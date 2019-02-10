@@ -36,7 +36,11 @@ function translateWorkBook (workbook, sheetName) {
   }
 
   let cols = Object.keys(colKeys).sort((a, b) => a.length - b.length || a.localeCompare(b)) // 1. length 2. locale
-  return { cols, data }
+  return {
+    cols,
+    data,
+    getValue: (table_, row_, col_) => (!table_.data[row_]) || (!table_.data[row_][col_]) ? undefined : table_.data[row_][col_].v
+  }
 }
 
 function readAndTranslate (path, options) {

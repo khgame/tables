@@ -12,7 +12,7 @@ function translateWorkBook (workbook, sheetName) {
   const sheet = workbook.Sheets[targetSheetName]
 
   // create return table
-  let ret = {}
+  let data = {}
   let colKeys = []
 
   // convert data types
@@ -29,18 +29,22 @@ function translateWorkBook (workbook, sheetName) {
     let col = key.slice(0, splitInd + 1)
     let row = key.slice(splitInd + 1)
     if (!row) { continue }
-    if (!ret[row]) ret[row] = {}
+    if (!data[row]) data[row] = {}
     let { t, v, w } = sheet[key]
-    ret[row][col] = { t, v, w }
+    data[row][col] = { t, v, w }
     colKeys[col] = 1
   }
 
   let cols = Object.keys(colKeys).sort((a, b) => a.length - b.length || a.localeCompare(b)) // 1. length 2. locale
-  return { cols, ret }
+  return { cols, data }
 }
 
-function readAndTranslate (path, sheetName) {
-  return translateWorkBook(readWorkBook(path), sheetName)
+function readAndTranslate (path, options) {
+  let table = translateWorkBook(readWorkBook(path), options.sheetName)
+  if (options.plugins) {
+    table = options.plugins.reduce((accumulate, plugin) => plugin(accumulate), table)
+  }
+  return table
 }
 
 module.exports = {

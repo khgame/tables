@@ -24,7 +24,8 @@
   "homepage": "https://github.com/khgame/tables#readme",
   "dependencies": {
     "assert": "^1.4.1",
-    "js-xlsx": "^0.8.22"
+    "js-xlsx": "^0.8.22",
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "eslint": "^5.13.0",

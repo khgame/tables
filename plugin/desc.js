@@ -5,14 +5,23 @@ module.exports = function tableDesc (table) {
   if (!table.tableMark) {
     table = tableMarkPlugin(table)
   }
-  const { data, tableMark, getValue } = table
+  const { data, tableMark, getValue, cols } = table
   const markRow = tableMark.row
   const markCol = tableMark.col
-  const markLine = data[markRow]
-  assert(markLine, 'markLine not exist')
-  assert(getValue(table, markRow, markCol) === '@', `mark info error ${markLine[markCol]}`)
+  const markLineData = data[markRow]
+  assert(markLineData, 'markLine not exist')
+  assert(getValue(table, markRow, markCol) === '@', `mark info error ${markLineData[markCol]}`)
 
-  // console.log(`get desc line : ${JSON.stringify(markLine)}`)
+  let markLine = {}
+  let descLine = {}
+  for (let i in cols) {
+    let col = cols[i]
+    let markSlot = getValue(table, tableMark.row, col)
+    let descSlot = getValue(table, tableMark.row + 1, col)
+    if (markSlot)markLine[col] = markSlot.trim()
+    if (descSlot)descLine[col] = descSlot.trim()
+  }
 
+  Object.assign(table, { markLine, descLine })
   return table
 }

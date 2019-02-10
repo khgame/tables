@@ -12,7 +12,7 @@ module.exports = function tableDesc (table) {
   assert(markLine, 'markLine not exist')
   assert(getValue(table, markRow, markCol) === '@', `mark info error ${markLine[markCol]}`)
 
-  console.log(`get desc line : ${JSON.stringify(markLine)}`)
+  // console.log(`get desc line : ${JSON.stringify(markLine)}`)
 
   return table
 }

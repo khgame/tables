@@ -55,10 +55,13 @@ function getConvertor (typeName) {
     case 'uint32':
     case 'uint64':
     case 'ulong':
+    case 'tid':
     case '@':
       return uint
     case 'bool':
       return bool
+    default:
+      return v => console.log('conv skip :', v)
   }
 }
 

@@ -4,6 +4,6 @@ const {
 } = require('..')
 
 let ret = readAndTranslate(`${__dirname}/../excel/nft.building.xlsx`, {
-  plugins: [ Plugins.expand, Plugins.desc ]
+  plugins: [ Plugins.convert ]
 })
-console.dir(ret)
+console.log(JSON.stringify(ret.convert, null, 2))

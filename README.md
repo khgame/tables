@@ -168,6 +168,67 @@ table = {
 }
 ```   
 
+#### 数据结构类
+
+##### 标准导表插件 Plugins.convert
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.convert ] })
+```
+- result
+> 将 raw 数据导出成程序易读的数据格式  
+> 其中 tids 表示原本的 row 与 id 的对应关系  
+> result 为转换后的数据, 以 id 为 key, 内部是表内数据的嵌套结构
+> 表格规则循序 @khgame/tid 规范, 详见 (详见 [ID 规划](###ID规划) )  
+> 或使用命令 `node ./example/convert.example.js` 尝试 ./example 下的示例   
+```js
+table = {
+  ...
+  convert : {
+    tids: {
+      "6": "2000000",
+      "7": "2000001",
+      "8": "2000002",
+      "9": "2000003",
+      "10": "2000004"
+    },
+    result: {
+      "2000000": {
+        "building_type": 200000,
+        "level": 0,
+        "name": "farm",
+        "upgrage": {
+          "to": 2000001,
+          "dependency": []
+        },
+        "product": {
+          "tid": 1000001,
+          "num": 1
+        }
+      },
+      "2000001": {
+        "building_type": 200000,
+        "level": 1,
+        "name": "farm",
+        "upgrage": {
+          "to": 2000002,
+          "dependency": []
+        },
+        "product": {
+          "tid": 1000001,
+          "num": 2
+        }
+      }
+      ...
+    }
+  }
+
+}
+```   
+
 ### ID规划
 
-    ...
+请移步 [https://github.com/khgame/tid-rules](https://github.com/khgame/tid-rules)
+
+### Troubleshooting
+

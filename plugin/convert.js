@@ -1,13 +1,16 @@
 const tableDescPlugin = require('./desc')
+const tableEnsureRowsPlugin = require('./erows')
 const { getConvertor } = require('../utils/typeNameConvertor')
+const assert = require('assert')
 const _ = require('lodash')
 
 module.exports = function tableConvert (table) {
   if (!table.tableMark || !table.markLine || !table.descLine) {
+    table = tableEnsureRowsPlugin(table)
     table = tableDescPlugin(table)
   }
 
-  const { getValue, cols, rows, tableMark, markLine, descLine } = table
+  const { getValue, erows, tableMark, markLine, descLine } = table
   const convertors = {}
   const idSeg = {}
   Object.keys(markLine).forEach(col => {
@@ -34,24 +37,30 @@ module.exports = function tableConvert (table) {
     if (_.isArray(node)) {
       node.push(child)
     } else {
+      assert(title, `tableConvert Error: colTitle of child ${child} must exist`)
       node[title] = child
     }
     node = child
   }
   const exitStack = () => { node = stack.pop() }
   const result = {}
-  for (let row in rows) {
-    row = parseInt(row)
+
+  for (let rowInd in erows) {
+    let row = parseInt(erows[rowInd])
+    console.log(`enter row ${row}/${erows}`)
     if (row < startRow) {
       continue
     }
+
+    console.log(`scan row ${row}, ${JSON.stringify(table.data[row])}`)
     node = {}
-    for (let colInd in cols) {
-      if (!cols.hasOwnProperty(colInd)) {
+    let markCols = Object.keys(markLine)
+    for (let colInd in markCols) {
+      if (!markCols.hasOwnProperty(colInd)) {
         continue
       }
-      let col = cols[colInd]
-      let colType = getValue(table, tableMark.row, col).trim()
+      let col = markCols[colInd]
+      let colType = getValue(table, tableMark.row, col).trim() // colType in mark line will never be empty
       let colTitle = descLine[col]
 
       switch (colType) {
@@ -67,24 +76,20 @@ module.exports = function tableConvert (table) {
           break
         default :
           let val = Val(row, col)
+          assert(colTitle, `tableConvert Error: colTitle must exist [${row}, ${col}]`)
           node[colTitle] = val
           break
       }
     }
 
-    if (!_.isEmpty(stack)) {
-      throw new Error(`tableConvert Error: parse row(${row}) error ==> object parser not close`)
-    }
-    if (!tids[row]) {
-      throw new Error(`tableConvert Error: id of row(${row}) not exist`)
-    }
-    if (result[tids[row]]) {
-      throw new Error(`tableConvert Error: row(${row}) : result of the id ${tids[row]} is already exist, please check the id table ${tids}`)
-    }
-    result[tids[row]] = node
+    assert(_.isEmpty(stack), `tableConvert Error: parse row(${row}) error ==> object parser not close`)
+    let tid = tids[row]
+    assert(tid, `tableConvert Error: id of row(${row}) should exist`)
+    assert(!result[tid], `tableConvert Error: row(${row}) : result of the id ${tid} is already exist, please check the id table ${tids}`)
+    result[tid] = node
   }
 
-  console.log(`get desc line : ${JSON.stringify(markLine)}`)
+  // console.log(`get desc line : ${JSON.stringify(markLine)}`)
   table.convert = { tids, result }
   return table
 }

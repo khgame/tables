@@ -6,7 +6,7 @@
 
 - 支持 Excel 文件到各种数据类型间的转换, 目前支持 json/js
 - 携带插件系统, 具有高可扩展性
-- 丰富的官方插件, 开箱即用的为 table 数据结构建立各种功能支持, 如各类索引, 数据结构转换, ID 规划功能等
+- 丰富的官方插件, 开箱即用的为 table 数据结构建立各种功能支持, 如各类索引, 数据结构转换, 数据验证, ID 规划功能等
 
 ## 基础用法
 
@@ -86,15 +86,29 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 #### 索引类
 
 ##### Plugins.rows 
+   - usage
+   ```js
+   let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.rows ] })
+   ```
+   - result  
+   > table 中将增加有序的索引 rows, 依序标注所有使用到的行号
+   ```js
+   table = {
+     rows : [ 4, 5, 6, 7, 10, 12 ... ],
+     ...
+   }
+   ```
+   
+##### Plugins.erows 
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.rows ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.erows ] })
 ```
 - result  
-> table 中将增加有序的索引 rows, 依序标注所有使用到的行号
+> table 中将增加有序的索引 rows, 依序标注所有使用到的行号, 元素全为空的行将不会包含在内
 ```js
 table = {
-  rows : [ 4, 5, 6, 7, 10, 12 ... ],
+  erows : [ 6, 7, 10, 12 ... ],
   ...
 }
 ```

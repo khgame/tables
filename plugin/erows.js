@@ -1,16 +1,13 @@
 const tableRows = require('./rows')
 
-module.exports = function tableMark (table) {
+module.exports = function tableEnsureRows (table) {
   if (!table.rows) {
     table = tableRows(table)
   }
   const { rows, cols, getValue } = table
 
-  let tableMark
+  let erows = []
   for (let rowInd in rows) {
-    if (tableMark) {
-      break
-    }
     if (!rows.hasOwnProperty(rowInd)) {
       continue
     }
@@ -18,15 +15,11 @@ module.exports = function tableMark (table) {
     for (let i in cols) {
       let col = cols[i]
       let value = getValue(table, row, col)
-      // console.log(row, col, value)
-      if (value === '@') {
-        tableMark = {
-          row, col
-        }
-        break
-      }
+      if (!value) continue
+      erows.push(row)
+      break
     }
   }
-  table.tableMark = tableMark
+  table.erows = erows
   return table
 }

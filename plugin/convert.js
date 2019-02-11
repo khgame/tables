@@ -24,7 +24,7 @@ module.exports = function tableConvert (table) {
     if (idSeg[col]) {
       tids[row] = tids[row] ? tids[row] + _.toString(val) : _.toString(val)
     }
-    console.log(`convert ${row},${col}:${val}`)
+    // console.log(`convert ${row},${col}:${val}`)
     return convertors[col](val)
   }
 
@@ -47,12 +47,12 @@ module.exports = function tableConvert (table) {
 
   for (let rowInd in erows) {
     let row = parseInt(erows[rowInd])
-    console.log(`enter row ${row}/${erows}`)
+    // console.log(`enter row ${row}/${erows}`)
     if (row < startRow) {
       continue
     }
 
-    console.log(`scan row ${row}, ${JSON.stringify(table.data[row])}`)
+    // console.log(`scan row ${row}, ${JSON.stringify(table.data[row])}`)
     node = {}
     let markCols = Object.keys(markLine)
     for (let colInd in markCols) {

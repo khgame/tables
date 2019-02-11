@@ -5,5 +5,6 @@ module.exports = {
   mark: require('./mark'),
   desc: require('./desc'),
   expand: require('./expand'),
-  plain: require('./plain')
+  plain: require('./plain'),
+  convert: require('./convert')
 }

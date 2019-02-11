@@ -85,88 +85,88 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 
 #### 索引类
 
-- rows : 
-    - usage
-    ```js
-    let ret = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`, { plugins: [ Plugins.rows ] })
-    ```
-    - result  
-    > table 中将增加有序的索引 rows, 依序标注所有使用到的行号
-    ```js
-    table = {
-      rows : [ 4, 5, 6, 7, 10, 12 ... ],
-      ...
-    }
-    ```
+##### Plugins.rows 
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.rows ] })
+```
+- result  
+> table 中将增加有序的索引 rows, 依序标注所有使用到的行号
+```js
+table = {
+  rows : [ 4, 5, 6, 7, 10, 12 ... ],
+  ...
+}
+```
     
-- colMap
-    - usage
-    ```js
-    let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.colMap ] })
-    ```
-    - result
-    > 在 table 中增加列名到列 ind 的索引
-    ```js
-    table = {
-      colMap : { "A" : 1, "B" : 2, "D" : 3, "AA" : 4 ... }
-      ...   
-    }
-    ```
-    
-- mark : 
-    - usage
-    ```js
-    let ret = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`, { plugins: [ Plugins.mark ] })
-    ```
-    - result  
-    > table 中将增加开始标记 tableMark, 标记表格中第一个 '@' 符号出现的位置 (详见 [ID 规划](###ID规划) )
-    ```js
-    table = {
-      tableMark : [ row: 4, col: 'C' ] 
-      rows : [ 4, 5, 6, 7, 10, 12 ... ],
-      ...
-    }
-    ```
-    
-### 数据结构类
+##### Plugins.colMap
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.colMap ] })
+```
+- result
+> 在 table 中增加列名到列 ind 的索引
+```js
+table = {
+  colMap : { "A" : 1, "B" : 2, "D" : 3, "AA" : 4 ... }
+  ...   
+}
+```
 
-- plain
-    - usage
-    ```js
-    let ret = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`, { plugins: [ Plugins.plain ] })
-    ```
-    - result
-    > data 将被改为 plan 模式, 简化 value 结构到只保留有效值
-    ```js
-    table = {
-      data : {
-        "4": {  
-          "C": "@",
-          "D": 3,
-          "E": "@khgame/table",
-          ...
-         },
-      },
-      ...
-    }
-    ```
+##### Plugins.mark
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.mark ] })
+```
+- result  
+> table 中将增加开始标记 tableMark, 标记表格中第一个 '@' 符号出现的位置 (详见 [ID 规划](###ID规划) )
+```js
+table = {
+  tableMark : [ row: 4, col: 'C' ] 
+  rows : [ 4, 5, 6, 7, 10, 12 ... ],
+  ...
+}
+```
 
-- expand 
-    - usage
-    ```js
-    let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.expand ] })
-    ```
-    - result
-    > data 将被改为 expand 模式, 按照 col 的可能情况扩展成列表并保证有序
-    ```js
-    table = {
-      data : {
-        "4": [ "@", 3, "@khgame/table", undefined, undefined, ...],
-        "5": [ "@", 3, "@khgame/table", 33.5, "@khgame/tconv", ...],
-      },
+#### 数据结构类
+
+##### Plugins.plain
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.plain ] })
+```
+- result
+> data 将被改为 plan 模式, 简化 value 结构到只保留有效值
+```js
+table = {
+  data : {
+    "4": {  
+      "C": "@",
+      "D": 3,
+      "E": "@khgame/table",
       ...
-    }
-    ```   
+    },
+  },
+  ...
+}
+```
+
+##### Plugins.expand
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.expand ] })
+```
+- result
+> data 将被改为 expand 模式, 按照 col 的可能情况扩展成列表并保证有序
+```js
+table = {
+  data : {
+    "4": [ "@", 3, "@khgame/table", undefined, undefined, ...],
+    "5": [ "@", 3, "@khgame/table", 33.5, "@khgame/tconv", ...],
+  },
+  ...
+}
+```   
 
 ### ID规划
 

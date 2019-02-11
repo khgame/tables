@@ -98,6 +98,21 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
       ...
     }
     ```
+    
+- colMap
+    - usage
+    ```js
+    let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.colMap ] })
+    ```
+    - result
+    > 在 table 中增加列名到列 ind 的索引
+    ```js
+    table = {
+      colMap : { "A" : 1, "B" : 2, "D" : 3, "AA" : 4 ... }
+      ...   
+    }
+    ```
+    
 - mark : 
     - usage
     ```js
@@ -139,7 +154,7 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - expand 
     - usage
     ```js
-    let ret = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`, { plugins: [ Plugins.expand ] })
+    let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.expand ] })
     ```
     - result
     > data 将被改为 expand 模式, 按照 col 的可能情况扩展成列表并保证有序

@@ -3,7 +3,7 @@ const { supportedTypes, getTypeName } = require('./schemaConvertor')
 
 const format = v => _.isString(v) ? v.toLowerCase().trim() : v
 
-const str = v => _.toString(format(v))
+const str = v => _.toString(v)
 
 const float = v => {
   let ret = _.toNumber(format(v))

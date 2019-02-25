@@ -7,5 +7,6 @@ module.exports = {
   desc: require('./desc'),
   expand: require('./expand'),
   plain: require('./plain'),
-  convert: require('./convert')
+  convert: require('./convert'),
+  schema: require('./schema')
 }

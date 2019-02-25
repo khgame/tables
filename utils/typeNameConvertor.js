@@ -1,6 +1,10 @@
 const _ = require('lodash')
+const { supportedTypes, getTypeName } = require('./schemaConvertor')
+
 const format = v => _.isString(v) ? v.toLowerCase().trim() : v
+
 const str = v => _.toString(format(v))
+
 const float = v => {
   let ret = _.toNumber(format(v))
   if (_.isNaN(ret)) throw TypeError(`NAN : type error ${v} => ${ret}`)
@@ -28,41 +32,18 @@ const bool = v => {
         (_.isString(ret) && ((ret === 'true') || (ret === 't') || (ret === 'y')))
 }
 
+const typeConvertorMap = {
+  [supportedTypes.String]: str,
+  [supportedTypes.Float]: float,
+  [supportedTypes.UFloat]: ufloat,
+  [supportedTypes.Int]: int,
+  [supportedTypes.UInt]: uint,
+  [supportedTypes.Boolean]: bool,
+  [supportedTypes.Undefined]: v => console.log('conv skip :', v)
+}
+
 function getConvertor (typeName) {
-  switch (typeName) {
-    case 'string':
-    case 'str':
-      return str
-    case 'double':
-    case 'single':
-    case 'float':
-    case 'num':
-    case 'number':
-      return float
-    case 'count':
-    case 'ufloat':
-      return ufloat
-    case 'int':
-    case 'int8':
-    case 'int16':
-    case 'int32':
-    case 'int64':
-    case 'long':
-      return int
-    case 'uint':
-    case 'uint8':
-    case 'uint16':
-    case 'uint32':
-    case 'uint64':
-    case 'ulong':
-    case 'tid':
-    case '@':
-      return uint
-    case 'bool':
-      return bool
-    default:
-      return v => console.log('conv skip :', v)
-  }
+  return typeConvertorMap[getTypeName(typeName)]
 }
 
 module.exports = {

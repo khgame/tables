@@ -53,7 +53,16 @@ module.exports = function tableConvert (table) {
         break
       default :
         assert(colTitle, `table schema Error: colTitle must exist [${col}]`)
-        node[colTitle] = getTypeName(colType)
+        let typeObj = getTypeName(colType)
+        let args = typeObj.args
+        let stack = [typeObj.type]
+        while (args.length > 0) {
+          typeObj = getTypeName(args[0])
+          args = typeObj.args
+          stack.push(typeObj.type)
+        }
+
+        node[colTitle] = stack.length === 1 ? stack[0] : stack.reverse().reduce((prev, cur) => `${cur}<${prev}>`)
         break
     }
   }

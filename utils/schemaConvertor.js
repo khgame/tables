@@ -10,6 +10,18 @@ const supportedTypes = {
   Array: 'Array' // not recommend
 }
 
+function catchTemplate (str, splitor) {
+  str = str.trim()
+  let leftAngle = str.indexOf('<')
+  let rightAngle = str[str.length - 1] === '>' ? str.length - 1 : -1
+  if (leftAngle >= 0 && rightAngle >= 0) {
+    return str.substr(leftAngle + 1, rightAngle - leftAngle - 1).split(splitor)
+  } else if (leftAngle >= 0 || rightAngle >= 0) {
+    throw new Error(`getTypeName error : angle not match ${str}`)
+  }
+  return []
+}
+
 function getTypeName (typeName) {
   let typeObject = {
     type: undefined,
@@ -56,28 +68,12 @@ function getTypeName (typeName) {
     default:
       if (typeName.startsWith(supportedTypes.Array)) {
         typeObject.type = supportedTypes.Array
-        let typeArgs = typeName.substr(supportedTypes.Array.length)
-        if (!typeArgs) break
-        let leftAngle = typeArgs.indexOf('<')
-        let rightAngle = typeArgs[typeArgs.length - 1] === '>' ? typeArgs.length - 1 : -1
-        if (leftAngle >= 0 && rightAngle >= 0) {
-          typeObject.args = typeArgs.substr(leftAngle + 1, rightAngle - leftAngle - 1).split('|')
-        } else if (leftAngle >= 0 || rightAngle >= 0) {
-          throw new Error(`getTypeName error : angle not match ${typeName}`)
-        }
+        typeObject.args = catchTemplate(typeName, '|')
         break
       }
       if (typeName.startsWith(supportedTypes.Map)) {
         typeObject.type = supportedTypes.Map
-        let typeArgs = typeName.substr(supportedTypes.Map.length)
-        if (!typeArgs) break
-        let leftAngle = typeArgs.indexOf('<')
-        let rightAngle = typeArgs[typeArgs.length - 1] === '>' ? typeArgs.length - 1 : -1
-        if (leftAngle >= 0 && rightAngle >= 0) {
-          typeObject.args = typeArgs.substr(leftAngle + 1, rightAngle - leftAngle - 1).split('|')
-        } else if (leftAngle >= 0 || rightAngle >= 0) {
-          throw new Error(`getTypeName error : angle not match ${typeName}`)
-        }
+        typeObject.args = catchTemplate(typeName, '-')
         break
       }
       typeObject.type = supportedTypes.Undefined

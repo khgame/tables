@@ -28,6 +28,11 @@ module.exports = function tableConvert (table) {
     return convertors[col](val)
   }
 
+  const isEmpty = (row, col) => {
+    let val = getValue(table, row, col)
+    return !val
+  }
+
   const startRow = tableMark.row + 2
 
   let stack = []
@@ -75,9 +80,17 @@ module.exports = function tableConvert (table) {
           exitStack()
           break
         default :
-          let val = Val(row, col)
-          assert(colTitle, `tableConvert Error: colTitle must exist [${row}, ${col}]`)
-          node[colTitle] = val
+          if (_.isArray(node)) {
+            console.log('catch array ', row, col, isEmpty(row, col), getValue(table, row, col))
+            if (!isEmpty(row, col)) {
+              console.log('not empty ', row, col)
+              node.push(Val(row, col))
+            }
+          } else {
+            assert(colTitle, `tableConvert Error: colTitle must exist [${row}, ${col}]`)
+            node[colTitle] = Val(row, col)
+          }
+
           break
       }
     }

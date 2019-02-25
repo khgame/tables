@@ -15,7 +15,7 @@ function getTsTypeName (typeName) {
     case supportedTypes.Any: return 'any'
     case supportedTypes.Array: return 'Array'
     case supportedTypes.Map: return 'any'
-    default: return '=-='
+    default: return 'any // todo'
   }
 }
 

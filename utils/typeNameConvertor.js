@@ -39,11 +39,42 @@ const typeConvertorMap = {
   [supportedTypes.Int]: int,
   [supportedTypes.UInt]: uint,
   [supportedTypes.Boolean]: bool,
-  [supportedTypes.Undefined]: v => console.log('conv skip :', v)
+  [supportedTypes.Undefined]: v => console.log('conv skip :', v),
+  [supportedTypes.Array]: (v, args) => {
+    if (!_.isString(v)) return v
+    if (v.indexOf('|') < 0) return v.trim()
+    let items = v.split('|').map(s => s.trim())
+    if (args.length > 0) {
+      let entryConvertor = getConvertor(args[0])
+      // console.log('array convertor ', args[0], v)
+      items = items.map(s => entryConvertor(s))
+    }
+    return items.length > 1 ? items : items[0]
+  },
+  [supportedTypes.Map]: (v, args) => {
+    if (!_.isString(v)) {
+      return v
+    }
+    if (v.indexOf('-') < 0) {
+      return v.trim()
+    }
+    const split = v.split('-').map(s => s.trim())
+    const kv = {
+      key: split[0],
+      val: split[1]
+    }
+    if (args.length > 0) {
+      let entryConvertor = getConvertor(args[0])
+      // console.log('map convertor ', args[0], v)
+      kv.val = entryConvertor(kv.val)
+    }
+    return kv
+  }
 }
 
 function getConvertor (typeName) {
-  return typeConvertorMap[getTypeName(typeName)]
+  let typeObject = getTypeName(typeName)
+  return v => typeConvertorMap[typeObject.type](v, typeObject.args)
 }
 
 module.exports = {

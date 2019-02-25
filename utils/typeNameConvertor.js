@@ -40,6 +40,7 @@ const typeConvertorMap = {
   [supportedTypes.UInt]: uint,
   [supportedTypes.Boolean]: bool,
   [supportedTypes.Undefined]: v => console.log('conv skip :', v),
+  [supportedTypes.Any]: v => v,
   [supportedTypes.Array]: (v, args) => {
     if (!_.isString(v)) return v
     if (v.indexOf('|') < 0) return v.trim()

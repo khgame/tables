@@ -6,6 +6,7 @@ const supportedTypes = {
   UInt: 'UInt',
   Boolean: 'Boolean',
   Undefined: 'Undefined',
+  Any: 'Any', // not recommend
   Map: 'Map', // not recommend
   Array: 'Array' // not recommend
 }
@@ -64,6 +65,12 @@ function getTypeName (typeName) {
       break
     case 'bool':
       typeObject.type = supportedTypes.Boolean
+      break
+    case 'dynamic':
+    case 'object':
+    case 'obj':
+    case 'any':
+      typeObject.type = supportedTypes.Any
       break
     default:
       if (typeName.startsWith(supportedTypes.Array)) {

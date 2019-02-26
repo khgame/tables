@@ -12,8 +12,8 @@ const fs = require('fs-extra')
  */
 function serialize (pathIn, dirOut, serializers) {
   let plugins = Object.values(serializers).reduce((prev, cur) => prev.concat(cur.plugins), [])
-  console.log('plugins', plugins)
-  console.dir(Object.values(serializers))
+  // console.log('plugins', plugins)
+  // console.dir(Object.values(serializers))
   let ret = readAndTranslate(pathIn, {
     plugins
   })

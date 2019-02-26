@@ -75,7 +75,22 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 
 > 建议使用 getValue 方法而非直接访问数据结构  
 > 原因是有一些插件可以改变 data 数据结构, 以适应不同场合下的表格使用需求  
-> 所以只建议在清楚自己所使用的插件的情况下直接访问 data 数据结构
+> 所以只建议在清楚自己所使用的插件的情况下直接访问 data 数据结构  
+
+### Supported Data Types
+
+- String: `string`, `str`
+- Float: `double`, `single`, `float`, `num`, `number`
+- UFloat: `ufloat`, `count`
+- Int: `int`, `int8`, `int16`, `int32`, `int64`, `long`
+- UInt: `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `ulong`, `tid`, `@`
+- Boolean: `bool`, `onoff`
+- Any: `dynamic`, `object`, `obj`, `any`
+- Array: `Array<T>`
+- Map: `Map<T>`
+
+> Any, Array, Map 不建议使用  
+> 使用 Array 和 Map 在未 Match 的情况下会返回 **any**, 请注意  
 
 ### plugins
 
@@ -183,6 +198,83 @@ table = {
 ```   
 
 #### 数据结构类
+
+##### 描述生成插件 Plugins.schema
+
+- usage
+```js
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.schema ] })
+```
+- result
+```js
+table = {
+  ...
+  schema: {
+    "ctype": "UInt",
+    "building": "UInt",
+    "level": "UInt",
+    "name": "String",
+    "upgrage": {
+      "to": "UInt",
+      "dependency": [
+        "UInt"
+      ]
+    },
+    "product": [
+      {
+        "tid": "UInt",
+        "num": "Float"
+      }
+    ],
+    "arr": "Array<Float>",
+    "map": "Map<UInt>",
+    "nest": [
+      [
+        "Int",
+        "Int",
+        "Int"
+      ],
+      [
+        [
+          "Boolean"
+        ]
+      ]
+    ]
+  },
+  ...
+}
+```
+
+### Serializer
+
+同时, 可以使用预制的Serializer来生成文件
+
+example:
+```js
+const { Serializer } = require('@khgame/tables')
+
+Serializer.serialize(`${__dirname}/your_awesome_excel.xlsx`, __dirname,
+  {
+    'your_awesome_excel.json': Serializer.jsonSerializer
+  }
+)
+```
+
+并支持生成 ts 的 interface 文件:
+
+example:
+```js
+const { Serializer } = require('@khgame/tables')
+
+Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+  {
+    'your_awesome_data.json': Serializer.jsonSerializer,
+    'your_awesome_ts_interface.ts': Serializer.tsInterfaceSerializer
+  }
+)
+```
+    
+
 
 ##### 标准导表插件 Plugins.convert
 - usage

@@ -1,4 +1,4 @@
-export interface Inft_building{
+export interface INftBuilding{
   ctype: number;
   building: number;
   level: number;
@@ -12,7 +12,7 @@ export interface Inft_building{
       num: number;
     })[];
   arr: number[];
-  map: {key: string, val: number}[];
+  map: {key: string, val: number};
   nest: ((number)[])|(((boolean)[])[])[];
 
 }

@@ -81,9 +81,9 @@ module.exports = function tableConvert (table) {
           break
         default :
           if (_.isArray(node)) {
-            console.log('catch array ', row, col, isEmpty(row, col), getValue(table, row, col))
+            // console.log('catch array ', row, col, isEmpty(row, col), getValue(table, row, col))
             if (!isEmpty(row, col)) {
-              console.log('not empty ', row, col)
+              // console.log('not empty ', row, col)
               node.push(Val(row, col))
             }
           } else {

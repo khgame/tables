@@ -64,6 +64,7 @@ function getTypeName (typeName) {
       typeObject.type = supportedTypes.UInt
       break
     case 'bool':
+    case 'onoff':
       typeObject.type = supportedTypes.Boolean
       break
     case 'dynamic':

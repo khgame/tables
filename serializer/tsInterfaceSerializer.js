@@ -1,7 +1,7 @@
 const Plugins = require('../plugin')
 const _ = require('lodash')
 
-const { catchTemplate, getTypeName, supportedTypes } = require('../utils/schemaConvertor')
+const { getTypeName, supportedTypes } = require('../utils/schemaConvertor')
 
 function getTsType (typeName) {
   switch (typeName) {
@@ -17,13 +17,13 @@ function getTsType (typeName) {
       if (typeName.startsWith(supportedTypes.Array)) {
         let typeInnerAll = getTypeName(typeName).args
         let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
-        console.log('typeInnerAll', 'array', typeName, typeInnerAll)
+        // console.log('typeInnerAll', 'array', typeName, typeInnerAll)
         return `${getTsType(typeInner)}[]`
       } else if (typeName.startsWith(supportedTypes.Map)) {
         let typeInnerAll = getTypeName(typeName).args
         let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
-        console.log('typeInnerAll', 'Map', typeInnerAll)
-        return `{key: string, val: ${getTsType(typeInner)}}[]`
+        // console.log('typeInnerAll', 'Map', typeInnerAll)
+        return `{key: string, val: ${getTsType(typeInner)}}`
       }
       return 'any'
   }
@@ -39,7 +39,7 @@ function dealSchema (schema, inArray = false, depth = 1) {
       result += str
     } else {
       itemSql.push(str)
-      console.log('itemSql', depth, itemSql)
+      // console.log('itemSql', depth, itemSql)
     }
   }
 
@@ -80,11 +80,23 @@ function dealSchema (schema, inArray = false, depth = 1) {
   return result
 }
 
+function culturelize (s) {
+  s = s.toLowerCase()
+  if (s.length <= 0) return ''
+  let ret = s.substr(0, 1).toUpperCase() + s.substr(1)
+  // console.log(ret)
+  return ret
+}
+
+function makeInterfaceName (fileName) {
+  return fileName.split(/[\s._-]/).reduce((p, c) => p + culturelize(c), 'I')
+}
+
 const tsInterfaceSerializer = {
   plugins: [Plugins.schema, Plugins.convert],
   file: (data, fileName) => {
-    console.log(data.schema)
-    return `export interface I${fileName.replace('.', '_').replace('-', '_')}{
+    // console.log(data.schema)
+    return `export interface ${makeInterfaceName(fileName)}{
 ${dealSchema(data.schema)}
 }`
   }

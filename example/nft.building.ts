@@ -11,8 +11,8 @@ export interface Inft_building{
       tid: number;
       num: number;
     })[];
-  arr: any // todo;
-  map: any // todo;
+  arr: number[];
+  map: {key: string, val: number}[];
   nest: ((number)[])|(((boolean)[])[])[];
 
 }

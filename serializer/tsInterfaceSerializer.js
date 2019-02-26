@@ -1,9 +1,9 @@
 const Plugins = require('../plugin')
 const _ = require('lodash')
 
-const { supportedTypes } = require('../utils/schemaConvertor')
+const { catchTemplate, getTypeName, supportedTypes } = require('../utils/schemaConvertor')
 
-function getTsTypeName (typeName) {
+function getTsType (typeName) {
   switch (typeName) {
     case supportedTypes.String: return 'string'
     case supportedTypes.Float: return 'number'
@@ -13,9 +13,19 @@ function getTsTypeName (typeName) {
     case supportedTypes.Boolean: return 'boolean'
     case supportedTypes.Undefined: return 'undefined'
     case supportedTypes.Any: return 'any'
-    case supportedTypes.Array: return 'Array'
-    case supportedTypes.Map: return 'any'
-    default: return 'any // todo'
+    default:
+      if (typeName.startsWith(supportedTypes.Array)) {
+        let typeInnerAll = getTypeName(typeName).args
+        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
+        console.log('typeInnerAll', 'array', typeName, typeInnerAll)
+        return `${getTsType(typeInner)}[]`
+      } else if (typeName.startsWith(supportedTypes.Map)) {
+        let typeInnerAll = getTypeName(typeName).args
+        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
+        console.log('typeInnerAll', 'Map', typeInnerAll)
+        return `{key: string, val: ${getTsType(typeInner)}}[]`
+      }
+      return 'any'
   }
 }
 
@@ -46,7 +56,7 @@ function dealSchema (schema, inArray = false, depth = 1) {
       temp += space + '}' + split
       rcv(temp)
     } else {
-      temp += `${getTsTypeName(schemaType)}${split}`
+      temp += `${getTsType(schemaType)}${split}`
       rcv(temp)
     }
     // if (inArray) break // nest array only accept the first type
@@ -59,12 +69,12 @@ function dealSchema (schema, inArray = false, depth = 1) {
     let typeOr = []
     itemSql.forEach(str => {
       if (typeOr.indexOf(str) < 0) {
-        console.log('typeOr.indexOf(str)', typeOr, str, typeOr.indexOf(str))
+        // console.log('typeOr.indexOf(str)', typeOr, str, typeOr.indexOf(str))
         typeOr.push(str)
       }
     })
     let merge = typeOr.reduce((p, c) => p + c)
-    console.log('==> typeOr itemSql ', typeOr, itemSql, 'res', result, 'merge', merge)
+    // console.log('==> typeOr itemSql ', typeOr, itemSql, 'res', result, 'merge', merge)
     result += merge
   }
   return result
@@ -74,7 +84,7 @@ const tsInterfaceSerializer = {
   plugins: [Plugins.schema, Plugins.convert],
   file: (data, fileName) => {
     console.log(data.schema)
-    return `export interface I${fileName.replace('.', '_')}{
+    return `export interface I${fileName.replace('.', '_').replace('-', '_')}{
 ${dealSchema(data.schema)}
 }`
   }

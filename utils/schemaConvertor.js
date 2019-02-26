@@ -92,5 +92,6 @@ function getTypeName (typeName) {
 
 module.exports = {
   supportedTypes,
-  getTypeName
+  getTypeName,
+  catchTemplate
 }

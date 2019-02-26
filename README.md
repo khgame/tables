@@ -245,37 +245,6 @@ table = {
 }
 ```
 
-### Serializer
-
-同时, 可以使用预制的Serializer来生成文件
-
-example:
-```js
-const { Serializer } = require('@khgame/tables')
-
-Serializer.serialize(`${__dirname}/your_awesome_excel.xlsx`, __dirname,
-  {
-    'your_awesome_excel.json': Serializer.jsonSerializer
-  }
-)
-```
-
-并支持生成 ts 的 interface 文件:
-
-example:
-```js
-const { Serializer } = require('@khgame/tables')
-
-Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
-  {
-    'your_awesome_data.json': Serializer.jsonSerializer,
-    'your_awesome_ts_interface.ts': Serializer.tsInterfaceSerializer
-  }
-)
-```
-    
-
-
 ##### 标准导表插件 Plugins.convert
 - usage
 ```js
@@ -332,6 +301,35 @@ table = {
 }
 ```   
 
+### Serializer
+
+同时, 可以使用预制的Serializer来生成文件
+
+example:
+```js
+const { Serializer } = require('@khgame/tables')
+
+Serializer.serialize(`${__dirname}/your_awesome_excel.xlsx`, __dirname,
+  {
+    'your_awesome_excel.json': Serializer.jsonSerializer
+  }
+)
+```
+
+并支持生成 ts 的 interface 文件:
+
+example:
+```js
+const { Serializer } = require('@khgame/tables')
+
+Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+  {
+    'your_awesome_data.json': Serializer.jsonSerializer,
+    'your_awesome_ts_interface.ts': Serializer.tsInterfaceSerializer
+  }
+)
+```
+    
 ### ID规划
 
 请移步 [https://github.com/khgame/tid-rules](https://github.com/khgame/tid-rules)

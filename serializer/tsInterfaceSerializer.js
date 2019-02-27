@@ -47,8 +47,8 @@ function dealSchema (schema, inArray = false, depth = 1) {
     let temp = (inArray ? '(' : space + key + ': ')
     let schemaType = schema[key]
     if (_.isArray(schemaType)) {
-      temp += dealSchema(schemaType, true, depth + 1)
-      temp = temp.substr(0, temp.length - 1) + '[]' + split
+      temp += '(' + dealSchema(schemaType, true, depth + 1)
+      temp = temp.substr(0, temp.length - 1) + ')[]' + split
       rcv(temp)
     } else if (_.isObject(schemaType)) {
       temp += '{\n'

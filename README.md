@@ -89,8 +89,13 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - Array: `Array<T>`
 - Pair: `Pair<T>`
 
-> Any, Array, Map 原则上不建议使用  
-> 使用 Array 和 Map 在未 Match 的情况抛出异常  
+> 定义类型的情况下, 类型转换失败将抛出异常, 形如:  
+    `
+    TypeError: Convert Error for col(U) map:Map<uint> // 此处 Map 已经不在类型定义中
+    undefined type detected, for value : tag-0
+    `   
+> Any, Array, Pair 原则上不建议使用  
+> Array 和 Pair 不指定类型时相当于 Array<any> 和 Pair<any>  
 > Any 最好仅用于异构列, 其他情况使用 Any 可能导致逻辑内出现未定义情况, 请注意
 
 ### plugins

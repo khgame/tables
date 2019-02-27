@@ -50,7 +50,7 @@ const typeConvertorMap = {
       // console.log('array convertor ', args[0], v)
       items = items.map(s => entryConvertor(s))
     }
-    return items.length > 1 ? items : items[0]
+    return items
   },
   [supportedTypes.Pair]: (v, args) => {
     if (!_.isString(v)) {

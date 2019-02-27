@@ -44,7 +44,7 @@ const typeConvertorMap = {
   },
   [supportedTypes.Any]: v => v,
   [supportedTypes.Array]: (v, args) => {
-    let items = (!_.isString(v) || v.indexOf('|') < 0) ? [ v ] : v.split('|').map(s => s.trim())
+    let items = !v ? [] : ((!_.isString(v) || v.indexOf('|') < 0) ? [ v ] : v.split('|').map(s => s.trim()))
     if (args.length > 0) {
       let entryConvertor = getConvertor(args[0])
       // console.log('array convertor ', args[0], v)

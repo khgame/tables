@@ -311,6 +311,7 @@ table = {
 
 同时, 可以使用预制的Serializer来生成文件
 
+#### jsonSerializer
 example:
 ```js
 const { Serializer } = require('@khgame/tables')
@@ -322,7 +323,9 @@ Serializer.serialize(`${__dirname}/your_awesome_excel.xlsx`, __dirname,
 )
 ```
 
-并支持生成 ts 的 interface 文件:
+#### tsInterfaceSerializer
+
+tsInterfaceSerializer 可以用于生成 ts 的 interface 文件:
 
 example:
 ```js
@@ -332,6 +335,36 @@ Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
   {
     'your_awesome_data.json': Serializer.jsonSerializer,
     'your_awesome_ts_interface.ts': Serializer.tsInterfaceSerializer
+  }
+)
+```
+
+#### jsSerializer
+
+jsSerializer 可以用于生成可直接引入的 js 代码:
+
+example:
+```js
+const { Serializer } = require('@khgame/tables')
+
+Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+  {
+    'your_awesome_data.js': Serializer.jsSerializer,
+  }
+)
+```
+
+#### tsSerializer
+
+jsSerializer 可以用于生成可直接引入的 ts 代码:
+
+example:
+```js
+const { Serializer } = require('@khgame/tables')
+
+Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+  {
+    'your_awesome_data.js': Serializer.tsSerializer,
   }
 )
 ```

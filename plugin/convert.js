@@ -25,7 +25,11 @@ module.exports = function tableConvert (table) {
       tids[row] = tids[row] ? tids[row] + _.toString(val) : _.toString(val)
     }
     // console.log(`convert ${row},${col}:${val}`)
-    return convertors[col](val)
+    try {
+      return convertors[col](val)
+    } catch (ex) {
+      throw new TypeError(`Convert Error for col(${col}) ${descLine[col]}:${markLine[col]} \n ${ex.message}`)
+    }
   }
 
   const isEmpty = (row, col) => {

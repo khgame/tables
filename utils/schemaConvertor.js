@@ -85,6 +85,7 @@ function getTypeName (typeName) {
         break
       }
       typeObject.type = supportedTypes.Undefined
+      // typeObject.args = [typeName]
       break
   }
 

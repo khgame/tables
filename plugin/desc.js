@@ -22,6 +22,11 @@ module.exports = function tableDesc (table) {
     if (descSlot)descLine[col] = descSlot.trim()
   }
 
-  Object.assign(table, { markLine, descLine })
+  Object.assign(table,
+    {
+      markLine, // 类型
+      descLine // 名称
+    }
+  )
   return table
 }

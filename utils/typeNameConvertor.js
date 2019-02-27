@@ -39,7 +39,9 @@ const typeConvertorMap = {
   [supportedTypes.Int]: int,
   [supportedTypes.UInt]: uint,
   [supportedTypes.Boolean]: bool,
-  [supportedTypes.Undefined]: v => console.log('conv skip :', v),
+  [supportedTypes.Undefined]: (v) => {
+    throw TypeError('undefined type detected, for value : ' + v)
+  },
   [supportedTypes.Any]: v => v,
   [supportedTypes.Array]: (v, args) => {
     let items = (!_.isString(v) || v.indexOf('|') < 0) ? [ v ] : v.split('|').map(s => s.trim())

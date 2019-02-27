@@ -103,5 +103,7 @@ ${dealSchema(data.schema)}
 }
 
 module.exports = {
+  dealSchema,
+  makeInterfaceName,
   tsInterfaceSerializer
 }

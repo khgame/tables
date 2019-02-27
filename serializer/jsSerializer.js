@@ -1,10 +1,10 @@
 const Plugins = require('../plugin')
 
-const jsonSerializer = {
+const jsSerializer = {
   plugins: [Plugins.convert],
   file: data => `${module.exports = JSON.stringify(data.convert, null, 2)}`
 }
 
 module.exports = {
-  jsonSerializer
+  jsSerializer
 }

@@ -26,5 +26,7 @@ function serialize (pathIn, dirOut, serializers) {
 module.exports = {
   serialize,
   jsonSerializer: require('./jsonSerializer').jsonSerializer,
+  jsSerializer: require('./jsSerializer').jsSerializer,
+  tsSerializer: require('./tsSerializer').tsSerializer,
   tsInterfaceSerializer: require('./tsInterfaceSerializer').tsInterfaceSerializer
 }

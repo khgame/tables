@@ -42,9 +42,7 @@ const typeConvertorMap = {
   [supportedTypes.Undefined]: v => console.log('conv skip :', v),
   [supportedTypes.Any]: v => v,
   [supportedTypes.Array]: (v, args) => {
-    if (!_.isString(v)) return v
-    if (v.indexOf('|') < 0) return v.trim()
-    let items = v.split('|').map(s => s.trim())
+    let items = (!_.isString(v) || v.indexOf('|') < 0) ? [ v ] : v.split('|').map(s => s.trim())
     if (args.length > 0) {
       let entryConvertor = getConvertor(args[0])
       // console.log('array convertor ', args[0], v)
@@ -52,21 +50,21 @@ const typeConvertorMap = {
     }
     return items.length > 1 ? items : items[0]
   },
-  [supportedTypes.Map]: (v, args) => {
+  [supportedTypes.Pair]: (v, args) => {
     if (!_.isString(v)) {
-      return v
+      throw TypeError(`must be string value ${v} of pair that match the schema 'key:val'`)
     }
-    if (v.indexOf('-') < 0) {
-      return v.trim()
+    if (v.indexOf(':') < 0) {
+      throw TypeError(`must be ${v} of pair that match the schema 'key:val'`)
     }
-    const split = v.split('-').map(s => s.trim())
+    const split = v.split(':').map(s => s.trim())
     const kv = {
       key: split[0],
       val: split[1]
     }
     if (args.length > 0) {
       let entryConvertor = getConvertor(args[0])
-      // console.log('map convertor ', args[0], v)
+      // console.log('pair convertor ', args[0], v)
       kv.val = entryConvertor(kv.val)
     }
     return kv

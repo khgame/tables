@@ -7,7 +7,7 @@ const supportedTypes = {
   Boolean: 'Boolean',
   Undefined: 'Undefined',
   Any: 'Any', // not recommend
-  Map: 'Map', // not recommend
+  Pair: 'Pair', // not recommend
   Array: 'Array' // not recommend
 }
 
@@ -79,8 +79,8 @@ function getTypeName (typeName) {
         typeObject.args = catchTemplate(typeName, '|')
         break
       }
-      if (typeName.startsWith(supportedTypes.Map)) {
-        typeObject.type = supportedTypes.Map
+      if (typeName.startsWith(supportedTypes.Pair)) {
+        typeObject.type = supportedTypes.Pair
         typeObject.args = catchTemplate(typeName, '-')
         break
       }

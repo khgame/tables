@@ -87,10 +87,11 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - Boolean: `bool`, `onoff`
 - Any: `dynamic`, `object`, `obj`, `any`
 - Array: `Array<T>`
-- Map: `Map<T>`
+- Pair: `Pair<T>`
 
-> Any, Array, Map 不建议使用  
-> 使用 Array 和 Map 在未 Match 的情况下会返回 **any**, 请注意  
+> Any, Array, Map 原则上不建议使用  
+> 使用 Array 和 Map 在未 Match 的情况抛出异常  
+> Any 最好仅用于异构列, 其他情况使用 Any 可能导致逻辑内出现未定义情况, 请注意
 
 ### plugins
 
@@ -227,7 +228,7 @@ table = {
       }
     ],
     "arr": "Array<Float>",
-    "map": "Map<UInt>",
+    "map": "Pair<UInt>",
     "nest": [
       [
         "Int",

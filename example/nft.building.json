@@ -31,10 +31,16 @@ module.exports = {
         2,
         3
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 0
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "0"
+        }
+      ],
       "nest": [
         [
           1,
@@ -70,10 +76,16 @@ module.exports = {
         2,
         4
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 1
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s1"
+        }
+      ],
       "nest": [
         [
           1,
@@ -106,10 +118,16 @@ module.exports = {
         2,
         5
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 2
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s2"
+        }
+      ],
       "nest": [
         [
           1,
@@ -142,10 +160,16 @@ module.exports = {
         2,
         6
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 3
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s3"
+        }
+      ],
       "nest": [
         [
           1,
@@ -178,10 +202,16 @@ module.exports = {
         2,
         7
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 4
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s4"
+        }
+      ],
       "nest": [
         [
           1,
@@ -214,10 +244,16 @@ module.exports = {
         2,
         8
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 5
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s5"
+        }
+      ],
       "nest": [
         [
           1,
@@ -250,10 +286,16 @@ module.exports = {
         2,
         9
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 6
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s6"
+        }
+      ],
       "nest": [
         [
           1,
@@ -286,10 +328,16 @@ module.exports = {
         2,
         10
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 7
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s7"
+        }
+      ],
       "nest": [
         [
           1,
@@ -322,10 +370,16 @@ module.exports = {
         2,
         11
       ],
-      "map": {
+      "pair": {
         "key": "tag",
         "val": 8
       },
+      "map": [
+        {
+          "key": "tag",
+          "val": "s8"
+        }
+      ],
       "nest": [
         [
           1,

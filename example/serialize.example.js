@@ -9,9 +9,9 @@ Serializer.serialize(`${__dirname}/nft.building.xlsx`, __dirname,
   }
 )
 
-Serializer.serialize(`${__dirname}/global_config.xlsx`, __dirname,
-  {
-    'global_config.json': Serializer.jsonSerializer,
-    'global_config.ts': Serializer.tsInterfaceSerializer
-  }
-)
+// Serializer.serialize(`${__dirname}/global_config.xlsx`, __dirname,
+//   {
+//     'global_config.json': Serializer.jsonSerializer,
+//     'global_config.ts': Serializer.tsInterfaceSerializer
+//   }
+// )

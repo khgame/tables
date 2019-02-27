@@ -19,7 +19,7 @@ function getTsType (typeName) {
         let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
         // console.log('typeInnerAll', 'array', typeName, typeInnerAll)
         return `${getTsType(typeInner)}[]`
-      } else if (typeName.startsWith(supportedTypes.Map)) {
+      } else if (typeName.startsWith(supportedTypes.Pair)) {
         let typeInnerAll = getTypeName(typeName).args
         let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
         // console.log('typeInnerAll', 'Map', typeInnerAll)

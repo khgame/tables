@@ -12,7 +12,8 @@ export interface INftBuilding{
       num: number;
     })[];
   arr: number[];
-  map: {key: string, val: number};
+  pair: {key: string, val: number};
+  map: {key: string, val: any}[];
   nest: ((number)[])|(((boolean)[])[])[];
 
 }

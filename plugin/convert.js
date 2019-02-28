@@ -3,12 +3,14 @@ const tableEnsureRowsPlugin = require('./erows')
 const { getConvertor } = require('../utils/typeNameConvertor')
 const {
   STRUCT_TYPES,
-  Analysis
-} = require('./core/type')
+  DECORATORS,
+  Analysis,
+  InfoSym,
+  createObj,
+  createArr
+} = require('./core/analyze')
 const assert = require('assert')
 const _ = require('lodash')
-
-const InfoSym = Symbol('InfoSym')
 
 module.exports = function tableConvert (table) {
   if (!table.tableMark || !table.markLine || !table.descLine) {
@@ -51,19 +53,21 @@ module.exports = function tableConvert (table) {
     stack.push(node)
     if (_.isArray(node)) {
       node.push(child)
+      child[InfoSym]['parentKey'] = node.length - 1
     } else {
       assert(title, `tableConvert Error: colTitle of child ${child} must exist`)
       node[title] = child
+      child[InfoSym]['parentKey'] = title
     }
     node = child
-    node[InfoSym] = {
-      title
-    }
   }
 
   const exitStack = () => {
     const orgNode = node
     node = stack.pop()
+    if (orgNode[InfoSym]['onFinish']) {
+      orgNode[InfoSym]['onFinish'](node, orgNode[InfoSym]['parentKey'], orgNode)
+    }
     return orgNode
   }
 
@@ -88,18 +92,34 @@ module.exports = function tableConvert (table) {
       let colTitle = descLine[col]
 
       let colAnalysis = Analysis(colType)
+      console.log('colType:', colType, 'colTitle:', colTitle, 'colAnalysis:', colAnalysis)
       switch (colAnalysis.type) {
         case STRUCT_TYPES.OBJ_START:
-          enterStack(colTitle, {})
+          enterStack(colTitle, createObj())
           break
         case STRUCT_TYPES.ARR_START:
-          enterStack(colTitle, [])
+          enterStack(colTitle, createArr())
+          if (colAnalysis.decorator.indexOf(DECORATORS.ONE_OF) >= 0) {
+            // console.log('Set onFinish')
+            node[InfoSym]['onFinish'] = (parent, parentKey, me) => {
+              if (me.length <= 0) {
+                throw Error(`array with decorator(${DECORATORS.ONE_OF}) must have at least one element.`)
+              } else if (me.length > 1) {
+                console.log(`[Warning] detected more than on element of array with decorator(${DECORATORS.ONE_OF}).`)
+              }
+              parent[parentKey] = me[0]
+              // console.log('parent[parentKey] = me[0]', parentKey, me[0])
+            }
+          }
           break
         case STRUCT_TYPES.OBJ_END:
+          exitStack()
+          break
         case STRUCT_TYPES.ARR_END:
           exitStack()
           break
         default :
+          // console.log(node)
           if (_.isArray(node)) {
             // console.log('catch array ', row, col, isEmpty(row, col), getValue(table, row, col))
             if (!isEmpty(row, col)) {

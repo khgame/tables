@@ -1,8 +1,14 @@
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')
 const { getConvertor } = require('../utils/typeNameConvertor')
+const {
+  STRUCT_TYPES,
+  Analysis
+} = require('./core/type')
 const assert = require('assert')
 const _ = require('lodash')
+
+const InfoSym = Symbol('InfoSym')
 
 module.exports = function tableConvert (table) {
   if (!table.tableMark || !table.markLine || !table.descLine) {
@@ -50,8 +56,17 @@ module.exports = function tableConvert (table) {
       node[title] = child
     }
     node = child
+    node[InfoSym] = {
+      title
+    }
   }
-  const exitStack = () => { node = stack.pop() }
+
+  const exitStack = () => {
+    const orgNode = node
+    node = stack.pop()
+    return orgNode
+  }
+
   const result = {}
 
   for (let rowInd in erows) {
@@ -72,15 +87,16 @@ module.exports = function tableConvert (table) {
       let colType = getValue(table, tableMark.row, col).trim() // colType in mark line will never be empty
       let colTitle = descLine[col]
 
-      switch (colType) {
-        case '{':
+      let colAnalysis = Analysis(colType)
+      switch (colAnalysis.type) {
+        case STRUCT_TYPES.OBJ_START:
           enterStack(colTitle, {})
           break
-        case '[':
+        case STRUCT_TYPES.ARR_START:
           enterStack(colTitle, [])
           break
-        case '}':
-        case ']':
+        case STRUCT_TYPES.OBJ_END:
+        case STRUCT_TYPES.ARR_END:
           exitStack()
           break
         default :

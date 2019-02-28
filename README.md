@@ -373,5 +373,17 @@ Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
 
 请移步 [https://github.com/khgame/tid-rules](https://github.com/khgame/tid-rules)
 
+### todo
+
+- [x] INTERFACE EXPORTOR: TS
+- [ ] INTERFACE EXPORTOR: GO
+- [ ] INTERFACE EXPORTOR: JAVA
+- [ ] INTERFACE EXPORTOR: C#
+- [x] DECORATORS: Base
+- [x] DECORATORS: ARR: $oneof
+- [ ] DECORATORS: OBJ
+- [ ] PLAIN OR
+- [ ] CONSTANT TYPE
+
 ### Troubleshooting
 

@@ -4,8 +4,8 @@ const { getConvertor } = require('../utils/typeNameConvertor')
 const {
   STRUCT_TYPES,
   DECORATORS,
-  Analysis,
   InfoSym,
+  Analyze,
   Machine
 } = require('./core/analyze')
 const assert = require('assert')
@@ -67,17 +67,18 @@ module.exports = function tableConvert (table) {
       let colType = getValue(table, tableMark.row, col).trim() // colType in mark line will never be empty
       let colTitle = descLine[col]
 
-      let colAnalysis = Analysis(colType)
+      let colAnalysis = Analyze(colType)
       // console.log('colType:', colType, 'colTitle:', colTitle, 'colAnalysis:', colAnalysis)
       switch (colAnalysis.type) {
         case STRUCT_TYPES.OBJ_START:
-          machine.enterStackObj(colTitle)[InfoSym]['decorator'] = colAnalysis.decorator
+          machine.enterStackObj(colTitle)[InfoSym].setAnalysisResult(colAnalysis)
           break
         case STRUCT_TYPES.ARR_START:
           machine.enterStackArr(
             colTitle,
             (parent, parentKey, me) => {
-              if (me[InfoSym]['decorator'].indexOf(DECORATORS.ONE_OF) >= 0) {
+              // console.log('me[InfoSym])', me[InfoSym], me[InfoSym].hasDecorator(DECORATORS.ONE_OF))
+              if (me[InfoSym].hasDecorator(DECORATORS.ONE_OF)) {
                 if (me.length <= 0) {
                   throw Error(`array with decorator(${DECORATORS.ONE_OF}) must have at least one element.`)
                 } else if (me.length > 1) {
@@ -85,7 +86,7 @@ module.exports = function tableConvert (table) {
                 }
                 parent[parentKey] = me[0]
               }
-            })[InfoSym]['decorator'] = colAnalysis.decorator
+            })[InfoSym].setAnalysisResult(colAnalysis)
           break
         case STRUCT_TYPES.OBJ_END:
           machine.exitStack()

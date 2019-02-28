@@ -5,8 +5,8 @@ const assert = require('assert')
 const _ = require('lodash')
 const {
   STRUCT_TYPES,
-  Analysis,
   InfoSym,
+  Analyze,
   Machine
 } = require('./core/analyze')
 
@@ -29,13 +29,13 @@ module.exports = function tableConvert (table) {
     let colType = getValue(table, tableMark.row, col).trim() // colType in mark line will never be empty
     let colTitle = descLine[col]
 
-    let colAnalysis = Analysis(colType)
+    let colAnalysis = Analyze(colType)
     switch (colAnalysis.type) {
       case STRUCT_TYPES.OBJ_START:
-        machine.enterStackObj(colTitle)[InfoSym]['decorator'] = colAnalysis.decorator
+        machine.enterStackObj(colTitle)[InfoSym].setAnalysisResult(colAnalysis)
         break
       case STRUCT_TYPES.ARR_START:
-        machine.enterStackArr(colTitle)[InfoSym]['decorator'] = colAnalysis.decorator
+        machine.enterStackArr(colTitle)[InfoSym].setAnalysisResult(colAnalysis)
         break
       case STRUCT_TYPES.OBJ_END:
       case STRUCT_TYPES.ARR_END:

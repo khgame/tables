@@ -15,38 +15,42 @@ const DECORATORS = {
 
 const InfoSym = Symbol('InfoSym')
 
-function Analysis (colType) {
-  const ret = {
-    type: '',
-    decorator: []
+class AnalysisResult {
+  constructor (type, decorators) {
+    this.type = type || ''
+    this.decorators = decorators || []
   }
+}
 
+function Analyze (colType) {
   if (colType.endsWith('{')) {
-    ret.type = STRUCT_TYPES.OBJ_START
+    return new AnalysisResult(STRUCT_TYPES.OBJ_START)
   } else if (colType.endsWith('[')) {
-    ret.type = STRUCT_TYPES.ARR_START
-    ret.decorator = colType.substr(0, colType.length - 1).split('|').filter(s => s).map(s => s.trim())
+    return new AnalysisResult(
+      STRUCT_TYPES.ARR_START,
+      colType.substr(0, colType.length - 1).split('|').filter(s => s).map(s => s.trim())
+    )
   } else if (colType.startsWith('}')) {
-    ret.type = STRUCT_TYPES.OBJ_END
+    return new AnalysisResult(STRUCT_TYPES.OBJ_END)
   } else if (colType.startsWith(']')) {
-    ret.type = STRUCT_TYPES.ARR_END
-  } else {
-    ret.type = STRUCT_TYPES.PLAIN
+    return new AnalysisResult(STRUCT_TYPES.ARR_END)
   }
+  return new AnalysisResult(STRUCT_TYPES.PLAIN)
+}
 
-  return ret
+function makeInfo (obj) {
+  obj[InfoSym] = {}
+  obj[InfoSym].setAnalysisResult = (analysisResult) => { obj[InfoSym]['AnalysisResult'] = analysisResult }
+  obj[InfoSym].hasDecorator = (decorator) => obj[InfoSym]['AnalysisResult'].decorators.indexOf(decorator) >= 0
+  return obj
 }
 
 function createObj () {
-  const ret = {}
-  ret[InfoSym] = {}
-  return ret
+  return makeInfo({})
 }
 
 function createArr () {
-  const ret = []
-  ret[InfoSym] = {}
-  return ret
+  return makeInfo([])
 }
 
 class Machine {
@@ -99,7 +103,7 @@ class Machine {
 module.exports = {
   STRUCT_TYPES,
   DECORATORS,
-  Analysis,
   InfoSym,
+  Analyze,
   Machine
 }

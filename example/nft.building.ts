@@ -80,9 +80,7 @@ const data = {
           ]
         ]
       ],
-      "stars": [
-        111
-      ]
+      "stars": 111
     },
     "2000001": {
       "ctype": 20,
@@ -139,9 +137,7 @@ const data = {
           []
         ]
       ],
-      "stars": [
-        222
-      ]
+      "stars": 222
     },
     "2000002": {
       "ctype": 20,
@@ -185,9 +181,7 @@ const data = {
           []
         ]
       ],
-      "stars": [
-        true
-      ]
+      "stars": true
     },
     "2000003": {
       "ctype": 20,
@@ -231,12 +225,10 @@ const data = {
           []
         ]
       ],
-      "stars": [
-        {
-          "key": "sfajdf",
-          "val": 123
-        }
-      ]
+      "stars": {
+        "key": "sfajdf",
+        "val": 123
+      }
     }
   }
 }

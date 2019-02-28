@@ -5,11 +5,9 @@ const assert = require('assert')
 const _ = require('lodash')
 const {
   STRUCT_TYPES,
-  DECORATORS,
   Analysis,
   InfoSym,
-  createObj,
-  createArr
+  Machine
 } = require('./core/analyze')
 
 module.exports = function tableConvert (table) {
@@ -20,29 +18,8 @@ module.exports = function tableConvert (table) {
 
   const { getValue, tableMark, markLine, descLine } = table
 
-  let stack = []
-  let node = {}
-  const enterStack = (title, child) => {
-    stack.push(node)
-    if (_.isArray(node)) {
-      if (title) console.log(`[WARNING] got redundant title ${title}`)
-      node.push(child)
-      child[InfoSym]['parentKey'] = node.length - 1
-    } else {
-      assert(title, `tableConvert Error: colTitle of child ${child} must exist`)
-      node[title] = child
-      child[InfoSym]['parentKey'] = title
-    }
-    node = child
-  }
-  const exitStack = () => {
-    const orgNode = node
-    node = stack.pop()
-    return orgNode
-  }
-
   // console.log(`scan row ${row}, ${JSON.stringify(table.data[row])}`)
-  node = {}
+  let machine = new Machine()
   let markCols = Object.keys(markLine)
   for (let colInd in markCols) {
     if (!markCols.hasOwnProperty(colInd)) {
@@ -55,16 +32,14 @@ module.exports = function tableConvert (table) {
     let colAnalysis = Analysis(colType)
     switch (colAnalysis.type) {
       case STRUCT_TYPES.OBJ_START:
-        enterStack(colTitle, createObj())
-        node[InfoSym]['decorator'] = colAnalysis.decorator
+        machine.enterStackObj(colTitle)[InfoSym]['decorator'] = colAnalysis.decorator
         break
       case STRUCT_TYPES.ARR_START:
-        enterStack(colTitle, createArr())
-        node[InfoSym]['decorator'] = colAnalysis.decorator
+        machine.enterStackArr(colTitle)[InfoSym]['decorator'] = colAnalysis.decorator
         break
       case STRUCT_TYPES.OBJ_END:
       case STRUCT_TYPES.ARR_END:
-        exitStack()
+        machine.exitStack()
         break
       default :
         let typeObj = getTypeName(colType)
@@ -77,17 +52,17 @@ module.exports = function tableConvert (table) {
         }
 
         let typeResult = stack.length === 1 ? stack[0] : stack.reverse().reduce((prev, cur) => `${cur}<${prev}>`)
-        if (_.isArray(node)) {
-          node.push(typeResult)
+        if (_.isArray(machine.node)) {
+          machine.node.push(typeResult)
         } else {
           assert(colTitle, `table schema Error: colTitle must exist [${col}]`)
-          node[colTitle] = typeResult
+          machine.node[colTitle] = typeResult
         }
         break
     }
   }
 
   // console.log(`get desc line : ${JSON.stringify(markLine)}`)
-  table.schema = node
+  table.schema = machine.node
   return table
 }

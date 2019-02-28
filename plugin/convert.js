@@ -6,8 +6,7 @@ const {
   DECORATORS,
   Analysis,
   InfoSym,
-  createObj,
-  createArr
+  Machine
 } = require('./core/analyze')
 const assert = require('assert')
 const _ = require('lodash')
@@ -47,30 +46,6 @@ module.exports = function tableConvert (table) {
 
   const startRow = tableMark.row + 2
 
-  let stack = []
-  let node = {}
-  const enterStack = (title, child) => {
-    stack.push(node)
-    if (_.isArray(node)) {
-      node.push(child)
-      child[InfoSym]['parentKey'] = node.length - 1
-    } else {
-      assert(title, `tableConvert Error: colTitle of child ${child} must exist`)
-      node[title] = child
-      child[InfoSym]['parentKey'] = title
-    }
-    node = child
-  }
-
-  const exitStack = () => {
-    const orgNode = node
-    node = stack.pop()
-    if (orgNode[InfoSym]['onFinish']) {
-      orgNode[InfoSym]['onFinish'](node, orgNode[InfoSym]['parentKey'], orgNode)
-    }
-    return orgNode
-  }
-
   const result = {}
 
   for (let rowInd in erows) {
@@ -80,8 +55,9 @@ module.exports = function tableConvert (table) {
       continue
     }
 
+    let machine = new Machine()
+
     // console.log(`scan row ${row}, ${JSON.stringify(table.data[row])}`)
-    node = {}
     let markCols = Object.keys(markLine)
     for (let colInd in markCols) {
       if (!markCols.hasOwnProperty(colInd)) {
@@ -92,54 +68,53 @@ module.exports = function tableConvert (table) {
       let colTitle = descLine[col]
 
       let colAnalysis = Analysis(colType)
-      console.log('colType:', colType, 'colTitle:', colTitle, 'colAnalysis:', colAnalysis)
+      // console.log('colType:', colType, 'colTitle:', colTitle, 'colAnalysis:', colAnalysis)
       switch (colAnalysis.type) {
         case STRUCT_TYPES.OBJ_START:
-          enterStack(colTitle, createObj())
+          machine.enterStackObj(colTitle)[InfoSym]['decorator'] = colAnalysis.decorator
           break
         case STRUCT_TYPES.ARR_START:
-          enterStack(colTitle, createArr())
-          if (colAnalysis.decorator.indexOf(DECORATORS.ONE_OF) >= 0) {
-            // console.log('Set onFinish')
-            node[InfoSym]['onFinish'] = (parent, parentKey, me) => {
-              if (me.length <= 0) {
-                throw Error(`array with decorator(${DECORATORS.ONE_OF}) must have at least one element.`)
-              } else if (me.length > 1) {
-                console.log(`[Warning] detected more than on element of array with decorator(${DECORATORS.ONE_OF}).`)
+          machine.enterStackArr(
+            colTitle,
+            (parent, parentKey, me) => {
+              if (me[InfoSym]['decorator'].indexOf(DECORATORS.ONE_OF) >= 0) {
+                if (me.length <= 0) {
+                  throw Error(`array with decorator(${DECORATORS.ONE_OF}) must have at least one element.`)
+                } else if (me.length > 1) {
+                  console.log(`[Warning] detected more than on element of array with decorator(${DECORATORS.ONE_OF}).`)
+                }
+                parent[parentKey] = me[0]
               }
-              parent[parentKey] = me[0]
-              // console.log('parent[parentKey] = me[0]', parentKey, me[0])
-            }
-          }
+            })[InfoSym]['decorator'] = colAnalysis.decorator
           break
         case STRUCT_TYPES.OBJ_END:
-          exitStack()
+          machine.exitStack()
           break
         case STRUCT_TYPES.ARR_END:
-          exitStack()
+          machine.exitStack()
           break
         default :
           // console.log(node)
-          if (_.isArray(node)) {
+          if (_.isArray(machine.node)) {
             // console.log('catch array ', row, col, isEmpty(row, col), getValue(table, row, col))
             if (!isEmpty(row, col)) {
               // console.log('not empty ', row, col)
-              node.push(Val(row, col))
+              machine.node.push(Val(row, col))
             }
           } else {
             assert(colTitle, `[Error] tableConvert : colTitle must exist [${row}, ${col}]`)
-            node[colTitle] = Val(row, col)
+            machine.node[colTitle] = Val(row, col)
           }
 
           break
       }
     }
 
-    assert(_.isEmpty(stack), `tableConvert Error: parse row(${row}) error ==> object parser not close`)
+    assert(_.isEmpty(machine.stack), `tableConvert Error: parse row(${row}) error ==> object parser not close`)
     let tid = tids[row]
     assert(tid, `tableConvert Error: id of row(${row}) should exist`)
     assert(!result[tid], `tableConvert Error: row(${row}) : result of the id ${tid} is already exist, please check the id table ${tids}`)
-    result[tid] = node
+    result[tid] = machine.node
   }
 
   // console.log(`get desc line : ${JSON.stringify(markLine)}`)

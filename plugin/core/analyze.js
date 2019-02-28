@@ -1,3 +1,6 @@
+const assert = require('assert')
+const _ = require('lodash')
+
 const STRUCT_TYPES = {
   PLAIN: 'PLAIN',
   OBJ_START: 'OBJ_START',
@@ -9,6 +12,8 @@ const STRUCT_TYPES = {
 const DECORATORS = {
   ONE_OF: 'oneof'
 }
+
+const InfoSym = Symbol('InfoSym')
 
 function Analysis (colType) {
   const ret = {
@@ -32,18 +37,63 @@ function Analysis (colType) {
   return ret
 }
 
-const InfoSym = Symbol('InfoSym')
-
-const createObj = () => {
-  const ret = { }
+function createObj () {
+  const ret = {}
   ret[InfoSym] = {}
   return ret
 }
 
-const createArr = () => {
-  const ret = [ ]
+function createArr () {
+  const ret = []
   ret[InfoSym] = {}
   return ret
+}
+
+class Machine {
+  constructor () {
+    this.node = createObj()
+    this.root = this.node
+    this.stack = []
+  }
+
+  enterStack (newNode, onFinish = null) {
+    this.stack.push(this.node)
+    this.node = newNode
+    if (onFinish) {
+      this.node[InfoSym]['onFinish'] = onFinish
+    }
+    return this.node
+  }
+
+  setChild (title, child) {
+    if (_.isArray(this.node)) {
+      this.node.push(child)
+      child[InfoSym]['parentKey'] = this.node.length - 1
+    } else {
+      assert(title, `tableConvert Error: colTitle of child ${child} must exist`)
+      this.node[title] = child
+      child[InfoSym]['parentKey'] = title
+    }
+    return child
+  }
+
+  enterStackObj (title, onFinish = null) {
+    return this.enterStack(this.setChild(title, createObj()), onFinish)
+  }
+
+  enterStackArr (title, onFinish = null) {
+    return this.enterStack(this.setChild(title, createArr()), onFinish)
+  }
+
+  exitStack () {
+    assert(this.node !== this.root, 'reached the bottom of the stack')
+    const orgNode = this.node
+    this.node = this.stack.pop()
+    if (orgNode[InfoSym]['onFinish']) {
+      orgNode[InfoSym]['onFinish'](this.node, orgNode[InfoSym]['parentKey'], orgNode)
+    }
+    return orgNode
+  }
 }
 
 module.exports = {
@@ -51,6 +101,5 @@ module.exports = {
   DECORATORS,
   Analysis,
   InfoSym,
-  createObj,
-  createArr
+  Machine
 }

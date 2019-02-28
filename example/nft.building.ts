@@ -16,7 +16,7 @@ export interface INftBuilding{
   pair: {key: string, val: number};
   map: {key: string, val: any}[];
   nest: ((((number))[])|(((((boolean))[]))[]))[];
-  stars: ((number)|(boolean)|({key: string, val: number}))[];
+  stars: ((number)|(boolean)|({key: string, val: number}));
 
 }
 

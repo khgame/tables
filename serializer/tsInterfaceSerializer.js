@@ -3,6 +3,11 @@ const _ = require('lodash')
 
 const { getTypeName, supportedTypes } = require('../utils/schemaConvertor')
 
+const {
+  DECORATORS,
+  InfoSym
+} = require('../plugin/core/analyze')
+
 function getTsType (typeName) {
   switch (typeName) {
     case supportedTypes.String: return 'string'
@@ -48,7 +53,7 @@ function dealSchema (schema, inArray = false, depth = 1) {
     let schemaType = schema[key]
     if (_.isArray(schemaType)) {
       temp += '(' + dealSchema(schemaType, true, depth + 1)
-      temp = temp.substr(0, temp.length - 1) + ')[]' + split
+      temp = temp.substr(0, temp.length - 1) + (schemaType[InfoSym].hasDecorator(DECORATORS.ONE_OF) ? ')' : ')[]') + split
       rcv(temp)
     } else if (_.isObject(schemaType)) {
       temp += '{\n'

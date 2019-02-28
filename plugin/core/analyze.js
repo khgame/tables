@@ -10,7 +10,7 @@ const STRUCT_TYPES = {
 }
 
 const DECORATORS = {
-  ONE_OF: 'oneof'
+  ONE_OF: '$oneof'
 }
 
 const InfoSym = Symbol('InfoSym')

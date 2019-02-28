@@ -1,26 +1,4 @@
-export interface INftBuilding{
-  ctype: number;
-  building: number;
-  level: number;
-  name: string;
-  upgrage: {
-    to: number;
-    dependency: ((number))[];
-  };
-  product: (({
-      tid: number;
-      num: number;
-    }))[];
-  cost: (({key: string, val: number}))[];
-  arr: number[];
-  pair: {key: string, val: number};
-  map: {key: string, val: any}[];
-  nest: ((((number))[])|(((((boolean))[]))[]))[];
-  stars: ((number)|(boolean)|({key: string, val: number}))[];
-
-}
-
-const data = {
+{
   "tids": {
     "7": "2000000",
     "8": "2000001",
@@ -240,5 +218,3 @@ const data = {
     }
   }
 }
-
-export const nftBuilding: { [tid: string] : INftBuilding } = data.result ;

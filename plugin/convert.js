@@ -91,7 +91,7 @@ module.exports = function tableConvert (table) {
               node.push(Val(row, col))
             }
           } else {
-            assert(colTitle, `tableConvert Error: colTitle must exist [${row}, ${col}]`)
+            assert(colTitle, `[Error] tableConvert : colTitle must exist [${row}, ${col}]`)
             node[colTitle] = Val(row, col)
           }
 

@@ -85,6 +85,8 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - Int: `int`, `int8`, `int16`, `int32`, `int64`, `long`
 - UInt: `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `ulong`, `tid`, `@`
 - Boolean: `bool`, `onoff`
+- Nested Array: 以 `[` 开始, 以 `]` 结束
+- Nested Object: 以 `{` 开始, 以 `}` 结束
 - Any: `dynamic`, `object`, `obj`, `any`
 - Array: `Array<T>`
 - Pair: `Pair<T>`
@@ -94,9 +96,30 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
     TypeError: Convert Error for col(U) map:Map<uint> // 此处 Map 已经不在类型定义中
     undefined type detected, for value : tag-0
     `   
-> Any, Array, Pair 原则上不建议使用  
+> Array, Pair 原则上不建议使用, 而建议使用 Nested Array 和 Nested Object  
 > Array 和 Pair 不指定类型时相当于 Array<any> 和 Pair<any>  
-> Any 最好仅用于异构列, 其他情况使用 Any 可能导致逻辑内出现未定义情况, 请注意
+> 使用 Any 可能导致逻辑内出现未定义情况, 请注意  
+> 对于异构列, 建议使用 $oneof NESTED ARRAY  
+
+#### Decorators
+
+Decorators 是用于描述 Nested 结构的特殊标记
+使用方法是在 Nested 结构的起始标记前(同 cell 内) 书写 Decorator 标记
+多个 Decorator 标记可用竖线 '|' 分隔, 同时作用
+
+目前支持的 Decorators 有:
+
+##### Nested Array
+
+- $oneof: 标记该数组为 oneof 数组, 获取且仅获取该数组的第一个有效值
+
+##### Nested Object 
+
+无
+
+#### Constant types
+
+
 
 ### plugins
 

@@ -22,7 +22,7 @@ class AnalysisResult {
   }
 }
 
-function Analyze (colType) {
+function Index (colType) {
   if (colType.endsWith('{')) {
     return new AnalysisResult(STRUCT_TYPES.OBJ_START)
   } else if (colType.endsWith('[')) {
@@ -104,6 +104,6 @@ module.exports = {
   STRUCT_TYPES,
   DECORATORS,
   InfoSym,
-  Analyze,
+  Analyze: Index,
   Machine
 }

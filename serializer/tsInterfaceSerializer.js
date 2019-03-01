@@ -6,7 +6,7 @@ const { getTypeName, supportedTypes } = require('../utils/schemaConvertor')
 const {
   DECORATORS,
   InfoSym
-} = require('../plugin/core/analyze')
+} = require('../plugin/analyze')
 
 function getTsType (typeName) {
   switch (typeName) {

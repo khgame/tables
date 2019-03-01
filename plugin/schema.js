@@ -8,7 +8,7 @@ const {
   InfoSym,
   Analyze,
   Machine
-} = require('./core/analyze')
+} = require('./analyze')
 
 module.exports = function tableConvert (table) {
   if (!table.tableMark || !table.markLine || !table.descLine) {

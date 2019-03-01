@@ -7,7 +7,7 @@ const {
   InfoSym,
   Analyze,
   Machine
-} = require('./core/analyze')
+} = require('./analyze')
 const assert = require('assert')
 const _ = require('lodash')
 

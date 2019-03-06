@@ -4,6 +4,9 @@
 _*/
 yarn.lock
 
+# build
+dist/
+
 # Logs
 logs
 *.log

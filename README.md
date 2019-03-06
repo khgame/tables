@@ -24,7 +24,7 @@
 ### CLI
 
 ```bash
-Usage: kh-table [-i INPUT_DIR] [-o OUTPUT_DIR] [-f FORMAT]
+Usage: tables [-i INPUT_DIR] [-o OUTPUT_DIR] [-f FORMAT]
 
 Options:
   --input, -i   the input directory                               [default: "."]

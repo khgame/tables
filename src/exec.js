@@ -9,7 +9,7 @@ import { makeCamelName } from './utils/names'
 
 const packageObj = require('../package.json')
 const argv = Yargs
-  .usage('Usage: kh-table [-i INPUT_DIR] [-o OUTPUT_DIR] [-f FORMAT]')
+  .usage('Usage: tables [-i INPUT_DIR] [-o OUTPUT_DIR] [-f FORMAT]')
   .option('input', {
     alias: 'i',
     default: '.',

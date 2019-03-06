@@ -3,6 +3,7 @@
 import * as Yargs from 'yargs'
 import { FileWalker } from 'kht'
 import * as Path from 'path'
+import * as fs from 'fs-extra'
 import * as Serializer from './serializer'
 import { makeCamelName } from './utils/names'
 
@@ -12,7 +13,7 @@ const argv = Yargs
   .option('input', {
     alias: 'i',
     default: '.',
-    describe: 'the input directory'
+    describe: 'the input directory or fileName'
   })
   .option('output', {
     alias: 'o',
@@ -31,8 +32,9 @@ const argv = Yargs
   .argv
 
 const { input, output, format } = argv
-const oPath = (output && output.startsWith('/')) ? output : Path.resolve(__dirname, output)
-const iPath = (input && input.startsWith('/')) ? input : Path.resolve(__dirname, input)
+const EXECUTE_PATH = process.cwd()
+const oPath = (output && output.startsWith('/')) ? output : Path.resolve(EXECUTE_PATH, output)
+const iPath = (input && input.startsWith('/')) ? input : Path.resolve(EXECUTE_PATH, input)
 
 const formats = {
   'json': { suffix: 'json', serializer: Serializer.jsonSerializer },
@@ -42,12 +44,22 @@ const formats = {
 }
 const formatObj = formats[format]
 
-FileWalker.forEachSync(
-  iPath,
-  fileObj => {
-    console.log('generate : ', fileObj.path)
-    Serializer.serialize(fileObj.path, oPath, {
-      [`${makeCamelName(fileObj.parsed.name)}.${formatObj.suffix}`]: formatObj.serializer
-    })
-  }, false, file => !file.match(/\..*\.swp/) && !file.startsWith('~')
-)
+const stat = fs.statSync(iPath)
+if (stat.isDirectory()) {
+  FileWalker.forEachSync(
+    iPath,
+    fileObj => {
+      console.log('generate : ', fileObj.path)
+      Serializer.serialize(fileObj.path, oPath, {
+        [`${makeCamelName(fileObj.parsed.name)}.${formatObj.suffix}`]: formatObj.serializer
+      })
+    }, false, file => !file.match(/\..*\.swp/) && !file.startsWith('~') && file.endsWith('xlsx')
+  )
+} else if (!iPath.match(/\..*\.swp/) && !iPath.startsWith('~') && iPath.endsWith('xlsx')) {
+  console.log('generate : ', iPath)
+  Serializer.serialize(iPath, oPath, {
+    [`${makeCamelName(Path.parse(iPath).name)}.${formatObj.suffix}`]: formatObj.serializer
+  })
+} else {
+  console.log('file format error:', iPath)
+}

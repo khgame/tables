@@ -10,6 +10,31 @@
 
 ## 基础用法
 
+### 安装
+
+直接从 npm 安装
+
+`npm i -g @khgame/tables`
+
+或者从源码安装
+
+1. clone 项目到本地
+2. `npm install && npm run local-install`
+
+### CLI
+
+```bash
+Usage: kh-table [-i INPUT_DIR] [-o OUTPUT_DIR] [-f FORMAT]
+
+Options:
+  --input, -i   the input directory                               [default: "."]
+  --output, -o  the output directory                              [default: "."]
+  --format, -f  export format
+                 [choices: "json", "js", "ts", "ts-interface"] [default: "json"]
+  -h, --help    Show help                                              [boolean]
+  --version     Show version number                                    [boolean]
+```
+
 ### API
 
 - Out-of-box API : `readAndTranslate(filepath [,option])`

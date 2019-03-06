@@ -5,7 +5,7 @@ _*/
 yarn.lock
 
 # build
-dist/
+lib/
 
 # Logs
 logs

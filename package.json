@@ -1,13 +1,13 @@
 {
   "name": "@khgame/tables",
-  "version": "0.0.12",
-  "description": "excel => json/js",
-  "main": "./dist/index.js",
+  "version": "0.0.13",
+  "description": "excel => json/js/ts/ts-interface",
+  "main": "./lib/index.js",
   "bin": {
-    "tables": "./dist/exec.js"
+    "tables": "./lib/exec.js"
   },
   "scripts": {
-    "build": "rimraf ./dist/ && babel ./src --experimental --source-maps-inline -d ./dist --copy-files LICENSE README.md",
+    "build": "rimraf ./lib/ && babel ./src --experimental --source-maps-inline -d ./lib --copy-files LICENSE README.md",
     "prepublishOnly": "npm run build",
     "ex:convert": "node ./example/convert.example.js",
     "ex:serialize": "node ./example/serialize.example.js",

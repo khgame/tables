@@ -1,3 +1,5 @@
+import { makeInterfaceName } from '../utils/names'
+
 const Plugins = require('../plugin')
 const _ = require('lodash')
 
@@ -10,14 +12,22 @@ const {
 
 function getTsType (typeName) {
   switch (typeName) {
-    case supportedTypes.String: return 'string'
-    case supportedTypes.Float: return 'number'
-    case supportedTypes.UFloat: return 'number'
-    case supportedTypes.Int: return 'number'
-    case supportedTypes.UInt: return 'number'
-    case supportedTypes.Boolean: return 'boolean'
-    case supportedTypes.Undefined: return 'undefined'
-    case supportedTypes.Any: return 'any'
+    case supportedTypes.String:
+      return 'string'
+    case supportedTypes.Float:
+      return 'number'
+    case supportedTypes.UFloat:
+      return 'number'
+    case supportedTypes.Int:
+      return 'number'
+    case supportedTypes.UInt:
+      return 'number'
+    case supportedTypes.Boolean:
+      return 'boolean'
+    case supportedTypes.Undefined:
+      return 'undefined'
+    case supportedTypes.Any:
+      return 'any'
     default:
       if (typeName.startsWith(supportedTypes.Array)) {
         let typeInnerAll = getTypeName(typeName).args
@@ -83,18 +93,6 @@ function dealSchema (schema, inArray = false, depth = 1) {
     result += merge
   }
   return result
-}
-
-function culturelize (s) {
-  s = s.toLowerCase()
-  if (s.length <= 0) return ''
-  let ret = s.substr(0, 1).toUpperCase() + s.substr(1)
-  // console.log(ret)
-  return ret
-}
-
-function makeInterfaceName (fileName) {
-  return fileName.split(/[\s._-]/).reduce((p, c) => p + culturelize(c), 'I')
 }
 
 const tsInterfaceSerializer = {

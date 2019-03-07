@@ -304,6 +304,16 @@ table = {
 ```js
 let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.convert ] })
 ```
+- markLine rules
+```bash
+Mark => [Decorators] TypeSegment
+Decorators => Decorator[<'|'>Decorators]
+TypeSegment => [TypeGroup][<'?'>]
+TypeGroup => Type[<'|'>TypeGroup]
+Type => TypeName[<'<'>TypeGroup<'>'>]
+Decorator => <'$'>Identity
+Type => Identity
+```
 - result
 > 将 raw 数据导出成程序易读的数据格式  
 > 其中 tids 表示原本的 row 与 id 的对应关系  

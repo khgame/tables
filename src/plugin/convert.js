@@ -1,6 +1,6 @@
+import { getConvertor } from '../utils/typeConvertor'
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')
-const { getConvertor } = require('../utils/typeConvertor')
 const {
   STRUCT_TYPES,
   DECORATORS,
@@ -75,7 +75,7 @@ module.exports = function tableConvert (table) {
             colTitle,
             (parent, parentKey, me) => {
               let isEmptyObject = Object.keys(JSON.parse(JSON.stringify(me))).length === 0
-              console.log('isEmptyObject', colTitle, '-', Object.keys(me), me['data'], '-', parentKey, isEmptyObject)
+              // console.log('isEmptyObject', colTitle, '-', Object.keys(me), me['data'], '-', parentKey, isEmptyObject)
               if (isEmptyObject) {
                 parent[InfoSym].delVal(parentKey)
               }

@@ -1,9 +1,8 @@
 import { makeInterfaceName } from '../utils/names'
+import { getTypeName, supportedTypes } from '../utils/typeNameConvertor'
 
 const Plugins = require('../plugin')
 const _ = require('lodash')
-
-const { getTypeName, supportedTypes } = require('../utils/schemaConvertor')
 
 const {
   DECORATORS,

@@ -1,31 +1,35 @@
-const _ = require('lodash')
-const { supportedTypes, getTypeName } = require('./schemaConvertor')
+import * as _ from 'lodash'
+import { supportedTypes, parseMark } from './typeNameConvertor'
 
-const format = v => _.isString(v) ? v.toLowerCase().trim() : v
+export const format = v => _.isString(v) ? v.toLowerCase().trim() : v
 
-const str = v => _.toString(v)
+export const str = v => _.toString(v)
 
-const float = v => {
+export const float = v => {
   let ret = _.toNumber(format(v))
   if (_.isNaN(ret)) throw TypeError(`NAN : type error ${v} => ${ret}`)
   return ret
 }
-const ufloat = v => {
+
+export const ufloat = v => {
   let ret = float(format(v))
   if (ret < 0) throw TypeError(`must be ufloat value ${v} => ${ret}`)
   return ret
 }
-const int = v => {
+
+export const int = v => {
   let ret = float(format(v))
   if (!_.isInteger(ret)) throw TypeError(`must be int value ${v} => ${ret}`)
   return ret
 }
-const uint = v => {
+
+export const uint = v => {
   let ret = int(format(v))
   if (ret < 0) throw TypeError(`must be uint value ${v} => ${ret}`)
   return ret
 }
-const bool = v => {
+
+export const bool = v => {
   let ret = format(v)
   return ret === true ||
         (_.isNumber(ret) && ret > 0) ||
@@ -43,16 +47,16 @@ const typeConvertorMap = {
     throw TypeError('undefined type detected, for value : ' + v)
   },
   [supportedTypes.Any]: v => v,
-  [supportedTypes.Array]: (v, args) => {
+  [supportedTypes.Array]: (v, typeObject) => {
     let items = !v ? [] : ((!_.isString(v) || v.indexOf('|') < 0) ? [ v ] : v.split('|').map(s => s.trim()))
-    if (args.length > 0) {
-      let entryConvertor = getConvertor(args[0])
+    if (typeObject.args.length > 0) {
+      let entryConvertor = getConvertor(typeObject.args[0].type)
       // console.log('array convertor ', args[0], v)
       items = items.map(s => entryConvertor(s))
     }
     return items
   },
-  [supportedTypes.Pair]: (v, args) => {
+  [supportedTypes.Pair]: (v, typeObject) => {
     if (!_.isString(v)) {
       throw TypeError(`must be string value ${v} of pair that match the schema 'key:val'`)
     }
@@ -64,8 +68,8 @@ const typeConvertorMap = {
       key: split[0],
       val: split[1]
     }
-    if (args.length > 0) {
-      let entryConvertor = getConvertor(args[0])
+    if (typeObject.args.length > 0) {
+      let entryConvertor = getConvertor(typeObject.args[0].type)
       // console.log('pair convertor ', args[0], v)
       kv.val = entryConvertor(kv.val)
     }
@@ -73,17 +77,9 @@ const typeConvertorMap = {
   }
 }
 
-function getConvertor (typeName) {
-  let typeObject = getTypeName(typeName)
-  return v => typeConvertorMap[typeObject.type](v, typeObject.args)
-}
-
-module.exports = {
-  str,
-  float,
-  ufloat,
-  int,
-  uint,
-  bool,
-  getConvertor
+export function getConvertor (markStr) {
+  const { typeObjects } = parseMark(markStr)
+  const typeObject = typeObjects[0]
+  // console.log('typeObject', typeObject, markStr)
+  return v => typeConvertorMap[typeObject.type](v, typeObject)
 }

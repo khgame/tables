@@ -1,6 +1,7 @@
+import {parseMark} from "../utils/typeNameConvertor";
+
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')
-const { getTypeName } = require('../utils/schemaConvertor')
 const assert = require('assert')
 const _ = require('lodash')
 const {
@@ -26,10 +27,10 @@ module.exports = function tableConvert (table) {
       continue
     }
     let col = markCols[colInd]
-    let colType = getValue(table, tableMark.row, col).trim() // colType in mark line will never be empty
+    let colMark = getValue(table, tableMark.row, col).trim() // colMark in mark line will never be empty
     let colTitle = descLine[col]
 
-    let colAnalysis = Analyze(colType)
+    let colAnalysis = Analyze(colMark)
     switch (colAnalysis.type) {
       case STRUCT_TYPES.OBJ_START:
         machine.enterStackObj(colTitle)[InfoSym].setAnalysisResult(colAnalysis)
@@ -42,11 +43,12 @@ module.exports = function tableConvert (table) {
         machine.exitStack()
         break
       default :
-        let typeObj = getTypeName(colType)
+        const { typeObjects } = parseMark(colMark)
+        let typeObj = typeObjects[0]
         let args = typeObj.args
         let stack = [typeObj.type]
         while (args.length > 0) {
-          typeObj = getTypeName(args[0])
+          typeObj = args[0]
           args = typeObj.args
           stack.push(typeObj.type)
         }

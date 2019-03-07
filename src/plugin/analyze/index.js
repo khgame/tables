@@ -1,3 +1,4 @@
+import { filterDecorators } from '../../utils/typeNameConvertor'
 const assert = require('assert')
 const _ = require('lodash')
 
@@ -22,20 +23,19 @@ class AnalysisResult {
   }
 }
 
-function Index (colType) {
-  if (colType.endsWith('{')) {
-    return new AnalysisResult(STRUCT_TYPES.OBJ_START)
-  } else if (colType.endsWith('[')) {
-    return new AnalysisResult(
-      STRUCT_TYPES.ARR_START,
-      colType.substr(0, colType.length - 1).split('|').filter(s => s).map(s => s.trim())
-    )
-  } else if (colType.startsWith('}')) {
-    return new AnalysisResult(STRUCT_TYPES.OBJ_END)
-  } else if (colType.startsWith(']')) {
-    return new AnalysisResult(STRUCT_TYPES.ARR_END)
+function Index (mark) {
+  const { decorators, strLeft } = filterDecorators(mark)
+  const t = (struct) => new AnalysisResult(struct, decorators)
+  if (strLeft.endsWith('{')) {
+    return t(STRUCT_TYPES.OBJ_START)
+  } else if (strLeft.endsWith('[')) {
+    return t(STRUCT_TYPES.ARR_START)
+  } else if (strLeft.startsWith('}')) {
+    return t(STRUCT_TYPES.OBJ_END)
+  } else if (strLeft.startsWith(']')) {
+    return t(STRUCT_TYPES.ARR_END)
   }
-  return new AnalysisResult(STRUCT_TYPES.PLAIN)
+  return t(STRUCT_TYPES.PLAIN)
 }
 
 function makeInfo (obj) {

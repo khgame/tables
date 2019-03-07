@@ -39,9 +39,25 @@ function Index (colType) {
 }
 
 function makeInfo (obj) {
-  obj[InfoSym] = {}
-  obj[InfoSym].setAnalysisResult = (analysisResult) => { obj[InfoSym]['AnalysisResult'] = analysisResult }
-  obj[InfoSym].hasDecorator = (decorator) => obj[InfoSym]['AnalysisResult'].decorators.indexOf(decorator) >= 0
+  obj[InfoSym] = {
+    inArray: false,
+    mirror: JSON.parse(JSON.stringify(obj)),
+    setAnalysisResult: (analysisResult) => {
+      obj[InfoSym].AnalysisResult = analysisResult
+    },
+    hasDecorator: (decorator) => {
+      return obj[InfoSym].AnalysisResult.decorators.indexOf(decorator) >= 0
+    },
+    setVal: (title, val) => {
+      if (_.isArray(obj)) {
+        obj.push(val)
+        obj[InfoSym].mirror.push(val)
+      } else {
+        obj[title] = val
+        obj[InfoSym].mirror[title] = val
+      }
+    }
+  }
   return obj
 }
 
@@ -60,11 +76,15 @@ class Machine {
     this.stack = []
   }
 
+  get operator () {
+    return this.node[InfoSym]
+  }
+
   enterStack (newNode, onFinish = null) {
     this.stack.push(this.node)
     this.node = newNode
     if (onFinish) {
-      this.node[InfoSym]['onFinish'] = onFinish
+      this.node[InfoSym].onFinish = onFinish
     }
     return this.node
   }
@@ -72,11 +92,13 @@ class Machine {
   setChild (title, child) {
     if (_.isArray(this.node)) {
       this.node.push(child)
-      child[InfoSym]['parentKey'] = this.node.length - 1
+      child[InfoSym].inArray = true
+      child[InfoSym].parentKey = this.node.length - 1
     } else {
       assert(title, `tableConvert Error: colTitle of child ${child} must exist`)
       this.node[title] = child
-      child[InfoSym]['parentKey'] = title
+      child[InfoSym].inArray = false
+      child[InfoSym].parentKey = title
     }
     return child
   }
@@ -93,8 +115,8 @@ class Machine {
     assert(this.node !== this.root, 'reached the bottom of the stack')
     const orgNode = this.node
     this.node = this.stack.pop()
-    if (orgNode[InfoSym]['onFinish']) {
-      orgNode[InfoSym]['onFinish'](this.node, orgNode[InfoSym]['parentKey'], orgNode)
+    if (orgNode[InfoSym].onFinish) {
+      orgNode[InfoSym].onFinish(this.node, orgNode[InfoSym].parentKey, orgNode)
     }
     return orgNode
   }

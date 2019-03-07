@@ -76,12 +76,12 @@ function getTypeName (typeName) {
     default:
       if (typeName.startsWith(supportedTypes.Array)) {
         typeObject.type = supportedTypes.Array
-        typeObject.args = catchTemplate(typeName, '|')
+        typeObject.args = catchTemplate(typeName, '|') // only support first type right now
         break
       }
       if (typeName.startsWith(supportedTypes.Pair)) {
         typeObject.type = supportedTypes.Pair
-        typeObject.args = catchTemplate(typeName, '-')
+        typeObject.args = catchTemplate(typeName, '|')
         break
       }
       typeObject.type = supportedTypes.Undefined

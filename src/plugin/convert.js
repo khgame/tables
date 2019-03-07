@@ -1,6 +1,6 @@
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')
-const { getConvertor } = require('../utils/typeNameConvertor')
+const { getConvertor } = require('../utils/typeConvertor')
 const {
   STRUCT_TYPES,
   DECORATORS,
@@ -71,12 +71,27 @@ module.exports = function tableConvert (table) {
       // console.log('colType:', colType, 'colTitle:', colTitle, 'colAnalysis:', colAnalysis)
       switch (colAnalysis.type) {
         case STRUCT_TYPES.OBJ_START:
-          machine.enterStackObj(colTitle)[InfoSym].setAnalysisResult(colAnalysis)
+          machine.enterStackObj(
+            colTitle,
+            (parent, parentKey, me) => {
+              let isEmptyObject = Object.keys(JSON.parse(JSON.stringify(me))).length === 0
+              console.log('isEmptyObject', colTitle, '-', Object.keys(me), me['data'], '-', parentKey, isEmptyObject)
+              if (isEmptyObject) {
+                parent[InfoSym].delVal(parentKey)
+              }
+            }
+          )[InfoSym].setAnalysisResult(colAnalysis)
           break
         case STRUCT_TYPES.ARR_START:
           machine.enterStackArr(
             colTitle,
             (parent, parentKey, me) => {
+              let isEmptyObject = Object.keys(JSON.parse(JSON.stringify(me))).length === 0
+              if (isEmptyObject) {
+                parent[InfoSym].delVal(parentKey)
+                return
+              }
+
               // console.log('me[InfoSym])', me[InfoSym], me[InfoSym].hasDecorator(DECORATORS.ONE_OF))
               if (me[InfoSym].hasDecorator(DECORATORS.ONE_OF)) {
                 if (me.length <= 0) {
@@ -100,11 +115,13 @@ module.exports = function tableConvert (table) {
             // console.log('catch array ', row, col, isEmpty(row, col), getValue(table, row, col))
             if (!isEmpty(row, col)) {
               // console.log('not empty ', row, col)
-              machine.node.push(Val(row, col))
+              machine.node[InfoSym].setVal(null, Val(row, col))
             }
           } else {
             assert(colTitle, `[Error] tableConvert : colTitle must exist [${row}, ${col}]`)
-            machine.node[colTitle] = Val(row, col)
+            // if (!isEmpty(row, col)) {
+            machine.node[InfoSym].setVal(colTitle, Val(row, col))
+            // }
           }
 
           break

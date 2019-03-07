@@ -48,13 +48,20 @@ function makeInfo (obj) {
     hasDecorator: (decorator) => {
       return obj[InfoSym].AnalysisResult.decorators.indexOf(decorator) >= 0
     },
-    setVal: (title, val) => {
+    setVal: (key, val) => {
       if (_.isArray(obj)) {
         obj.push(val)
         obj[InfoSym].mirror.push(val)
       } else {
-        obj[title] = val
-        obj[InfoSym].mirror[title] = val
+        obj[key] = val
+        obj[InfoSym].mirror[key] = val
+      }
+    },
+    delVal: (key) => {
+      if (_.isArray(obj)) {
+        obj.splice(key, 1)
+      } else {
+        obj[key] = undefined
       }
     }
   }

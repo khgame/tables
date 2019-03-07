@@ -9,8 +9,8 @@
   "scripts": {
     "build": "rimraf ./lib/ && babel ./src --experimental --source-maps-inline -d ./lib --copy-files LICENSE README.md",
     "prepublishOnly": "npm run build",
-    "ex:convert": "node ./example/convert.example.js",
-    "ex:serialize": "node ./example/serialize.example.js",
+    "ex:convert": "npm run build && node ./example/convert.example.js",
+    "ex:serialize": "npm run build && node ./example/serialize.example.js",
     "local-install": "rimraf /usr/local/lib/node_modules/@khgame/tables && npm i . -g"
   },
   "repository": {

@@ -17,6 +17,10 @@ export interface INftBuilding{
   map: {key: string, val: any}[];
   nest: ((((number))[])|(((((boolean))[]))[]))[];
   stars: ((number)|(boolean)|({key: string, val: number}));
+  nestedArray: (({
+      data: number;
+    }))[];
+  ax: any;
 
 }
 
@@ -34,8 +38,7 @@ const data = {
       "level": 0,
       "name": "farm",
       "upgrage": {
-        "to": 2000001,
-        "dependency": []
+        "to": 2000001
       },
       "product": [
         {
@@ -80,7 +83,16 @@ const data = {
           ]
         ]
       ],
-      "stars": 111
+      "stars": 111,
+      "nestedArray": [
+        {
+          "data": 111
+        },
+        {
+          "data": 211
+        }
+      ],
+      "ax": 1
     },
     "2000001": {
       "ctype": 20,
@@ -132,12 +144,18 @@ const data = {
         [
           1,
           2
-        ],
-        [
-          []
         ]
       ],
-      "stars": 222
+      "stars": 222,
+      "nestedArray": [
+        {
+          "data": 111
+        },
+        {
+          "data": 222
+        }
+      ],
+      "ax": 2
     },
     "2000002": {
       "ctype": 20,
@@ -156,7 +174,6 @@ const data = {
           "num": 3
         }
       ],
-      "cost": [],
       "arr": [
         1,
         2,
@@ -176,12 +193,18 @@ const data = {
         [
           1,
           2
-        ],
-        [
-          []
         ]
       ],
-      "stars": true
+      "stars": true,
+      "nestedArray": [
+        {
+          "data": 111
+        },
+        {
+          "data": 222
+        }
+      ],
+      "ax": 2
     },
     "2000003": {
       "ctype": 20,
@@ -200,7 +223,6 @@ const data = {
           "num": 4
         }
       ],
-      "cost": [],
       "arr": [
         1,
         2,
@@ -220,15 +242,21 @@ const data = {
         [
           1,
           2
-        ],
-        [
-          []
         ]
       ],
       "stars": {
         "key": "sfajdf",
         "val": 123
-      }
+      },
+      "nestedArray": [
+        {
+          "data": 111
+        },
+        {
+          "data": 222
+        }
+      ],
+      "ax": 2
     }
   }
 }

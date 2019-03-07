@@ -1,5 +1,5 @@
 import { makeInterfaceName } from '../utils/names'
-import { getTypeName, supportedTypes } from '../utils/typeNameConvertor'
+import { getTypeObject, supportedTypes } from '../utils/typeNameConvertor'
 
 const Plugins = require('../plugin')
 const _ = require('lodash')
@@ -29,13 +29,13 @@ function getTsType (typeName) {
       return 'any'
     default:
       if (typeName.startsWith(supportedTypes.Array)) {
-        let typeInnerAll = getTypeName(typeName).args
-        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
+        let typeInnerAll = getTypeObject(typeName).args
+        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0].type : 'any'
         // console.log('typeInnerAll', 'array', typeName, typeInnerAll)
         return `${getTsType(typeInner)}[]`
       } else if (typeName.startsWith(supportedTypes.Pair)) {
-        let typeInnerAll = getTypeName(typeName).args
-        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0] : 'any'
+        let typeInnerAll = getTypeObject(typeName).args
+        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0].type : 'any'
         // console.log('typeInnerAll', 'Map', typeInnerAll)
         return `{key: string, val: ${getTsType(typeInner)}}`
       }

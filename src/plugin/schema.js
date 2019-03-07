@@ -1,4 +1,4 @@
-import {parseMark} from "../utils/typeNameConvertor";
+import { parseMark } from '../utils/typeNameConvertor'
 
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')
@@ -43,17 +43,8 @@ module.exports = function tableConvert (table) {
         machine.exitStack()
         break
       default :
-        const { typeObjects } = parseMark(colMark)
-        let typeObj = typeObjects[0]
-        let args = typeObj.args
-        let stack = [typeObj.type]
-        while (args.length > 0) {
-          typeObj = args[0]
-          args = typeObj.args
-          stack.push(typeObj.type)
-        }
-
-        let typeResult = stack.length === 1 ? stack[0] : stack.reverse().reduce((prev, cur) => `${cur}<${prev}>`)
+        const markObj = parseMark(colMark)
+        const typeResult = markObj.toSchemaStr()
         if (_.isArray(machine.node)) {
           machine.node.push(typeResult)
         } else {

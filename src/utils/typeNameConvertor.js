@@ -14,9 +14,9 @@ export const supportedTypes = {
   None: 'none',
   String: 'string',
   Float: 'float',
-  UFloat: 'uFloat',
+  UFloat: 'uiloat',
   Int: 'int',
-  UInt: 'uInt',
+  UInt: 'uint',
   Boolean: 'boolean',
   Undefined: 'undefined',
   Any: 'any', // not recommend
@@ -24,10 +24,29 @@ export const supportedTypes = {
   Array: 'array' // not recommend
 }
 
+export class MarkObject {
+  constructor (decorators, typeObjects) {
+    this.decorators = decorators
+    this.typeObjects = typeObjects
+  }
+
+  toSchemaStr () {
+    return `${this.typeObjects.reduce((prev, tObj) => prev + '|' + tObj.toSchemaStr(), '').substr(1)}`
+  }
+}
+
 export class TypeObject {
   constructor () {
     this.type = undefined
     this.args = []
+  }
+
+  toSchemaStr () {
+    if (!this.type) {
+      throw new Error('the type dose not exit')
+    }
+    const templateArgStr = this.args.reduce((prev, tObj) => prev + '|' + tObj.toSchemaStr(), '').substr(1)
+    return templateArgStr ? `${this.type}<${templateArgStr}>` : `${this.type}`
   }
 }
 
@@ -41,7 +60,7 @@ export function filterDecorators (markStr) {
 export function parseMark (markStr) {
   const { decorators, strLeft } = filterDecorators(markStr)
   const typeObjects = analyzeTypeSegment(strLeft)
-  return { decorators, typeObjects }
+  return new MarkObject(decorators, typeObjects)
 }
 
 export function analyzeTypeSegment (typeSegment) {
@@ -137,13 +156,4 @@ export function getTypeObject (typeName) {
       break
   }
   return typeObject
-}
-
-export class TypeObjectGroup {
-  constructor () {
-    this.types = []
-  }
-}
-
-export class TypeNameConvertor {
 }

@@ -14,7 +14,7 @@ export const supportedTypes = {
   None: 'none',
   String: 'string',
   Float: 'float',
-  UFloat: 'uiloat',
+  UFloat: 'ufloat',
   Int: 'int',
   UInt: 'uint',
   Boolean: 'boolean',
@@ -23,6 +23,31 @@ export const supportedTypes = {
   Pair: 'pair', // not recommend
   Array: 'array' // not recommend
 }
+
+export const aliasTable = {
+  [supportedTypes.String]: [supportedTypes.String, 'str'],
+  [supportedTypes.Float]: [supportedTypes.Float, 'double', 'single', 'num', 'number'],
+  [supportedTypes.UFloat]: [supportedTypes.UFloat, 'count'],
+  [supportedTypes.Int]: [supportedTypes.Int, 'int', 'int8', 'int16', 'int32', 'int64', 'long'],
+  [supportedTypes.UInt]: [supportedTypes.UInt, 'uint', 'uint8', 'uint16', 'uint32', 'uint64', 'ulong', 'tid', '@'],
+  [supportedTypes.Boolean]: [supportedTypes.Boolean, 'bool', 'onoff'],
+  [supportedTypes.Undefined]: [supportedTypes.Undefined],
+  [supportedTypes.Any]: [supportedTypes.Any, 'dynamic', 'object', 'obj', 'any'],
+  [supportedTypes.Pair]: [supportedTypes.Pair],
+  [supportedTypes.Array]: [supportedTypes.Array]
+}
+
+function reverseAlias () {
+  let ret = {}
+  for (const key in aliasTable) {
+    aliasTable[key].forEach((a) => {
+      ret[a] = key
+    })
+  }
+  return ret
+}
+
+export const reverseAliasTable = reverseAlias()
 
 export class MarkObject {
   constructor (decorators, typeObjects) {
@@ -36,9 +61,9 @@ export class MarkObject {
 }
 
 export class TypeObject {
-  constructor () {
-    this.type = undefined
-    this.args = []
+  constructor (typeName, templateTypes) {
+    this.type = typeName
+    this.args = templateTypes
   }
 
   toSchemaStr () {
@@ -85,75 +110,23 @@ export function catchTemplate (str) {
   let leftAngle = str.indexOf('<')
   let rightAngle = str[str.length - 1] === '>' ? str.length - 1 : -1
   if (leftAngle >= 0 && rightAngle >= 0) {
-    return analyzeTypeSegment(str.substr(leftAngle + 1, rightAngle - leftAngle - 1))
+    return {
+      typeStr: str.substr(0, leftAngle).trim(),
+      templateTypes: analyzeTypeSegment(str.substr(leftAngle + 1, rightAngle - leftAngle - 1))
+    }
   } else if (leftAngle >= 0 || rightAngle >= 0) {
     throw new Error(`getTypeName error : angle not match ${str}`)
   }
-  return []
+  return {
+    typeStr: str.trim(),
+    templateTypes: []
+  }
 }
 
 export function getTypeObject (typeName) {
-  const typeObject = new TypeObject()
-  // console.log(typeName)
-  typeName = typeName.trim().toLowerCase()
-  switch (typeName) {
-    case 'string':
-    case 'str':
-      typeObject.type = supportedTypes.String
-      break
-    case 'double':
-    case 'single':
-    case 'float':
-    case 'num':
-    case 'number':
-      typeObject.type = supportedTypes.Float
-      break
-    case 'count':
-    case 'ufloat':
-      typeObject.type = supportedTypes.UFloat
-      break
-    case 'int':
-    case 'int8':
-    case 'int16':
-    case 'int32':
-    case 'int64':
-    case 'long':
-      typeObject.type = supportedTypes.Int
-      break
-    case 'uint':
-    case 'uint8':
-    case 'uint16':
-    case 'uint32':
-    case 'uint64':
-    case 'ulong':
-    case 'tid':
-    case '@':
-      typeObject.type = supportedTypes.UInt
-      break
-    case 'bool':
-    case 'onoff':
-      typeObject.type = supportedTypes.Boolean
-      break
-    case 'dynamic':
-    case 'object':
-    case 'obj':
-    case 'any':
-      typeObject.type = supportedTypes.Any
-      break
-    default:
-      if (typeName.startsWith(supportedTypes.Array)) {
-        typeObject.type = supportedTypes.Array
-        typeObject.args = catchTemplate(typeName) // only support first type right now
-        break
-      }
-      if (typeName.startsWith(supportedTypes.Pair)) {
-        typeObject.type = supportedTypes.Pair
-        typeObject.args = catchTemplate(typeName)
-        break
-      }
-      typeObject.type = supportedTypes.Undefined
-      // typeObject.args = [typeName]
-      break
-  }
-  return typeObject
+  const template = catchTemplate(typeName.toLowerCase())
+  return new TypeObject(
+    reverseAliasTable[template.typeStr] || supportedTypes.None,
+    template.templateTypes
+  )
 }

@@ -1,5 +1,6 @@
 import * as _ from 'lodash'
-import { supportedTypes, parseMark } from './typeNameConvertor'
+import { parseMark } from './typeNameConvertor'
+import { supportedTypes } from '../constant'
 
 export const format = v => _.isString(v) ? v.toLowerCase().trim() : v
 

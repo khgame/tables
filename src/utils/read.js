@@ -1,11 +1,11 @@
-const XLSX = require('js-xlsx')
+import * as XLSX from 'js-xlsx'
 
-function readWorkBook (path) {
+export function readWorkBook (path) {
   // read the raw file
   return XLSX.readFile(path)
 }
 
-function translateWorkBook (workbook, sheetName) {
+export function translateWorkBook (workbook, sheetName) {
   // read the sheet with the given name or the first sheet
   const targetSheetInd = workbook.SheetNames.findIndex(n => n === (sheetName || '__data'))
   const targetSheetName = workbook.SheetNames[targetSheetInd > 0 ? targetSheetInd : 0]
@@ -43,16 +43,10 @@ function translateWorkBook (workbook, sheetName) {
   }
 }
 
-function readAndTranslate (path, options) {
+export function readAndTranslate (path, options) {
   let table = translateWorkBook(readWorkBook(path), options.sheetName)
   if (options.plugins) {
     table = options.plugins.reduce((accumulate, plugin) => plugin(accumulate), table)
   }
   return table
-}
-
-module.exports = {
-  readWorkBook,
-  translateWorkBook,
-  readAndTranslate
 }

@@ -1,5 +1,6 @@
 import { makeInterfaceName } from '../utils/names'
-import { getTypeObject, supportedTypes } from '../utils/typeNameConvertor'
+import { getTypeObject } from '../utils/typeNameConvertor'
+import { supportedTypes } from '../constant'
 
 const Plugins = require('../plugin')
 const _ = require('lodash')

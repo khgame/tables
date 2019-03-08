@@ -1,6 +1,6 @@
 const {
   readAndTranslate
-} = require('../read')
+} = require('../utils/read')
 const Path = require('path')
 const fs = require('fs-extra')
 

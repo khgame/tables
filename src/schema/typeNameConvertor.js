@@ -1,5 +1,5 @@
 /**
- * rule:
+ * schema rule:
  *
  * Mark => [Decorators] TypeSegment
  * Decorators => Decorator[<'|'>Decorators]
@@ -10,7 +10,7 @@
  * Type => Identity
  */
 
-import { aliasTable, supportedTypes } from '../constant'
+import { aliasTable, supportedTypes } from '../constant/index'
 
 function reverseAlias () {
   let ret = {}
@@ -36,9 +36,9 @@ export class MarkObject {
 }
 
 export class TypeObject {
-  constructor (typeName, templateTypes) {
+  constructor (typeName, templateTypeObjects) {
     this.type = typeName
-    this.args = templateTypes
+    this.args = templateTypeObjects
   }
 
   toSchemaStr () {

@@ -1,6 +1,7 @@
 import * as _ from 'lodash'
 import { Convertor } from './base'
 import { getPlainConvertor } from './plainConvertor'
+import { supportedTypes } from '../constant'
 
 export class TemplateConvertor extends Convertor {
   constructor (typeObject) {

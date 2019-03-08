@@ -1,4 +1,4 @@
-import { parseMark } from '../utils/typeNameConvertor'
+import { parseMark } from '../schema/typeNameConvertor'
 
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')

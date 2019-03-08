@@ -1,4 +1,4 @@
-import { filterDecorators } from '../../utils/typeNameConvertor'
+import { filterDecorators } from '../../schema/typeNameConvertor'
 const assert = require('assert')
 const _ = require('lodash')
 

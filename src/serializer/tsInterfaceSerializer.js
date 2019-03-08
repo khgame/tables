@@ -1,5 +1,5 @@
 import { makeInterfaceName } from '../utils/names'
-import { getTypeObject } from '../utils/typeNameConvertor'
+import { getTypeObject } from '../schema/typeNameConvertor'
 import { supportedTypes } from '../constant'
 
 const Plugins = require('../plugin')

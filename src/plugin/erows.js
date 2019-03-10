@@ -1,4 +1,4 @@
-const tableRows = require('./rows')
+import { tableRows } from './rows'
 
 export function tableEnsureRows (table) {
   if (!table.rows) {

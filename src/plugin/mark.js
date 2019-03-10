@@ -1,4 +1,4 @@
-const tableRows = require('./rows')
+import { tableRows } from './rows'
 
 export function tableMark (table) {
   if (!table.rows) {
@@ -27,6 +27,6 @@ export function tableMark (table) {
       }
     }
   }
-  table.tableMark = tableMark
+  table.marks = tableMark
   return table
 }

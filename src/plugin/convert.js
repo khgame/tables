@@ -1,4 +1,5 @@
 import { getConvertor } from '../utils/typeConvertor'
+import { tableSchema } from './schema'
 const tableDescPlugin = require('./desc')
 const tableEnsureRowsPlugin = require('./erows')
 const {
@@ -11,10 +12,11 @@ const {
 const assert = require('assert')
 const _ = require('lodash')
 
-module.exports = function tableConvert (table) {
-  if (!table.tableMark || !table.markLine || !table.descLine) {
+export function tableConvert (table) {
+  if (!table.tableMark || !table.markLine || !table.descLine || !table.schema) {
     table = tableEnsureRowsPlugin(table)
     table = tableDescPlugin(table)
+    table = tableSchema(table)
   }
 
   const { getValue, erows, tableMark, markLine, descLine } = table

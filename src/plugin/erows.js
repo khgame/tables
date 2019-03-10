@@ -1,6 +1,6 @@
 const tableRows = require('./rows')
 
-module.exports = function tableEnsureRows (table) {
+export function tableEnsureRows (table) {
   if (!table.rows) {
     table = tableRows(table)
   }

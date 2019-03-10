@@ -1,11 +1,12 @@
+import { tableConvert, tableSchema } from '../plugin'
+
 const {
   dealSchema,
   makeInterfaceName
 } = require('./tsInterfaceSerializer')
-const Plugins = require('../plugin')
 
-const tsSerializer = {
-  plugins: [Plugins.schema, Plugins.convert],
+export const tsSerializer = {
+  plugins: [tableSchema, tableConvert],
   file: (data, fileName) => {
     // console.log(data.schema)
     let interfaceName = makeInterfaceName(fileName)
@@ -20,6 +21,3 @@ export const ${interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2
   }
 }
 
-module.exports = {
-  tsSerializer
-}

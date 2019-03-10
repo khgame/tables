@@ -1,4 +1,4 @@
-module.exports = function tableColMap (table) {
+export function tableColMap (table) {
   const { cols } = table
   let colMap = {}
   for (let i in cols) {

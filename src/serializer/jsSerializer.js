@@ -1,10 +1,6 @@
-const Plugins = require('../plugin')
+import { tableConvert } from '../plugin'
 
-const jsSerializer = {
-  plugins: [Plugins.convert],
+export const jsSerializer = {
+  plugins: [tableConvert],
   file: data => `module.exports = ${JSON.stringify(data.convert, null, 2)}`
-}
-
-module.exports = {
-  jsSerializer
 }

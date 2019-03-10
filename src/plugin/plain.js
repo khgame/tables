@@ -1,4 +1,4 @@
-module.exports = function tableDesc (table) {
+export function tablePlain (table) {
   if (table.__plain) {
     console.log('[tableDesc] Warning : its already a plain table')
   }

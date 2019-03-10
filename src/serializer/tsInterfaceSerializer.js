@@ -2,7 +2,8 @@ import { makeInterfaceName } from '../utils/names'
 import { getTypeObject } from '../schema/typeNameConvertor'
 import { supportedTypes } from '../constant'
 
-const Plugins = require('../plugin')
+import { tableSchema, tableConvert } from '../plugin'
+
 const _ = require('lodash')
 
 const {
@@ -95,8 +96,8 @@ function dealSchema (schema, inArray = false, depth = 1) {
   return result
 }
 
-const tsInterfaceSerializer = {
-  plugins: [Plugins.schema, Plugins.convert],
+export const tsInterfaceSerializer = {
+  plugins: [tableSchema, tableConvert],
   file: (data, fileName) => {
     // console.log(data.schema)
     return `export interface ${makeInterfaceName(fileName)}{
@@ -105,8 +106,3 @@ ${dealSchema(data.schema)}
   }
 }
 
-module.exports = {
-  dealSchema,
-  makeInterfaceName,
-  tsInterfaceSerializer
-}

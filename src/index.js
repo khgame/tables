@@ -1,11 +1,4 @@
-const { readWorkBook, translateWorkBook, readAndTranslate } = require('./utils/read')
-const Plugins = require('./plugin/index')
-const Serializer = require('./serializer/index')
-
-module.exports = {
-  readWorkBook,
-  translateWorkBook,
-  readAndTranslate,
-  Plugins,
-  Serializer
-}
+export * from './plugin'
+export * from './utils/read'
+export * from './utils/names'
+export * from './serializer'

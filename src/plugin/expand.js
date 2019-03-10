@@ -1,6 +1,6 @@
 const tableColMap = require('./colMap')
 
-module.exports = function tableExpand (table) {
+export function tableExpand (table) {
   if (table.__expand) {
     console.log('[tableExpand] Warning : its already a expanded table')
   }

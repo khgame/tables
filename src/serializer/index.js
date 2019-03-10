@@ -1,8 +1,6 @@
-const {
-  readAndTranslate
-} = require('../utils/read')
-const Path = require('path')
-const fs = require('fs-extra')
+import { readAndTranslate } from '../utils/read'
+import * as Path from 'path'
+import * as fs from 'fs-extra'
 
 /**
  * serialize files with selected serializers
@@ -10,7 +8,7 @@ const fs = require('fs-extra')
  * @param {string} dirOut - output dir
  * @param {Object.<string,Serializer>} serializers
  */
-function serialize (pathIn, dirOut, serializers) {
+export function serialize (pathIn, dirOut, serializers) {
   let plugins = Object.values(serializers).reduce((prev, cur) => prev.concat(cur.plugins), [])
   // console.log('plugins', plugins)
   // console.dir(Object.values(serializers))
@@ -23,10 +21,7 @@ function serialize (pathIn, dirOut, serializers) {
   }
 }
 
-module.exports = {
-  serialize,
-  jsonSerializer: require('./jsonSerializer').jsonSerializer,
-  jsSerializer: require('./jsSerializer').jsSerializer,
-  tsSerializer: require('./tsSerializer').tsSerializer,
-  tsInterfaceSerializer: require('./tsInterfaceSerializer').tsInterfaceSerializer
-}
+export * from './jsonSerializer'
+export * from './jsSerializer'
+export * from './tsSerializer'
+export * from './tsInterfaceSerializer'

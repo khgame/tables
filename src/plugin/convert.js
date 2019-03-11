@@ -28,7 +28,7 @@ export function tableConvert (table) {
     return ret
   }
 
-  function createObject (converted, sdm, fnAppendID) { // the node is sdm
+  function createObject (converted, sdm) { // the node is sdm
     let ret = sdm.sdmType === SDMType.Arr ? [] : {}
 
     function setValue (markInd, value) {
@@ -36,10 +36,6 @@ export function tableConvert (table) {
         if (value) ret.push(value)
       } else {
         ret[descLine[markCols[markInd]]] = value
-        // console.log('setvalue', markInd, descLine[markCols[markInd]], value)
-      }
-      if (fnAppendID && idSeg.indexOf(markInd) >= 0) {
-        fnAppendID(value)
       }
     }
 
@@ -54,7 +50,7 @@ export function tableConvert (table) {
       if (child.markType === MarkType.TDM) {
         setValue(markInd, value)
       } else {
-        setValue(markInd - 1, createObject(value, child)) // fnAppendID 只允许出现在第一层
+        setValue(markInd - 1, createObject(value, child))
       }
     }
     return ret
@@ -75,12 +71,10 @@ export function tableConvert (table) {
       console.log(`error at row ${row} stack:\n${JSON.stringify(replaceErrorStack(errorStack), null, 2)}`)
       continue
     }
+    const id = idSeg.reduce((prev, cur) => prev + values[cur], "");
     let converted = convertor.convert(values)
     console.log('--- converted:\n', JSON.stringify(converted), '\n===')
-    let id = ''
-    let ret = createObject(converted, schema, (v) => {
-      id = id + v
-    })
+    let ret = createObject(converted, schema)
     tids.push(id)
     result[id] = ret
     console.log('result', id, ret)

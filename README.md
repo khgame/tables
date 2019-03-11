@@ -116,6 +116,7 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - Array: `Array<T>`
 - Pair: `Pair<T>`
 
+> string 不允许空串
 > 定义类型的情况下, 类型转换失败将抛出异常, 形如:  
     `
     TypeError: Convert Error for col(U) map:Map<uint> // 此处 Map 已经不在类型定义中
@@ -125,6 +126,14 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 > Array 和 Pair 不指定类型时相当于 Array<any> 和 Pair<any>  
 > 使用 Any 可能导致逻辑内出现未定义情况, 请注意  
 > 对于异构列, 建议使用 $oneof NESTED ARRAY  
+
+- 多个类型或, 可以简单用竖线'|'连接表示多个类型的或如: uint|float
+
+> 由于类型或为最大可用的方式, 如果前一个类型能解析则会直接解析成该类型, 如 string|float 一定会解析成 float
+
+- 模糊类型, 对于可能为空的mark, 只需要在类型 mark最后加上问号'?', 如 uint? (相当于 uint|undefined)
+
+> 类型解析错误不会被认为是模糊类型
 
 #### Decorators
 
@@ -150,14 +159,14 @@ Decorators 是用于描述 Nested 结构的特殊标记
 
 基本用法
 
-`const { plugins } = require('@khgame/tables')`
+`const { PLUGIN_NAME } = require('@khgame/tables')`
 
 #### 索引类
 
-##### Plugins.rows 
+##### tableRows
    - usage
    ```js
-   let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.rows ] })
+   let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableRows ] })
    ```
    - result  
    > table 中将增加有序的索引 rows, 依序标注所有使用到的行号
@@ -168,10 +177,10 @@ Decorators 是用于描述 Nested 结构的特殊标记
    }
    ```
    
-##### Plugins.erows 
+##### tableEnsureRows 
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.erows ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableEnsureRows ] })
 ```
 - result  
 > table 中将增加有序的索引 rows, 依序标注所有使用到的行号, 元素全为空的行将不会包含在内
@@ -182,10 +191,10 @@ table = {
 }
 ```
     
-##### Plugins.colMap
+##### tableColMap
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.colMap ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableColMap ] })
 ```
 - result
 > 在 table 中增加列名到列 ind 的索引
@@ -196,10 +205,10 @@ table = {
 }
 ```
 
-##### Plugins.mark
+##### tableMark
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.mark ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableMark ] })
 ```
 - result  
 > table 中将增加开始标记 tableMark, 标记表格中第一个 '@' 符号出现的位置 (详见 [ID 规划](###ID规划) )
@@ -213,10 +222,10 @@ table = {
 
 #### 数据结构类
 
-##### Plugins.plain
+##### tablePlain
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.plain ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tablePlain ] })
 ```
 - result
 > data 将被改为 plan 模式, 简化 value 结构到只保留有效值
@@ -234,10 +243,10 @@ table = {
 }
 ```
 
-##### Plugins.expand
+##### tableExpand
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.expand ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableExpand ] })
 ```
 - result
 > data 将被改为 expand 模式, 按照 col 的可能情况扩展成列表并保证有序
@@ -253,16 +262,17 @@ table = {
 
 #### 数据结构类
 
-##### 描述生成插件 Plugins.schema
+##### 描述生成插件 tableSchema
 
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.schema ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableSchema ] })
 ```
 - result
 ```js
 table = {
   ...
+  markList: ['uint','uint','uint','string','{','uint','[','uint',']','}','[' ... ]
   schema: {
     "ctype": "UInt",
     "building": "UInt",
@@ -299,10 +309,10 @@ table = {
 }
 ```
 
-##### 标准导表插件 Plugins.convert
+##### 标准导表插件 tableConvert
 - usage
 ```js
-let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ Plugins.convert ] })
+let ret = readAndTranslate(`your_awesome_excel.xlsx`, { plugins: [ tableConvert ] })
 ```
 - markLine rules
 ```bash
@@ -372,11 +382,11 @@ table = {
 #### jsonSerializer
 example:
 ```js
-const { Serializer } = require('@khgame/tables')
+const { serialize, jsonSerializer } = require('@khgame/tables')
 
-Serializer.serialize(`${__dirname}/your_awesome_excel.xlsx`, __dirname,
+serialize(`${__dirname}/your_awesome_excel.xlsx`, __dirname,
   {
-    'your_awesome_excel.json': Serializer.jsonSerializer
+    'your_awesome_excel.json': jsonSerializer
   }
 )
 ```
@@ -387,12 +397,12 @@ tsInterfaceSerializer 可以用于生成 ts 的 interface 文件:
 
 example:
 ```js
-const { Serializer } = require('@khgame/tables')
+const { serialize, jsonSerializer, tsInterfaceSerializer } = require('@khgame/tables')
 
-Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
   {
-    'your_awesome_data.json': Serializer.jsonSerializer,
-    'your_awesome_ts_interface.ts': Serializer.tsInterfaceSerializer
+    'your_awesome_data.json': jsonSerializer,
+    'your_awesome_ts_interface.ts': tsInterfaceSerializer
   }
 )
 ```
@@ -403,11 +413,11 @@ jsSerializer 可以用于生成可直接引入的 js 代码:
 
 example:
 ```js
-const { Serializer } = require('@khgame/tables')
+const { serialize, jsSerializer } = require('@khgame/tables')
 
-Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
   {
-    'your_awesome_data.js': Serializer.jsSerializer,
+    'your_awesome_data.js': jsSerializer,
   }
 )
 ```
@@ -418,11 +428,11 @@ jsSerializer 可以用于生成可直接引入的 ts 代码:
 
 example:
 ```js
-const { Serializer } = require('@khgame/tables')
+const { serialize, tsSerializer } = require('@khgame/tables')
 
-Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
+serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
   {
-    'your_awesome_data.js': Serializer.tsSerializer,
+    'your_awesome_data.js': tsSerializer,
   }
 )
 ```
@@ -433,15 +443,24 @@ Serializer.serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
 
 ### todo
 
+- [x] DECORATORS: Base
+- [x] DECORATORS: ARR: 
+    - *(deprecated) $oneof*
+    - [x] $strict 
+    - [x] $ghost
+- [x] DECORATORS: OBJ
+    - [x] $ghost
+- [x] SCHEMA: [@khgame/schema](https://github.com/khgame/schema)
+- [x] PLAIN OR
+- [ ] CONSTANT TYPE
+- [ ] ID RULES
+- [ ] RELATED ID RULES
+- [x] INTERFACE EXPORTOR: JS
 - [x] INTERFACE EXPORTOR: TS
+- [x] INTERFACE EXPORTOR: TSINTERFACE
 - [ ] INTERFACE EXPORTOR: GO
 - [ ] INTERFACE EXPORTOR: JAVA
 - [ ] INTERFACE EXPORTOR: C#
-- [x] DECORATORS: Base
-- [x] DECORATORS: ARR: $oneof
-- [ ] DECORATORS: OBJ
-- [ ] PLAIN OR
-- [ ] CONSTANT TYPE
 
 ### Troubleshooting
 

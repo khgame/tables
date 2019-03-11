@@ -7,9 +7,9 @@ const {
 
 serialize(`${__dirname}/nft.building.xlsx`, __dirname,
   {
-    'nft.building.json': jsonSerializer,
-    'i_nft.building.ts': tsInterfaceSerializer,
-    'nft.building.ts': tsSerializer
+    'NFTBuilding.json': jsonSerializer,
+    'INFTBuilding.ts': tsInterfaceSerializer,
+    'NFTBuilding.ts': tsSerializer
   }
 )
 

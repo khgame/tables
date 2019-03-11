@@ -39,7 +39,7 @@ export function tableConvert (table) {
       }
     }
 
-    console.log(converted)
+    // console.log(converted)
     for (const markIndStr in converted) {
       const markInd = Number(markIndStr)
       const child = sdm.marks.find(v => v.markInd === markInd)
@@ -73,11 +73,11 @@ export function tableConvert (table) {
     }
     const id = idSeg.reduce((prev, cur) => prev + values[cur], "");
     let converted = convertor.convert(values)
-    console.log('--- converted:\n', JSON.stringify(converted), '\n===')
+    // console.log('--- converted:\n', JSON.stringify(converted), '\n===')
     let ret = createObject(converted, schema)
     tids.push(id)
     result[id] = ret
-    console.log('result', id, ret)
+    // console.log('result', id, ret)
   }
   table.convert = { tids, result }
   return table

@@ -1,10 +1,34 @@
-{
-  "tids": {
-    "7": "2000000",
-    "8": "2000001",
-    "9": "2000002",
-    "10": "2000003"
-  },
+export interface INftBuilding {
+  ctype: number;
+  building: number;
+  level: number;
+  name: string;
+  upgrage: {
+    to: number;
+    dependency: number[];
+  };
+  product: Array<{
+      tid: number;
+      num: number;
+    }>;
+  cost: Array<{key: string, val: number}>;
+  arr: number[];
+  pair: {key: string, val: number};
+  map: Array<{key: string, val: any}>;
+  nest: Array<number[]|boolean[][]>;
+  stars: Array<number|boolean|{key: string, val: number}>;
+  nestedArray: Array<{data: number}|({data: number}|undefined)>;
+  ax: number|string;
+}
+
+
+const data = {
+  "tids": [
+    "2000000",
+    "2000001",
+    "2000002",
+    "2000003"
+  ],
   "result": {
     "2000000": {
       "ctype": 20,
@@ -12,7 +36,8 @@
       "level": 0,
       "name": "farm",
       "upgrage": {
-        "to": 2000001
+        "to": 2000001,
+        "dependency": []
       },
       "product": [
         {
@@ -57,13 +82,12 @@
           ]
         ]
       ],
-      "stars": 111,
+      "stars": [
+        111
+      ],
       "nestedArray": [
         {
           "data": 111
-        },
-        {
-          "data": 211
         }
       ],
       "ax": 1
@@ -118,9 +142,14 @@
         [
           1,
           2
+        ],
+        [
+          []
         ]
       ],
-      "stars": 222,
+      "stars": [
+        222
+      ],
       "nestedArray": [
         {
           "data": 111
@@ -148,6 +177,7 @@
           "num": 3
         }
       ],
+      "cost": [],
       "arr": [
         1,
         2,
@@ -167,9 +197,14 @@
         [
           1,
           2
+        ],
+        [
+          []
         ]
       ],
-      "stars": true,
+      "stars": [
+        true
+      ],
       "nestedArray": [
         {
           "data": 111
@@ -197,6 +232,7 @@
           "num": 4
         }
       ],
+      "cost": [],
       "arr": [
         1,
         2,
@@ -216,12 +252,17 @@
         [
           1,
           2
+        ],
+        [
+          []
         ]
       ],
-      "stars": {
-        "key": "sfajdf",
-        "val": 123
-      },
+      "stars": [
+        {
+          "key": "sfajdf",
+          "val": 123
+        }
+      ],
       "nestedArray": [
         {
           "data": 111
@@ -234,3 +275,5 @@
     }
   }
 }
+
+export const nftBuilding: { [tid: string] : INftBuilding } = data.result ;

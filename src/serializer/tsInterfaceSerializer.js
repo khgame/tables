@@ -1,108 +1,187 @@
 import { makeInterfaceName } from '../utils/names'
-import { getTypeObject } from '../schema/typeNameConvertor'
-import { supportedTypes } from '../constant'
-
 import { tableSchema, tableConvert } from '../plugin'
+import deepEqual from 'deep-equal'
+
+import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
 
 const _ = require('lodash')
 
-const {
-  DECORATORS,
-  InfoSym
-} = require('../plugin/analyze')
-
-function getTsType (typeName) {
-  switch (typeName) {
-    case supportedTypes.String:
+function getTsType (tName, innerTypeString) {
+  switch (tName) {
+    case SupportedTypes.String:
       return 'string'
-    case supportedTypes.Float:
+    case SupportedTypes.Float:
       return 'number'
-    case supportedTypes.UFloat:
+    case SupportedTypes.UFloat:
       return 'number'
-    case supportedTypes.Int:
+    case SupportedTypes.Int:
       return 'number'
-    case supportedTypes.UInt:
+    case SupportedTypes.UInt:
       return 'number'
-    case supportedTypes.Boolean:
+    case SupportedTypes.Boolean:
       return 'boolean'
-    case supportedTypes.Undefined:
+    case SupportedTypes.Undefined:
       return 'undefined'
-    case supportedTypes.Any:
+    case SupportedTypes.Any:
       return 'any'
+    case SupportedTypes.Array:
+      return innerTypeString.length > 9 ? `Array<${innerTypeString || 'any'}>` : `${innerTypeString || 'any'}[]`
+    case SupportedTypes.Pair:
+      return `{key: string, val: ${innerTypeString || 'any'}}`
     default:
-      if (typeName.startsWith(supportedTypes.Array)) {
-        let typeInnerAll = getTypeObject(typeName).args
-        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0].type : 'any'
-        // console.log('typeInnerAll', 'array', typeName, typeInnerAll)
-        return `${getTsType(typeInner)}[]`
-      } else if (typeName.startsWith(supportedTypes.Pair)) {
-        let typeInnerAll = getTypeObject(typeName).args
-        let typeInner = typeInnerAll.length > 0 ? typeInnerAll[0].type : 'any'
-        // console.log('typeInnerAll', 'Map', typeInnerAll)
-        return `{key: string, val: ${getTsType(typeInner)}}`
-      }
-      return 'any'
+      return 'none'
   }
 }
 
-function dealSchema (schema, inArray = false, depth = 1) {
-  let result = ''
-  let space = ' '.repeat(depth * 2)
-  let split = inArray ? ')|' : ';'
-  let itemSql = []
-  const rcv = (str) => {
-    if (!inArray) {
-      result += str
-    } else {
-      itemSql.push(str)
-      // console.log('itemSql', depth, itemSql)
-    }
-  }
-
-  for (let key in schema) {
-    let temp = (inArray ? '(' : space + key + ': ')
-    let schemaType = schema[key]
-    if (_.isArray(schemaType)) {
-      temp += '(' + dealSchema(schemaType, true, depth + 1)
-      temp = temp.substr(0, temp.length - 1) + (schemaType[InfoSym].hasDecorator(DECORATORS.ONE_OF) ? ')' : ')[]') + split
-      rcv(temp)
-    } else if (_.isObject(schemaType)) {
-      temp += '{\n'
-      temp += dealSchema(schemaType, false, depth + 1)
-      temp += space + '}' + split
-      rcv(temp)
-    } else {
-      temp += `${getTsType(schemaType)}${split}`
-      rcv(temp)
-    }
-    // if (inArray) break // nest array only accept the first type
-    if (!inArray) {
-      result += '\n'
-    }
-  }
-
-  if (inArray) {
-    let typeOr = []
-    itemSql.forEach(str => {
-      if (typeOr.indexOf(str) < 0) {
-        // console.log('typeOr.indexOf(str)', typeOr, str, typeOr.indexOf(str))
-        typeOr.push(str)
-      }
-    })
-    let merge = typeOr.reduce((p, c) => p + c)
-    // console.log('==> typeOr itemSql ', typeOr, itemSql, 'res', result, 'merge', merge)
-    result += merge
-  }
-  return result
+function tNodeToType (node) {
+  return getTsType(node.tName, node.innerCount > 0 ? tSegToType(node.tSeg) : undefined)
 }
+
+function tSegToType (tSeg) {
+  if (tSeg.nodes.length <= 0) { // no template
+    return ''
+  }
+  const types = tSeg.nodes.map(n => tNodeToType(n))
+  if (types.length <= 0) {
+    throw new Error(`error: tdm ${JSON.stringify(tSeg)} are empty`)
+  }
+  return types.reduce((prev, cur) => prev + '|' + cur, '').substr(1)
+}
+
+function tdmToType (tdm, descs) {
+  const types = []
+  for (let i = 0; i < tdm.innerCount; i++) {
+    types.push(tNodeToType(tdm.inner(i)))
+  }
+  return [descs[tdm.markInd], types.reduce((prev, cur) => prev + '|' + cur, '').substr(1)]
+}
+
+function sdmToType (sdm, descs, depth = 0) {
+  let result = []
+  sdm.marks.forEach(dm => {
+    switch (dm.markType) {
+      case MarkType.SDM:
+        result.push(sdmToType(dm, descs, depth + 1))
+        break
+      case MarkType.TDM:
+        result.push(tdmToType(dm, descs))
+        break
+    }
+  })
+
+  let ret = ''
+  let space = '  '.repeat(depth + 1)
+  let spaceOut = '  '.repeat(depth)
+  switch (sdm.sdmType) {
+    case SDMType.Arr:
+      result = result.filter((item, index, array) => {
+        return index === array.findIndex(v => {
+          console.log('deepEqual', item, v, deepEqual(item[1], v[1]))
+          return deepEqual(item[1], v[1])
+        })
+      })
+      if (sdm.mds.findIndex(str => str === '$strict') >= 0) {
+        ret = result.length <= 0
+          ? '[]'
+          : '[' +
+            (result.length > 1
+              ? result.reduce((prev, cur) => prev + '\n' + space + cur[1] + ';', '') + '\n' + spaceOut + ']'
+              : result[0][1] + ']'
+            )
+      } else {
+        ret = result.length <= 0
+          ? '[]'
+          : (result.length > 1 || result[0][1].length > 9
+            ? 'Array<' + result.reduce((prev, cur) => prev + '|' + cur[1], '').substr(1) + '>'
+            : result[0][1] + '[]'
+          )
+      }
+      if (sdm.mds.findIndex(str => str === '$ghost') >= 0) {
+        ret += '|undefined'
+      }
+      break
+    case SDMType.Obj:
+      ret = result.length <= 0
+        ? '{}'
+        : '{' +
+          (result.length > 1
+            ? result.reduce((prev, cur) => prev + '\n' + space + cur[0] + ': ' + cur[1] + ';', '') + '\n' + spaceOut + '}'
+            : result[0][0] + ': ' + result[0][1] + '}'
+          )
+      if (sdm.mds.findIndex(str => str === '$ghost') >= 0) {
+        ret = '(' + ret + '|undefined)'
+      }
+      break
+  }
+  return [descs[sdm.markInd - 1], ret]
+  // deal string
+}
+
+export function dealSchema (schema, descLine, markCols) {
+  const descs = markCols.map(c => descLine[c])
+  const ret = sdmToType(schema, descs)
+  console.log('sentences', descs, JSON.stringify(ret[1], null, 2))
+  return ret[1]
+}
+
+// export function dealSchema(schema, inArray = false, depth = 1) {
+//     console.log(schema)
+//     let result = ''
+//     let space = ' '.repeat(depth * 2)
+//     let split = inArray ? ')|' : ';'
+//     let itemSql = []
+//
+//     const rcv = (str) => {
+//         if (!inArray) {
+//             result += str
+//         } else {
+//             itemSql.push(str)
+//             // console.log('itemSql', depth, itemSql)
+//         }
+//     }
+//
+//     for (let key in schema) {
+//         let temp = (inArray ? '(' : space + key + ': ')
+//         let schemaType = schema[key]
+//         if (_.isArray(schemaType)) {
+//             temp += '(' + dealSchema(schemaType, true, depth + 1)
+//             temp = temp.substr(0, temp.length - 1) + (schemaType[InfoSym].hasDecorator(DECORATORS.ONE_OF) ? ')' : ')[]') + split
+//             rcv(temp)
+//         } else if (_.isObject(schemaType)) {
+//             temp += '{\n'
+//             temp += dealSchema(schemaType, false, depth + 1)
+//             temp += space + '}' + split
+//             rcv(temp)
+//         } else {
+//             temp += `${getTsType(schemaType)}${split}`
+//             rcv(temp)
+//         }
+//         // if (inArray) break // nest array only accept the first type
+//         if (!inArray) {
+//             result += '\n'
+//         }
+//     }
+//
+//     if (inArray) {
+//         let typeOr = []
+//         itemSql.forEach(str => {
+//             if (typeOr.indexOf(str) < 0) {
+//                 // console.log('typeOr.indexOf(str)', typeOr, str, typeOr.indexOf(str))
+//                 typeOr.push(str)
+//             }
+//         })
+//         let merge = typeOr.reduce((p, c) => p + c)
+//         // console.log('==> typeOr itemSql ', typeOr, itemSql, 'res', result, 'merge', merge)
+//         result += merge
+//     }
+//     return result
+// }
 
 export const tsInterfaceSerializer = {
   plugins: [tableSchema, tableConvert],
   file: (data, fileName) => {
     // console.log(data.schema)
-    return `export interface ${makeInterfaceName(fileName)}{
-${dealSchema(data.schema)}
-}`
+    return `export interface ${makeInterfaceName(fileName)} ${dealSchema(data.schema, data.descLine, data.markCols)}
+`
   }
 }
-

@@ -1,12 +1,15 @@
 const {
-  Serializer
+  serialize,
+  jsonSerializer,
+  tsSerializer,
+  tsInterfaceSerializer
 } = require('..')
 
-Serializer.serialize(`${__dirname}/nft.building.xlsx`, __dirname,
+serialize(`${__dirname}/nft.building.xlsx`, __dirname,
   {
-    'nft.building.json': Serializer.jsonSerializer,
-    // 'nft.building.ts': Serializer.tsInterfaceSerializer,
-    'nft.building.ts': Serializer.tsSerializer
+    'nft.building.json': jsonSerializer,
+    'i_nft.building.ts': tsInterfaceSerializer,
+    'nft.building.ts': tsSerializer
   }
 )
 

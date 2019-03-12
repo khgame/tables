@@ -1,5 +1,6 @@
 import { tableMark } from './mark'
 import assert from 'assert'
+import * as _ from 'lodash'
 
 export function tableDesc (table) {
   if (!table.marks) {
@@ -24,7 +25,7 @@ export function tableDesc (table) {
       markCols.push(col)
       markLine[col] = markSlot.trim()
     }
-    if (descSlot) descLine[col] = descSlot.trim()
+    if (undefined !== descSlot) descLine[col] = _.toString(descSlot).trim()
   }
 
   Object.assign(table,

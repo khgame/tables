@@ -124,8 +124,7 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
     `   
 > Array, Pair 原则上不建议使用, 而建议使用 Nested Array 和 Nested Object  
 > Array 和 Pair 不指定类型时相当于 Array<any> 和 Pair<any>  
-> 使用 Any 可能导致逻辑内出现未定义情况, 请注意  
-> 对于异构列, 建议使用 $oneof NESTED ARRAY  
+> 使用 Any 可能导致逻辑内出现未定义情况, 请注意 
 
 - 多个类型或, 可以简单用竖线'|'连接表示多个类型的或如: uint|float
 
@@ -145,15 +144,14 @@ Decorators 是用于描述 Nested 结构的特殊标记
 
 ##### Nested Array
 
-- $oneof: 标记该数组为 oneof 数组, 获取且仅获取该数组的第一个有效值
+- $ghost: 标记该结构为 ghost 结构, 当结构中的所有值都为空值时, 认为整个结构不存在
+- $strict: 标记该数组为 strict 数组, 数组中每一项都必须有值
 
 ##### Nested Object 
 
-无
+- $ghost: 标记该结构为 ghost 结构, 当结构中的所有值都为空值时, 认为整个结构不存在
 
 #### Constant types
-
-
 
 ### plugins
 

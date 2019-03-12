@@ -56,6 +56,23 @@ function tdmToType (tdm, descs) {
   return [descs[tdm.markInd], types.reduce((prev, cur) => prev + '|' + cur, '').substr(1)]
 }
 
+function mergeSdmArr (result, splitor, inNoStrictArray) {
+  // console.log('result', result)
+  if (inNoStrictArray) {
+    result = result.map(s => [s[0], s[1].replace('|undefined', '')]).filter(s => s[1] !== 'undefined')
+  }
+
+  result = result.filter((item, index, array) => {
+    return index === array.findIndex(v => {
+      // console.log('deepEqual', item, v, deepEqual(item[1], v[1]))
+      return deepEqual(item[1], v[1])
+    })
+  })
+  let ret = result.reduce((prev, cur) => prev + splitor + cur[1], '').substr(splitor.length)
+  // console.log('ret', ret)
+  return ret
+}
+
 function sdmToType (sdm, descs, depth = 0) {
   let result = []
   sdm.marks.forEach(dm => {
@@ -74,25 +91,18 @@ function sdmToType (sdm, descs, depth = 0) {
   let spaceOut = '  '.repeat(depth)
   switch (sdm.sdmType) {
     case SDMType.Arr:
-      result = result.filter((item, index, array) => {
-        return index === array.findIndex(v => {
-          console.log('deepEqual', item, v, deepEqual(item[1], v[1]))
-          return deepEqual(item[1], v[1])
-        })
-      })
       if (sdm.mds.findIndex(str => str === '$strict') >= 0) {
         ret = result.length <= 0
           ? '[]'
-          : '[' +
-            (result.length > 1
-              ? result.reduce((prev, cur) => prev + '\n' + space + cur[1] + ';', '') + '\n' + spaceOut + ']'
-              : result[0][1] + ']'
-            )
+          : (result.length > 1
+            ? '[\n' + space + mergeSdmArr(result, ',\n' + space) + '\n' + spaceOut + ']'
+            : '[' + result[0][1] + ']'
+          )
       } else {
         ret = result.length <= 0
           ? '[]'
           : (result.length > 1 || result[0][1].length > 9
-            ? 'Array<' + result.reduce((prev, cur) => prev + '|' + cur[1], '').substr(1) + '>'
+            ? 'Array<' + mergeSdmArr(result, '|', true) + '>'
             : result[0][1] + '[]'
           )
       }
@@ -104,12 +114,12 @@ function sdmToType (sdm, descs, depth = 0) {
       ret = result.length <= 0
         ? '{}'
         : '{' +
-          (result.length > 1
-            ? result.reduce((prev, cur) => prev + '\n' + space + cur[0] + ': ' + cur[1] + ';', '') + '\n' + spaceOut + '}'
-            : result[0][0] + ': ' + result[0][1] + '}'
-          )
+                (result.length > 1
+                  ? result.reduce((prev, cur) => prev + '\n' + space + cur[0] + ': ' + cur[1] + ';', '') + '\n' + spaceOut + '}'
+                  : result[0][0] + ': ' + result[0][1] + '}'
+                )
       if (sdm.mds.findIndex(str => str === '$ghost') >= 0) {
-        ret = '(' + ret + '|undefined)'
+        ret += '|undefined'
       }
       break
   }
@@ -120,7 +130,7 @@ function sdmToType (sdm, descs, depth = 0) {
 export function dealSchema (schema, descLine, markCols) {
   const descs = markCols.map(c => descLine[c])
   const ret = sdmToType(schema, descs)
-  console.log('sentences', descs, JSON.stringify(ret[1], null, 2))
+  console.log('success', JSON.stringify(ret[1], null, 2))
   return ret[1]
 }
 

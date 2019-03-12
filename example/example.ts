@@ -1,4 +1,4 @@
-export interface INftBuilding {
+export interface IExample {
   ctype: number;
   building: number;
   level: number;
@@ -15,8 +15,12 @@ export interface INftBuilding {
   arr: number[];
   pair: {key: string, val: number};
   map: Array<{key: string, val: any}>;
-  nest: Array<number[]|boolean[][]>;
+  nest: Array<Array<number>|boolean[][]>;
   stars: Array<number|boolean|{key: string, val: number}>;
-  nestedArray: Array<{data: number}|({data: number}|undefined)>;
+  nestedArray: [
+    {data: number},
+    {data: number}|undefined,
+    number[]
+  ];
   ax: number|string;
 }

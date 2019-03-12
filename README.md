@@ -327,7 +327,7 @@ Type => Identity
 > 其中 tids 表示原本的 row 与 id 的对应关系  
 > result 为转换后的数据, 以 id 为 key, 内部是表内数据的嵌套结构
 > 表格规则循序 @khgame/tid 规范, 详见 (详见 [ID 规划](###ID规划) )  
-> 或使用命令 `node ./example/convert.example.js` 尝试 ./example 下的示例   
+> 或使用命令 `node ./example/ex.convert.js` 尝试 ./example 下的示例   
 ```js
 table = {
   ...

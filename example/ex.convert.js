@@ -10,7 +10,7 @@ let ret
 // console.log('SCHEMA =>', JSON.stringify(ret.schema, null, 2))
 // console.log('Convert =>', JSON.stringify(ret.convert, null, 2))
 
-ret = readAndTranslate(`${__dirname}/nft.building.xlsx`, {
+ret = readAndTranslate(`${__dirname}/example.xlsx`, {
   plugins: [ tableConvert ]
 })
 console.log('Cols =>', JSON.stringify(ret.cols, null, 2))

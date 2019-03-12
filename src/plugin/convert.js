@@ -33,26 +33,47 @@ export function tableConvert (table) {
 
     function setValue (markInd, value) {
       if (sdm.sdmType === SDMType.Arr) {
-        if (value) ret.push(value)
+        const strict = sdm.mds.findIndex(str => str === '$strict') >= 0
+        if (value || strict) {
+          ret.push(value)
+        }
       } else {
-        ret[descLine[markCols[markInd]]] = value
+        const col = markCols[markInd]
+        const key = descLine[col]
+        if (key === undefined || key === null) { throw new Error('key in object not found: col - ' + col) }
+        ret[key] = value
       }
     }
 
     // console.log(converted)
-    for (const markIndStr in converted) {
-      const markInd = Number(markIndStr)
-      const child = sdm.marks.find(v => v.markInd === markInd)
-      if (!child) {
-        throw new Error('DM not found for markInd ' + markInd)
-      }
-      const value = converted[markInd][1]
-      if (child.markType === MarkType.TDM) {
+    // for (const markIndStr in converted) {
+    //   const markInd = Number(markIndStr)
+    //   const child = sdm.marks.find(v => v.markInd === markInd)
+    //   if (!child) {
+    //     throw new Error('DM not found for markInd ' + markInd)
+    //   }
+    //   const value = converted[markInd][1]
+    //   if (child.markType === MarkType.TDM) {
+    //     setValue(markInd, value)
+    //   } else {
+    //     setValue(markInd - 1, createObject(value, child))
+    //   }
+    // }
+
+    for (const childInd in sdm.marks) {
+      const child = sdm.marks[childInd]
+      const markInd = child.markInd
+      const value = converted[markInd] ? converted[markInd][1] : undefined
+
+      // const child = sdm.marks.find(v => v.markInd === markInd)
+      if (child.markType === MarkType.TDM || value === undefined) {
+        console.log(child.markInd, value)//, child)
         setValue(markInd, value)
       } else {
         setValue(markInd - 1, createObject(value, child))
       }
     }
+    console.log('create', ret)
     return ret
   }
 
@@ -71,7 +92,7 @@ export function tableConvert (table) {
       console.log(`error at row ${row} stack:\n${JSON.stringify(replaceErrorStack(errorStack), null, 2)}`)
       continue
     }
-    const id = idSeg.reduce((prev, cur) => prev + values[cur], "");
+    const id = idSeg.reduce((prev, cur) => prev + values[cur], '')
     let converted = convertor.convert(values)
     // console.log('--- converted:\n', JSON.stringify(converted), '\n===')
     let ret = createObject(converted, schema)

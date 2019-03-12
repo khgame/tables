@@ -8,8 +8,8 @@ const {
 serialize(`${__dirname}/example.xlsx`, __dirname,
   {
     'example.json': jsonSerializer,
-    'example.ts': tsInterfaceSerializer,
-    'iExample.ts': tsSerializer
+    'example.ts': tsSerializer,
+    'exampleInterface.ts': tsInterfaceSerializer
   }
 )
 

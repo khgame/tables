@@ -1,5 +1,5 @@
 import { tableSchema } from './schema'
-import { SchemaConvertor, MarkConvertorResultToErrorStack, MarkType, SDMType } from '@khgame/schema'
+import { SchemaConvertor, MarkConvertorResultToErrorStack, MarkType, SDMType, exportJson } from '@khgame/schema'
 import * as _ from 'lodash'
 
 export function tableConvert (table) {
@@ -9,9 +9,17 @@ export function tableConvert (table) {
 
   const { schema, markCols, marks, markLine, descLine, getValue, erows } = table
 
-  // console.log('markList:\n', JSON.stringify(markList))
-  const convertor = new SchemaConvertor(schema)
   const startRow = marks.row + 2
+
+  const descList = markCols.map(colName => descLine[colName])
+  const convertedRows = erows
+    .filter(row => row >= startRow)
+    .map(row => markCols.map(colName => getValue(table, row, colName)))
+  const markDescriptor = {
+    row: erows,
+    col: markCols
+  }
+  let exportResult = exportJson(schema, descList, convertedRows, markDescriptor)
 
   const idSeg = []
   markCols.forEach((col, markInd) => {
@@ -19,87 +27,12 @@ export function tableConvert (table) {
       idSeg.push(markInd)
     }
   })
-
-  function replaceErrorStack (errStack) {
-    const ret = {}
-    Object.keys(errStack).forEach(key => {
-      ret[markCols[key]] = _.isObject(errStack[key]) ? replaceErrorStack(errStack[key]) : errStack[key]
-    })
-    return ret
-  }
-
-  function createObject (converted, sdm) { // the node is sdm
-    let ret = sdm.sdmType === SDMType.Arr ? [] : {}
-
-    function setValue (markInd, value) {
-      if (sdm.sdmType === SDMType.Arr) {
-        const strict = sdm.mds.findIndex(str => str === '$strict') >= 0
-        if (value || strict) {
-          ret.push(value)
-        }
-      } else {
-        const col = markCols[markInd]
-        const key = descLine[col]
-        if (key === undefined || key === null) { throw new Error('key in object not found: col - ' + col) }
-        ret[key] = value
-      }
-    }
-
-    // console.log(converted)
-    // for (const markIndStr in converted) {
-    //   const markInd = Number(markIndStr)
-    //   const child = sdm.marks.find(v => v.markInd === markInd)
-    //   if (!child) {
-    //     throw new Error('DM not found for markInd ' + markInd)
-    //   }
-    //   const value = converted[markInd][1]
-    //   if (child.markType === MarkType.TDM) {
-    //     setValue(markInd, value)
-    //   } else {
-    //     setValue(markInd - 1, createObject(value, child))
-    //   }
-    // }
-
-    for (const childInd in sdm.marks) {
-      const child = sdm.marks[childInd]
-      const markInd = child.markInd
-      const value = converted[markInd] ? converted[markInd][1] : undefined
-
-      // const child = sdm.marks.find(v => v.markInd === markInd)
-      if (child.markType === MarkType.TDM || value === undefined) {
-        console.log(child.markInd, value)//, child)
-        setValue(markInd, value)
-      } else {
-        setValue(markInd - 1, createObject(value, child))
-      }
-    }
-    console.log('create', ret)
-    return ret
-  }
+  const tids = convertedRows.map(values => idSeg.reduce((prev, cur) => prev + values[cur], ''))
 
   const result = {}
-  const tids = []
-  for (const rowInd in erows) {
-    const row = parseInt(erows[rowInd])
-    if (row < startRow) {
-      continue
-    }
-    const values = markCols.map(colName => getValue(table, row, colName))
-    // console.log('--\n', JSON.stringify(values))
-    const validate = convertor.validate(values)
-    if (!validate[0]) {
-      const errorStack = MarkConvertorResultToErrorStack(validate)
-      console.log(`error at row ${row} stack:\n${JSON.stringify(replaceErrorStack(errorStack), null, 2)}`)
-      continue
-    }
-    const id = idSeg.reduce((prev, cur) => prev + values[cur], '')
-    let converted = convertor.convert(values)
-    // console.log('--- converted:\n', JSON.stringify(converted), '\n===')
-    let ret = createObject(converted, schema)
-    tids.push(id)
-    result[id] = ret
-    // console.log('result', id, ret)
-  }
+  tids.forEach((id, i) => { result[id] = exportResult[i] })
+
   table.convert = { tids, result }
+  // console.log('result', table.convert)
   return table
 }

@@ -4,6 +4,7 @@ const {
 } = require('..')
 
 let ret
+
 // ret = readAndTranslate(`${__dirname}/global_config.xlsx`, {
 //   plugins: [Plugins.schema, Plugins.convert]
 // })

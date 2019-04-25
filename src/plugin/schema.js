@@ -11,6 +11,10 @@ export function tableSchema (table) {
   const { markCols, markLine } = table
 
   const markList = markCols.map(colName => markLine[colName])
+
+  // console.log(
+  //   '\n=======markList=======\n', JSON.stringify(markList)
+  // )
   const schema = parseSchema(markList)
   // table.markList = markList
   table.schema = schema

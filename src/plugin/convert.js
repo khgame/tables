@@ -19,6 +19,12 @@ export function tableConvert (table) {
     row: erows,
     col: markCols
   }
+  // console.log(
+  //   '\n=======schema=======\n', JSON.stringify(schema),
+  //   '\n=======descList=======\n', JSON.stringify(descList),
+  //   '\n=======convertedRows=======\n', JSON.stringify(convertedRows),
+  //   '\n=======markDescriptor=======\n', JSON.stringify(markDescriptor)
+  // )
   let exportResult = exportJson(schema, descList, convertedRows, markDescriptor)
 
   const idSeg = []

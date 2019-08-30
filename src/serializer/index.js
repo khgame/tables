@@ -14,7 +14,7 @@ export function serialize (pathIn, dirOut, serializers) {
   // console.dir(Object.values(serializers))
   let ret = readAndTranslate(pathIn, {
     plugins
-  })
+  });
   for (let outName in serializers) {
     let fileContent = serializers[outName].file(ret, Path.parse(pathIn).name)
     fs.outputFileSync(Path.resolve(dirOut, outName), fileContent)

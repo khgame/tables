@@ -1,5 +1,10 @@
 import * as XLSX from 'js-xlsx'
 
+/**
+ * read the raw file form give path
+ * @param path
+ * @return {*}
+ */
 export function readWorkBook (path) {
   // read the raw file
   return XLSX.readFile(path)

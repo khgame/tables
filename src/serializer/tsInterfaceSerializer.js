@@ -3,8 +3,9 @@ import { tableSchema, tableConvert } from '../plugin'
 import deepEqual from 'deep-equal'
 
 import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
+import { cyan } from 'chalk'
 
-const _ = require('lodash')
+const _ = require('lodash');
 
 function getTsType (tName, innerTypeString) {
   switch (tName) {
@@ -130,7 +131,7 @@ function sdmToType (sdm, descs, depth = 0) {
 export function dealSchema (schema, descLine, markCols) {
   const descs = markCols.map(c => descLine[c])
   const ret = sdmToType(schema, descs)
-  console.log('success', JSON.stringify(ret[1], null, 2))
+  console.log(cyan('tsInterface serializer dealSchema success'), JSON.stringify(ret[1], null, 2))
   return ret[1]
 }
 

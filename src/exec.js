@@ -35,10 +35,10 @@ const argv = Yargs
   .help('h')
   .alias('h', 'help')
   .version(packageObj.version)
-  .argv
+  .argv;
 
-const { input, output, format } = argv
-const EXECUTE_PATH = process.cwd()
+const { input, output, format } = argv;
+const EXECUTE_PATH = process.cwd();
 const oPath = (output && output.startsWith('/')) ? output : Path.resolve(EXECUTE_PATH, output)
 const iPath = (input && input.startsWith('/')) ? input : Path.resolve(EXECUTE_PATH, input)
 

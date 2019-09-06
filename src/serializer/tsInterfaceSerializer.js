@@ -41,7 +41,7 @@ function enumTSegToType(tSeg, context) {
         return '';
     }
     return tSeg.nodes.reduce((prev, cur) => prev + '|' +
-        ((context.enums || {})[cur.rawName] ? cur.rawName : `${tNodeToType(cur, context)}`), '').substr(1);
+        ((context.enums || {})[cur.rawName] ? "TableContext." + cur.rawName : `${tNodeToType(cur, context)}`), '').substr(1);
 }
 
 function tSegToType(tSeg, context) {
@@ -66,7 +66,7 @@ function tdmToType(tdm, descs, context) {
 function mergeSdmArr(result, splitor, inNoStrictArray) {
     // console.log('result', result)
     if (inNoStrictArray) {
-        result = result.map(s => [s[0], s[1].replace('|undefined', '')]).filter(s => s[1] !== 'undefined')
+        result = result.map(s => [s[0], s[1].replace(/\|undefined$/, '')]).filter(s => s[1] !== 'undefined')
     }
 
     result = result.filter((item, index, array) => {
@@ -86,10 +86,10 @@ function sdmToType(sdm, descs, depth = 0, context = {}) {
         switch (dm.markType) {
             case MarkType.SDM:
                 result.push(sdmToType(dm, descs, depth + 1, context));
-                break
+                break;
             case MarkType.TDM:
                 result.push(tdmToType(dm, descs, context));
-                break
+                break;
         }
     });
 

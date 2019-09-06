@@ -31,7 +31,7 @@
   "homepage": "https://github.com/khgame/tables#readme",
   "dependencies": {
     "@babel/runtime": "^7.3.4",
-    "@khgame/schema": "^0.0.8",
+    "@khgame/schema": "^0.0.9",
     "@types/chalk": "^2.2.0",
     "@types/fs-extra": "^8.0.0",
     "@types/yargs": "^13.0.2",

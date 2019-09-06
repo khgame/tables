@@ -1,23 +1,19 @@
-import { parseSchema } from '@khgame/schema'
-import { tableDesc } from './desc'
-import { tableEnsureRows } from './erows'
+import {parseSchema} from '@khgame/schema'
+import {tableDesc} from './desc'
+import {tableEnsureRows} from './erows'
 
-export function tableSchema (table) {
-  if (!table.tableMark || !table.markLine || !table.descLine) {
-    table = tableEnsureRows(table)
-    table = tableDesc(table)
-  }
+export function tableSchema(table, context) {
+    if (!table.tableMark || !table.markLine || !table.descLine) {
+        table = tableEnsureRows(table);
+        table = tableDesc(table)
+    }
 
-  const { markCols, markLine } = table
+    const {markCols, markLine} = table;
 
-  const markList = markCols.map(colName => markLine[colName])
+    const markList = markCols.map(colName => markLine[colName]);
 
-  // console.log(
-  //   '\n=======markList=======\n', JSON.stringify(markList)
-  // )
-  const schema = parseSchema(markList)
-  // table.markList = markList
-  table.schema = schema
-  table.markList = markList
-  return table
+    table.schema = parseSchema(markList, context);
+    console.log("table.schema", table.schema);
+    table.markList = markList;
+    return table
 }

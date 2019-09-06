@@ -1,9 +1,9 @@
 const {
-  serialize,
-  jsonSerializer,
-  tsSerializer,
-  tsInterfaceSerializer
-} = require('..')
+    serialize,
+    jsonSerializer,
+    tsSerializer,
+    tsInterfaceSerializer
+} = require('..');
 
 // serialize(`${__dirname}/example.xlsx`, __dirname,
 //   {
@@ -18,9 +18,16 @@ serialize(`${__dirname}/hero_advance.xlsx`, __dirname,
         'example.json': jsonSerializer,
         'example.ts': tsSerializer,
         'exampleInterface.ts': tsInterfaceSerializer
+    }, {
+        enums: {
+            HERO_TYPE: {
+                ONE: 1,
+                TWO: 2,
+                THREE: 'three'
+            }
+        }
     }
-)
-
+);
 
 // Serializer.serialize(`${__dirname}/global_config.xlsx`, __dirname,
 //   {

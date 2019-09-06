@@ -1,25 +1,30 @@
-import { tableRows } from './rows'
+import {tableRows} from './rows'
 
-export function tableEnsureRows (table) {
-  if (!table.rows) {
-    table = tableRows(table)
-  }
-  const { rows, cols, getValue } = table
+/**
+ * remove emply rows
+ * @param table
+ * @return {*}
+ */
+export function tableEnsureRows(table) {
+    if (!table.rows) {
+        table = tableRows(table)
+    }
+    const {rows, cols, getValue} = table;
 
-  let erows = []
-  for (let rowInd in rows) {
-    if (!rows.hasOwnProperty(rowInd)) {
-      continue
+    let erows = [];
+    for (let rowInd in rows) {
+        if (!rows.hasOwnProperty(rowInd)) {
+            continue
+        }
+        let row = rows[rowInd];
+        for (let i in cols) {
+            let col = cols[i];
+            let value = getValue(table, row, col);
+            if (!value) continue;
+            erows.push(row);
+            break
+        }
     }
-    let row = rows[rowInd]
-    for (let i in cols) {
-      let col = cols[i]
-      let value = getValue(table, row, col)
-      if (!value) continue
-      erows.push(row)
-      break
-    }
-  }
-  table.erows = erows
-  return table
+    table.erows = erows;
+    return table;
 }

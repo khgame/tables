@@ -16,7 +16,7 @@ export interface ${interfaceName} ${dealSchema(data.schema, data.descLine, data.
 
 const data = ${JSON.stringify(data.convert, null, 2)}
 
-export const ${interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2)}: { [tid: string] : ${interfaceName} } = data.result ;
+export const ${interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2)}: { [tid: string] : ${interfaceName} } = data.result as any ;
 `
     },
     contextDealer: dealContext

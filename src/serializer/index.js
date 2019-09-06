@@ -1,9 +1,8 @@
 import {readAndTranslate} from '../utils/read'
 import * as Path from 'path'
 import * as fs from 'fs-extra'
-import {tsSerializer} from "./tsSerializer";
 
-const {FileWalker} = require('kht');
+import {FileWalker} from "kht"
 
 /**
  * serialize files with selected serializers
@@ -20,7 +19,7 @@ export function serialize(pathIn, dirOut, serializers, context) {
     }, context);
 
     for (let outName in serializers) {
-        let fileContent = serializers[outName].file(ret, Path.parse(pathIn).name, 'import * from "./context"', context);
+        let fileContent = serializers[outName].file(ret, Path.parse(pathIn).name, 'import * as TableContext from "./context";', context);
         fs.outputFileSync(Path.resolve(dirOut, outName), fileContent)
     }
 }

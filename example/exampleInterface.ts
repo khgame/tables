@@ -1,5 +1,5 @@
 /** this file is auto generated */
-import * from "./context"
+import * as TableContext from "./context"
         
 export interface IHeroAdvance {
   system: number;
@@ -9,5 +9,5 @@ export interface IHeroAdvance {
   agi: number;
   int: number;
   attr: Array<number>;
-  type: HERO_TYPE|"temp";
+  type: TableContext.HERO_TYPE|"temp";
 }

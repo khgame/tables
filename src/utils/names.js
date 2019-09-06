@@ -6,7 +6,7 @@ export function culturelize (s) {
   return ret
 }
 
-export function makeCamelName (fileName) {
+export function makeCamelName(fileName) {
   return fileName.split(/[\s._-]/).reduce((p, c) => p + culturelize(c), '')
 }
 

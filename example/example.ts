@@ -1,5 +1,5 @@
 /** this file is auto generated */
-
+import * from "./context"
         
 export interface IHeroAdvance {
   system: number;

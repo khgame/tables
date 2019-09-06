@@ -141,6 +141,22 @@ export function dealSchema(schema, descLine, markCols, context) {
     return ret[1]
 }
 
+export function dealContext(context) {
+    if (!context.enums) {
+        return '';
+    }
+    let str = '';
+    for (const enumName in context.enums) {
+        str += `export enum ${enumName} {\n`;
+        for (const keyName in context.enums[enumName]) {
+            const v = context.enums[enumName][keyName];
+            str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`) + ',\n';
+        }
+        str += '}\n'
+    }
+    return str;
+}
+
 export const tsInterfaceSerializer = {
     plugins: [tableSchema, tableConvert],
     file: (data, fileName, imports, context) => {
@@ -149,6 +165,7 @@ export const tsInterfaceSerializer = {
 ${imports}
         
 export interface ${makeInterfaceName(fileName)} ${dealSchema(data.schema, data.descLine, data.markCols, context)}
-`
-    }
+`;
+    },
+    contextDealer: dealContext
 }

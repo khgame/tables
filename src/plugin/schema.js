@@ -13,7 +13,7 @@ export function tableSchema(table, context) {
     const markList = markCols.map(colName => markLine[colName]);
 
     table.schema = parseSchema(markList, context);
-    console.log("table.schema", table.schema);
+    // console.log("table.schema", table.schema);
     table.markList = markList;
     return table
 }

@@ -3,6 +3,7 @@ import * as Path from 'path'
 import * as fs from 'fs-extra'
 
 import {FileWalker} from "kht"
+import {IFileObj} from "kht/src/fileWalker";
 
 /**
  * serialize files with selected serializers
@@ -26,9 +27,28 @@ export function serialize(pathIn, dirOut, serializers, context) {
 
 export function loadContext(dirIn) {
     const context = {};
-    FileWalker.forEachSync(dirIn, fileObj => {
-            context[Path.basename(fileObj.path).replace(/\.context\.json$/, '')] = fs.readJsonSync(fileObj.path);
-        }, false, file => file.match(/.*\.context\.json/) && !file.startsWith('~')
+    FileWalker.forEachSync(dirIn, (fileObj) => {
+            const fileName = fileObj.parsed.base.replace(/^context\./i, '').replace(/\.json$/i, '');
+            const metas = fileName.split('.');
+            if (metas.length < 0 || !metas[0]) {
+                console.error(`load file ${fileName} failed: format error`);
+                return;
+            }
+
+            const blobName = metas[0];
+            if (context[blobName]) {
+                const appendBlob = fs.readJsonSync(fileObj.path);
+                for (const key in appendBlob) {
+                    if (context[blobName][key]) {
+                        console.error(`load context ${key} of blob ${blobName} failed: blobs with same name is already exist`);
+                    }
+                    context[blobName][key] = appendBlob[key];
+                }
+            } else {
+                context[blobName] = fs.readJsonSync(fileObj.path);
+            }
+
+        }, false, file => file.match(/^context\..*\.json/i) && !file.startsWith('~')
     );
     console.log('context loaded:', dirIn, context);
     return context;

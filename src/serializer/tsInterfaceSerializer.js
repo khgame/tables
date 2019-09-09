@@ -74,14 +74,14 @@ function mergeSdmArr(result, splitor, inNoStrictArray) {
             // console.log('deepEqual', item, v, deepEqual(item[1], v[1]))
             return deepEqual(item[1], v[1])
         })
-    })
+    });
     let ret = result.reduce((prev, cur) => prev + splitor + cur[1], '').substr(splitor.length)
     // console.log('ret', ret)
     return ret
 }
 
 function sdmToType(sdm, descs, depth = 0, context = {}) {
-    let result = []
+    let result = [];
     sdm.marks.forEach(dm => {
         switch (dm.markType) {
             case MarkType.SDM:
@@ -142,18 +142,29 @@ export function dealSchema(schema, descLine, markCols, context) {
 }
 
 export function dealContext(context) {
-    if (!context.enums) {
-        return '';
+    let enumExportsNames = [];
+    if (context.meta && context.meta.exports && context.meta.exports.enum) {
+        enumExportsNames = context.meta.exports.enum;
     }
+
     let str = '';
-    for (const enumName in context.enums) {
-        str += `export enum ${enumName} {\n`;
-        for (const keyName in context.enums[enumName]) {
-            const v = context.enums[enumName][keyName];
-            str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`) + ',\n';
+    for (const i in enumExportsNames) {
+        const contextKeyName = enumExportsNames[i];
+        const contextBlob = context[contextKeyName];
+        if (!contextBlob) {
+            throw new Error(`export enum failed: check if ${contextKeyName} are existed in your context`);
         }
-        str += '}\n'
+        for (const enumName in contextBlob) {
+            str += `/** these codes are auto generated :context.${contextKeyName}.${enumName} */
+            export enum ${enumName} {\n`;
+            for (const keyName in context.enums[enumName]) {
+                const v = context.enums[enumName][keyName];
+                str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`) + ',\n';
+            }
+            str += '}\n\n'
+        }
     }
+
     return str;
 }
 

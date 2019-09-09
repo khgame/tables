@@ -3,7 +3,6 @@ import * as Path from 'path'
 import * as fs from 'fs-extra'
 
 import {FileWalker} from "kht"
-import {IFileObj} from "kht/src/fileWalker";
 
 /**
  * serialize files with selected serializers
@@ -50,7 +49,7 @@ export function loadContext(dirIn) {
 
         }, false, file => file.match(/^context\..*\.json/i) && !file.startsWith('~')
     );
-    console.log('context loaded:', dirIn, context);
+    console.log('context loaded:', dirIn, Object.keys(context));
     return context;
 }
 

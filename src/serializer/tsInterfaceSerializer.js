@@ -155,11 +155,18 @@ export function dealContext(context) {
             throw new Error(`export enum failed: check if ${contextKeyName} are existed in your context`);
         }
         for (const enumName in contextBlob) {
-            str += `/** these codes are auto generated :context.${contextKeyName}.${enumName} */
-            export enum ${enumName} {\n`;
-            for (const keyName in context.enums[enumName]) {
-                const v = context.enums[enumName][keyName];
-                str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`) + ',\n';
+            str += `/** These codes are auto generated :context.${contextKeyName}.${enumName} */
+export enum ${enumName} {\n`;
+            for (const keyName in contextBlob[enumName]) {
+                let v = contextBlob[enumName][keyName];
+
+                let annotate;
+                if (_.isArray(v) && v.length >= 2) {
+                    annotate = v[1];
+                    v = v[0];
+                }
+                str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`);
+                str += annotate ? `, // ${annotate.trim()}\n` : ',\n';
             }
             str += '}\n\n'
         }

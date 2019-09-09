@@ -162,7 +162,7 @@ export enum ${enumName} {\n`;
 
                 if (_.isArray(v)) {
                     if (v.length >= 2) {
-                        str += `/** ${v[1].replace(/\n/g, "; ")} */`;
+                        str += `    /** ${v[1].replace(/\n/g, "; ")} */\n`;
                     }
                     v = v[0];
                 }

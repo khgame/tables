@@ -160,13 +160,14 @@ export enum ${enumName} {\n`;
             for (const keyName in contextBlob[enumName]) {
                 let v = contextBlob[enumName][keyName];
 
-                let annotate;
-                if (_.isArray(v) && v.length >= 2) {
-                    annotate = v[1];
+                if (_.isArray(v)) {
+                    if (v.length >= 2) {
+                        str += `/** ${v[1].replace(/\n/g, "; ")} */`;
+                    }
                     v = v[0];
                 }
-                str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`);
-                str += annotate ? `, // ${annotate.trim()}\n` : ',\n';
+                str += '    ' + keyName + ' = ' + (typeof v === "number" ? v : `"${v}"`) + ',\n';
+
             }
             str += '}\n\n'
         }

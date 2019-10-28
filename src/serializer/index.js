@@ -59,7 +59,7 @@ export function serializeContext(dirOut, serializers, context) {
         []
     );
 
-    let strs = "";
+    let strs = "export const TABLE_CONTEXT_VERSION = 0; \n";
     for (const i in contextDealers) {
         const contextDealer = contextDealers[i];
         strs += contextDealer(context) + "\n";

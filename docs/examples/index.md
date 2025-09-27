@@ -6,3 +6,4 @@
 - [掉落与关卡奖励（drop-table）](drop-table.md)
 - [商店与经济（shop）](shop.md)
 - [多语言（localization）](localization.md)
+- [最小 RPG 项目（game_01_minirpg）](minirpg.md) — 多段 `@` 组合 ID + 全局配置示例

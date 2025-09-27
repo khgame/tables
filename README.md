@@ -59,6 +59,8 @@ let table = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`)
 tables -i ./example -o ./example/out -f json --silent
 ```
 
+如果需要参考一个较完整的项目结构，可直接使用 `example/game_01_minirpg/` 下的多表样例（包含英雄 / 技能 / 物品 / 关卡等 Excel），可通过 `npm run ex:minirpg`（或 `node example/game_01_minirpg/serialize.js`）生成 JSON 与 TS 产物；该示例演示了 8 位 ID 的分类方案以及跨表引用。
+
 ### Data Structure
 
 默认的 table 结构

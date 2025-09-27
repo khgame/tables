@@ -1,0 +1,56 @@
+{
+  "HeroClass": {
+    "Knight": "knight",
+    "Mage": "mage",
+    "Rogue": "rogue",
+    "Assassin": "assassin"
+  },
+  "HeroElement": {
+    "Frost": "Frost",
+    "Arcane": "Arcane",
+    "Shadow": "Shadow",
+    "Lunar": "Lunar"
+  },
+  "HeroRole": {
+    "Vanguard": "Vanguard",
+    "Burst": "Burst",
+    "Assassin": "Assassin",
+    "Skirmisher": "Skirmisher"
+  },
+  "StageEnvironment": {
+    "Tundra": "Tundra",
+    "Volcano": "Volcano",
+    "Marsh": "Marsh",
+    "NightCity": "NightCity"
+  },
+  "StageSubtype": {
+    "Main": "Main",
+    "Elite": "Elite"
+  },
+  "SkillTarget": {
+    "Enemy": "Enemy",
+    "AllyTeam": "AllyTeam",
+    "Self": "Self",
+    "EnemyAll": "EnemyAll",
+    "Boss": "Boss"
+  },
+  "RewardCurrency": {
+    "Gold": "gold",
+    "Guild": "guild",
+    "Honor": "honor"
+  },
+  "ItemSlot": {
+    "Weapon": "weapon",
+    "Armor": "armor",
+    "Consumable": "consumable",
+    "Trinket": "trinket",
+    "Accessory": "accessory"
+  },
+  "GlobalValueType": {
+    "String": "String",
+    "Bool": "Bool",
+    "UInt": "UInt",
+    "Currency": "Currency",
+    "StageId": "StageId"
+  }
+}

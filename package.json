@@ -11,6 +11,7 @@
     "prepublishOnly": "npm run build",
     "ex:convert": "npm run build && node ./example/ex.convert.js",
     "ex:serialize": "npm run build && node ./example/ex.serialize.js",
+    "ex:minirpg": "npm run build && node ./example/game_01_minirpg/serialize.js",
     "local-install": "rimraf /usr/local/lib/node_modules/@khgame/tables && npm i . -g",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "types": "tsc -p tsconfig.types.json",

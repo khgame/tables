@@ -59,7 +59,7 @@ let table = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`)
 tables -i ./example -o ./example/out -f json --silent
 ```
 
-如果需要参考一个较完整的项目结构，可直接使用 `example/game_01_minirpg/` 下的多表样例（包含英雄 / 技能 / 物品 / 关卡等 Excel），可通过 `npm run ex:minirpg`（或 `node example/game_01_minirpg/serialize.js`）生成 JSON 与 TS 产物；该示例演示了 8 位 ID 的分类方案以及跨表引用。
+如果需要参考一个较完整的项目结构，可直接使用 `example/game_01_minirpg/` 下的多表样例（英雄 / 技能 / 物品 / 敌人 / 关卡 / 全局配置），可通过 `npm run ex:minirpg`（或 `node example/game_01_minirpg/serialize.js`）生成 JSON、TS 产物以及一个基于 React + Tailwind 的静态网页（`out/index.html`）；该示例演示了 8 位 ID 分类、跨表引用以及前端即时消费（含简化回合制战斗）。
 
 ### Data Structure
 

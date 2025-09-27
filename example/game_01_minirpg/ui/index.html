@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini RPG Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Unbounded"', 'sans-serif'],
+              body: ['"Inter"', 'system-ui']
+            },
+            colors: {
+              midnight: '#091426',
+              aurora: '#7de2d1',
+              ember: '#f97316'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-midnight text-slate-100 overflow-hidden" style="font-family: 'Inter', system-ui; background-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-attachment: fixed;">
+    <div class="min-h-screen backdrop-blur-2xl" style="background: linear-gradient(185deg, rgba(6,12,24,0.85) 0%, rgba(8,16,28,0.9) 45%, rgba(12,21,36,0.95) 100%);">
+      <div class="max-w-6xl mx-auto py-8 px-6 lg:px-10 flex flex-col h-screen">
+        <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
+          <div>
+            <p class="uppercase tracking-[0.35em] text-xs text-aurora/80 font-medium">@khgame/tables showcase</p>
+            <h1 class="font-display text-3xl lg:text-4xl text-white drop-shadow">Mini RPG 数据驱动演示</h1>
+            <p class="text-slate-300 text-sm mt-2 max-w-2xl">
+              右侧读取 Excel → tables 导出的 JSON，左侧剧情日志实时反馈英雄、关卡与战斗的推进。
+            </p>
+          </div>
+          <div class="flex items-center gap-3 rounded-3xl bg-white/6 px-5 py-4 shadow-2xl shadow-black/40">
+            <img src="https://raw.githubusercontent.com/executablebooks/sphinx-book-theme/master/docs/_static/sbt-book.svg" alt="glyph" class="h-10 w-10 opacity-80" />
+            <div class="text-sm text-slate-200">
+              <p class="font-semibold text-white">配置即剧情</p>
+              <p class="text-slate-400">Excel → tables → JSON → Browser</p>
+            </div>
+          </div>
+        </header>
+
+        <div id="app" class="flex-1 overflow-hidden"></div>
+      </div>
+    </div>
+
+    <script>
+      window.TABLES_DATA = {
+        heroes: __HEROES_JSON__,
+        skills: __SKILLS_JSON__,
+        items: __ITEMS_JSON__,
+        enemies: __ENEMIES_JSON__,
+        stages: __STAGES_JSON__,
+        globalConfig: __GLOBAL_JSON__
+      };
+    </script>
+
+    <script type="text/babel">
+      const { useMemo, useState, useEffect } = React;
+      const data = window.TABLES_DATA;
+
+      const heroFallback = 'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=1400&q=80';
+      const enemyFallback = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+      const stageFallback = 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=1400&q=80';
+      const runeTexture = 'linear-gradient(135deg, rgba(125,226,209,0.12) 0%, rgba(79,70,229,0.18) 100%)';
+
+      function useLookup(result) {
+        return useMemo(() => {
+          const map = new Map();
+          if (!result) return map;
+          Object.keys(result).forEach(key => map.set(Number(key), result[key]));
+          return map;
+        }, [result]);
+      }
+
+      function HeroSummary({ hero, skill, item }) {
+        if (!hero) {
+          return (
+            <section className="rounded-3xl bg-white/5 p-6 text-sm text-slate-200 shadow-2xl shadow-black/30 backdrop-blur">
+              请选择一名英雄以查看概要。
+            </section>
+          );
+        }
+        const portrait = hero.portrait || heroFallback;
+        return (
+          <section className="relative overflow-hidden rounded-3xl shadow-2xl shadow-black/40 backdrop-blur">
+            <div className="absolute inset-0 opacity-40" style={{ backgroundImage: `url(${portrait})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(8,14,28,0.85) 0%, rgba(19,26,44,0.92) 65%, rgba(58,25,81,0.85) 100%)' }}></div>
+            <div className="relative z-10 p-6 lg:p-8 space-y-5">
+              <div className="flex items-center gap-4">
+                <img src={portrait} alt={hero.name} className="w-16 h-16 md:w-20 md:h-20 rounded-3xl object-cover shadow-lg shadow-black/40 border border-white/10" />
+                <div>
+                  <p className="uppercase text-xs tracking-[0.35em] text-aurora/70">Selected Hero</p>
+                  <h2 className="font-display text-2xl text-white drop-shadow">{hero.name}</h2>
+                  <p className="text-xs text-slate-300 mt-1">{hero.class} · {hero.element} · {hero.role}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge icon="spark" label={`稀有度 ${'★'.repeat(Math.min(hero.rarity, 5))}`} />
+                <Badge icon="shield" label={`HP ${hero.baseHp}`} />
+                <Badge icon="sword" label={`ATK ${hero.baseAtk}`} />
+                <Badge icon="armor" label={`DEF ${hero.baseDef}`} />
+              </div>
+              <div className="space-y-3 text-sm text-slate-100">
+                <InfoRow title="主技能" value={skill ? `${skill.name}（${skill.target}）` : '未知技能'} />
+                <InfoRow title="标志装" value={item ? `${item.name}（${item.effect}）` : '未知装备'} />
+                <InfoRow title="解锁关卡" value={`Stage ${hero.unlockStage}`} />
+              </div>
+              <p className="rounded-3xl bg-white/5 px-4 py-3 text-xs leading-5 text-slate-200 shadow-inner shadow-black/40">
+                {hero.story}
+              </p>
+            </div>
+          </section>
+        );
+      }
+
+      function InfoRow({ title, value }) {
+        return (
+          <div className="flex items-center gap-3">
+            <span className="text-aurora text-xs uppercase tracking-[0.3em]">{title}</span>
+            <span className="text-slate-100 text-sm">{value}</span>
+          </div>
+        );
+      }
+
+      function Badge({ icon, label }) {
+        const iconSvg = {
+          spark: <path d="M12 2c.3 0 .58.16.73.43l1.65 2.98 3.35.57c.3.05.55.26.65.55a.87.87 0 0 1-.21.92l-2.46 2.32.6 3.3c.05.3-.07.6-.31.78a.88.88 0 0 1-.9.08L12 12.98l-3.08 1.95a.87.87 0 0 1-.9-.08.84.84 0 0 1-.31-.78l.6-3.3-2.46-2.32a.87.87 0 0 1-.21-.92.86.86 0 0 1 .65-.55l3.35-.57 1.65-2.98A.84.84 0 0 1 12 2Z" fill="currentColor"/>,
+          shield: <path d="M12 3.25 5.25 6v5.87c0 2.92 2.28 5.85 6.07 7.9a.85.85 0 0 0 .76 0c3.79-2.05 6.07-4.98 6.07-7.9V6L12 3.25Z" fill="currentColor"/>,
+          sword: <path d="M14.7 3.3a1 1 0 0 0-1.4 0L6 10.59V13l-1.7 1.7a1 1 0 0 0 1.4 1.4L7.4 14.7H9.8l7.3-7.3a1 1 0 0 0 0-1.4l-2.4-2.4Z" fill="currentColor"/>,
+          armor: <path d="M4.5 5.5 12 2l7.5 3.5V11c0 4.1-2.85 7.85-7.5 9.5-4.65-1.65-7.5-5.4-7.5-9.5V5.5Z" fill="currentColor"/>
+        }[icon];
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-aurora/20 px-3 py-1 text-aurora shadow-sm shadow-black/30">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">{iconSvg}</svg>
+            <span>{label}</span>
+          </span>
+        );
+      }
+
+      function StageControls({ stages, stageIds, clearedSet, currentIndex, onNext, onLog, onBattle, enemy, pendingBattle }) {
+        const stage = stages[currentIndex];
+        if (!stage) return null;
+        const backdrop = stage.backdrop || stageFallback;
+        const stageStyle = {
+          backgroundImage: `linear-gradient(135deg, rgba(12,20,34,0.92), rgba(12,22,38,0.96)), url(${backdrop})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        };
+        return (
+          <section className="relative rounded-3xl shadow-xl shadow-black/40 backdrop-blur overflow-hidden">
+            <div className="absolute inset-0 opacity-70" style={stageStyle}></div>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(11,18,32,0.9) 0%, rgba(9,15,28,0.92) 100%)' }}></div>
+            <div className="relative z-10 px-5 py-5 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-lg text-aurora">当前关卡</h2>
+                  <p className="text-sm text-slate-100 mt-1">{stage.name}</p>
+                  <p className="text-xs text-slate-300 mt-1">环境：{stage.environment} · 推荐战力 {stage.requiredPower}</p>
+                  <p className="text-xs text-slate-400 mt-1">敌方：{enemy ? `${enemy.name} · ${enemy.element}` : '未知'}</p>
+                  {stage.prerequisiteStage && !clearedSet.has(stage.prerequisiteStage) && (
+                    <p className="text-xs text-amber-300 mt-1">前置关卡：{stage.prerequisiteStage}</p>
+                  )}
+                </div>
+                <div className="flex flex-col items-center gap-2 text-xs font-semibold">
+                  {enemy && (
+                    <img src={enemy.portrait || enemyFallback} alt={enemy.name} className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-black/50 border border-white/10" />
+                  )}
+                  <button className={`rounded-full bg-aurora/80 hover:bg-aurora text-slate-900 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => onLog(`【关卡情报】${stage.narrative}`)} disabled={pendingBattle}>查看剧情</button>
+                  <button className={`rounded-full bg-ember/90 hover:bg-ember text-slate-950 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={onNext} disabled={pendingBattle}>推进关卡</button>
+                  <button className={`rounded-full bg-white/80 hover:bg-white text-slate-900 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={onBattle} disabled={pendingBattle}>开始战斗</button>
+                </div>
+              </div>
+              <div className="flex gap-2 text-[11px] text-slate-200 overflow-x-auto">
+                {stages.map((item, idx) => {
+                  const isActive = idx === currentIndex;
+                  const locked = item.prerequisiteStage && !clearedSet.has(item.prerequisiteStage);
+                  return (
+                    <span
+                      key={item.sequence}
+                      className={`rounded-full px-3 py-1 flex items-center gap-1 ${isActive ? 'bg-aurora/35 text-aurora shadow-[0_0_18px_rgba(125,226,209,0.45)]' : 'bg-white/15'} ${locked ? 'opacity-50' : ''}`}
+                    >
+                      {idx + 1}. {item.name}
+                      {locked && <span className="text-[10px] text-amber-200">锁定</span>}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      function HeroList({ heroes, selectedId, onSelect }) {
+        return (
+          <section className="rounded-3xl bg-white/5 px-4 py-4 shadow-xl shadow-black/40 backdrop-blur">
+            <h2 className="font-display text-lg text-aurora mb-2">英雄列表</h2>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {heroes.map(hero => {
+                const isActive = selectedId === hero.sequence;
+                return (
+                  <button
+                    key={hero.sequence}
+                    onClick={() => onSelect(hero)}
+                    className={`w-full rounded-2xl px-4 py-3 text-left transition flex items-center gap-3 ${isActive ? 'bg-aurora/20 text-aurora shadow-[0_0_25px_rgba(125,226,209,0.35)]' : 'bg-white/10 hover:bg-aurora/15'}`}
+                  >
+                    <img src={hero.portrait || heroFallback} alt={hero.name} className="w-10 h-10 rounded-2xl object-cover border border-white/10" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{hero.name}</p>
+                      <p className="text-xs text-slate-300 mt-1">{hero.class} · {hero.element}</p>
+                    </div>
+                    <span className="text-xs text-slate-400">Lv.{hero.maxLevel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      }
+
+      function GlobalPanel({ config, onLog }) {
+        const entries = useMemo(() => {
+          if (!config) return [];
+          return Object.values(config.result || {});
+        }, [config]);
+        if (!entries.length) return null;
+        return (
+          <section className="rounded-3xl bg-white/5 px-5 py-5 shadow-xl shadow-black/40 space-y-2 backdrop-blur text-xs max-h-48 overflow-y-auto">
+            <h2 className="font-display text-lg text-aurora mb-2">全局配置</h2>
+            {entries.map(entry => (
+              <button
+                key={entry.key}
+                className="w-full rounded-2xl bg-white/10 px-3 py-2 text-left hover:bg-aurora/15 hover:text-aurora transition"
+                onClick={() => onLog(`【配置】${entry.key} = ${JSON.stringify(entry.value)}（${entry.description}）`)}
+              >
+                <p className="text-sm font-medium text-slate-100">{entry.key}</p>
+                <p className="text-slate-400 mt-1">{entry.description}</p>
+              </button>
+            ))}
+          </section>
+        );
+      }
+
+      function LogView({ entries, onReset }) {
+        return (
+          <section className="relative overflow-hidden rounded-3xl bg-white/5 shadow-2xl shadow-black/50 backdrop-blur flex flex-col h-full">
+            <div className="absolute inset-0" style={{ background: runeTexture }}></div>
+            <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(125,226,209,0.4), transparent 65%)' }}></div>
+            <div className="relative z-10 p-6 lg:p-8 flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="uppercase text-xs tracking-[0.4em] text-aurora/70">Story Log</p>
+                  <h2 className="font-display text-2xl text-white">剧情日志</h2>
+                </div>
+                <button className="text-xs text-slate-200 hover:text-aurora transition" onClick={onReset}>清空</button>
+              </div>
+              <div id="log-scroll" className="flex-1 overflow-y-auto rounded-3xl bg-white/6 px-4 py-4 text-sm space-y-3 shadow-inner shadow-black/40">
+                {entries.length === 0 && (
+                  <p className="text-slate-300">日志空空如也，选择英雄、推进关卡或点击战斗吧。</p>
+                )}
+                {entries.map((item, idx) => (
+                  <p key={idx} className="leading-6">
+                    <span className="text-aurora/70">[{item.when}]</span>
+                    <span className="ml-2 text-slate-100">{renderMessage(item.message)}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      function App() {
+        const heroes = useMemo(() => {
+          const dataset = data.heroes;
+          if (!dataset) return [];
+          return dataset.tids.map(id => dataset.result[id]);
+        }, []);
+
+        const stages = useMemo(() => {
+          const dataset = data.stages;
+          if (!dataset) return [];
+          return dataset.tids.map(id => dataset.result[id]);
+        }, []);
+
+        const stageIds = useMemo(() => (data.stages ? data.stages.tids.map(id => Number(id)) : []), []);
+
+        const skills = useLookup(data.skills?.result);
+        const items = useLookup(data.items?.result);
+        const enemies = useLookup(data.enemies?.result);
+
+        const [selectedHero, setSelectedHero] = useState(() => heroes[0] || null);
+        const [stageIndex, setStageIndex] = useState(0);
+        const [log, setLog] = useState([]);
+        const [booted, setBooted] = useState(false);
+        const [pendingBattle, setPendingBattle] = useState(false);
+        const [clearedStages, setClearedStages] = useState([]);
+
+        const clearedSet = useMemo(() => new Set(clearedStages), [clearedStages]);
+
+        const currentStage = stages[stageIndex] || null;
+        const currentStageId = stageIds[stageIndex];
+        const heroSkill = selectedHero ? skills.get(selectedHero.primarySkill) : null;
+        const heroItem = selectedHero ? items.get(selectedHero.signatureItem) : null;
+        const bossEnemy = currentStage ? enemies.get(currentStage.bossEnemy) : null;
+
+        function pushLog(message) {
+          const when = new Date().toLocaleTimeString();
+          setLog(prev => [...prev.slice(-99), { when, message }]);
+          requestAnimationFrame(() => {
+            const el = document.getElementById('log-scroll');
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+        }
+
+        function handleSelectHero(hero) {
+          setSelectedHero(hero);
+          const skill = skills.get(hero.primarySkill);
+          const item = items.get(hero.signatureItem);
+          pushLog(`选择英雄「${hero.name}」，主技能：${skill ? skill.name : '未知'}，装备：${item ? item.name : '未知'}`);
+          pushLog(hero.story);
+        }
+
+        function advanceStage() {
+          if (!stages.length) return;
+          if (pendingBattle) {
+            pushLog('战斗进行中，无法切换关卡。');
+            return;
+          }
+          const nextIndex = (stageIndex + 1) % stages.length;
+          const nextStage = stages[nextIndex];
+          const prereq = nextStage?.prerequisiteStage;
+          if (prereq && !clearedSet.has(prereq)) {
+            pushLog(`【关卡锁定】需先完成 Stage ${prereq} 才能前往「${nextStage.name}」。`);
+            return;
+          }
+          setStageIndex(nextIndex);
+          pushLog(`已切换至关卡「${nextStage.name}」。`);
+        }
+
+        function simulateBattle(hero, enemy) {
+          if (!hero || !enemy || pendingBattle) {
+            if (!hero || !enemy) pushLog('战斗数据不足，无法开始。');
+            return;
+          }
+          setPendingBattle(true);
+
+          const messages = [];
+          messages.push(`战斗开始：${hero.name} VS ${enemy.name}`);
+
+          let heroHp = hero.baseHp;
+          let enemyHp = enemy.hp;
+          let turn = 1;
+
+          while (heroHp > 0 && enemyHp > 0) {
+            const heroDamage = Math.max(1, Math.round(hero.baseAtk - enemy.defense * 0.32));
+            enemyHp -= heroDamage;
+            messages.push(`第 ${turn} 回合：${hero.name} 造成 ${heroDamage} 点伤害（敌剩 ${Math.max(enemyHp, 0)}）。`);
+            if (enemyHp <= 0) break;
+
+            const enemyDamage = Math.max(1, Math.round(enemy.attack - hero.baseDef * 0.22));
+            heroHp -= enemyDamage;
+            messages.push(`${enemy.name} 反击造成 ${enemyDamage} 点伤害（我方剩 ${Math.max(heroHp, 0)}）。`);
+            turn++;
+            if (turn > 50) break; // 保底，避免极端配置
+          }
+
+          let outcome;
+          if (heroHp <= 0 && enemyHp <= 0) outcome = '双方同归于尽，战斗平局。';
+          else if (heroHp <= 0) outcome = `${hero.name} 战败，${enemy.name} 获胜。`;
+          else if (enemyHp <= 0) outcome = `${hero.name} 战胜 ${enemy.name}，获得胜利！`;
+          else outcome = '战斗时间结束，双方暂时休整。';
+
+          messages.push(outcome);
+
+          if (enemyHp <= 0) {
+            const rewards = [currentStage?.rewardItem1, currentStage?.rewardItem2, currentStage?.rewardItem3]
+              .filter(Boolean)
+              .map(id => items.get(id)?.name || id);
+            const rewardText = rewards.length ? rewards.join('、') : '无';
+            messages.push(`战利品：${rewardText}，经验 +${enemy.rewardExp}`);
+            if (currentStageId && !clearedSet.has(currentStageId)) {
+              setClearedStages(prev => prev.includes(currentStageId) ? prev : [...prev, currentStageId]);
+              messages.push('关卡标记为已通关，可解锁后续关卡。');
+            }
+          }
+
+          messages.forEach((msg, idx) => {
+            setTimeout(() => {
+              pushLog(msg);
+              if (idx === messages.length - 1) setPendingBattle(false);
+            }, idx * 420);
+          });
+        }
+
+        function resetLog() {
+          setLog([]);
+        }
+
+        useEffect(() => {
+          if (!booted && selectedHero) {
+            handleSelectHero(selectedHero);
+            setBooted(true);
+          }
+        }, [booted, selectedHero]);
+
+        return (
+          <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] h-full">
+            <LogView entries={log} onReset={resetLog} />
+            <div className="space-y-4 overflow-hidden">
+              <HeroSummary hero={selectedHero} skill={heroSkill} item={heroItem} />
+              <StageControls
+                stages={stages}
+                stageIds={stageIds}
+                clearedSet={clearedSet}
+                currentIndex={stageIndex}
+                onNext={advanceStage}
+                onLog={pushLog}
+                onBattle={() => simulateBattle(selectedHero, bossEnemy)}
+                enemy={bossEnemy}
+                pendingBattle={pendingBattle}
+              />
+              <GlobalPanel config={data.globalConfig} onLog={pushLog} />
+              <HeroList heroes={heroes} selectedId={selectedHero?.sequence} onSelect={handleSelectHero} />
+            </div>
+          </div>
+        );
+      }
+
+      function renderMessage(message) {
+        const parts = String(message).split(/(\d+)/g);
+        return parts.map((part, idx) => {
+          if (/^\d+$/.test(part)) {
+            return <span key={idx} className="text-aurora font-semibold">{part}</span>;
+          }
+          return <React.Fragment key={idx}>{part}</React.Fragment>;
+        });
+      }
+
+      ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+    </script>
+  </body>
+</html>

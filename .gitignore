@@ -7,6 +7,20 @@ yarn.lock
 # build
 lib/
 
+# generated demo artifacts
+out-json/
+out-json-ts/
+out-ts/
+out-ts-ts/
+out-ts-ts2/
+example/out/
+example/context.ts
+example/example.json
+example/example.ts
+example/exampleInterface.ts
+example/global_config.json
+example/global_config.ts
+
 # Logs
 logs
 *.log

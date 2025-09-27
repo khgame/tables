@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Click Cookies Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Luckiest Guy"', 'cursive'],
+              body: ['"Inter"', 'system-ui']
+            },
+            colors: {
+              cookie: '#f2a365',
+              chocolate: '#5c3d27',
+              cream: '#fdf5e6',
+              sugar: '#ffe8d6',
+              caramel: '#d18952'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      @keyframes float-up {
+        from {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+        to {
+          transform: translate(-50%, calc(var(--float-distance, 120px) * -1));
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="h-screen overflow-hidden min-h-screen bg-gradient-to-br from-sugar via-cream to-sugar text-chocolate" style="font-family: 'Inter', system-ui;">
+    <div class="min-h-screen bg-[url('https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-fixed bg-center">
+      <div class="min-h-screen backdrop-blur-xl backdrop-brightness-110">
+        <div class="max-w-6xl mx-auto py-10 px-6 lg:px-10 flex flex-col h-screen overflow-hidden">
+          <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <p class="uppercase tracking-[0.35em] text-xs text-chocolate/70 font-semibold">@khgame/tables showcase</p>
+              <h1 class="font-display text-4xl text-cookie drop-shadow">Click Cookies</h1>
+              <p class="text-chocolate/80 text-sm mt-2 max-w-2xl">点击中央大饼干、购买建筑与升级、重置声望兑换神器——所有数据来自 Excel → tables → JSON。</p>
+            </div>
+            <div class="rounded-3xl bg-white/70 px-4 py-3 shadow-lg shadow-chocolate/30 text-sm text-chocolate flex items-center gap-3">
+              <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36a.png" alt="cookie" class="w-10 h-10" />
+              <div>
+                <p class="font-semibold">配置即玩法</p>
+                <p class="text-xs">Excel sheets → tables → React</p>
+              </div>
+            </div>
+          </header>
+
+          <div id="app" class="flex-1 overflow-hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.TABLES_DATA = {
+        producers: __PRODUCERS_JSON__,
+        upgrades: __UPGRADES_JSON__,
+        achievements: __ACHIEVEMENTS_JSON__,
+        artifacts: __ARTIFACTS_JSON__,
+        globalConfig: __GLOBAL_JSON__
+      };
+    </script>
+
+    <script type="text/babel">
+      const { useMemo, useState, useEffect } = React;
+      const data = window.TABLES_DATA || {};
+      const runeTexture = 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(242,163,101,0.12) 100%)';
+      const STORAGE_KEY = 'click-cookies-demo-v1';
+
+      const TABS = [
+        { id: 'producers', label: '建筑' },
+        { id: 'upgrades', label: '升级' },
+        { id: 'artifacts', label: '神器' },
+        { id: 'achievements', label: '成就' }
+      ];
+
+      const formatNumber = value => {
+        if (value >= 1e12) return (value / 1e12).toFixed(2) + 'T';
+        if (value >= 1e9) return (value / 1e9).toFixed(2) + 'B';
+        if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M';
+        if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+        return value.toFixed(0);
+      };
+
+      const highlightNumbers = message => (
+        String(message).split(/(\d+(?:\.\d+)?)/g).map((part, idx) => (
+          /^\d/.test(part)
+            ? <span key={idx} className="text-cookie font-semibold">{part}</span>
+            : <React.Fragment key={idx}>{part}</React.Fragment>
+        ))
+      );
+
+      const SparkleNumber = ({ value, unit }) => (
+        <span className="font-semibold text-cookie">
+          {formatNumber(value)}{unit ? <span className="text-xs text-chocolate/70 ml-1">{unit}</span> : null}
+        </span>
+      );
+
+      const StatCard = ({ label, value }) => (
+        <div className="rounded-3xl bg-white/70 px-5 py-3 shadow flex flex-col">
+          <p className="text-xs text-chocolate/70">{label}</p>
+          <p className="text-xl font-display text-cookie drop-shadow">{value}</p>
+        </div>
+      );
+
+      const PanelTabs = ({ active, onChange }) => (
+        <div className="flex gap-2 rounded-3xl bg-white/70 p-2 shadow-inner shadow-chocolate/20 text-sm">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              className={`flex-1 rounded-full px-3 py-2 font-semibold transition ${active === tab.id ? 'bg-cookie text-chocolate shadow-lg shadow-cookie/40' : 'text-chocolate/70 hover:bg-cookie/15'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      );
+
+      const ListItem = ({ title, subtitle, caption, icon, state }) => {
+        const base = 'w-full rounded-2xl px-3 py-2 flex gap-3 items-center border transition shadow-sm';
+        const palette = {
+          locked: 'bg-white/30 text-chocolate/40 border-transparent cursor-not-allowed',
+          affordable: 'bg-white/95 text-chocolate border-cookie/40 hover:bg-cookie/25',
+          limited: 'bg-white/70 text-chocolate/80 border-chocolate/10',
+          owned: 'bg-cookie/25 text-chocolate border-cookie/40'
+        };
+        return (
+          <div className={`${base} ${palette[state] || palette.limited}`}>
+            <img src={icon} alt={title} className="w-8 h-8 rounded-xl object-cover shadow" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="text-xs text-chocolate/60">{subtitle}</p>
+            </div>
+            <div className="text-right text-xs text-chocolate/70">
+              {caption}
+            </div>
+          </div>
+        );
+      };
+
+      const ScrollPanel = ({ children }) => (
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 pe-2">
+          {children}
+        </div>
+      );
+
+      const BigCookie = ({ onClick, disabled, floaters, floatSettings }) => (
+        <div className="relative flex flex-col items-center justify-center">
+          <button
+            className={`relative flex items-center justify-center w-48 h-48 md:w-60 md:h-60 rounded-full shadow-2xl shadow-chocolate/50 border-[6px] border-white/70 transition transform active:scale-95 ${disabled ? 'opacity-60 cursor-not-allowed' : 'bg-cookie/90 hover:brightness-105'}`}
+            onClick={onClick}
+            disabled={disabled}
+          >
+            <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36a.png" alt="Cookie" className="w-40 h-40 object-contain" />
+          </button>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            {floaters.map(f => (
+              <span
+                key={f.id}
+                className="absolute text-cookie font-semibold text-lg drop-shadow-lg"
+                style={{
+                  left: '50%',
+                  marginLeft: `${f.offsetX}px`,
+                  bottom: '25%',
+                  animation: `float-up ${floatSettings.duration}s ease-out forwards`,
+                  '--float-distance': `${floatSettings.distance}px`
+                }}
+              >
+                +{formatNumber(f.amount)}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+
+      const ProducersTab = (props) => {
+        const { producers, counts, cookies, totalCookies, upgradeMultipliers, artifactBoosts, globalMultiplier, onBuy } = props;
+        return (
+          <ScrollPanel>
+            {producers.map(prod => {
+              const owned = counts[prod.id] || 0;
+              const cost = Math.ceil(prod.baseCost * Math.pow(prod.costGrowth, owned));
+              const locked = totalCookies < (prod.unlockCookies || 0);
+              const upgradeMult = upgradeMultipliers.get(prod.id) || 1;
+              const artMult = artifactBoosts.get(prod.id) || 1;
+              const displayCps = prod.baseCps * upgradeMult * artMult * globalMultiplier;
+              const state = locked ? 'locked' : cookies >= cost ? 'affordable' : 'limited';
+              return (
+                <button key={prod.id} className="w-full text-left" onClick={() => onBuy(prod.id, cost)} disabled={locked || cookies < cost}>
+                  <ListItem
+                    title={`${prod.name} × ${owned}`}
+                    subtitle={prod.desc}
+                    caption={<span>CPS {displayCps.toFixed(2)} · Cost <SparkleNumber value={cost} /></span>}
+                    icon={prod.icon}
+                    state={state}
+                  />
+                </button>
+              );
+            })}
+          </ScrollPanel>
+        );
+      };
+
+      const UpgradesTab = ({ upgrades, owned, cookies, unlockSet, onBuy }) => (
+        <ScrollPanel>
+          {upgrades.map(upg => {
+            const purchased = owned.has(upg.id);
+            const locked = !unlockSet.has(upg.id);
+            const state = purchased ? 'owned' : locked ? 'locked' : cookies >= upg.cost ? 'affordable' : 'limited';
+            return (
+              <button key={upg.id} className="w-full text-left" onClick={() => onBuy(upg.id, upg.cost)} disabled={purchased || locked || cookies < upg.cost}>
+                <ListItem
+                  title={upg.name}
+                  subtitle={upg.desc}
+                  caption={<span>Cost <SparkleNumber value={upg.cost} /></span>}
+                  icon={upg.icon}
+                  state={state}
+                />
+              </button>
+            );
+          })}
+        </ScrollPanel>
+      );
+
+      const ArtifactsTab = ({ artifacts, ownedArtifacts, availablePoints, onBuy }) => (
+        <ScrollPanel>
+          {artifacts.map(art => {
+            const owned = ownedArtifacts.has(art.id);
+            const state = owned ? 'owned' : availablePoints >= art.costPoints ? 'affordable' : 'limited';
+            return (
+              <button key={art.id} className="w-full text-left" onClick={() => onBuy(art.id, art.costPoints)} disabled={owned || availablePoints < art.costPoints}>
+                <ListItem
+                  title={art.name}
+                  subtitle={art.desc}
+                  caption={<span>{art.costPoints} 点</span>}
+                  icon={art.icon}
+                  state={state}
+                />
+              </button>
+            );
+          })}
+        </ScrollPanel>
+      );
+
+      const AchievementsTab = ({ achievements, unlocked }) => (
+        <ScrollPanel>
+          {achievements.map(ach => (
+            <ListItem
+              key={ach.id}
+              title={ach.name}
+              subtitle={ach.flavor}
+              caption={unlocked.has(ach.id) ? '已达成' : '未达成'}
+              icon={ach.icon}
+              state={unlocked.has(ach.id) ? 'owned' : 'locked'}
+            />
+          ))}
+        </ScrollPanel>
+      );
+
+      const LogView = ({ entries, onReset }) => (
+        <section className="relative overflow-hidden rounded-3xl bg-white/80 backdrop-blur-md shadow-xl shadow-chocolate/30 flex flex-col h-full">
+          <div className="absolute inset-0 opacity-20" style={{ background: runeTexture }}></div>
+          <div className="relative z-10 p-4 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-xl text-cookie drop-shadow">日志</h2>
+              <button className="text-xs text-chocolate/70 hover:text-cookie" onClick={onReset}>清空</button>
+            </div>
+            <div id="log-view" className="flex-1 overflow-y-auto rounded-2xl bg-white/70 px-3 py-3 text-sm text-chocolate/80 space-y-2">
+              {entries.length === 0 && <p className="text-chocolate/50">开始点击或购买建筑来触发日志。</p>}
+              {entries.map((item, idx) => (
+                <p key={idx} className="leading-5">
+                  <span className="text-cookie/80">[{item.when}]</span>
+                  <span className="ml-2">{highlightNumbers(item.message)}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+
+      const useDictionary = dataset => useMemo(() => {
+        const map = new Map();
+        Object.entries(dataset || {}).forEach(([tid, node]) => map.set(Number(tid), node));
+        return map;
+      }, [dataset]);
+
+      const calculatePrestigePoints = (total, config) => {
+        const base = Math.max(1, Number(config.prestigeBase) || 1e10);
+        const exp = Number(config.prestigeExponent) || 0.6;
+        if (total <= 0) return 0;
+        return Math.floor(Math.pow(total / base, exp));
+      };
+
+      function App() {
+        const producersDataset = data.producers || { tids: [], result: {} };
+        const upgradesDataset = data.upgrades || { tids: [], result: {} };
+        const achievementsDataset = data.achievements || { tids: [], result: {} };
+        const artifactsDataset = data.artifacts || { tids: [], result: {} };
+        const globalDataset = data.globalConfig || { result: {} };
+
+        const producers = useMemo(() => producersDataset.tids.map(id => ({ id: Number(id), ...(producersDataset.result[id] || {}) })), [producersDataset]);
+        const upgrades = useMemo(() => upgradesDataset.tids.map(id => ({ id: Number(id), ...(upgradesDataset.result[id] || {}) })), [upgradesDataset]);
+        const achievements = useMemo(() => achievementsDataset.tids.map(id => ({ id: Number(id), ...(achievementsDataset.result[id] || {}) })), [achievementsDataset]);
+        const artifacts = useMemo(() => artifactsDataset.tids.map(id => ({ id: Number(id), ...(artifactsDataset.result[id] || {}) })), [artifactsDataset]);
+
+        const config = useMemo(() => {
+          const res = {};
+          Object.values(globalDataset.result || {}).forEach(entry => { res[entry.key] = entry.value; });
+          return res;
+        }, [globalDataset]);
+
+        const floatSettings = useMemo(() => ({
+          duration: Number(config.clickFloatDuration) || 0.9,
+          distance: Number(config.clickFloatDistance) || 140,
+          spread: Number(config.clickFloatSpread) || 80
+        }), [config]);
+
+        const loadInitialState = () => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return {
+              cookies: parsed.cookies || 0,
+              totalCookies: parsed.totalCookies || 0,
+              producerCounts: parsed.producerCounts || {},
+              ownedUpgrades: new Set(parsed.ownedUpgrades || []),
+              ownedArtifacts: new Set(parsed.ownedArtifacts || []),
+              artifactPoints: parsed.artifactPoints || 0,
+              prestigePoints: parsed.prestigePoints || 0,
+              unlockedAchievements: new Set(parsed.unlockedAchievements || []),
+              log: parsed.log || []
+            };
+          } catch (err) {
+            console.warn('[click-cookies] Failed to load save:', err);
+            return null;
+          }
+        };
+
+        const initial = loadInitialState();
+
+        const [cookies, setCookies] = useState(initial ? initial.cookies : 0);
+        const [totalCookies, setTotalCookies] = useState(initial ? initial.totalCookies : 0);
+        const [producerCounts, setProducerCounts] = useState(initial ? initial.producerCounts : {});
+        const [ownedUpgrades, setOwnedUpgrades] = useState(initial ? initial.ownedUpgrades : new Set());
+        const [ownedArtifacts, setOwnedArtifacts] = useState(initial ? initial.ownedArtifacts : new Set());
+        const [artifactPoints, setArtifactPoints] = useState(initial ? initial.artifactPoints : 0);
+        const [prestigePoints, setPrestigePoints] = useState(initial ? initial.prestigePoints : 0);
+        const [unlockedAchievements, setUnlockedAchievements] = useState(initial ? initial.unlockedAchievements : new Set());
+        const [log, setLog] = useState(initial ? initial.log : []);
+        const [floaters, setFloaters] = useState([]);
+        const [activeTab, setActiveTab] = useState('producers');
+
+        const upgradeLookup = useDictionary(upgradesDataset.result || {});
+        const artifactLookup = useDictionary(artifactsDataset.result || {});
+
+        useEffect(() => {
+          const payload = {
+            cookies,
+            totalCookies,
+            producerCounts,
+            ownedUpgrades: Array.from(ownedUpgrades),
+            ownedArtifacts: Array.from(ownedArtifacts),
+            artifactPoints,
+            prestigePoints,
+            unlockedAchievements: Array.from(unlockedAchievements),
+            log
+          };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+          } catch (err) {
+            console.warn('[click-cookies] Failed to save:', err);
+          }
+        }, [cookies, totalCookies, producerCounts, ownedUpgrades, ownedArtifacts, artifactPoints, prestigePoints, unlockedAchievements, log]);
+
+        const upgradeUnlockSet = useMemo(() => {
+          const set = new Set();
+          upgrades.forEach(upg => { if (totalCookies >= (upg.unlockCookies || 0)) set.add(upg.id); });
+          return set;
+        }, [upgrades, totalCookies]);
+
+        const artifactEffects = useMemo(() => {
+          const effects = { globalMultiplier: 1, clickMultiplier: 1, cpsAdditive: 0, producerBoost: new Map() };
+          artifacts.forEach(art => {
+            if (!ownedArtifacts.has(art.id)) return;
+            const type = art.effectType || '';
+            if (type === 'globalMultiplier') effects.globalMultiplier *= art.effectValue;
+            else if (type === 'clickMultiplier') effects.clickMultiplier *= art.effectValue;
+            else if (type === 'cpsAdditive') effects.cpsAdditive += art.effectValue;
+            else if (type.startsWith('producerBoost')) {
+              const [, tidStr] = type.split(':');
+              const target = Number(tidStr);
+              const current = effects.producerBoost.get(target) || 1;
+              effects.producerBoost.set(target, current * art.effectValue);
+            }
+          });
+          return effects;
+        }, [artifacts, ownedArtifacts]);
+
+        const producerMultipliers = useMemo(() => {
+          const map = new Map();
+          upgrades.forEach(upg => {
+            const current = map.get(upg.target) || 1;
+            if (ownedUpgrades.has(upg.id)) {
+              if (upg.upgradeType === 'multiplier') map.set(upg.target, current * upg.value);
+              else if (upg.upgradeType === 'additive') map.set(upg.target, current + upg.value);
+            } else if (!map.has(upg.target)) {
+              map.set(upg.target, current);
+            }
+          });
+          return map;
+        }, [upgrades, ownedUpgrades]);
+
+        const prestigeMultiplier = useMemo(() => Math.pow(Number(config.prestigeResetMultiplier) || 1.05, prestigePoints), [config, prestigePoints]);
+
+        const baseCpsTotal = useMemo(() => producers.reduce((sum, prod) => {
+          const count = producerCounts[prod.id] || 0;
+          if (!count) return sum;
+          const upgradeMult = producerMultipliers.get(prod.id) || 1;
+          const artMult = artifactEffects.producerBoost.get(prod.id) || 1;
+          return sum + prod.baseCps * count * upgradeMult * artMult;
+        }, 0), [producers, producerCounts, producerMultipliers, artifactEffects]);
+
+        const cps = useMemo(() => {
+          const base = baseCpsTotal * (artifactEffects.globalMultiplier || 1);
+          return (base + (artifactEffects.cpsAdditive || 0)) * prestigeMultiplier;
+        }, [baseCpsTotal, artifactEffects, prestigeMultiplier]);
+
+        useEffect(() => {
+          const interval = setInterval(() => {
+            if (cps <= 0) return;
+            const delta = cps * (Number(config.tickInterval) || 0.1);
+            setCookies(prev => prev + delta);
+            setTotalCookies(prev => prev + delta);
+          }, Math.max(50, (Number(config.tickInterval) || 0.1) * 1000));
+          return () => clearInterval(interval);
+        }, [cps, config.tickInterval]);
+
+        const baseClickAmount = useMemo(() => {
+          const base = Number(config.baseClick) || 1;
+          return base * (artifactEffects.clickMultiplier || 1) * prestigeMultiplier;
+        }, [config.baseClick, artifactEffects, prestigeMultiplier]);
+
+        const prestigePotential = useMemo(() => calculatePrestigePoints(totalCookies, config), [totalCookies, config]);
+        const prestigeGain = Math.max(0, prestigePotential - prestigePoints);
+
+        const pushLog = message => {
+          const when = new Date().toLocaleTimeString();
+          setLog(prev => [...prev.slice(-99), { when, message }]);
+          requestAnimationFrame(() => {
+            const el = document.getElementById('log-view');
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+        };
+
+        const spawnFloater = amount => {
+          const id = Date.now() + Math.random();
+          const offsetX = (Math.random() - 0.5) * floatSettings.spread;
+          setFloaters(prev => [...prev, { id, amount, offsetX }]);
+          setTimeout(() => setFloaters(prev => prev.filter(f => f.id !== id)), floatSettings.duration * 1000);
+        };
+
+        const handleClickCookie = () => {
+          const amount = baseClickAmount;
+          setCookies(prev => prev + amount);
+          setTotalCookies(prev => prev + amount);
+          spawnFloater(amount);
+        };
+
+        const buyProducer = (id, cost) => {
+          if (cookies < cost) return;
+          setCookies(prev => prev - cost);
+          setProducerCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+        };
+
+        const buyUpgrade = (id, cost) => {
+          if (ownedUpgrades.has(id) || cookies < cost) return;
+          setCookies(prev => prev - cost);
+          setOwnedUpgrades(prev => new Set(prev).add(id));
+          const info = upgradeLookup.get(id);
+          if (info) pushLog(`购买升级「${info.name}」`);
+        };
+
+        const buyArtifact = (id, cost) => {
+          if (ownedArtifacts.has(id) || artifactPoints < cost) return;
+          setArtifactPoints(prev => prev - cost);
+          setOwnedArtifacts(prev => new Set(prev).add(id));
+          const info = artifactLookup.get(id);
+          if (info) pushLog(`激活神器「${info.name}」`);
+        };
+
+        const handleAscend = () => {
+          if (prestigeGain <= 0) {
+            pushLog('暂未满足声望条件，继续烘焙吧。');
+            return;
+          }
+          setPrestigePoints(prestigePotential);
+          setArtifactPoints(prev => prev + prestigeGain);
+          setCookies(0);
+          setTotalCookies(0);
+          setProducerCounts({});
+          setOwnedUpgrades(new Set());
+          pushLog(`声望重置完成，获得 ${prestigeGain} 神器点。`);
+        };
+
+        useEffect(() => {
+          const newlyUnlocked = [];
+          achievements.forEach(ach => {
+            if (unlockedAchievements.has(ach.id)) return;
+            const type = ach.requirementType || '';
+            if (type === 'totalCookies') {
+              if (totalCookies >= ach.requirementValue) newlyUnlocked.push(ach);
+            } else if (type.startsWith('buildingCount')) {
+              const [, tidStr] = type.split(':');
+              const target = Number(tidStr);
+              if ((producerCounts[target] || 0) >= ach.requirementValue) newlyUnlocked.push(ach);
+            }
+          });
+          if (newlyUnlocked.length) {
+            setUnlockedAchievements(prev => {
+              const next = new Set(prev);
+              newlyUnlocked.forEach(ach => next.add(ach.id));
+              return next;
+            });
+            newlyUnlocked.forEach(ach => pushLog(`达成成就「${ach.name}」！`));
+          }
+        }, [totalCookies, achievements, unlockedAchievements, producerCounts]);
+
+        return (
+          <div className="flex flex-col h-full gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <StatCard label="当前饼干" value={formatNumber(cookies)} />
+              <StatCard label="总共烘焙" value={formatNumber(totalCookies)} />
+              <StatCard label="每秒产量" value={(cps || 0).toFixed(2)} />
+              <StatCard label="声望等级" value={prestigePoints} />
+              <StatCard label="神器点" value={artifactPoints} />
+              <button
+                className={`rounded-3xl px-5 py-3 text-sm font-semibold text-white shadow ${prestigeGain > 0 ? 'bg-cookie hover:brightness-105' : 'bg-chocolate/30 cursor-not-allowed'}`}
+                onClick={handleAscend}
+                disabled={prestigeGain <= 0}
+              >
+                声望重置 {prestigeGain > 0 ? `(+${prestigeGain} 点)` : ''}
+              </button>
+            </div>
+
+            <div className="flex-1 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] min-h-0">
+              <div className="rounded-3xl bg-white/80 backdrop-blur-md shadow-lg shadow-chocolate/30 p-5 flex flex-col gap-4">
+                <BigCookie onClick={handleClickCookie} disabled={false} floaters={floaters} floatSettings={floatSettings} />
+                <LogView entries={log} onReset={() => setLog([])} />
+              </div>
+
+              <div className="rounded-3xl bg-white/80 backdrop-blur-md shadow-lg shadow-chocolate/30 px-5 py-4 flex flex-col min-h-0">
+                <PanelTabs active={activeTab} onChange={setActiveTab} />
+                <div className="mt-3 flex-1 min-h-0">
+                  {activeTab === 'producers' && (
+                    <ProducersTab
+                      producers={producers}
+                      counts={producerCounts}
+                      cookies={cookies}
+                      totalCookies={totalCookies}
+                      onBuy={buyProducer}
+                      upgradeMultipliers={producerMultipliers}
+                      artifactBoosts={artifactEffects.producerBoost}
+                      globalMultiplier={(artifactEffects.globalMultiplier || 1) * prestigeMultiplier}
+                    />
+                  )}
+                  {activeTab === 'upgrades' && (
+                    <UpgradesTab
+                      upgrades={upgrades}
+                      owned={ownedUpgrades}
+                      cookies={cookies}
+                      unlockSet={upgradeUnlockSet}
+                      onBuy={buyUpgrade}
+                    />
+                  )}
+                  {activeTab === 'artifacts' && (
+                    <ArtifactsTab
+                      artifacts={artifacts}
+                      ownedArtifacts={ownedArtifacts}
+                      availablePoints={artifactPoints}
+                      onBuy={buyArtifact}
+                    />
+                  )}
+                  {activeTab === 'achievements' && (
+                    <AchievementsTab achievements={achievements} unlocked={unlockedAchievements} />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+    </script>
+  </body>
+</html>
+"""
+html_path.write_text(html)
+PY

@@ -61,6 +61,8 @@ tables -i ./example -o ./example/out -f json --silent
 
 如果需要参考一个较完整的项目结构，可直接使用 `example/game_01_minirpg/` 下的多表样例（英雄 / 技能 / 物品 / 敌人 / 关卡 / 全局配置），可通过 `npm run ex:minirpg`（或 `node example/game_01_minirpg/serialize.js`）生成 JSON、TS 产物以及一个基于 React + Tailwind 的静态网页（`out/index.html`）；该示例演示了 8 位 ID 分类、跨表引用以及前端即时消费（含简化回合制战斗）。
 
+如果想展示增量点击类玩法，可参考 `example/game_02_click_cookies/`，运行 `npm run ex:click-cookies`（或 `node example/game_02_click_cookies/serialize.js`）后，会生成建筑 / 升级 / 成就等产物和一个可直接打开的点击饼干 Demo 页面。
+
 ### Data Structure
 
 默认的 table 结构

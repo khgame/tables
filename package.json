@@ -1,6 +1,6 @@
 {
   "name": "@khgame/tables",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "excel => json/js/ts/ts-interface",
   "main": "./lib/index.js",
   "bin": {
@@ -12,6 +12,7 @@
     "ex:convert": "npm run build && node ./example/ex.convert.js",
     "ex:serialize": "npm run build && node ./example/ex.serialize.js",
     "ex:minirpg": "npm run build && node ./example/game_01_minirpg/serialize.js",
+    "ex:click-cookies": "npm run build && node ./example/game_02_click_cookies/serialize.js",
     "local-install": "rimraf /usr/local/lib/node_modules/@khgame/tables && npm i . -g",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "types": "tsc -p tsconfig.types.json",

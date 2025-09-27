@@ -1,0 +1,18 @@
+# GitHub Pages (Jekyll) config
+# See: https://pages.github.com/themes/
+# You can switch to another supported theme if you prefer.
+
+remote_theme: null
+# Use a built-in theme to avoid extra plugins
+# Options include: jekyll-theme-cayman, jekyll-theme-minimal, jekyll-theme-midnight, etc.
+# If the theme name below doesn't render as expected, remove it and let Pages use the default.
+theme: jekyll-theme-cayman
+
+# Site settings
+name: tables – Excel to json/js/ts
+title: tables
+description: 轻量级跨平台 Excel 导表工具（Excel => json/js/ts/ts-interface）
+markdown: kramdown
+
+# Keep docs simple: just Markdown pages under docs/
+# GitHub Pages will serve /docs as the site root when configured in repo settings.

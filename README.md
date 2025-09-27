@@ -54,6 +54,11 @@ const { readAndTranslate } = require('@khgame/tables')
 let table = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`)
 ```
 
+推荐将产物集中到示例目录下：
+```bash
+tables -i ./example -o ./example/out -f json --silent
+```
+
 ### Data Structure
 
 默认的 table 结构
@@ -377,6 +382,8 @@ table = {
 
 同时, 可以使用预制的Serializer来生成文件
 
+额外提供带协议头（实验性）的 JSON：`jsonx`（参见 docs/protocol.md）。
+
 #### jsonSerializer
 example:
 ```js
@@ -461,4 +468,3 @@ serialize(`${__dirname}/your_awsome_excel.xlsx`, __dirname,
 - [ ] INTERFACE EXPORTOR: C#
 
 ### Troubleshooting
-

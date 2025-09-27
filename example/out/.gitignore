@@ -1,0 +1,4 @@
+# Ignore all generated artifacts in this folder
+*
+!/.gitignore
+

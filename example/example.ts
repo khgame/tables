@@ -1,5 +1,5 @@
 /** this file is auto generated */
-import * as TableContext from "./context"
+import * as TableContext from "./context";
         
 export interface IHeroAdvance {
   system: number;
@@ -9,7 +9,7 @@ export interface IHeroAdvance {
   agi: number;
   int: number;
   attr: Array<number>;
-  type: TableContext.HERO_TYPE|"temp";
+  type: "HERO_TYPE"|"temp";
 }
 
 const data = {
@@ -20,56 +20,6 @@ const data = {
     "10600101"
   ],
   "result": {
-    "10400100": {
-      "system": 104,
-      "id": 1,
-      "star": 0,
-      "str": 1,
-      "agi": 1,
-      "int": 1,
-      "attr": [
-        0,
-        4,
-        0,
-        4,
-        0,
-        4
-      ],
-      "type": 1
-    },
-    "10400101": {
-      "system": 104,
-      "id": 1,
-      "star": 1,
-      "str": 2,
-      "agi": 2,
-      "int": 2,
-      "attr": [
-        2,
-        6,
-        2,
-        6,
-        2,
-        6
-      ],
-      "type": 2
-    },
-    "10500101": {
-      "system": 105,
-      "id": 1,
-      "star": 1,
-      "str": 2,
-      "agi": 2,
-      "int": 2,
-      "attr": [
-        2,
-        6,
-        2,
-        6,
-        2
-      ],
-      "type": "three"
-    },
     "10600101": {
       "system": 106,
       "id": 1,
@@ -86,7 +36,8 @@ const data = {
       ],
       "type": "temp"
     }
-  }
+  },
+  "collisions": []
 }
 
-export const heroAdvance: { [tid: string] : IHeroAdvance } = data.result ;
+export const heroAdvance: { [tid: string] : IHeroAdvance } = data.result as any ;

@@ -1,10 +1,12 @@
+const Path = require('path')
+const fs = require('fs-extra')
 const {
-    serialize,
-    jsonSerializer,
-    tsSerializer,
-    tsInterfaceSerializer,
-    loadContext,
-    serializeContext
+  serialize,
+  jsonSerializer,
+  tsSerializer,
+  tsInterfaceSerializer,
+  loadContext,
+  serializeContext
 } = require('..');
 
 // serialize(`${__dirname}/example.xlsx`, __dirname,
@@ -15,15 +17,16 @@ const {
 //   }
 // )
 const context = loadContext(__dirname);
+const outDir = Path.resolve(__dirname, 'out')
+fs.ensureDirSync(outDir)
 const serializers = {
-    'example.json': jsonSerializer,
-    'example.ts': tsSerializer,
-    'exampleInterface.ts': tsInterfaceSerializer
+  'example.json': jsonSerializer,
+  'example.ts': tsSerializer,
+  'exampleInterface.ts': tsInterfaceSerializer
 };
-serializeContext(__dirname, serializers, context);
-serialize(`${__dirname}/hero_advance.xlsx`, __dirname, serializers
-    , context
-);
+// generate context.ts and artifacts under example/out
+serializeContext(outDir, Object.values(serializers), context);
+serialize(`${__dirname}/hero_advance.xlsx`, outDir, serializers, context);
 
 // Serializer.serialize(`${__dirname}/global_config.xlsx`, __dirname,
 //   {

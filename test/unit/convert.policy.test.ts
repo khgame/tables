@@ -49,5 +49,27 @@ describe('convert TID collision policy', () => {
     const ret = tableConvert(table, { policy: { tidConflict: 'merge' } })
     expect(ret.convert!.result['id001']).toEqual({ v: 1 }) // merge({}, {v:0}, {v:1}) -> {v:1}
   })
-})
 
+  it('emits collision warnings when verbose mode enabled', () => {
+    const originalVerbose = process.env.TABLES_VERBOSE
+    process.env.TABLES_VERBOSE = '1'
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      tableConvert(makeCollisionTable(), { policy: { tidConflict: 'overwrite' } })
+      tableConvert(makeCollisionTable(), { policy: { tidConflict: 'ignore' } })
+      tableConvert(makeCollisionTable(), { policy: { tidConflict: 'merge' } })
+
+      expect(warnSpy).toHaveBeenCalledTimes(3)
+      expect(warnSpy.mock.calls[0][0]).toMatch(/overwrite/i)
+      expect(warnSpy.mock.calls[1][0]).toMatch(/ignore/i)
+      expect(warnSpy.mock.calls[2][0]).toMatch(/merge/i)
+    } finally {
+      warnSpy.mockRestore()
+      if (originalVerbose === undefined) {
+        delete process.env.TABLES_VERBOSE
+      } else {
+        process.env.TABLES_VERBOSE = originalVerbose
+      }
+    }
+  })
+})

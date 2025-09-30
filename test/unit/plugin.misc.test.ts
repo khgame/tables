@@ -50,6 +50,25 @@ describe('tablePlain', () => {
     const again = tablePlain(ret)
     expect((again.data as any)['1']).toEqual({ A: 1, B: 'x' })
   })
+
+  it('logs when already plain and verbose mode is enabled', () => {
+    const t = makeTable([{ A: 1 }], ['A'])
+    const originalVerbose = process.env.TABLES_VERBOSE
+    process.env.TABLES_VERBOSE = '1'
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const ret = tablePlain(t)
+      tablePlain(ret)
+      expect(warnSpy).toHaveBeenCalledWith('[tablePlain] Warning: already plain')
+    } finally {
+      warnSpy.mockRestore()
+      if (originalVerbose === undefined) {
+        delete process.env.TABLES_VERBOSE
+      } else {
+        process.env.TABLES_VERBOSE = originalVerbose
+      }
+    }
+  })
 })
 
 describe('tableExpand', () => {
@@ -62,6 +81,25 @@ describe('tableExpand', () => {
     // calling expand again should not break
     const again = tableExpand(ret)
     expect((again.data as any)['1']).toEqual([1, 'x'])
+  })
+
+  it('logs when already expanded and verbose mode is enabled', () => {
+    const t = makeTable([{ A: 1 }], ['A'])
+    const originalVerbose = process.env.TABLES_VERBOSE
+    process.env.TABLES_VERBOSE = '1'
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const ret = tableExpand(t)
+      tableExpand(ret)
+      expect(warnSpy).toHaveBeenCalledWith('[tableExpand] Warning: already expanded')
+    } finally {
+      warnSpy.mockRestore()
+      if (originalVerbose === undefined) {
+        delete process.env.TABLES_VERBOSE
+      } else {
+        process.env.TABLES_VERBOSE = originalVerbose
+      }
+    }
   })
 })
 

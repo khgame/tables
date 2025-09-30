@@ -84,4 +84,46 @@ describe('serializer core helpers', () => {
     expect(contextTs).toContain('TABLE_CONTEXT_VERSION')
     expect(contextTs).toContain('export const stub = 42;')
   })
+
+  it('serializeContext deduplicates shared context dealers', () => {
+    const ctxOut = Path.join(tmpDir, 'ctx-out-dedup')
+    fs.ensureDirSync(ctxOut)
+    const dealer = jest.fn(() => 'export const onlyOnce = true;')
+    const serializers: Serializer[] = [
+      { file: jest.fn(() => ''), contextDealer: dealer },
+      { file: jest.fn(() => ''), contextDealer: dealer }
+    ]
+
+    serializeContext(ctxOut, serializers, { flag: 1 })
+    expect(dealer).toHaveBeenCalledTimes(1)
+  })
+
+  it('loadContext reports malformed names, duplicate keys, and verbose summary', () => {
+    const originalVerbose = process.env.TABLES_VERBOSE
+    process.env.TABLES_VERBOSE = '1'
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const ctxDir = Path.join(tmpDir, 'ctx-verbose')
+      fs.ensureDirSync(ctxDir)
+      fs.writeJsonSync(Path.join(ctxDir, 'context..json'), { skip: true })
+      fs.writeJsonSync(Path.join(ctxDir, 'context.enums.json'), { Colors: { Red: 1 } })
+      fs.writeJsonSync(Path.join(ctxDir, 'context.enums.duplicate.json'), { Colors: { Blue: 2 } })
+
+      const context = loadContext(ctxDir)
+      expect(context.enums.Colors).toBeDefined()
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('format error'))
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('same name is already exist'))
+      expect(logSpy).toHaveBeenCalledWith('context loaded:', ctxDir, expect.arrayContaining(['enums']))
+    } finally {
+      errorSpy.mockRestore()
+      logSpy.mockRestore()
+      if (originalVerbose === undefined) {
+        delete process.env.TABLES_VERBOSE
+      } else {
+        process.env.TABLES_VERBOSE = originalVerbose
+      }
+    }
+  })
 })

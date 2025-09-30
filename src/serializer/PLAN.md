@@ -5,11 +5,12 @@
    - Add regression specs for context dealer edge cases (duplicate enums, empty blobs).
 
 2. **Schema Intermediate Model**
-   - Extract language-agnostic schema description from current `tsInterface` helpers.
-   - Define translation layer for TypeScript to ensure the refactor preserves behaviour.
+   - ✅ Extract language-agnostic schema description from current `tsInterface` helpers (`core/schemaModel.ts`).
+   - ✅ Define translation layer for TypeScript to ensure the refactor preserves behaviour (`formats/tsInterface.ts`).
 
 3. **New Language Emitters**
-   - Implement Go and C# serializers on top of the new intermediate model.
+   - ✅ Implement Go serializer on top of the new intermediate model (`formats/go.ts`).
+   - ☐ Implement C# serializer on top of the new intermediate model.
    - Provide sample outputs + golden tests mirroring current TS snapshots.
 
 4. **CLI Format Registration**

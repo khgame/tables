@@ -1,124 +1,142 @@
 import { makeInterfaceName } from '../../utils/names'
 import { tableSchema, tableConvert } from '../../plugin'
-import deepEqual from 'deep-equal'
-import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
 import chalk from 'chalk'
 import type { Serializer } from '../../types'
 import * as _ from 'lodash'
-
-function tNodeToType(node: any, context: any): string {
-  switch (node.tName) {
-    case SupportedTypes.String:
-      return 'string'
-    case SupportedTypes.Float:
-    case SupportedTypes.UFloat:
-    case SupportedTypes.Int:
-    case SupportedTypes.UInt:
-      return 'number'
-    case SupportedTypes.Boolean:
-      return 'boolean'
-    case SupportedTypes.Undefined:
-      return 'undefined'
-    case SupportedTypes.Any:
-      return 'any'
-    case SupportedTypes.Array:
-      return node.innerCount > 1 ? `Array<${tSegToType(node.tSeg, context) || 'any'}>` : `${tSegToType(node.tSeg, context) || 'any'}[]`
-    case SupportedTypes.Pair:
-      return `{key: string, val: ${tSegToType(node.tSeg, context) || 'any'}}`
-    case SupportedTypes.Enum:
-      return `${enumTSegToType(node.tSeg, context)}`
-    default:
-      return `"${node.rawName}"`
-  }
-}
-
-function enumTSegToType(tSeg: any, context: any): string {
-  if (tSeg.nodes.length <= 0) return ''
-  return tSeg.nodes.reduce((prev: string, cur: any) => prev + '|' + ((context.enums || {})[cur.rawName] ? 'TableContext.' + cur.rawName : `${tNodeToType(cur, context)}`), '').substr(1)
-}
-
-function tSegToType(tSeg: any, context: any): string {
-  if (tSeg.nodes.length <= 0) return ''
-  const types = tSeg.nodes.map((n: any) => tNodeToType(n, context))
-  if (types.length <= 0) {
-    throw new Error(`error: tdm ${JSON.stringify(tSeg)} are empty`)
-  }
-  return types.reduce((prev: string, cur: string) => prev + '|' + cur, '').substr(1)
-}
-
-function tdmToType(tdm: any, descs: any[], context: any): [string, string] {
-  const types: string[] = []
-  for (let i = 0; i < tdm.innerCount; i++) {
-    types.push(tNodeToType(tdm.inner(i), context))
-  }
-  return [descs[tdm.markInd], types.reduce((prev, cur) => prev + '|' + cur, '').substr(1)]
-}
-
-function mergeSdmArr(result: Array<[string, string]>, splitor: string, inNoStrictArray?: boolean): string {
-  if (inNoStrictArray) {
-    result = result.map(s => [s[0], s[1].replace(/\|undefined$/, '')]).filter(s => s[1] !== 'undefined') as any
-  }
-  result = result.filter((item, index, array) => index === array.findIndex(v => deepEqual(item[1], v[1])))
-  const ret = result.reduce((prev, cur) => prev + splitor + cur[1], '').substr(splitor.length)
-  return ret
-}
-
-function sdmToType(sdm: any, descs: any[], depth = 0, context: any = {}): [string, string] {
-  const result: Array<[string, string]> = []
-  sdm.marks.forEach((dm: any) => {
-    switch (dm.markType) {
-      case MarkType.SDM:
-        result.push(sdmToType(dm, descs, depth + 1, context))
-        break
-      case MarkType.TDM:
-        result.push(tdmToType(dm, descs, context))
-        break
-    }
-  })
-
-  let ret = ''
-  const space = '  '.repeat(depth + 1)
-  const spaceOut = '  '.repeat(depth)
-  switch (sdm.sdmType) {
-    case SDMType.Arr:
-      if (sdm.mds.findIndex((str: string) => str === '$strict') >= 0) {
-        ret = result.length <= 0
-          ? '[]'
-          : (result.length > 1
-            ? '[\n' + space + mergeSdmArr(result, ',\n' + space) + '\n' + spaceOut + ']'
-            : '[' + result[0][1] + ']')
-      } else {
-        ret = result.length <= 0
-          ? '[]'
-          : (result.length > 1 || result[0][1].length > 9
-            ? 'Array<' + mergeSdmArr(result, '|', true) + '>'
-            : result[0][1] + '[]')
-      }
-      if (sdm.mds.findIndex((str: string) => str === '$ghost') >= 0) {
-        ret += '|undefined'
-      }
-      break
-    case SDMType.Obj:
-      ret = result.length <= 0
-        ? '{}'
-        : '{' + (result.length > 1
-          ? result.reduce((prev, cur) => prev + '\n' + space + cur[0] + ': ' + cur[1] + ';', '') + '\n' + spaceOut + '}'
-          : result[0][0] + ': ' + result[0][1] + '}')
-      if (sdm.mds.findIndex((str: string) => str === '$ghost') >= 0) {
-        ret += '|undefined'
-      }
-      break
-  }
-  return [descs[sdm.markInd - 1], ret]
-}
+import {
+  buildSchemaModel,
+  isEmptyArray,
+  isUnion,
+  type ArrayType,
+  type LiteralType,
+  type ObjectField,
+  type ObjectType,
+  type PrimitiveType,
+  type SchemaModel,
+  type TupleType,
+  type TypeNode,
+  type UnionType,
+  type EnumReferenceType
+} from '../core/schemaModel'
 
 export function dealSchema(schema: any, descLine: any, markCols: any[], context: any): string {
-  const descs = markCols.map(c => (descLine as any)[c])
-  const ret = sdmToType(schema, descs, 0, context)
+  const model: SchemaModel = buildSchemaModel(schema, descLine, markCols, context)
+  const rendered = renderTypeNode(model, 0)
   if (process.env.TABLES_VERBOSE === '1') {
-    console.log(chalk.cyan('tsInterface serializer dealSchema success'), JSON.stringify(ret[1], null, 2))
+    console.log(chalk.cyan('tsInterface serializer dealSchema success'), JSON.stringify(rendered, null, 2))
   }
-  return ret[1]
+  return rendered
+}
+
+function renderTypeNode(node: TypeNode, depth: number): string {
+  switch (node.kind) {
+    case 'primitive':
+      return renderPrimitive(node)
+    case 'literal':
+      return renderLiteral(node)
+    case 'enum':
+      return renderEnum(node)
+    case 'object':
+      return renderObject(node, depth)
+    case 'array':
+      return renderArray(node, depth)
+    case 'tuple':
+      return renderTuple(node, depth)
+    case 'union':
+      return renderUnion(node, depth)
+    default:
+      return 'any'
+  }
+}
+
+function renderPrimitive(node: PrimitiveType): string {
+  return node.name
+}
+
+function renderLiteral(node: LiteralType): string {
+  if (typeof node.value === 'string') {
+    return `"${node.value}"`
+  }
+  return String(node.value)
+}
+
+function renderEnum(node: EnumReferenceType): string {
+  return node.ref
+}
+
+function renderObject(node: ObjectType, depth: number): string {
+  const fields = node.fields || []
+  if (fields.length === 0) {
+    return '{}'
+  }
+  if (node.style === 'inline') {
+    const inline = fields.map(field => `${field.name}: ${renderTypeNode(field.type, depth + 1)}`).join(', ')
+    return `{${inline}}`
+  }
+  if (fields.length === 1) {
+    const field = fields[0]
+    return `{${renderField(field, depth + 1, false)}}`
+  }
+  const indent = indentOf(depth + 1)
+  const closingIndent = indentOf(depth)
+  const lines = fields.map(field => `${indent}${renderField(field, depth + 1, true)}`)
+  return `{
+${lines.join('\n')}
+${closingIndent}}`
+}
+
+function renderField(field: ObjectField, depth: number, appendSemicolon: boolean): string {
+  const rendered = `${field.name}: ${renderTypeNode(field.type, depth)}`
+  return appendSemicolon ? `${rendered};` : rendered
+}
+
+function renderArray(node: ArrayType, depth: number): string {
+  if (isEmptyArray(node)) {
+    return '[]'
+  }
+  const element = node.element ?? ({ kind: 'primitive', name: 'any' } as PrimitiveType)
+  const renderedElement = renderTypeNode(element, depth + 1)
+  if (node.origin === 'tnode') {
+    if (node.representation === 'generic') {
+      return `Array<${renderedElement}>`
+    }
+    return `${renderedElement}[]`
+  }
+  const childCount = node.childCount ?? (isUnion(element) ? element.variants.length : 1)
+  return shouldUseGenericArrayNotation(element, renderedElement, childCount)
+    ? `Array<${renderedElement}>`
+    : `${renderedElement}[]`
+}
+
+function shouldUseGenericArrayNotation(element: TypeNode, rendered: string, childCount: number): boolean {
+  if (childCount > 1) return true
+  if (rendered.length > 9) return true
+  if (isUnion(element) && element.variants.length > 1) return true
+  return false
+}
+
+function renderTuple(node: TupleType, depth: number): string {
+  const elements = node.elements || []
+  if (elements.length === 0) {
+    return '[]'
+  }
+  if (elements.length === 1) {
+    return `[${renderTypeNode(elements[0], depth + 1)}]`
+  }
+  const indent = indentOf(depth + 1)
+  const closingIndent = indentOf(depth)
+  const rendered = elements.map(element => renderTypeNode(element, depth + 1))
+  return `[
+${indent}${rendered.join(',\n' + indent)}
+${closingIndent}]`
+}
+
+function renderUnion(node: UnionType, depth: number): string {
+  return node.variants.map(variant => renderTypeNode(variant, depth)).join('|')
+}
+
+function indentOf(depth: number): string {
+  return '  '.repeat(depth)
 }
 
 export function dealContext(context: any): string {

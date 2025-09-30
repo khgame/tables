@@ -25,13 +25,13 @@
       }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
-  <body class="min-h-screen bg-midnight text-slate-100 overflow-hidden" style="font-family: 'Inter', system-ui; background-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-attachment: fixed;">
+  <body class="min-h-screen bg-midnight text-slate-100 overflow-y-auto" style="font-family: 'Inter', system-ui; background-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-attachment: fixed;">
     <div class="min-h-screen backdrop-blur-2xl" style="background: linear-gradient(185deg, rgba(6,12,24,0.85) 0%, rgba(8,16,28,0.9) 45%, rgba(12,21,36,0.95) 100%);">
-      <div class="max-w-6xl mx-auto py-8 px-6 lg:px-10 flex flex-col h-screen">
+      <div class="max-w-7xl mx-auto py-8 px-6 lg:px-10 xl:px-14 flex flex-col min-h-screen">
         <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
           <div>
             <p class="uppercase tracking-[0.35em] text-xs text-aurora/80 font-medium">@khgame/tables showcase</p>
@@ -41,7 +41,7 @@
             </p>
           </div>
           <div class="flex items-center gap-3 rounded-3xl bg-white/6 px-5 py-4 shadow-2xl shadow-black/40">
-            <img src="https://raw.githubusercontent.com/executablebooks/sphinx-book-theme/master/docs/_static/sbt-book.svg" alt="glyph" class="h-10 w-10 opacity-80" />
+            <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d6.png" alt="glyph" class="h-10 w-10 opacity-90" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4da.png';" />
             <div class="text-sm text-slate-200">
               <p class="font-semibold text-white">配置即剧情</p>
               <p class="text-slate-400">Excel → tables → JSON → Browser</p>
@@ -49,7 +49,7 @@
           </div>
         </header>
 
-        <div id="app" class="flex-1 overflow-hidden"></div>
+        <div id="app" class="flex-1"></div>
       </div>
     </div>
 
@@ -59,6 +59,7 @@
         skills: __SKILLS_JSON__,
         items: __ITEMS_JSON__,
         enemies: __ENEMIES_JSON__,
+        relics: __RELICS_JSON__,
         stages: __STAGES_JSON__,
         globalConfig: __GLOBAL_JSON__
       };
@@ -72,6 +73,14 @@
       const enemyFallback = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
       const stageFallback = 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=1400&q=80';
       const runeTexture = 'linear-gradient(135deg, rgba(125,226,209,0.12) 0%, rgba(79,70,229,0.18) 100%)';
+      const relicEffectLabels = {
+        attackMultiplier: '攻击x',
+        defenseMultiplier: '防御x',
+        enemyDefenseReduction: '破甲',
+        expBonus: '经验+',
+        'environmentBonus:Tundra': '冰原增伤x',
+        'elementBonus:Lunar': '月属性x'
+      };
 
       function useLookup(result) {
         return useMemo(() => {
@@ -82,6 +91,124 @@
         }, [result]);
       }
 
+      function useFallbackImage(url, fallback) {
+        const [resolved, setResolved] = useState(url || fallback);
+        useEffect(() => {
+          if (!url) {
+            setResolved(fallback);
+            return;
+          }
+          let mounted = true;
+          const img = new Image();
+          img.onload = () => {
+            if (mounted) setResolved(url);
+          };
+          img.onerror = () => {
+            if (mounted) setResolved(fallback);
+          };
+          img.src = url;
+          return () => {
+            mounted = false;
+          };
+        }, [url, fallback]);
+        return resolved;
+      }
+
+      function getActiveRelics(relics, clearedSet) {
+        return relics.filter(relic => {
+          const unlock = relic.unlockStage;
+          if (!unlock) return true;
+          return clearedSet.has(Number(unlock));
+        });
+      }
+
+      function computeRelicEffects(relics, clearedSet, hero, stage) {
+        const activeRelics = getActiveRelics(relics, clearedSet);
+        let attackMultiplier = 1;
+        let defenseMultiplier = 1;
+        let enemyDefenseReduction = 0;
+        let expBonus = 0;
+
+        activeRelics.forEach(relic => {
+          const rawType = String(relic.effectType || '');
+          const [type, param] = rawType.split(':');
+          const value = Number(relic.effectValue) || 0;
+          switch (type) {
+            case 'attackMultiplier':
+              attackMultiplier *= value || 1;
+              break;
+            case 'defenseMultiplier':
+              defenseMultiplier *= value || 1;
+              break;
+            case 'enemyDefenseReduction':
+              enemyDefenseReduction = Math.max(enemyDefenseReduction, Math.min(Math.max(value, 0), 0.9));
+              break;
+            case 'expBonus':
+              expBonus += Math.max(0, value || 0);
+              break;
+            case 'elementBonus':
+              if (hero && hero.element === param) {
+                attackMultiplier *= value || 1;
+              }
+              break;
+            case 'environmentBonus':
+              if (stage && stage.environment === param) {
+                attackMultiplier *= value || 1;
+              }
+              break;
+            default:
+              break;
+          }
+        });
+
+        return {
+          attackMultiplier,
+          defenseMultiplier,
+          enemyDefenseReduction,
+          expBonus,
+          activeRelics
+        };
+      }
+
+      function buildRelicSummary(snapshot) {
+        const rows = [];
+        if (snapshot.attackMultiplier && Math.abs(snapshot.attackMultiplier - 1) > 0.01) {
+          rows.push(`攻击 ×${snapshot.attackMultiplier.toFixed(2)}`);
+        }
+        if (snapshot.defenseMultiplier && Math.abs(snapshot.defenseMultiplier - 1) > 0.01) {
+          rows.push(`防御 ×${snapshot.defenseMultiplier.toFixed(2)}`);
+        }
+        if (snapshot.enemyDefenseReduction > 0) {
+          rows.push(`破甲 ${Math.round(snapshot.enemyDefenseReduction * 100)}%`);
+        }
+      if (snapshot.expBonus > 0) {
+        rows.push(`经验 +${Math.round(snapshot.expBonus * 100)}%`);
+      }
+      return rows;
+      }
+
+      const statScale = {
+        hp: 1800,
+        atk: 160,
+        def: 180
+      };
+
+      function StatBar({ label, value, scaleKey, accentClass = 'bg-aurora/80' }) {
+        const max = statScale[scaleKey] || Math.max(value, 1);
+        const percent = Math.min(100, Math.round((value / max) * 100));
+        return (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-slate-300">
+              <span>{label}</span>
+              <span className="text-slate-100 font-medium">{value}</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-white/12 overflow-hidden">
+              <div className={`h-full rounded-full ${accentClass}`} style={{ width: `${percent}%` }}></div>
+            </div>
+          </div>
+        );
+      }
+
       function HeroSummary({ hero, skill, item }) {
         if (!hero) {
           return (
@@ -90,32 +217,39 @@
             </section>
           );
         }
-        const portrait = hero.portrait || heroFallback;
+        const resolvedPortrait = useFallbackImage(hero.portrait, heroFallback);
         return (
-          <section className="relative overflow-hidden rounded-3xl shadow-2xl shadow-black/40 backdrop-blur">
-            <div className="absolute inset-0 opacity-40" style={{ backgroundImage: `url(${portrait})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(8,14,28,0.85) 0%, rgba(19,26,44,0.92) 65%, rgba(58,25,81,0.85) 100%)' }}></div>
-            <div className="relative z-10 p-6 lg:p-8 space-y-5">
+          <section className="relative overflow-hidden rounded-3xl shadow-xl shadow-black/30 backdrop-blur">
+            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: `url(${resolvedPortrait})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(150deg, rgba(8,14,28,0.88) 0%, rgba(23,28,46,0.9) 55%, rgba(56,24,80,0.88) 100%)' }}></div>
+            <div className="relative z-10 px-5 py-4 lg:px-6 lg:py-5 space-y-3.5">
               <div className="flex items-center gap-4">
-                <img src={portrait} alt={hero.name} className="w-16 h-16 md:w-20 md:h-20 rounded-3xl object-cover shadow-lg shadow-black/40 border border-white/10" />
-                <div>
-                  <p className="uppercase text-xs tracking-[0.35em] text-aurora/70">Selected Hero</p>
-                  <h2 className="font-display text-2xl text-white drop-shadow">{hero.name}</h2>
-                  <p className="text-xs text-slate-300 mt-1">{hero.class} · {hero.element} · {hero.role}</p>
+                <img src={resolvedPortrait} alt={hero.name} className="w-16 h-16 md:w-18 md:h-18 rounded-3xl object-cover shadow-lg shadow-black/25 border border-white/10" />
+                <div className="space-y-1">
+                  <p className="uppercase text-[11px] tracking-[0.3em] text-aurora/70">Selected Hero</p>
+                  <h2 className="font-display text-xl md:text-2xl text-white drop-shadow-sm">{hero.name}</h2>
+                  <p className="text-[12px] text-slate-300">{hero.class} · {hero.element} · {hero.role}</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-[11px]">
                 <Badge icon="spark" label={`稀有度 ${'★'.repeat(Math.min(hero.rarity, 5))}`} />
                 <Badge icon="shield" label={`HP ${hero.baseHp}`} />
                 <Badge icon="sword" label={`ATK ${hero.baseAtk}`} />
                 <Badge icon="armor" label={`DEF ${hero.baseDef}`} />
               </div>
-              <div className="space-y-3 text-sm text-slate-100">
-                <InfoRow title="主技能" value={skill ? `${skill.name}（${skill.target}）` : '未知技能'} />
-                <InfoRow title="标志装" value={item ? `${item.name}（${item.effect}）` : '未知装备'} />
-                <InfoRow title="解锁关卡" value={`Stage ${hero.unlockStage}`} />
+              <div className="grid gap-3 md:grid-cols-[1.1fr_1fr] text-sm text-slate-100">
+                <div className="rounded-2xl bg-white/9 px-4 py-3 shadow-inner shadow-black/25 space-y-2.5">
+                  <StatBar label="生命" value={hero.baseHp} scaleKey="hp" accentClass="bg-aurora/80" />
+                  <StatBar label="攻击" value={hero.baseAtk} scaleKey="atk" accentClass="bg-emerald-300/80" />
+                  <StatBar label="防御" value={hero.baseDef} scaleKey="def" accentClass="bg-sky-300/80" />
+                </div>
+                <div className="space-y-2.5 text-[13px]">
+                  <InfoRow title="主技能" value={skill ? `${skill.name}（${skill.target}）` : '未知技能'} />
+                  <InfoRow title="标志装" value={item ? `${item.name}（${item.effect}）` : '未知装备'} />
+                  <InfoRow title="解锁关卡" value={`Stage ${hero.unlockStage}`} />
+                </div>
               </div>
-              <p className="rounded-3xl bg-white/5 px-4 py-3 text-xs leading-5 text-slate-200 shadow-inner shadow-black/40">
+              <p className="rounded-3xl bg-white/6 px-4 py-3 text-[12px] leading-5 text-slate-200 shadow-inner shadow-black/25">
                 {hero.story}
               </p>
             </div>
@@ -147,10 +281,10 @@
         );
       }
 
-      function StageControls({ stages, stageIds, clearedSet, currentIndex, onNext, onLog, onBattle, enemy, pendingBattle }) {
+      function StageControls({ stages, stageIds, clearedSet, currentIndex, onNext, onLog, onBattle, enemy, pendingBattle, activeRelics, effectSummary }) {
         const stage = stages[currentIndex];
         if (!stage) return null;
-        const backdrop = stage.backdrop || stageFallback;
+        const backdrop = useFallbackImage(stage.backdrop, stageFallback);
         const stageStyle = {
           backgroundImage: `linear-gradient(135deg, rgba(12,20,34,0.92), rgba(12,22,38,0.96)), url(${backdrop})`,
           backgroundSize: 'cover',
@@ -160,7 +294,7 @@
           <section className="relative rounded-3xl shadow-xl shadow-black/40 backdrop-blur overflow-hidden">
             <div className="absolute inset-0 opacity-70" style={stageStyle}></div>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(11,18,32,0.9) 0%, rgba(9,15,28,0.92) 100%)' }}></div>
-            <div className="relative z-10 px-5 py-5 space-y-4">
+            <div className="relative z-10 px-5 py-4 space-y-3.5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-display text-lg text-aurora">当前关卡</h2>
@@ -173,7 +307,15 @@
                 </div>
                 <div className="flex flex-col items-center gap-2 text-xs font-semibold">
                   {enemy && (
-                    <img src={enemy.portrait || enemyFallback} alt={enemy.name} className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-black/50 border border-white/10" />
+                    <img
+                      src={enemy.portrait || enemyFallback}
+                      alt={enemy.name}
+                      className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-black/50 border border-white/10"
+                      onError={event => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = enemyFallback;
+                      }}
+                    />
                   )}
                   <button className={`rounded-full bg-aurora/80 hover:bg-aurora text-slate-900 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => onLog(`【关卡情报】${stage.narrative}`)} disabled={pendingBattle}>查看剧情</button>
                   <button className={`rounded-full bg-ember/90 hover:bg-ember text-slate-950 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={onNext} disabled={pendingBattle}>推进关卡</button>
@@ -187,7 +329,7 @@
                   return (
                     <span
                       key={item.sequence}
-                      className={`rounded-full px-3 py-1 flex items-center gap-1 ${isActive ? 'bg-aurora/35 text-aurora shadow-[0_0_18px_rgba(125,226,209,0.45)]' : 'bg-white/15'} ${locked ? 'opacity-50' : ''}`}
+                      className={`rounded-full px-3 py-1 flex items-center gap-1 ${isActive ? 'bg-aurora/35 text-aurora shadow-[0_0_12px_rgba(125,226,209,0.35)]' : 'bg-white/12 text-slate-100'} ${locked ? 'opacity-50' : ''}`}
                     >
                       {idx + 1}. {item.name}
                       {locked && <span className="text-[10px] text-amber-200">锁定</span>}
@@ -195,6 +337,81 @@
                   );
                 })}
               </div>
+              {effectSummary && effectSummary.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-aurora/90">
+                  {effectSummary.map((row, idx) => (
+                    <span key={idx} className="rounded-full bg-white/15 px-3 py-1 shadow-sm shadow-black/30">{row}</span>
+                  ))}
+                </div>
+              )}
+              {activeRelics && activeRelics.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-200">
+                  {activeRelics.map(relic => {
+                    const rawType = String(relic.effectType || '');
+                    const label = relicEffectLabels[rawType] || rawType;
+                    const value = Number(relic.effectValue) || 0;
+                    let valueText = '';
+                    if (rawType.includes('attackMultiplier') || rawType.includes('defenseMultiplier') || rawType.includes('environmentBonus') || rawType.includes('elementBonus')) {
+                      valueText = `×${value.toFixed(2)}`;
+                    } else if (rawType === 'enemyDefenseReduction') {
+                      valueText = `-${Math.round(value * 100)}% DEF`;
+                    } else if (rawType === 'expBonus') {
+                      valueText = `+${Math.round(value * 100)}% EXP`;
+                    }
+                    return (
+                      <span key={relic.sequence} className="rounded-full bg-aurora/15 px-3 py-1 flex items-center gap-2 text-aurora shadow-sm shadow-black/40">
+                        <span className="font-semibold">{relic.name}</span>
+                        <span className="text-[10px] text-aurora/80">{label}{valueText && ` ${valueText}`}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
+
+      function RelicGallery({ relics, clearedSet }) {
+        if (!relics.length) return null;
+        const unlockedCount = relics.filter(relic => !relic.unlockStage || clearedSet.has(Number(relic.unlockStage))).length;
+        return (
+          <section className="rounded-3xl bg-white/5 px-5 py-4 shadow-xl shadow-black/40 backdrop-blur">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-lg text-aurora">遗物图鉴</h2>
+              <span className="text-xs text-slate-300">已解锁 {unlockedCount} / {relics.length}</span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {relics.map(relic => {
+                const requiredStage = relic.unlockStage ? Number(relic.unlockStage) : null;
+                const unlocked = !requiredStage || clearedSet.has(requiredStage);
+                return (
+                  <div
+                    key={relic.id || relic.sequence}
+                    className={`relative rounded-2xl border border-white/10 px-4 py-3 shadow-inner shadow-black/30 transition ${unlocked ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5 opacity-60'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={relic.icon}
+                        alt={relic.name}
+                        className="w-10 h-10 rounded-xl object-cover shadow shadow-black/30"
+                        onError={event => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f381.png';
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm text-slate-100 font-semibold">{relic.name}</p>
+                        <p className="text-[11px] text-aurora/80 uppercase tracking-[0.25em]">{relicEffectLabels[relic.effectType] || relic.effectType}</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-200 mt-2 leading-5">{relic.desc}</p>
+                    {requiredStage && !unlocked && (
+                      <p className="mt-2 text-[10px] text-amber-200">通关 Stage {requiredStage} 解锁</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
         );
@@ -213,7 +430,15 @@
                     onClick={() => onSelect(hero)}
                     className={`w-full rounded-2xl px-4 py-3 text-left transition flex items-center gap-3 ${isActive ? 'bg-aurora/20 text-aurora shadow-[0_0_25px_rgba(125,226,209,0.35)]' : 'bg-white/10 hover:bg-aurora/15'}`}
                   >
-                    <img src={hero.portrait || heroFallback} alt={hero.name} className="w-10 h-10 rounded-2xl object-cover border border-white/10" />
+                    <img
+                      src={hero.portrait || heroFallback}
+                      alt={hero.name}
+                      className="w-10 h-10 rounded-2xl object-cover border border-white/10"
+                      onError={event => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = heroFallback;
+                      }}
+                    />
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-white">{hero.name}</p>
                       <p className="text-xs text-slate-300 mt-1">{hero.class} · {hero.element}</p>
@@ -297,6 +522,11 @@
         const skills = useLookup(data.skills?.result);
         const items = useLookup(data.items?.result);
         const enemies = useLookup(data.enemies?.result);
+        const relics = useMemo(() => {
+          const dataset = data.relics;
+          if (!dataset) return [];
+          return dataset.tids.map(id => ({ id: Number(id), ...(dataset.result[id] || {}) }));
+        }, []);
 
         const [selectedHero, setSelectedHero] = useState(() => heroes[0] || null);
         const [stageIndex, setStageIndex] = useState(0);
@@ -305,13 +535,17 @@
         const [pendingBattle, setPendingBattle] = useState(false);
         const [clearedStages, setClearedStages] = useState([]);
 
-        const clearedSet = useMemo(() => new Set(clearedStages), [clearedStages]);
+        const clearedSet = useMemo(() => new Set(clearedStages.map(Number)), [clearedStages]);
 
         const currentStage = stages[stageIndex] || null;
         const currentStageId = stageIds[stageIndex];
         const heroSkill = selectedHero ? skills.get(selectedHero.primarySkill) : null;
         const heroItem = selectedHero ? items.get(selectedHero.signatureItem) : null;
         const bossEnemy = currentStage ? enemies.get(currentStage.bossEnemy) : null;
+        const relicSnapshot = useMemo(
+          () => computeRelicEffects(relics, clearedSet, selectedHero, currentStage),
+          [relics, clearedSet, selectedHero, currentStage]
+        );
 
         function pushLog(message) {
           const when = new Date().toLocaleTimeString();
@@ -357,17 +591,29 @@
           const messages = [];
           messages.push(`战斗开始：${hero.name} VS ${enemy.name}`);
 
+          const effects = computeRelicEffects(relics, clearedSet, hero, currentStage);
+          if (effects.activeRelics.length > 0) {
+            const buffSummary = buildRelicSummary(effects);
+            if (buffSummary.length > 0) {
+              messages.push(`增益生效：${buffSummary.join('、')}`);
+            }
+          }
+
           let heroHp = hero.baseHp;
           let enemyHp = enemy.hp;
           let turn = 1;
 
+          const heroAttack = hero.baseAtk * effects.attackMultiplier;
+          const heroDefense = hero.baseDef * effects.defenseMultiplier;
+          const enemyEffectiveDefense = enemy.defense * (1 - effects.enemyDefenseReduction);
+
           while (heroHp > 0 && enemyHp > 0) {
-            const heroDamage = Math.max(1, Math.round(hero.baseAtk - enemy.defense * 0.32));
+            const heroDamage = Math.max(1, Math.round(heroAttack - enemyEffectiveDefense * 0.32));
             enemyHp -= heroDamage;
             messages.push(`第 ${turn} 回合：${hero.name} 造成 ${heroDamage} 点伤害（敌剩 ${Math.max(enemyHp, 0)}）。`);
             if (enemyHp <= 0) break;
 
-            const enemyDamage = Math.max(1, Math.round(enemy.attack - hero.baseDef * 0.22));
+            const enemyDamage = Math.max(1, Math.round(enemy.attack - heroDefense * 0.22));
             heroHp -= enemyDamage;
             messages.push(`${enemy.name} 反击造成 ${enemyDamage} 点伤害（我方剩 ${Math.max(heroHp, 0)}）。`);
             turn++;
@@ -387,10 +633,15 @@
               .filter(Boolean)
               .map(id => items.get(id)?.name || id);
             const rewardText = rewards.length ? rewards.join('、') : '无';
-            messages.push(`战利品：${rewardText}，经验 +${enemy.rewardExp}`);
+            const expGain = Math.round(enemy.rewardExp * (1 + effects.expBonus));
+            messages.push(`战利品：${rewardText}，经验 +${expGain}`);
             if (currentStageId && !clearedSet.has(currentStageId)) {
               setClearedStages(prev => prev.includes(currentStageId) ? prev : [...prev, currentStageId]);
               messages.push('关卡标记为已通关，可解锁后续关卡。');
+              const newlyUnlockedRelics = relics.filter(relic => Number(relic.unlockStage) === currentStageId);
+              newlyUnlockedRelics.forEach(relic => {
+                messages.push(`解锁遗物「${relic.name}」：${relic.desc}`);
+              });
             }
           }
 
@@ -414,23 +665,32 @@
         }, [booted, selectedHero]);
 
         return (
-          <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] h-full">
+          <div className="grid gap-5 lg:grid-cols-[1.2fr_1.8fr] h-full">
             <LogView entries={log} onReset={resetLog} />
-            <div className="space-y-4 overflow-hidden">
-              <HeroSummary hero={selectedHero} skill={heroSkill} item={heroItem} />
-              <StageControls
-                stages={stages}
-                stageIds={stageIds}
-                clearedSet={clearedSet}
-                currentIndex={stageIndex}
-                onNext={advanceStage}
-                onLog={pushLog}
-                onBattle={() => simulateBattle(selectedHero, bossEnemy)}
-                enemy={bossEnemy}
-                pendingBattle={pendingBattle}
-              />
-              <GlobalPanel config={data.globalConfig} onLog={pushLog} />
-              <HeroList heroes={heroes} selectedId={selectedHero?.sequence} onSelect={handleSelectHero} />
+            <div className="space-y-3 overflow-hidden">
+              <div className="grid gap-3 xl:grid-cols-2">
+                <HeroSummary hero={selectedHero} skill={heroSkill} item={heroItem} />
+                <StageControls
+                  stages={stages}
+                  stageIds={stageIds}
+                  clearedSet={clearedSet}
+                  currentIndex={stageIndex}
+                  onNext={advanceStage}
+                  onLog={pushLog}
+                  onBattle={() => simulateBattle(selectedHero, bossEnemy)}
+                  enemy={bossEnemy}
+                  pendingBattle={pendingBattle}
+                  activeRelics={relicSnapshot.activeRelics}
+                  effectSummary={buildRelicSummary(relicSnapshot)}
+                />
+              </div>
+              <div className="grid gap-3 xl:grid-cols-[1.3fr_0.7fr]">
+                <RelicGallery relics={relics} clearedSet={clearedSet} />
+                <div className="space-y-3">
+                  <GlobalPanel config={data.globalConfig} onLog={pushLog} />
+                  <HeroList heroes={heroes} selectedId={selectedHero?.sequence} onSelect={handleSelectHero} />
+                </div>
+              </div>
             </div>
           </div>
         );

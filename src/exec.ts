@@ -4,12 +4,9 @@ import { FileWalker } from 'kht'
 import * as Path from 'path'
 import * as fs from 'fs-extra'
 import {
-  jsonSerializer,
-  jsSerializer,
-  tsSerializer,
-  tsInterfaceSerializer,
-  jsonxSerializer,
-  serialize
+  serialize,
+  getSerializerFormat,
+  listSerializerFormats
 } from './serializer'
 import { makeCamelName } from './utils/names'
 
@@ -19,7 +16,7 @@ const argv = (Yargs as any)
   .usage('Usage: tables [-i INPUT_DIR] [-o OUTPUT_DIR] [-f FORMAT]')
   .option('input', { alias: 'i', default: '.', describe: 'the input directory or fileName' })
   .option('output', { alias: 'o', default: '.', describe: 'the output directory' })
-  .option('format', { alias: 'f', describe: 'export format', choices: ['json', 'js', 'ts', 'ts-interface', 'jsonx'], default: 'json' })
+  .option('format', { alias: 'f', describe: 'export format', choices: listSerializerFormats(), default: 'json' })
   .option('silent', { alias: 's', type: 'boolean', default: false, describe: 'suppress logs' })
   .option('verbose', { alias: 'v', type: 'boolean', default: false, describe: 'verbose logs' })
   .option('fail-fast', { type: 'boolean', default: false, describe: 'stop on first fatal error (best-effort)' })
@@ -39,14 +36,10 @@ const EXECUTE_PATH = process.cwd()
 const oPath = (output && output.startsWith('/')) ? output : Path.resolve(EXECUTE_PATH, output)
 const iPath = (input && input.startsWith('/')) ? input : Path.resolve(EXECUTE_PATH, input)
 
-const formats: any = {
-  json: { suffix: 'json', serializer: jsonSerializer },
-  js: { suffix: 'js', serializer: jsSerializer },
-  ts: { suffix: 'ts', serializer: tsSerializer },
-  'ts-interface': { suffix: 'ts', serializer: tsInterfaceSerializer },
-  jsonx: { suffix: 'json', serializer: jsonxSerializer }
+const formatObj = getSerializerFormat(format)
+if (!formatObj) {
+  throw new Error(`Unsupported format '${format}'. Available formats: ${listSerializerFormats().join(', ')}`)
 }
-const formatObj = formats[format]
 
 function pathAvailable(path: string): boolean {
   return !path.match(/\..*\.swp/) && !path.startsWith('~') && /.(xls|xlsx)$/i.test(path)

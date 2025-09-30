@@ -1,3 +1,9 @@
+<script setup>
+import { withBase } from 'vitepress'
+
+const demoUrl = withBase('/examples/minirpg/index.html')
+</script>
+
 # Mini RPG 示范
 
 > 位置：`example/game_01_minirpg`
@@ -6,7 +12,9 @@
 - **展示要点**：跨表引用、角色成长、战斗模拟、枚举上下文注入
 - **序列化产物**：`*.json`、`*.ts`、`*Interface.ts`、web demo (`out/index.html`)
 
-[立即体验 Demo](/examples/minirpg/index.html){.vp-doc-button .primary target="_blank" rel="noopener"}
+<a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
+  立即体验 Demo
+</a>
 
 ## 快速生成
 

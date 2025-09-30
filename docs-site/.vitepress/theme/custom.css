@@ -1,14 +1,28 @@
 :root {
-  --vp-c-brand-1: #22d3ee;
-  --vp-c-brand-2: #38bdf8;
+  --vp-c-brand-1: #38bdf8;
+  --vp-c-brand-2: #22d3ee;
   --vp-c-brand-3: #0ea5e9;
   --vp-c-text-code: #f4f4f5;
+  --vp-c-bg: #050714;
+  --vp-c-bg-alt: #0a1022;
+  --vp-c-bg-soft: rgba(12, 18, 33, 0.75);
+  --vp-c-bg-mute: rgba(12, 18, 33, 0.55);
+  --vp-c-divider: rgba(107, 114, 128, 0.18);
+  --vp-c-divider-light: rgba(107, 114, 128, 0.08);
+  --vp-c-text-1: #e2e8f0;
+  --vp-c-text-2: rgba(226, 232, 240, 0.75);
+  --vp-c-text-3: rgba(148, 163, 184, 0.6);
+  --vp-code-block-bg: rgba(8, 17, 31, 0.92);
+  --vp-code-block-shadow: 0 22px 45px rgba(7, 16, 32, 0.38);
 }
 
 body {
-  background: radial-gradient(circle at top, rgba(34,211,238,0.08), transparent 55%),
-    radial-gradient(circle at bottom, rgba(124,58,237,0.06), transparent 50%),
-    #020617;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(56, 189, 248, 0.18), transparent 55%),
+    radial-gradient(circle at 82% 85%, rgba(14, 165, 233, 0.14), transparent 50%),
+    radial-gradient(circle at 50% 120%, rgba(124, 58, 237, 0.12), transparent 58%),
+    #050714;
+  color: var(--vp-c-text-1);
 }
 
 .VPNavBarTitle span {
@@ -18,7 +32,74 @@ body {
 }
 
 .main .container {
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
+  background: linear-gradient(140deg, rgba(12, 18, 33, 0.82), rgba(8, 15, 27, 0.72));
+  border: 1px solid rgba(59, 130, 246, 0.08);
+  box-shadow: 0 28px 60px rgba(3, 7, 18, 0.45);
+}
+
+.VPDoc .content {
+  color: var(--vp-c-text-1);
+}
+
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3,
+.VPDoc h4 {
+  color: #f8fafc;
+  text-shadow: 0 8px 20px rgba(15, 23, 42, 0.45);
+}
+
+.VPDoc p {
+  color: var(--vp-c-text-2);
+}
+
+.VPDoc strong {
+  color: #f1f5f9;
+}
+
+.VPDoc a {
+  color: var(--vp-c-brand-1);
+  transition: color 0.25s ease;
+}
+
+.VPDoc a:hover {
+  color: #60a5fa;
+}
+
+.VPSidebar {
+  background: rgba(9, 13, 24, 0.86);
+  border-right: 1px solid rgba(59, 130, 246, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.VPSidebarItem.is-active > a {
+  color: var(--vp-c-brand-1);
+  text-shadow: 0 4px 18px rgba(56, 189, 248, 0.35);
+}
+
+.VPNavBar {
+  background: linear-gradient(90deg, rgba(8, 13, 26, 0.92), rgba(9, 16, 30, 0.75));
+  border-bottom: 1px solid rgba(56, 189, 248, 0.06);
+}
+
+.VPNavBarMenuLink {
+  color: var(--vp-c-text-2);
+}
+
+.VPNavBarMenuLink:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.VPNavBarAppearance {
+  background: rgba(10, 15, 26, 0.8);
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.VPBadge {
+  background: rgba(34, 211, 238, 0.18);
+  color: #22d3ee;
 }
 
 .demo-grid {
@@ -31,9 +112,9 @@ body {
 .demo-card {
   border-radius: 18px;
   padding: 1.5rem;
-  background: rgba(15, 23, 41, 0.88);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.25);
+  background: linear-gradient(160deg, rgba(10, 18, 33, 0.82), rgba(8, 12, 26, 0.92));
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  box-shadow: 0 22px 48px rgba(6, 12, 24, 0.38);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -45,10 +126,11 @@ body {
   margin: 0;
 }
 
+
 .demo-card p {
   margin: 0;
-  color: rgba(226, 232, 240, 0.85);
-  line-height: 1.5;
+  color: rgba(226, 232, 240, 0.78);
+  line-height: 1.55;
 }
 
 .demo-card .actions {
@@ -69,14 +151,15 @@ body {
 }
 
 .demo-card a.primary {
-  color: #0f1729;
-  background: linear-gradient(120deg, #22d3ee, #38bdf8);
-  box-shadow: 0 12px 24px rgba(56, 189, 248, 0.35);
+  color: #0b1324;
+  background: linear-gradient(120deg, #38bdf8, #22d3ee);
+  box-shadow: 0 14px 26px rgba(56, 189, 248, 0.42);
 }
 
 .demo-card a.secondary {
   color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(94, 234, 212, 0.28);
+  background: rgba(15, 23, 42, 0.4);
 }
 
 .demo-card a:hover {
@@ -84,7 +167,8 @@ body {
 }
 
 .demo-card a.secondary:hover {
-  border-color: rgba(94, 234, 212, 0.6);
+  border-color: rgba(94, 234, 212, 0.7);
+  box-shadow: 0 12px 24px rgba(45, 212, 191, 0.28);
 }
 
 .vp-doc-button {
@@ -99,9 +183,9 @@ body {
 }
 
 .vp-doc-button.primary {
-  background: linear-gradient(120deg, #22d3ee, #38bdf8);
-  color: #0f1729 !important;
-  box-shadow: 0 12px 24px rgba(56, 189, 248, 0.35);
+  background: linear-gradient(130deg, #38bdf8, #22d3ee);
+  color: #081120 !important;
+  box-shadow: 0 16px 32px rgba(56, 189, 248, 0.38);
 }
 
 .vp-doc-button.primary:hover {

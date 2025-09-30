@@ -1,3 +1,9 @@
+<script setup>
+import { withBase } from 'vitepress'
+
+const demoUrl = withBase('/examples/a-dark-room/index.html')
+</script>
+
 # A Dark Room 示范
 
 > 位置：`example/game_03_a_dark_room`
@@ -6,7 +12,9 @@
 - **展示要点**：多资源消耗、职业分配、事件脚本、序列化上下文与 React UI 模块化
 - **序列化产物**：`*.json`、`*.ts`、`*Interface.ts`、web demo (`out/index.html`)
 
-[立即体验 Demo](/examples/a-dark-room/index.html){.vp-doc-button .primary target="_blank" rel="noopener"}
+<a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
+  立即体验 Demo
+</a>
 
 ## 快速生成
 

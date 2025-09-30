@@ -39,7 +39,7 @@ const themeConfig: DefaultTheme.Config = {
   ],
   footer: {
     message: 'MIT Licensed',
-    copyright: 'Copyright © 2024 khgame'
+    copyright: 'Copyright © 2025 khgame'
   }
 }
 

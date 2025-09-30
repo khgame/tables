@@ -86,4 +86,103 @@ describe('go serializer type mapping', () => {
     const code = run(arrayNode)
     expect(code).toContain('type TestTable []float64')
   })
+
+  it('renders empty arrays as []interface{}', () => {
+    const code = run({
+      kind: 'object',
+      fields: [{ name: 'items', type: { kind: 'array', empty: true } }]
+    })
+    expect(code).toContain('Items []interface{} `json:"items"`')
+  })
+
+  it('renders homogeneous tuples as typed slices', () => {
+    const tuple = {
+      kind: 'tuple',
+      elements: [
+        { kind: 'primitive', name: 'number' },
+        { kind: 'primitive', name: 'number' }
+      ]
+    }
+    const code = run({
+      kind: 'object',
+      fields: [{ name: 'coords', type: tuple }]
+    })
+    expect(code).toContain('Coords []float64 `json:"coords"`')
+  })
+
+  it('renders heterogeneous tuples as []interface{}', () => {
+    const tuple = {
+      kind: 'tuple',
+      elements: [
+        { kind: 'primitive', name: 'number' },
+        { kind: 'primitive', name: 'string' }
+      ]
+    }
+    const code = run({
+      kind: 'object',
+      fields: [{ name: 'values', type: tuple }]
+    })
+    expect(code).toContain('Values []interface{} `json:"values"`')
+  })
+
+  it('maps all-boolean unions to bool', () => {
+    const union = {
+      kind: 'union',
+      variants: [
+        { kind: 'primitive', name: 'boolean' },
+        { kind: 'literal', value: true }
+      ]
+    }
+    const code = run({
+      kind: 'object',
+      fields: [{ name: 'active', type: union }]
+    })
+    expect(code).toContain('Active bool `json:"active"`')
+  })
+
+  it('maps all-number unions to float64', () => {
+    const union = {
+      kind: 'union',
+      variants: [
+        { kind: 'primitive', name: 'number' },
+        { kind: 'literal', value: 1 }
+      ]
+    }
+    const code = run({
+      kind: 'object',
+      fields: [{ name: 'score', type: union }]
+    })
+    expect(code).toContain('Score float64 `json:"score"`')
+  })
+
+  it('falls back to interface{} for undefined primitives at root', () => {
+    const code = run({ kind: 'primitive', name: 'undefined' })
+    expect(code).toContain('type TestTable interface{}')
+  })
+
+  it('uses fallback type name when source is unusable', () => {
+    buildSchemaModel.mockReturnValueOnce({ kind: 'primitive', name: 'string' })
+    const code = goSerializer.file({ schema: {}, descLine: {}, markCols: [] } as any, '!!!', '', {})
+    expect(code).toContain('type Record string')
+  })
+
+  it('renders literal numbers as float64', () => {
+    const code = run({ kind: 'literal', value: 42 })
+    expect(code).toContain('type TestTable float64')
+  })
+
+  it('renders literal booleans as bool', () => {
+    const code = run({ kind: 'literal', value: true })
+    expect(code).toContain('type TestTable bool')
+  })
+
+  it('renders empty structs when object has no fields', () => {
+    const code = run({ kind: 'object', fields: [] })
+    expect(code).toContain('struct{}')
+  })
+
+  it('renders arrays with missing element metadata as interface slices', () => {
+    const code = run({ kind: 'object', fields: [{ name: 'items', type: { kind: 'array' } }] })
+    expect(code).toContain('Items []interface{} `json:"items"`')
+  })
 })

@@ -18,6 +18,12 @@
     description: '向经典致敬的完整增量游戏示例，涵盖资源、职业、建筑、事件与可交互 React UI。',
     play: '/examples/a-dark-room/index.html',
     source: 'https://github.com/khgame/tables/tree/master/example/game_03_a_dark_room'
+  },
+  {
+    title: 'Arcane Depths',
+    description: '战术 Roguelike + 基地经营 Demo：多层章节、构筑小队、地牢线路与 jsonx 协议头输出。',
+    play: '/examples/arcane-depths/ui/index.html',
+    source: 'https://github.com/khgame/tables/tree/master/example/game_04_arcane_depths'
   }
 ]" />
 

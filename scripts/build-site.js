@@ -26,6 +26,12 @@ const demos = [
     slug: 'a-dark-room',
     title: 'A Dark Room',
     description: '经典增量游戏改编示例，完整序列化与前端 UI'
+  },
+  {
+    id: 'game_04_arcane_depths',
+    slug: 'arcane-depths',
+    title: 'Arcane Depths',
+    description: '战术 Roguelike + 基地经营示例，覆盖 jsonx 协议与可视化战斗'
   }
 ]
 

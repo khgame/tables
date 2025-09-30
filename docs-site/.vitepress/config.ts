@@ -29,7 +29,8 @@ const themeConfig: DefaultTheme.Config = {
           { text: '概览', link: '/demos/' },
           { text: 'Mini RPG', link: '/demos/minirpg' },
           { text: 'Click Cookies', link: '/demos/click-cookies' },
-          { text: 'A Dark Room', link: '/demos/a-dark-room' }
+          { text: 'A Dark Room', link: '/demos/a-dark-room' },
+          { text: 'Arcane Depths', link: '/demos/arcane-depths' }
         ]
       }
     ]

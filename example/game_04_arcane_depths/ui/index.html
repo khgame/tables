@@ -46,14 +46,16 @@
         min-height: 100vh;
       }
       .glass-panel {
-        backdrop-filter: blur(22px) saturate(130%);
-        background: linear-gradient(135deg, rgba(21, 30, 56, 0.92), rgba(26, 19, 43, 0.85));
-        border: 1px solid rgba(115, 129, 188, 0.35);
+        backdrop-filter: blur(24px) saturate(135%);
+        background: linear-gradient(135deg, rgba(21, 30, 56, 0.94), rgba(18, 17, 34, 0.88));
+        box-shadow: 0 28px 60px rgba(10, 12, 24, 0.55);
+        border: none;
       }
       .glass-soft {
-        backdrop-filter: blur(18px) saturate(120%);
-        background: linear-gradient(135deg, rgba(36, 52, 86, 0.86), rgba(25, 33, 56, 0.82));
-        border: 1px solid rgba(136, 160, 255, 0.2);
+        backdrop-filter: blur(20px) saturate(130%);
+        background: linear-gradient(145deg, rgba(38, 58, 92, 0.9), rgba(28, 33, 60, 0.86));
+        box-shadow: 0 18px 40px rgba(8, 10, 22, 0.45);
+        border: none;
       }
       .bg-grid {
         background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
@@ -62,6 +64,18 @@
       }
       .scroll-shadow {
         mask-image: linear-gradient(180deg, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+      }
+      .clamp-2 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+      .clamp-3 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
       }
     </style>
   </head>
@@ -78,22 +92,22 @@
               一个由 Excel 配置驱动的“战术 Roguelike + 基地经营”示例。通过 tables 插件流水线生成 schema、转换结果与 jsonx 协议，快速搭建可体验的游戏 MVP。
             </p>
             <div class="flex flex-wrap gap-3">
-              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-starlight/80 border border-starlight/30">
+              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-starlight/80 shadow-[0_12px_24px_rgba(176,132,247,0.25)]">
                 <span class="text-starlight">●</span> 多层地牢 & 章节被动
               </span>
-              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-aurora/80 border border-aurora/30">
+              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-aurora/80 shadow-[0_12px_24px_rgba(78,205,196,0.25)]">
                 <span class="text-aurora">●</span> Excel → tables → React
               </span>
-              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-ember/80 border border-ember/30">
+              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-ember/80 shadow-[0_12px_24px_rgba(239,131,84,0.25)]">
                 <span class="text-ember">●</span> jsonx 协议头输出
               </span>
             </div>
           </div>
-          <div class="glass-soft rounded-3xl p-6 md:p-7 w-full lg:w-80 border border-white/10">
+          <div class="glass-soft rounded-3xl p-6 md:p-7 w-full lg:w-80">
             <p class="text-sm text-white/60 uppercase tracking-[0.4em] mb-2">Quick Start</p>
             <ol class="space-y-2 text-sm text-white/80">
-              <li>1. 运行 <code class="bg-black/40 px-2 py-0.5 rounded border border-white/10 text-aurora">node _rebuild_data.js</code></li>
-              <li>2. 运行 <code class="bg-black/40 px-2 py-0.5 rounded border border-white/10 text-aurora">node serialize.js</code></li>
+              <li>1. 运行 <code class="bg-black/40 px-2 py-0.5 rounded text-aurora">node _rebuild_data.js</code></li>
+              <li>2. 运行 <code class="bg-black/40 px-2 py-0.5 rounded text-aurora">node serialize.js</code></li>
               <li>3. 使用静态服务器打开 <code>ui/index.html</code></li>
               <li>4. 借助 Chrome Dev MCP 调试，扩展玩法</li>
             </ol>
@@ -194,10 +208,10 @@
       };
 
       const tagToneMap = {
-        veil: 'bg-veil/50 text-white/70 border-white/10',
-        aurora: 'bg-aurora/20 text-aurora border-aurora/40',
-        ember: 'bg-ember/20 text-ember border-ember/40',
-        starlight: 'bg-starlight/20 text-starlight border-starlight/40'
+        veil: 'bg-veil/55 text-white/70 shadow-[0_14px_32px_rgba(15,20,38,0.35)]',
+        aurora: 'bg-aurora/25 text-aurora shadow-[0_12px_28px_rgba(78,205,196,0.28)]',
+        ember: 'bg-ember/25 text-ember shadow-[0_12px_28px_rgba(239,131,84,0.28)]',
+        starlight: 'bg-starlight/25 text-starlight shadow-[0_12px_28px_rgba(176,132,247,0.28)]'
       };
 
       const createLog = (type, message) => ({
@@ -570,7 +584,7 @@
 
 
       const StatCard = ({ label, value, accent = 'starlight' }) => (
-        <div className="glass-soft rounded-2xl px-5 py-4 border border-white/5 flex flex-col gap-1">
+        <div className="glass-soft rounded-2xl px-5 py-4 flex flex-col gap-1 shadow-[0_16px_36px_rgba(6,10,26,0.35)]">
           <span className="text-xs uppercase tracking-[0.4em] text-white/50">{label}</span>
           <span className={`text-2xl font-semibold ${accentClassMap[accent] || 'text-white'}`}>{value}</span>
         </div>
@@ -592,7 +606,7 @@
           {heroes.map(hero => {
             const hpRatio = hero.maxHp ? Math.max(0, hero.hp) / hero.maxHp : 0;
             return (
-              <div key={hero.id} className="glass-soft rounded-2xl p-4 border border-white/10 space-y-2">
+              <div key={hero.id} className="glass-soft rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-white font-semibold">{hero.name}</p>
                   <span className="text-xs text-white/50">{hero.role}</span>
@@ -612,10 +626,10 @@
       );
 
       const LogPanel = ({ logs }) => (
-        <div className="glass-soft rounded-3xl p-4 border border-white/10 max-h-72 overflow-auto scroll-shadow space-y-2">
+        <div className="glass-soft rounded-3xl p-4 max-h-72 overflow-auto scroll-shadow space-y-2">
           {logs.length === 0 ? <p className="text-sm text-white/40">等待行动...</p> : null}
           {logs.slice().reverse().map(entry => (
-            <div key={entry.id} className="text-sm text-white/70 leading-relaxed">
+            <div key={entry.id} className="text-sm text-white/70 leading-relaxed clamp-3">
               <span className="text-xs uppercase tracking-[0.35em] text-white/30 mr-2">{entry.type}</span>
               {entry.message}
             </div>
@@ -626,18 +640,18 @@
       const EventOverlay = ({ pending, onSelect, onSkip }) => (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] border border-white/10 space-y-4">
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">{pending.event.title}</h3>
               <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">放弃</button>
             </div>
-            <p className="text-sm text-white/70 leading-relaxed">{pending.event.summary}</p>
+            <p className="text-sm text-white/70 leading-relaxed clamp-3">{pending.event.summary}</p>
             <div className="space-y-3">
               {pending.options.map(option => (
                 <button
                   key={option.key}
                   onClick={() => onSelect(option)}
-                  className="w-full text-left glass-soft rounded-2xl p-4 border border-white/10 hover:border-aurora/60 hover:bg-aurora/10 transition"
+                  className="w-full text-left glass-soft rounded-2xl p-4 hover:bg-aurora/12 hover:shadow-[0_14px_32px_rgba(78,205,196,0.35)] transition"
                 >
                   <p className="text-white font-semibold text-base">{option.label}</p>
                   <div className="flex flex-wrap gap-2 mt-2 text-xs text-white/50">
@@ -655,7 +669,7 @@
       const MerchantOverlay = ({ pending, onChoose, onSkip }) => (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="glass-panel relative rounded-3xl p-6 w-[min(540px,90vw)] border border-white/10 space-y-4">
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(540px,90vw)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">漂泊商人</h3>
               <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">离开</button>
@@ -663,9 +677,9 @@
             <p className="text-sm text-white/70">挑选一件心仪的物品，或空手离开。</p>
             <div className="space-y-3">
               {pending.offers.map((offer, index) => (
-                <div key={offer.key} className="glass-soft rounded-2xl p-4 border border-white/10 space-y-2">
+                <div key={offer.key} className="glass-soft rounded-2xl p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-white font-semibold text-lg">{offer.label}</p>
+                    <p className="text-white font-semibold text-lg clamp-2">{offer.label}</p>
                     <Tag label={`价格: ${offer.cost.amount} ${offer.cost.resource}`} tone="veil" />
                   </div>
                   <p className="text-sm text-white/70">{offer.description}</p>
@@ -685,7 +699,7 @@
       const RestOverlay = ({ pending, onChoose, onSkip }) => (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] border border-white/10 space-y-4">
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">休整选择</h3>
               <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">继续前进</button>
@@ -696,9 +710,9 @@
                 <button
                   key={option.key}
                   onClick={() => onChoose(option)}
-                  className="w-full glass-soft rounded-2xl p-4 border border-white/10 text-left hover:border-aurora/60 hover:bg-aurora/10 transition"
+                  className="w-full glass-soft rounded-2xl p-4 text-left hover:bg-aurora/12 hover:shadow-[0_14px_32px_rgba(78,205,196,0.35)] transition"
                 >
-                  <p className="text-white font-semibold text-lg">{option.label}</p>
+                  <p className="text-white font-semibold text-lg clamp-2">{option.label}</p>
                   <p className="text-sm text-white/70 mt-1">{option.description}</p>
                 </button>
               ))}
@@ -755,10 +769,10 @@
             />
             <div className="grid lg:grid-cols-[320px,1fr] gap-6">
               <div className="space-y-4">
-                <div className="glass-soft rounded-3xl p-5 border border-white/10 space-y-3">
+                <div className="glass-soft rounded-3xl p-5 space-y-3">
                   <p className="text-xs uppercase tracking-[0.4em] text-white/40">章节选择</p>
                   <select
-                    className="glass-soft border border-white/10 rounded-xl px-4 py-2 text-sm bg-transparent"
+                    className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
                     value={selectedChapterId || ''}
                     onChange={e => setSelectedChapterId(e.target.value)}
                     disabled={runState.stage === 'running'}
@@ -770,7 +784,7 @@
                   {runState.passive ? <p className="text-xs text-white/50">当前被动：{runState.passive}</p> : null}
                 </div>
 
-                <div className="glass-soft rounded-3xl p-5 border border-white/10 space-y-3">
+                <div className="glass-soft rounded-3xl p-5 space-y-3">
                   <p className="text-xs uppercase tracking-[0.4em] text-white/40">英雄编制 (4/4)</p>
                   <div className="grid gap-2">
                     {heroCatalog.map(hero => {
@@ -780,9 +794,9 @@
                           key={hero.id}
                           onClick={() => toggleHero(hero.id)}
                           disabled={runState.stage === 'running' && !active}
-                          className={`text-left rounded-2xl px-4 py-3 border transition ${active ? 'border-starlight/60 bg-starlight/15 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'}`}
+                          className={`text-left rounded-2xl px-4 py-3 transition ${active ? 'bg-starlight/20 text-white shadow-[0_12px_28px_rgba(176,132,247,0.35)]' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(12,18,38,0.35)]'}`}
                         >
-                          <p className="text-sm font-semibold">{hero.name}</p>
+                          <p className="text-sm font-semibold clamp-2">{hero.name}</p>
                           <p className="text-xs text-white/50">{hero.role} · HP {hero.baseHp}</p>
                         </button>
                       );
@@ -791,7 +805,7 @@
                 </div>
 
                 {(runState.stage === 'running' || runState.stage === 'completed') && (
-                  <div className="glass-soft rounded-3xl p-5 border border-white/10 space-y-4">
+                  <div className="glass-soft rounded-3xl p-5 space-y-4">
                     <p className="text-xs uppercase tracking-[0.4em] text-white/40">资源概览</p>
                     <div className="grid grid-cols-3 gap-3">
                       <StatCard label="Arcane" value={formatNumber(runState.resources.arcane)} accent="aurora" />
@@ -813,7 +827,7 @@
 
               <div className="space-y-4">
                 {runState.stage === 'idle' && (
-                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                  <div className="glass-soft rounded-3xl p-6 space-y-4">
                     <p className="text-sm text-white/70">挑选章节与 4 名英雄后点击「开始周目」即可自动读取 Excel 数据并进入地牢。</p>
                     <button
                       onClick={() => onStartRun(Number(selectedChapterId), selectedHeroIds.map(Number))}
@@ -826,7 +840,7 @@
                 )}
 
                 {runState.stage === 'running' && currentNode && (
-                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                  <div className="glass-soft rounded-3xl p-6 space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs uppercase tracking-[0.4em] text-white/40">当前节点</p>
@@ -834,7 +848,7 @@
                       </div>
                       <Tag label={currentRoom?.roomType || currentNode.roomType || '未知'} tone="veil" />
                     </div>
-                    {currentRoom?.description ? <p className="text-sm text-white/70 leading-relaxed">{currentRoom.description}</p> : null}
+                    {currentRoom?.description ? <p className="text-sm text-white/70 leading-relaxed clamp-3">{currentRoom.description}</p> : null}
                     {currentRoom?.specialRule ? <p className="text-xs text-white/50">特殊规则：{currentRoom.specialRule}</p> : null}
                     {currentRoom?.rewardType ? <p className="text-xs text-white/50">奖励：{currentRoom.rewardType} {currentRoom.rewardValue || ''}</p> : null}
                     <button
@@ -849,7 +863,7 @@
                 )}
 
                 {runState.stage === 'completed' && runState.summary && (
-                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                  <div className="glass-soft rounded-3xl p-6 space-y-4">
                     <h3 className="text-xl font-semibold text-white">周目完成</h3>
                     <p className="text-sm text-white/70">资源结算：</p>
                     <div className="grid grid-cols-3 gap-3">
@@ -872,7 +886,7 @@
                 )}
 
                 {runState.stage === 'failed' && (
-                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                  <div className="glass-soft rounded-3xl p-6 space-y-4">
                     <h3 className="text-xl font-semibold text-white">周目失败</h3>
                     <p className="text-sm text-white/70">队伍全灭或战斗未能取胜，携带少量资源返程。</p>
                     <button
@@ -939,7 +953,7 @@
                 </h3>
                 <div className="space-y-3 max-h-72 overflow-auto scroll-shadow pr-2">
                   {campFacilities.map(fac => (
-                    <div key={fac.id} className="glass-soft rounded-2xl p-4 border border-white/10">
+                    <div key={fac.id} className="glass-soft rounded-2xl p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-white text-base font-semibold">{fac.name}</p>
@@ -961,7 +975,7 @@
                 </h3>
                 <div className="space-y-3 max-h-72 overflow-auto scroll-shadow pr-2">
                   {research.map(node => (
-                    <div key={node.id} className="glass-soft rounded-2xl p-4 border border-white/10">
+                    <div key={node.id} className="glass-soft rounded-2xl p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-white text-base font-semibold">{node.name}</p>
@@ -984,7 +998,7 @@
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
                 {incomeByResource.map(item => (
-                  <div key={item.resource} className="glass-soft rounded-2xl p-4 border border-white/10">
+                  <div key={item.resource} className="glass-soft rounded-2xl p-4">
                     <p className="text-sm text-white/60 uppercase tracking-[0.3em]">{item.resource}</p>
                     <p className="text-2xl font-semibold text-white mt-2">+{formatNumber(item.reward)}</p>
                     <p className="text-xs text-white/40">消耗 {formatNumber(item.consumption)}</p>
@@ -1030,7 +1044,7 @@
                   <button
                     key={hero.id}
                     onClick={() => setActiveHeroId(hero.id)}
-                    className={`w-full text-left rounded-2xl border px-4 py-3 transition ${activeHeroId === hero.id ? 'border-starlight/60 bg-starlight/15' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+                    className={`w-full text-left rounded-2xl px-4 py-3 transition ${activeHeroId === hero.id ? 'bg-starlight/18 text-white shadow-[0_12px_28px_rgba(176,132,247,0.35)]' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(12,18,38,0.35)]'}`}
                   >
                     <p className="text-sm uppercase tracking-[0.3em] text-white/50">{hero.role}</p>
                     <p className="text-lg font-semibold text-white">{hero.name}</p>
@@ -1046,7 +1060,7 @@
 
               <div className="space-y-6">
                 {activeHero ? (
-                  <div className="glass-soft rounded-3xl p-6 border border-white/10">
+                  <div className="glass-soft rounded-3xl p-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                       <div className="space-y-2">
                         <p className="text-xs uppercase tracking-[0.4em] text-white/40">Hero #{activeHero.id}</p>
@@ -1063,7 +1077,7 @@
                         </div>
                       </div>
                       <div className="w-full lg:w-56">
-                        <div className="relative rounded-3xl overflow-hidden aspect-[3/4] border border-white/10">
+                        <div className="relative rounded-3xl overflow-hidden aspect-[3/4]">
                           <img src={activeHero.portrait} alt={activeHero.name} className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
                         </div>
@@ -1074,11 +1088,11 @@
                       <h4 className="text-lg font-semibold flex items-center gap-2"><span className="text-starlight">◈</span> 技能组合</h4>
                       <div className="grid md:grid-cols-3 gap-4">
                         {heroSkills.map(skill => (
-                          <div key={skill.id} className="glass-soft rounded-2xl p-4 border border-white/10">
+                          <div key={skill.id} className="glass-soft rounded-2xl p-4">
                             <p className="text-xs uppercase tracking-[0.3em] text-white/40">{skill.tag}</p>
                             <p className="text-lg font-semibold text-white">{skill.name}</p>
                             <p className="text-xs text-white/50 mt-1">目标：{skill.target} · 冷却 {skill.cooldown} · 能量 {skill.energyCost}</p>
-                            <p className="text-sm text-white/70 mt-3">{skill.description}</p>
+                            <p className="text-sm text-white/70 mt-3 clamp-3">{skill.description}</p>
                           </div>
                         ))}
                         {heroSkills.length === 0 ? <p className="text-sm text-white/40">技能未配置。</p> : null}
@@ -1089,7 +1103,7 @@
                           <h4 className="text-lg font-semibold flex items-center gap-2"><span className="text-aurora">◈</span> 协同遗物</h4>
                           <div className="grid md:grid-cols-2 gap-3">
                             {synergyRelics.map(relic => (
-                              <div key={relic.id} className="glass-soft rounded-2xl p-4 border border-white/10">
+                              <div key={relic.id} className="glass-soft rounded-2xl p-4">
                                 <p className="text-sm text-white font-semibold">{relic.name}</p>
                                 <p className="text-xs text-white/40">稀有度 {relic.rarity} · 触发 {relic.triggerCondition}</p>
                                 <p className="text-sm text-white/70 mt-1">{relic.effectSummary}</p>
@@ -1140,7 +1154,7 @@
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <label className="text-sm text-white/60">选择章节：</label>
               <select
-                className="glass-soft border border-white/10 rounded-xl px-4 py-2 text-sm bg-transparent"
+                className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
                 value={activeChapterId || ''}
                 onChange={e => setActiveChapterId(Number(e.target.value))}
               >
@@ -1152,7 +1166,7 @@
             </div>
 
             {activeChapter ? (
-              <div className="glass-soft rounded-3xl p-5 border border-white/10">
+              <div className="glass-soft rounded-3xl p-5">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
                   <div>
                     <p className="text-xs uppercase tracking-[0.4em] text-white/40">章节被动</p>
@@ -1171,7 +1185,7 @@
               <div className="flex items-stretch gap-6 min-w-max">
                 {layers.map(layer => (
                   <div key={layer.layer} className="min-w-[220px] space-y-3">
-                    <div className="glass-soft rounded-2xl px-4 py-2 border border-white/10 flex items-center justify-between">
+                    <div className="glass-soft rounded-2xl px-4 py-2 flex items-center justify-between">
                       <span className="text-sm text-white/70">第 {layer.layer} 层</span>
                       <span className="text-white/40 text-xs">节点 {layer.nodes.length}</span>
                     </div>
@@ -1180,13 +1194,13 @@
                         const linkedRoom = roomById.get(Number(node.destinationRoomId || node.nodeCode))
                           || rooms.find(room => room.roomType === node.roomType && Number(room.chapterId) === Number(activeChapterId));
                         return (
-                          <div key={`${layer.layer}-${node.order}-${node.nodeCode}`} className="glass-soft rounded-2xl p-4 border border-white/10">
+                          <div key={`${layer.layer}-${node.order}-${node.nodeCode}`} className="glass-soft rounded-2xl p-4">
                             <p className="text-xs uppercase tracking-[0.3em] text-white/40">{node.roomType}</p>
                             <p className="text-base text-white font-semibold">
                               {linkedRoom?.name || `节点 ${node.nodeCode}`}
                             </p>
                             {linkedRoom?.description ? (
-                              <p className="text-xs text-white/60 mt-2">{linkedRoom.description}</p>
+                              <p className="text-xs text-white/60 mt-2 clamp-2">{linkedRoom.description}</p>
                             ) : null}
                             <div className="flex flex-wrap gap-2 mt-3">
                               {node.rewardHint ? <Tag label={`奖励：${node.rewardHint}`} /> : null}
@@ -1229,7 +1243,7 @@
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <label className="text-sm text-white/60">演示房间：</label>
               <select
-                className="glass-soft border border-white/10 rounded-xl px-4 py-2 text-sm bg-transparent"
+                className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
                 value={activeRoom?.id || ''}
                 onChange={e => setActiveRoom(rooms.find(room => Number(room.id) === Number(e.target.value)))}
               >
@@ -1240,7 +1254,7 @@
             </div>
 
             <div className="grid lg:grid-cols-[1.2fr,1fr] gap-6">
-              <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-5">
+              <div className="glass-soft rounded-3xl p-6 space-y-5">
                 <h3 className="text-lg font-semibold flex items-center gap-3">
                   <span className="text-aurora text-xl">玩家阵容</span>
                   <span className="text-xs text-white/40">示例：首发 4 名英雄</span>
@@ -1251,7 +1265,7 @@
                       .map(id => skillMap.get(Number(id)))
                       .filter(Boolean);
                     return (
-                      <div key={hero.id} className="glass-soft rounded-2xl p-4 border border-white/10">
+                      <div key={hero.id} className="glass-soft rounded-2xl p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-sm text-white font-semibold">{hero.name}</p>
@@ -1279,7 +1293,7 @@
               </div>
 
               {bossEnemy ? (
-                <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                <div className="glass-soft rounded-3xl p-6 space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-3">
                     <span className="text-ember text-xl">Boss 情报</span>
                     <Tag label={bossEnemy.family} />
@@ -1297,7 +1311,7 @@
                     <h4 className="text-sm text-white/60 uppercase tracking-[0.3em]">行为序列</h4>
                     <div className="space-y-2 max-h-48 overflow-auto pr-1 scroll-shadow">
                       {bossAI.map(action => (
-                        <div key={`${action.enemyId}-${action.sequence}`} className="glass-soft rounded-2xl p-3 border border-white/10">
+                        <div key={`${action.enemyId}-${action.sequence}`} className="glass-soft rounded-2xl p-3">
                           <p className="text-xs text-white/50">优先级 {action.priority} · 条件 {action.condition}</p>
                           <p className="text-sm text-white/80">动作：{action.action} {action.param ? `(${action.param})` : ''}</p>
                         </div>
@@ -1329,7 +1343,7 @@
         const activeEvent = filteredEvents.find(evt => evt.id === activeEventId);
 
         const renderOption = (label, requirement, rewardType, rewardValue, penaltyType, penaltyValue) => (
-          <div className="glass-soft rounded-2xl p-4 border border-white/10">
+          <div className="glass-soft rounded-2xl p-4">
             <p className="text-sm text-white font-semibold">{label}</p>
             <div className="flex flex-wrap gap-2 mt-2">
               {requirement ? <Tag label={`需求: ${requirement}`} /> : <Tag label="无需求" />}
@@ -1345,7 +1359,7 @@
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <label className="text-sm text-white/60">章节：</label>
               <select
-                className="glass-soft border border-white/10 rounded-xl px-4 py-2 text-sm bg-transparent"
+                className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
                 value={activeChapterId || ''}
                 onChange={e => setActiveChapterId(Number(e.target.value))}
               >
@@ -1361,7 +1375,7 @@
                   <button
                     key={evt.id}
                     onClick={() => setActiveEventId(evt.id)}
-                    className={`w-full text-left rounded-2xl border px-4 py-3 transition ${activeEventId === evt.id ? 'border-aurora/60 bg-aurora/20' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+                    className={`w-full text-left rounded-2xl px-4 py-3 transition ${activeEventId === evt.id ? 'bg-aurora/18 text-white shadow-[0_14px_32px_rgba(78,205,196,0.35)]' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(12,18,38,0.35)]'}`}
                   >
                     <p className="text-xs uppercase tracking-[0.3em] text-white/40">#{evt.id}</p>
                     <p className="text-sm text-white font-semibold">{evt.title}</p>
@@ -1371,12 +1385,12 @@
                 {filteredEvents.length === 0 ? <p className="text-sm text-white/40">该章节暂未配置事件。</p> : null}
               </div>
 
-              <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+              <div className="glass-soft rounded-3xl p-6 space-y-4">
                 {activeEvent ? (
                   <>
                     <p className="text-xs uppercase tracking-[0.4em] text-white/40">事件详情</p>
                     <h3 className="text-2xl font-display text-white">{activeEvent.title}</h3>
-                    <p className="text-sm text-white/70 max-w-2xl">{activeEvent.summary}</p>
+                    <p className="text-sm text-white/70 max-w-2xl clamp-3">{activeEvent.summary}</p>
                     <div className="grid md:grid-cols-2 gap-3 pt-4">
                       {renderOption(activeEvent.option1Text || '选项 A', activeEvent.option1Requirement, activeEvent.option1RewardType, activeEvent.option1RewardValue, activeEvent.option1PenaltyType, activeEvent.option1PenaltyValue)}
                       {renderOption(activeEvent.option2Text || '选项 B', activeEvent.option2Requirement, activeEvent.option2RewardType, activeEvent.option2RewardValue, activeEvent.option2PenaltyType, activeEvent.option2PenaltyValue)}
@@ -1615,7 +1629,7 @@
             <button
               key={section.id}
               onClick={() => onChange(section.id)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 border transition text-sm ${active === section.id ? 'border-starlight/60 bg-starlight/15 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'}`}
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition text-sm ${active === section.id ? 'bg-starlight/18 text-white shadow-[0_16px_36px_rgba(176,132,247,0.35)]' : 'bg-white/6 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_28px_rgba(12,18,38,0.35)]'}`}
             >
               <span className="text-lg">{section.emoji}</span>
               <span className="font-semibold">{section.label}</span>

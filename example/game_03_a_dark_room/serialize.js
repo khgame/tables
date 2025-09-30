@@ -58,7 +58,9 @@ function writeWebDemo(targetDir) {
   // Copy all UI files
   const uiFiles = fs.readdirSync(uiDir).filter(f => f.endsWith('.js') || f.endsWith('.jsx'))
   uiFiles.forEach(file => {
-    fs.copyFileSync(Path.resolve(uiDir, file), Path.resolve(targetDir, file))
+    const sourcePath = Path.resolve(uiDir, file)
+    const targetName = file === 'app.jsx' ? 'app.new.jsx' : file
+    fs.copyFileSync(sourcePath, Path.resolve(targetDir, targetName))
   })
   console.log(`[a-dark-room] copied ${uiFiles.length} UI modules to ${targetDir}`)
 

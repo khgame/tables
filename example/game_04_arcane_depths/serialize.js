@@ -35,6 +35,9 @@ const tables = [
 
 function main() {
   fs.ensureDirSync(outDir)
+
+  // 清理旧产物，避免残留文件影响调试
+  fs.emptyDirSync(outDir)
   const context = loadContext(baseDir)
 
   const serializerList = [jsonSerializer, tsSerializer, tsInterfaceSerializer]
@@ -54,6 +57,15 @@ function main() {
     }
     serialize(src, outDir, serializerMap, context)
     console.log(`[arcane-depths] serialized ${file}`)
+  }
+
+  const uiSrc = Path.resolve(baseDir, 'ui')
+  const uiDest = Path.resolve(outDir, 'ui')
+  if (fs.existsSync(uiSrc)) {
+    fs.copySync(uiSrc, uiDest, { overwrite: true })
+    console.log(`[arcane-depths] ui copied to ${uiDest}`)
+  } else {
+    console.warn('[arcane-depths] ui folder not found, skip copying')
   }
 
   console.log(`[arcane-depths] artifacts written to ${outDir}`)

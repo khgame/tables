@@ -120,24 +120,25 @@
         { id: 'events', label: '事件簿', emoji: '📜' }
       ];
 
+      const DATA_BASE = '..';
       const DATA_FILES = [
-        { key: 'chapters', file: '../out/chapters.json' },
-        { key: 'mapTemplates', file: '../out/map_templates.json' },
-        { key: 'classes', file: '../out/classes.json' },
-        { key: 'heroes', file: '../out/heroes.json' },
-        { key: 'skills', file: '../out/skills.json' },
-        { key: 'skillLinks', file: '../out/skill_links.json' },
-        { key: 'enemies', file: '../out/enemies.json' },
-        { key: 'enemyAI', file: '../out/enemy_ai.json' },
-        { key: 'rooms', file: '../out/rooms.json' },
-        { key: 'events', file: '../out/events.json' },
-        { key: 'relics', file: '../out/relics.json' },
-        { key: 'equipment', file: '../out/equipment.json' },
-        { key: 'facilities', file: '../out/facilities.json' },
-        { key: 'research', file: '../out/research.json' },
-        { key: 'economy', file: '../out/economy.json' },
-        { key: 'tasks', file: '../out/tasks.json' },
-        { key: 'achievements', file: '../out/achievements.json' }
+        { key: 'chapters', file: `${DATA_BASE}/chapters.json` },
+        { key: 'mapTemplates', file: `${DATA_BASE}/map_templates.json` },
+        { key: 'classes', file: `${DATA_BASE}/classes.json` },
+        { key: 'heroes', file: `${DATA_BASE}/heroes.json` },
+        { key: 'skills', file: `${DATA_BASE}/skills.json` },
+        { key: 'skillLinks', file: `${DATA_BASE}/skill_links.json` },
+        { key: 'enemies', file: `${DATA_BASE}/enemies.json` },
+        { key: 'enemyAI', file: `${DATA_BASE}/enemy_ai.json` },
+        { key: 'rooms', file: `${DATA_BASE}/rooms.json` },
+        { key: 'events', file: `${DATA_BASE}/events.json` },
+        { key: 'relics', file: `${DATA_BASE}/relics.json` },
+        { key: 'equipment', file: `${DATA_BASE}/equipment.json` },
+        { key: 'facilities', file: `${DATA_BASE}/facilities.json` },
+        { key: 'research', file: `${DATA_BASE}/research.json` },
+        { key: 'economy', file: `${DATA_BASE}/economy.json` },
+        { key: 'tasks', file: `${DATA_BASE}/tasks.json` },
+        { key: 'achievements', file: `${DATA_BASE}/achievements.json` }
       ];
 
       const fetchJSON = async (file) => {

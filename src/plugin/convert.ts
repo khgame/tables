@@ -15,15 +15,26 @@ export function tableConvert(table: Table, context?: any): Table {
     markLine,
     descLine,
     getValue,
-    erows = []
+    erows = [],
+    markList = []
   } = table as any
 
   const startRow: number = (marks as any).row + 2
   const descList = markCols.map((colName: string) => (descLine as any)[colName])
 
+  const stringLikeColumns = markCols.map((_: string, columnIndex: number) => {
+    const markToken = String((markList as any)[columnIndex] || '').toLowerCase()
+    return markToken.includes('string')
+  })
+
   const convertedRows = erows
     .filter((row: number) => row >= startRow)
-    .map((row: number) => markCols.map((colName: string) => getValue(table, row, colName)))
+    .map((row: number) => markCols.map((colName: string, colIndex: number) => {
+      const cellValue = getValue(table, row, colName)
+      if (!stringLikeColumns[colIndex]) return cellValue
+      if (cellValue === undefined || cellValue === null) return ''
+      return typeof cellValue === 'string' ? cellValue : String(cellValue)
+    }))
 
   const markDescriptor = {
     row: erows,

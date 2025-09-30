@@ -21,17 +21,8 @@
   "ArtifactEffectType": {
     "GlobalMultiplier": "globalMultiplier",
     "ClickMultiplier": "clickMultiplier",
-    "ProducerBoostCursor": "producerBoost:60000001",
-    "ProducerBoostGrandma": "producerBoost:60000002",
-    "ProducerBoostFarm": "producerBoost:60000003",
-    "ProducerBoostFactory": "producerBoost:60000005",
-    "ProducerBoostBank": "producerBoost:60000006",
-    "ProducerBoostTemple": "producerBoost:60000007",
-    "ProducerBoostWizard": "producerBoost:60000008",
-    "ProducerBoostShipment": "producerBoost:60000009",
-    "ProducerBoostPortal": "producerBoost:60000010",
-    "ProducerBoostTimeMachine": "producerBoost:60000011",
-    "ProducerBoostAntimatter": "producerBoost:60000012",
-    "CPSAdditive": "cpsAdditive"
+    "OfflineMultiplier": "offlineMultiplier",
+    "CostReduction": "costReduction",
+    "PrestigeBonus": "prestigeBonus"
   }
 }

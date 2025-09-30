@@ -88,9 +88,9 @@ writeSheet('artifacts.xlsx', [
   ['categoryCode', 'subtypeCode', 'sequenceCode', 'sequence', 'name', 'effectType', 'effectValue', 'costPoints', 'desc', 'icon'],
   ['95', '00', '0001', 1, 'Golden Oven Mitts', 'globalMultiplier', 1.6, 30, '所有 CPS 乘以 1.6。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9b5.png'],
   ['95', '00', '0002', 2, 'Sugar Rush', 'clickMultiplier', 3.0, 25, '点击产量翻至 3 倍，并更快上浮。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36c.png'],
-  ['95', '00', '0003', 3, 'Grandma Covenant', 'producerBoost:60000002', 3.0, 35, '奶奶建筑产出 *3。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f465.png'],
-  ['95', '00', '0004', 4, 'Factory Time Dilation', 'producerBoost:60000005', 3.0, 45, '工厂生产效率提升 200%。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f1.png'],
-  ['95', '01', '0001', 5, 'Chrono Crumbs', 'cpsAdditive', 50000, 40, '额外 +50,000 CPS。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f3.png']
+  ['95', '00', '0003', 3, 'Pocket Chronometer', 'offlineMultiplier', 2.0, 35, '离线收益翻倍，归来即可收割。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f1.png'],
+  ['95', '00', '0004', 4, 'Quantum Ledger', 'costReduction', 0.15, 40, '所有建筑成本降低 15%。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b0.png'],
+  ['95', '01', '0001', 5, 'Starfarer Compass', 'prestigeBonus', 0.25, 45, '声望重置额外 +25% 神器点。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f320.png']
 ])
 
 // context enums
@@ -123,18 +123,9 @@ fs.writeFileSync(Path.join(base, 'context.enums.json'), JSON.stringify({
   ArtifactEffectType: {
     GlobalMultiplier: 'globalMultiplier',
     ClickMultiplier: 'clickMultiplier',
-    ProducerBoostCursor: 'producerBoost:60000001',
-    ProducerBoostGrandma: 'producerBoost:60000002',
-    ProducerBoostFarm: 'producerBoost:60000003',
-    ProducerBoostFactory: 'producerBoost:60000005',
-    ProducerBoostBank: 'producerBoost:60000006',
-    ProducerBoostTemple: 'producerBoost:60000007',
-    ProducerBoostWizard: 'producerBoost:60000008',
-    ProducerBoostShipment: 'producerBoost:60000009',
-    ProducerBoostPortal: 'producerBoost:60000010',
-    ProducerBoostTimeMachine: 'producerBoost:60000011',
-    ProducerBoostAntimatter: 'producerBoost:60000012',
-    CPSAdditive: 'cpsAdditive'
+    OfflineMultiplier: 'offlineMultiplier',
+    CostReduction: 'costReduction',
+    PrestigeBonus: 'prestigeBonus'
   }
 }, null, 2))
 

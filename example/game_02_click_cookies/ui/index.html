@@ -90,7 +90,16 @@
 
       const computeArtifactEffects = (artifacts, ownedArtifacts) => {
         const owned = toOwnedSet(ownedArtifacts);
-        const effects = { globalMultiplier: 1, clickMultiplier: 1, cpsAdditive: 0, producerBoost: new Map() };
+        const effects = {
+          globalMultiplier: 1,
+          clickMultiplier: 1,
+          cpsAdditive: 0,
+          producerBoost: new Map(),
+          costReduction: new Map(),
+          globalCostReduction: 0,
+          offlineMultiplier: 1,
+          prestigeBonus: 0
+        };
         artifacts.forEach(art => {
           if (!owned.has(art.id)) return;
           const type = art.effectType || '';
@@ -106,6 +115,20 @@
             const target = Number(tidStr);
             const current = effects.producerBoost.get(target) || 1;
             effects.producerBoost.set(target, current * (value || 1));
+          } else if (type.startsWith('costReduction')) {
+            const [, tidStr] = type.split(':');
+            const reduction = Math.max(0, Math.min(value || 0, 0.9));
+            if (tidStr) {
+              const target = Number(tidStr);
+              const current = effects.costReduction.get(target) || 0;
+              effects.costReduction.set(target, Math.max(current, reduction));
+            } else {
+              effects.globalCostReduction = Math.max(effects.globalCostReduction, reduction);
+            }
+          } else if (type === 'offlineMultiplier') {
+            effects.offlineMultiplier *= value || 1;
+          } else if (type === 'prestigeBonus') {
+            effects.prestigeBonus += Math.max(0, value || 0);
           }
         });
         return effects;
@@ -263,23 +286,44 @@
       );
 
       const ProducersTab = (props) => {
-        const { producers, counts, cookies, totalCookies, upgradeMultipliers, artifactBoosts, globalMultiplier, onBuy } = props;
+        const {
+          producers,
+          counts,
+          cookies,
+          totalCookies,
+          upgradeMultipliers,
+          artifactBoosts,
+          globalMultiplier,
+          costReducers,
+          globalCostReduction,
+          onBuy
+        } = props;
         return (
           <ScrollPanel>
             {producers.map(prod => {
               const owned = counts[prod.id] || 0;
-              const cost = Math.ceil(prod.baseCost * Math.pow(prod.costGrowth, owned));
+              const baseCost = Math.ceil(prod.baseCost * Math.pow(prod.costGrowth, owned));
+              const targetedReduction = (costReducers && costReducers.get(prod.id)) || 0;
+              const effectiveReduction = Math.max(targetedReduction, globalCostReduction || 0);
+              const discountedCost = Math.ceil(baseCost * (1 - effectiveReduction));
               const locked = totalCookies < (prod.unlockCookies || 0);
               const upgradeMult = upgradeMultipliers.get(prod.id) || 1;
               const artMult = artifactBoosts.get(prod.id) || 1;
               const displayCps = prod.baseCps * upgradeMult * artMult * globalMultiplier;
-              const state = locked ? 'locked' : cookies >= cost ? 'affordable' : 'limited';
+              const state = locked ? 'locked' : cookies >= discountedCost ? 'affordable' : 'limited';
               return (
-                <button key={prod.id} className="w-full text-left" onClick={() => onBuy(prod.id, cost)} disabled={locked || cookies < cost}>
+                <button key={prod.id} className="w-full text-left" onClick={() => onBuy(prod.id, discountedCost)} disabled={locked || cookies < discountedCost}>
                   <ListItem
                     title={`${prod.name} × ${owned}`}
                     subtitle={prod.desc}
-                    caption={<span>CPS {displayCps.toFixed(2)} · Cost <SparkleNumber value={cost} /></span>}
+                    caption={(
+                      <span>
+                        CPS {displayCps.toFixed(2)} · Cost <SparkleNumber value={discountedCost} />
+                        {effectiveReduction > 0 ? (
+                          <span className="ml-1 text-[11px] text-chocolate/60">(-{Math.round(effectiveReduction * 100)}%)</span>
+                        ) : null}
+                      </span>
+                    )}
                     icon={prod.icon}
                     state={state}
                   />
@@ -424,23 +468,24 @@
               lastActiveAt: Date.now()
             };
             const lastTimestamp = parsed.timestamp || parsed.lastActiveAt;
-            if (lastTimestamp) {
-              const elapsedSeconds = Math.max(0, (Date.now() - lastTimestamp) / 1000);
-              if (elapsedSeconds > 0) {
-                const snapshot = computeCpsSnapshot({
-                  producers,
-                  upgrades,
-                  artifacts,
-                  config,
-                  counts: result.producerCounts,
-                  ownedUpgrades,
-                  ownedArtifacts,
-                  prestigePoints: result.prestigePoints
-                });
-                const offlineGain = snapshot.cps * elapsedSeconds;
-                if (offlineGain > 0) {
-                  result.cookies += offlineGain;
-                  result.totalCookies += offlineGain;
+              if (lastTimestamp) {
+                const elapsedSeconds = Math.max(0, (Date.now() - lastTimestamp) / 1000);
+                if (elapsedSeconds > 0) {
+                  const restoreEffects = computeArtifactEffects(artifacts, ownedArtifacts);
+                  const snapshot = computeCpsSnapshot({
+                    producers,
+                    upgrades,
+                    artifacts,
+                    config,
+                    counts: result.producerCounts,
+                    ownedUpgrades,
+                    ownedArtifacts,
+                    prestigePoints: result.prestigePoints
+                  });
+                  const offlineGain = snapshot.cps * elapsedSeconds * (restoreEffects.offlineMultiplier || 1);
+                  if (offlineGain > 0) {
+                    result.cookies += offlineGain;
+                    result.totalCookies += offlineGain;
                   const message = `离线收益 +${offlineGain.toFixed(1)} 饼干（${elapsedSeconds.toFixed(1)} 秒）`;
                   const timestamp = new Date().toLocaleTimeString();
                   result.log = [...result.log.slice(-99), { when: timestamp, message }];
@@ -558,7 +603,9 @@
         }, [config.baseClick, artifactEffects, prestigeMultiplier]);
 
         const prestigePotential = useMemo(() => calculatePrestigePoints(totalCookies, config), [totalCookies, config]);
-        const prestigeGain = Math.max(0, prestigePotential - prestigePoints);
+        const basePrestigeGain = Math.max(0, prestigePotential - prestigePoints);
+        const prestigeBonusMultiplier = 1 + (artifactEffects.prestigeBonus || 0);
+        const prestigeGain = Math.floor(basePrestigeGain * prestigeBonusMultiplier);
 
         const pushLog = message => {
           const when = new Date().toLocaleTimeString();
@@ -606,7 +653,7 @@
         };
 
         const handleAscend = () => {
-          if (prestigeGain <= 0) {
+          if (basePrestigeGain <= 0) {
             pushLog('暂未满足声望条件，继续烘焙吧。');
             return;
           }
@@ -616,7 +663,12 @@
           setTotalCookies(0);
           setProducerCounts({});
           setOwnedUpgrades(new Set());
-          pushLog(`声望重置完成，获得 ${prestigeGain} 神器点。`);
+          if (artifactEffects.prestigeBonus) {
+            const bonus = prestigeGain - basePrestigeGain;
+            pushLog(`声望重置完成，获得 ${prestigeGain} 神器点（含神器额外 +${bonus}）。`);
+          } else {
+            pushLog(`声望重置完成，获得 ${prestigeGain} 神器点。`);
+          }
         };
 
         useEffect(() => {
@@ -678,6 +730,8 @@
                       upgradeMultipliers={producerMultipliers}
                       artifactBoosts={artifactEffects.producerBoost}
                       globalMultiplier={(artifactEffects.globalMultiplier || 1) * prestigeMultiplier}
+                      costReducers={artifactEffects.costReduction}
+                      globalCostReduction={artifactEffects.globalCostReduction || 0}
                     />
                   )}
                   {activeTab === 'upgrades' && (

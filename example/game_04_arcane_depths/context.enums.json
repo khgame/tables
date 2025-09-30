@@ -1,0 +1,99 @@
+{
+  "ResourceType": {
+    "Arcane": "arcane",
+    "Crystal": "crystal",
+    "Provision": "provision"
+  },
+  "RoomType": {
+    "Combat": "Combat",
+    "Elite": "Elite",
+    "Event": "Event",
+    "Merchant": "Merchant",
+    "Rest": "Rest",
+    "Boss": "Boss"
+  },
+  "SkillTag": {
+    "Melee": "Melee",
+    "Ranged": "Ranged",
+    "Spell": "Spell",
+    "Support": "Support",
+    "Control": "Control"
+  },
+  "HeroClass": {
+    "Vanguard": "Vanguard",
+    "Mystic": "Mystic",
+    "Gunner": "Gunner",
+    "Warden": "Warden"
+  },
+  "HeroRole": {
+    "Tank": "Tank",
+    "Burst": "Burst",
+    "Support": "Support",
+    "Specialist": "Specialist"
+  },
+  "TraitType": {
+    "Resolve": "Resolve",
+    "Resonance": "Resonance",
+    "Synergy": "Synergy",
+    "Instinct": "Instinct"
+  },
+  "EnemyFamily": {
+    "Aberrant": "Aberrant",
+    "Cultist": "Cultist",
+    "Construct": "Construct"
+  },
+  "BehaviorCondition": {
+    "OnTurnStart": "OnTurnStart",
+    "OnAllyDown": "OnAllyDown",
+    "OnPlayerHeal": "OnPlayerHeal",
+    "HpBelow50": "HpBelow50"
+  },
+  "BehaviorAction": {
+    "AttackFront": "AttackFront",
+    "AttackLowestHp": "AttackLowestHp",
+    "ApplyDebuff": "ApplyDebuff",
+    "SummonMinion": "SummonMinion"
+  },
+  "RewardType": {
+    "Resource": "Resource",
+    "Relic": "Relic",
+    "Item": "Item",
+    "Trait": "Trait"
+  },
+  "RequirementType": {
+    "SkillTag": "SkillTag",
+    "Resource": "Resource",
+    "RelicOwned": "RelicOwned",
+    "HeroTrait": "HeroTrait"
+  },
+  "PenaltyType": {
+    "Damage": "Damage",
+    "Debuff": "Debuff",
+    "LoseResource": "LoseResource",
+    "SpawnEnemy": "SpawnEnemy"
+  },
+  "FacilityType": {
+    "Camp": "Camp",
+    "Workshop": "Workshop",
+    "Library": "Library",
+    "Spire": "Spire"
+  },
+  "EquipmentSlot": {
+    "Weapon": "Weapon",
+    "Armor": "Armor",
+    "Accessory": "Accessory"
+  },
+  "SkillTarget": {
+    "Enemy": "Enemy",
+    "AllyTeam": "AllyTeam",
+    "Self": "Self",
+    "EnemyAll": "EnemyAll",
+    "Boss": "Boss"
+  },
+  "DamageFormula": {
+    "Basic": "Basic",
+    "Burst": "Burst",
+    "Pierce": "Pierce",
+    "Aoe": "Aoe"
+  }
+}

@@ -10,7 +10,7 @@
 
 3. **New Language Emitters**
    - ✅ Implement Go serializer on top of the new intermediate model (`formats/go.ts`).
-   - ☐ Implement C# serializer on top of the new intermediate model.
+   - ✅ Implement C# serializer on top of the new intermediate model (`formats/csharp.ts`).
    - Provide sample outputs + golden tests mirroring current TS snapshots.
 
 4. **CLI Format Registration**

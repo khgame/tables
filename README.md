@@ -2,6 +2,12 @@
 
 轻量级跨平台Excel导表工具 ( `Excel` ==> `json`/`js`/`ts`/`ts-interface` )
 
+## 在线体验
+
+- GitHub Pages: https://khgame.github.io/tables/
+- 站点包含各示例（Mini RPG / Click Cookies / A Dark Room）的静态 Demo，可直接打开 `examples/<name>/index.html` 体验导表结果。
+- 文档（`docs/`）及 `README` 会同步发布，方便快速查阅概念约定与插件说明。
+
 ## 功能
 
 - 支持 Excel 文件到各种数据类型间的转换, 目前支持 json/js

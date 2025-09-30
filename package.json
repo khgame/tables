@@ -16,6 +16,8 @@
     "ex:darkroom": "npm run build && node ./example/game_03_a_dark_room/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_03_a_dark_room/out -p 8765 -l",
     "ex:arcane": "npm run build && node ./example/game_04_arcane_depths/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_04_arcane_depths/out -p 8769 -l",
     "build:site": "node ./scripts/build-site.js",
+    "docs:dev": "vitepress dev docs-site",
+    "docs:build": "vitepress build docs-site",
     "local-install": "rimraf /usr/local/lib/node_modules/@khgame/tables && npm i . -g",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "types": "tsc -p tsconfig.types.json",
@@ -78,7 +80,8 @@
     "jest": "^30.1.3",
     "ts-node": "^8.0.2",
     "tslint": "^5.13.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitepress": "^1.6.4"
   },
   "files": [
     "lib"

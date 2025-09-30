@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480">
+  <defs>
+    <radialGradient id="grad" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="rgba(56,189,248,0.9)" />
+      <stop offset="35%" stop-color="rgba(59,130,246,0.35)" />
+      <stop offset="70%" stop-color="rgba(15,23,42,0.1)" />
+      <stop offset="100%" stop-color="rgba(15,23,42,0)" />
+    </radialGradient>
+    <linearGradient id="bars" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" fill="rgba(2,6,23,0.2)" />
+  <circle cx="420" cy="200" r="240" fill="url(#grad)" />
+  <g transform="translate(180,120)" fill="none" stroke="url(#bars)" stroke-width="20" stroke-linecap="round" opacity="0.85">
+    <path d="M20 240 L120 80 L180 140 L240 40 L320 200 L400 20 L460 160 L520 80" />
+  </g>
+  <g transform="translate(140,150)" fill="none" stroke="rgba(94,234,212,0.55)" stroke-width="12" stroke-linecap="round">
+    <polyline points="0,180 80,110 150,150 260,40 340,180 420,70 500,210" />
+  </g>
+</svg>

@@ -1,0 +1,109 @@
+:root {
+  --vp-c-brand-1: #22d3ee;
+  --vp-c-brand-2: #38bdf8;
+  --vp-c-brand-3: #0ea5e9;
+  --vp-c-text-code: #f4f4f5;
+}
+
+body {
+  background: radial-gradient(circle at top, rgba(34,211,238,0.08), transparent 55%),
+    radial-gradient(circle at bottom, rgba(124,58,237,0.06), transparent 50%),
+    #020617;
+}
+
+.VPNavBarTitle span {
+  background: linear-gradient(120deg, #22d3ee, #7c3aed);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.main .container {
+  backdrop-filter: blur(12px);
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.demo-card {
+  border-radius: 18px;
+  padding: 1.5rem;
+  background: rgba(15, 23, 41, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.demo-card h3 {
+  font-size: 1.2rem;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.demo-card p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.85);
+  line-height: 1.5;
+}
+
+.demo-card .actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.demo-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.demo-card a.primary {
+  color: #0f1729;
+  background: linear-gradient(120deg, #22d3ee, #38bdf8);
+  box-shadow: 0 12px 24px rgba(56, 189, 248, 0.35);
+}
+
+.demo-card a.secondary {
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.demo-card a:hover {
+  transform: translateY(-2px);
+}
+
+.demo-card a.secondary:hover {
+  border-color: rgba(94, 234, 212, 0.6);
+}
+
+.vp-doc-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  margin-top: 0.75rem;
+}
+
+.vp-doc-button.primary {
+  background: linear-gradient(120deg, #22d3ee, #38bdf8);
+  color: #0f1729 !important;
+  box-shadow: 0 12px 24px rgba(56, 189, 248, 0.35);
+}
+
+.vp-doc-button.primary:hover {
+  transform: translateY(-2px);
+}

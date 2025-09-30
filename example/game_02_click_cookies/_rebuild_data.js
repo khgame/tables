@@ -18,17 +18,17 @@ writeSheet('producers.xlsx', [
   ['@', '@', '@', 'uint', 'string', 'string', 'uint', 'float', 'float', 'string', 'uint'],
   ['categoryCode', 'subtypeCode', 'sequenceCode', 'sequence', 'name', 'desc', 'baseCost', 'costGrowth', 'baseCps', 'icon', 'unlockCookies'],
   ['60', '00', '0001', 1, 'Cursor', '雇佣手指自动点击，每个 +0.1 CPS。', 15, 1.15, 0.1, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f446.png', 0],
-  ['60',  '00', '0002', 2, 'Grandma', '奶奶烘焙饼干，每个 +1 CPS。', 100, 1.15, 1.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f475.png', 50],
-  ['60', '00', '0003', 3, 'Farm', '种植饼干树，每个 +8 CPS。', 1100, 1.15, 8.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f33e.png', 500],
-  ['60', '00', '0004', 4, 'Mine', '开采饼干矿脉，每个 +47 CPS。', 12000, 1.15, 47.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png', 6000],
-  ['60', '00', '0005', 5, 'Factory', '批量生产饼干，每个 +260 CPS。', 130000, 1.15, 260.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png', 65000],
-  ['60', '00', '0006', 6, 'Bank', '资本运作，每个 +1400 CPS。', 1400000, 1.15, 1400.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3e6.png', 500000],
-  ['60', '00', '0007', 7, 'Temple', '奶奶祈祷，每个 +7800 CPS。', 20000000, 1.15, 7800.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png', 7500000],
-  ['60', '00', '0008', 8, 'Wizard Tower', '魔法师召唤饼干，每个 +44K CPS。', 330000000, 1.15, 44000.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f52e.png', 250000000],
-  ['60', '00', '0009', 9, 'Shipment', '宇宙运输，每个 +260K CPS。', 5100000000, 1.15, 260000.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6f8.png', 1200000000],
-  ['60', '00', '0010', 10, 'Portal', '跨维度门户，每个 +1.6M CPS。', 75000000000, 1.15, 1600000.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f300.png', 60000000000],
-  ['60', '00', '0011', 11, 'Time Machine', '扭曲时间，每个 +10M CPS。', 1000000000000, 1.15, 10000000.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png', 400000000000],
-  ['60', '00', '0012', 12, 'Antimatter Condenser', '凝聚物质，每个 +65M CPS。', 14000000000000, 1.15, 65000000.0, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png', 8000000000000]
+  ['60',  '00', '0002', 2, 'Grandma', '奶奶烘焙饼干，每个约 +0.6 CPS。', 100, 1.15, 0.6, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f475.png', 50],
+  ['60', '00', '0003', 3, 'Farm', '种植饼干树，每个约 +6.5 CPS。', 1100, 1.15, 6.5, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f33e.png', 500],
+  ['60', '00', '0004', 4, 'Mine', '开采饼干矿脉，每个约 +65 CPS。', 12000, 1.15, 65, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png', 6000],
+  ['60', '00', '0005', 5, 'Factory', '批量生产饼干，每个约 +650 CPS。', 130000, 1.15, 650, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png', 65000],
+  ['60', '00', '0006', 6, 'Bank', '资本运作，每个约 +7000 CPS。', 1400000, 1.15, 7000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3e6.png', 500000],
+  ['60', '00', '0007', 7, 'Temple', '奶奶祈祷，每个约 +85K CPS。', 20000000, 1.15, 85000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png', 7500000],
+  ['60', '00', '0008', 8, 'Wizard Tower', '魔法师召唤饼干，每个约 +1.2M CPS。', 330000000, 1.15, 1200000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f52e.png', 250000000],
+  ['60', '00', '0009', 9, 'Shipment', '宇宙运输，每个约 +18M CPS。', 5100000000, 1.15, 18000000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6f8.png', 1200000000],
+  ['60', '00', '0010', 10, 'Portal', '跨维度门户，每个约 +260M CPS。', 75000000000, 1.15, 260000000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f300.png', 60000000000],
+  ['60', '00', '0011', 11, 'Time Machine', '扭曲时间，每个约 +3.2B CPS。', 1000000000000, 1.15, 3200000000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png', 400000000000],
+  ['60', '00', '0012', 12, 'Antimatter Condenser', '凝聚物质，每个约 +42B CPS。', 14000000000000, 1.15, 42000000000, 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png', 8000000000000]
 ])
 
 // Upgrades
@@ -36,18 +36,18 @@ writeSheet('upgrades.xlsx', [
   ['Category Code', 'Subtype Code', 'Sequence Code', 'Sequence', 'Upgrade Name', 'Target Producer', 'Upgrade Type', 'Value', 'Cost', 'Description', 'Icon', 'Unlock Cookies'],
   ['@', '@', '@', 'uint', 'string', 'tid', 'UpgradeType', 'float', 'uint', 'string', 'string', 'uint'],
   ['categoryCode', 'subtypeCode', 'sequenceCode', 'sequence', 'name', 'target', 'upgradeType', 'value', 'cost', 'desc', 'icon', 'unlockCookies'],
-  ['70', '00', '0001', 1, 'Reinforced Index Finger', 60000001, 'multiplier', 2.0, 100, '游标产出翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png', 50],
-  ['70', '00', '0002', 2, 'Forwards from Grandma', 60000002, 'multiplier', 2.0, 1000, '奶奶烘焙速度翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9d3.png', 400],
-  ['70', '00', '0003', 3, 'Steel Plows', 60000003, 'multiplier', 2.0, 11000, '农场效率翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e0.png', 2500],
-  ['70', '00', '0004', 4, 'Deep Drills', 60000004, 'multiplier', 2.0, 120000, '矿井深挖翻倍产出。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png', 60000],
-  ['70', '00', '0005', 5, 'Assembly Line', 60000005, 'multiplier', 2.0, 1300000, '工厂效率翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png', 600000],
-  ['70', '00', '0006', 6, 'Compound Interest', 60000006, 'multiplier', 2.0, 14000000, '银行存款利滚利。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b5.png', 5000000],
-  ['70', '00', '0007', 7, 'Divine Inspiration', 60000007, 'multiplier', 2.0, 200000000, '庙宇产出翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png', 75000000],
-  ['70', '00', '0008', 8, 'Arcane Circuit', 60000008, 'multiplier', 2.0, 3300000000, '巫师塔效率翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f52e.png', 2200000000],
-  ['70', '00', '0009', 9, 'Interstellar Logistics', 60000009, 'multiplier', 2.0, 51000000000, '宇宙运输翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6f8.png', 35000000000],
-  ['70', '00', '0010', 10, 'Dimensional Stabilizer', 60000010, 'multiplier', 2.0, 750000000000, '传送门稳定性提升。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f300.png', 520000000000],
-  ['70', '00', '0011', 11, 'Chrono Crystal', 60000011, 'multiplier', 2.0, 10000000000000, '时间机器效率翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png', 7500000000000],
-  ['70', '00', '0012', 12, 'Quantum Condenser', 60000012, 'multiplier', 2.0, 140000000000000, '反物质凝聚器效率翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png', 90000000000000]
+  ['70', '00', '0001', 1, 'Reinforced Index Finger', 60000001, 'multiplier', 2.0, 80, '游标产出翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png', 50],
+  ['70', '00', '0002', 2, 'Forwards from Grandma', 60000002, 'multiplier', 2.0, 800, '奶奶烘焙速度翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9d3.png', 400],
+  ['70', '00', '0003', 3, 'Steel Plows', 60000003, 'multiplier', 2.0, 9500, '农场效率翻倍。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e0.png', 2500],
+  ['70', '00', '0004', 4, 'Deep Drills', 60000004, 'multiplier', 2.0, 100000, '矿井深挖翻倍产出。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png', 60000],
+  ['70', '00', '0005', 5, 'Assembly Line', 60000005, 'multiplier', 1.8, 1100000, '工厂效率 ×1.8。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png', 600000],
+  ['70', '00', '0006', 6, 'Compound Interest', 60000006, 'multiplier', 1.8, 11000000, '银行存款利滚利，CPS ×1.8。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b5.png', 5000000],
+  ['70', '00', '0007', 7, 'Divine Inspiration', 60000007, 'multiplier', 1.8, 160000000, '庙宇产出 ×1.8。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png', 75000000],
+  ['70', '00', '0008', 8, 'Arcane Circuit', 60000008, 'multiplier', 1.8, 2400000000, '巫师塔效率 ×1.8。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f52e.png', 2200000000],
+  ['70', '00', '0009', 9, 'Interstellar Logistics', 60000009, 'multiplier', 1.6, 36000000000, '宇宙运输效率 ×1.6。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6f8.png', 35000000000],
+  ['70', '00', '0010', 10, 'Dimensional Stabilizer', 60000010, 'multiplier', 1.6, 540000000000, '传送门稳定性提升，产出 ×1.6。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f300.png', 520000000000],
+  ['70', '00', '0011', 11, 'Chrono Crystal', 60000011, 'multiplier', 1.6, 7200000000000, '时间机器效率 ×1.6。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png', 7500000000000],
+  ['70', '00', '0012', 12, 'Quantum Condenser', 60000012, 'multiplier', 1.6, 95000000000000, '反物质凝聚器效率 ×1.6。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png', 90000000000000]
 ])
 
 // Achievements
@@ -75,9 +75,9 @@ writeSheet('global_config.xlsx', [
   ['90', '00', '0003', 3, 'clickFloatDuration', 'Float', 0.9, '点击数字上浮动画时长（秒）'],
   ['90', '00', '0004', 4, 'clickFloatDistance', 'Float', 140, '点击数字上浮距离（像素）'],
   ['90', '00', '0005', 5, 'clickFloatSpread', 'Float', 80, '点击数字随机偏移范围（像素）'],
-  ['90', '00', '0006', 6, 'prestigeBase', 'Float', 1000000000, '声望计算基数（总饼干 / 基数）'],
-  ['90', '00', '0007', 7, 'prestigeExponent', 'Float', 0.58, '声望计算指数'],
-  ['90', '00', '0008', 8, 'prestigeResetMultiplier', 'Float', 1.05, '每次声望提升的全局 CPS 乘数'],
+  ['90', '00', '0006', 6, 'prestigeBase', 'Float', 250000000, '声望计算基数（总饼干 / 基数）'],
+  ['90', '00', '0007', 7, 'prestigeExponent', 'Float', 0.6, '声望计算指数'],
+  ['90', '00', '0008', 8, 'prestigeResetMultiplier', 'Float', 1.08, '每次声望提升的全局 CPS 乘数'],
   ['90', '01', '0001', 9, 'autosaveInterval', 'UInt', 30, '自动保存秒数（演示用途）']
 ])
 
@@ -86,11 +86,11 @@ writeSheet('artifacts.xlsx', [
   ['Category Code', 'Subtype Code', 'Sequence Code', 'Sequence', 'Artifact Name', 'Effect Type', 'Effect Value', 'Cost Points', 'Description', 'Icon'],
   ['@', '@', '@', 'uint', 'string', 'ArtifactEffectType', 'float', 'uint', 'string', 'string'],
   ['categoryCode', 'subtypeCode', 'sequenceCode', 'sequence', 'name', 'effectType', 'effectValue', 'costPoints', 'desc', 'icon'],
-  ['95', '00', '0001', 1, 'Golden Oven Mitts', 'globalMultiplier', 1.5, 30, '所有 CPS 乘以 1.5。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9b5.png'],
-  ['95', '00', '0002', 2, 'Sugar Rush', 'clickMultiplier', 2.5, 25, '点击产量加倍并更快上浮。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36c.png'],
+  ['95', '00', '0001', 1, 'Golden Oven Mitts', 'globalMultiplier', 1.6, 30, '所有 CPS 乘以 1.6。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9b5.png'],
+  ['95', '00', '0002', 2, 'Sugar Rush', 'clickMultiplier', 3.0, 25, '点击产量翻至 3 倍，并更快上浮。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36c.png'],
   ['95', '00', '0003', 3, 'Grandma Covenant', 'producerBoost:60000002', 3.0, 35, '奶奶建筑产出 *3。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f465.png'],
-  ['95', '00', '0004', 4, 'Factory Time Dilation', 'producerBoost:60000005', 2.5, 45, '工厂生产效率提升 150%。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f1.png'],
-  ['95', '01', '0001', 5, 'Chrono Crumbs', 'cpsAdditive', 200, 40, '额外 +200 CPS。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f3.png']
+  ['95', '00', '0004', 4, 'Factory Time Dilation', 'producerBoost:60000005', 3.0, 45, '工厂生产效率提升 200%。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f1.png'],
+  ['95', '01', '0001', 5, 'Chrono Crumbs', 'cpsAdditive', 50000, 40, '额外 +50,000 CPS。', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f3.png']
 ])
 
 // context enums

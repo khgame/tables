@@ -20,19 +20,33 @@ const tables = [
   { file: 'global_config.xlsx', stem: 'global_config' }
 ]
 
+const serializerConfigs = [
+  {
+    getFileName: stem => `${stem}.json`,
+    serializer: jsonSerializer
+  },
+  {
+    getFileName: stem => `${stem}.ts`,
+    serializer: tsSerializer
+  },
+  {
+    getFileName: stem => `${stem}Interface.ts`,
+    serializer: tsInterfaceSerializer
+  }
+]
+
 function main() {
   fs.ensureDirSync(outDir)
   const context = loadContext(baseDir)
-  const serializerList = [jsonSerializer, tsSerializer, tsInterfaceSerializer]
+  const serializerList = serializerConfigs.map(({ serializer }) => serializer)
   serializeContext(outDir, serializerList, context)
 
   for (const { file, stem } of tables) {
     const src = Path.resolve(baseDir, file)
-    const serializerMap = {
-      [`${stem}.json`]: jsonSerializer,
-      [`${stem}.ts`]: tsSerializer,
-      [`${stem}Interface.ts`]: tsInterfaceSerializer
-    }
+    const serializerMap = serializerConfigs.reduce((acc, cfg) => {
+      acc[cfg.getFileName(stem)] = cfg.serializer
+      return acc
+    }, {})
     serialize(src, outDir, serializerMap, context)
     console.log(`[click-cookies] serialized ${file}`)
   }

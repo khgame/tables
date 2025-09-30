@@ -52,5 +52,13 @@
     "UInt": "UInt",
     "Currency": "Currency",
     "StageId": "StageId"
+  },
+  "RelicEffectType": {
+    "AttackMultiplier": "attackMultiplier",
+    "DefenseMultiplier": "defenseMultiplier",
+    "EnemyDefenseReduction": "enemyDefenseReduction",
+    "ExpBonus": "expBonus",
+    "EnvironmentBonusTundra": "environmentBonus:Tundra",
+    "ElementBonusLunar": "elementBonus:Lunar"
   }
 }

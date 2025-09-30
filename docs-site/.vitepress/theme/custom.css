@@ -67,6 +67,40 @@ body {
   color: #60a5fa;
 }
 
+.VPDoc code {
+  background: rgba(148, 163, 184, 0.16);
+  color: #f8fafc;
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+}
+
+.VPDoc pre {
+  background: var(--vp-code-block-bg) !important;
+  color: #e2e8f0;
+  box-shadow: var(--vp-code-block-shadow);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+}
+
+.VPDoc pre code {
+  background: transparent;
+  color: inherit;
+}
+
+.VPDoc table {
+  background: rgba(10, 16, 30, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  color: var(--vp-c-text-2);
+}
+
+.VPDoc tbody tr:nth-child(2n) {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.VPDoc thead {
+  background: rgba(17, 24, 39, 0.9);
+  color: #f8fafc;
+}
+
 .VPSidebar {
   background: rgba(9, 13, 24, 0.86);
   border-right: 1px solid rgba(59, 130, 246, 0.08);
@@ -100,6 +134,12 @@ body {
 .VPBadge {
   background: rgba(34, 211, 238, 0.18);
   color: #22d3ee;
+}
+
+.custom-block {
+  background: rgba(13, 20, 36, 0.85);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: var(--vp-c-text-1);
 }
 
 .demo-grid {

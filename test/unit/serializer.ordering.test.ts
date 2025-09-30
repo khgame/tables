@@ -1,5 +1,4 @@
-import { jsonSerializer } from '../../src/serializer/jsonSerializer'
-import { jsSerializer } from '../../src/serializer/jsSerializer'
+import { jsonSerializer, jsSerializer } from '../../src/serializer'
 
 describe('serializer stable ordering', () => {
   const sample = {
@@ -25,4 +24,3 @@ describe('serializer stable ordering', () => {
     expect(Object.keys(obj.result)).toEqual(['a', 'b'])
   })
 })
-

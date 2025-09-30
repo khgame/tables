@@ -1,4 +1,4 @@
-import { jsonxSerializer } from '../../src/serializer/jsonxSerializer'
+import { jsonxSerializer } from '../../src/serializer'
 
 describe('jsonxSerializer', () => {
   const sample = { convert: { tids: ['b', 'a'], result: { b: { id: 2 }, a: { id: 1 } }, collisions: [] } } as any
@@ -10,4 +10,3 @@ describe('jsonxSerializer', () => {
     expect(Object.keys(obj.convert.result)).toEqual(['a', 'b'])
   })
 })
-

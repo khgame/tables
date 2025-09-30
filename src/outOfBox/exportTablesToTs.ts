@@ -1,6 +1,5 @@
 import { FileWalker } from 'kht'
-import { tsSerializer } from '../serializer/tsSerializer'
-import { serialize, loadContext, serializeContext } from '../serializer'
+import { tsSerializer, serialize, loadContext, serializeContext } from '../serializer'
 import { makeInterfaceName } from '../utils/names'
 import * as fs from 'fs-extra'
 import * as Path from 'path'

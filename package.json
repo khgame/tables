@@ -14,7 +14,7 @@
     "ex:minirpg": "npm run build && node ./example/game_01_minirpg/serialize.js",
     "ex:click-cookies": "npm run build && node ./example/game_02_click_cookies/serialize.js",
     "ex:darkroom": "npm run build && node ./example/game_03_a_dark_room/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_03_a_dark_room/out -p 8765 -l",
-    "ex:arcane": "npm run build && node ./example/game_04_arcane_depths/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_04_arcane_depths/out -p 8766 -l",
+    "ex:arcane": "npm run build && node ./example/game_04_arcane_depths/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_04_arcane_depths/out -p 8769 -l",
     "build:site": "node ./scripts/build-site.js",
     "local-install": "rimraf /usr/local/lib/node_modules/@khgame/tables && npm i . -g",
     "typecheck": "tsc -p tsconfig.json --noEmit",

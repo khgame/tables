@@ -1,4 +1,4 @@
-import { dealSchema } from '../../src/serializer/tsInterfaceSerializer'
+import { dealSchema } from '../../src/serializer'
 import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
 
 function tdmOf(name: string, tNode: any) {

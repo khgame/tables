@@ -1,16 +1,14 @@
-import { jsonSerializer } from '../../src/serializer/jsonSerializer'
-import { jsSerializer } from '../../src/serializer/jsSerializer'
+import { jsonSerializer, jsSerializer, tsSerializer } from '../../src/serializer'
 // Mock dealSchema/dealContext before importing tsSerializer to avoid deep schema dependency
-jest.mock('../../src/serializer/tsInterfaceSerializer', () => ({
+jest.mock('../../src/serializer/formats/tsInterface', () => ({
   dealSchema: () => '{ foo: string }',
   dealContext: () => ''
 }))
-import { tsSerializer } from '../../src/serializer/tsSerializer'
 // Import real helpers for focused tests (use requireActual)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const real = (jest as any).requireActual('../../src/serializer/tsInterfaceSerializer')
-const dealSchema = real.dealSchema as typeof import('../../src/serializer/tsInterfaceSerializer').dealSchema
-const dealContext = real.dealContext as typeof import('../../src/serializer/tsInterfaceSerializer').dealContext
+const real = (jest as any).requireActual('../../src/serializer/formats/tsInterface')
+const dealSchema = real.dealSchema as typeof import('../../src/serializer/formats/tsInterface').dealSchema
+const dealContext = real.dealContext as typeof import('../../src/serializer/formats/tsInterface').dealContext
 import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
 
 describe('basic serializers', () => {

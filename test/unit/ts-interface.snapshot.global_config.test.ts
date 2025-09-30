@@ -1,6 +1,6 @@
 import { readAndTranslate } from '../../src/utils/read'
 import { tableSchema, tableConvert } from '../../src/plugin'
-import { tsInterfaceSerializer } from '../../src/serializer/tsInterfaceSerializer'
+import { tsInterfaceSerializer } from '../../src/serializer'
 import * as Path from 'path'
 
 describe('ts-interface snapshot (global_config.xlsx)', () => {
@@ -11,4 +11,3 @@ describe('ts-interface snapshot (global_config.xlsx)', () => {
     expect(code).toMatchSnapshot()
   })
 })
-

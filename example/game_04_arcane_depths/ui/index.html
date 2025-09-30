@@ -113,6 +113,7 @@
       const { useEffect, useState, useMemo } = React;
 
       const SECTIONS = [
+        { id: 'run', label: '运行面板', emoji: '🎲' },
         { id: 'overview', label: '基地概览', emoji: '🏕️' },
         { id: 'squad', label: '小队配置', emoji: '⚔️' },
         { id: 'map', label: '地牢线路', emoji: '🗺️' },
@@ -199,6 +200,375 @@
         starlight: 'bg-starlight/20 text-starlight border-starlight/40'
       };
 
+      const createLog = (type, message) => ({
+        id: `${type}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        type,
+        message
+      });
+
+      const trimLogs = logs => logs.slice(-160);
+
+      const lowerResourceKey = value => (value ? String(value).toLowerCase() : '');
+
+      const createDerivedMaps = data => {
+        const roomsList = data.rooms?.list || [];
+        const roomsById = new Map();
+        const roomsByChapterType = new Map();
+        roomsList.forEach(room => {
+          const id = Number(room.id);
+          if (!Number.isNaN(id)) roomsById.set(id, room);
+          const chapterKey = room.chapterId ?? 'any';
+          const key = `${chapterKey}::${room.roomType}`;
+          if (!roomsByChapterType.has(key)) roomsByChapterType.set(key, []);
+          roomsByChapterType.get(key).push(room);
+        });
+
+        const eventsList = data.events?.list || [];
+        const eventsById = new Map();
+        const eventsByChapter = new Map();
+        eventsList.forEach(evt => {
+          const id = Number(evt.id);
+          if (!Number.isNaN(id)) eventsById.set(id, evt);
+          const chapterKey = evt.chapterId ? Number(evt.chapterId) : 'any';
+          if (!eventsByChapter.has(chapterKey)) eventsByChapter.set(chapterKey, []);
+          eventsByChapter.get(chapterKey).push(evt);
+        });
+
+        const enemiesById = new Map((data.enemies?.list || []).map(enemy => [Number(enemy.id), enemy]));
+        const relicList = data.relics?.list || [];
+        const relicsById = new Map(relicList.map(relic => [Number(relic.id), relic]));
+        const equipmentList = data.equipment?.list || [];
+        const equipmentById = new Map(equipmentList.map(item => [Number(item.id), item]));
+        const skillsById = new Map((data.skills?.list || []).map(skill => [Number(skill.id), skill]));
+
+        return {
+          roomsById,
+          roomsByChapterType,
+          eventsById,
+          eventsByChapter,
+          enemiesById,
+          relicsById,
+          relicList,
+          equipmentById,
+          equipmentList,
+          skillsById
+        };
+      };
+
+      const buildNodesByLayer = (mapTemplates, chapterId) => {
+        const filtered = (mapTemplates || []).filter(node => Number(node.chapterId) === Number(chapterId));
+        const grouped = new Map();
+        filtered.forEach(node => {
+          const layer = Number(node.layer) || 0;
+          if (!grouped.has(layer)) grouped.set(layer, []);
+          grouped.get(layer).push(node);
+        });
+        return Array.from(grouped.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([layer, nodes]) => ({
+            layer,
+            nodes: nodes.sort((a, b) => (a.order || 0) - (b.order || 0))
+          }));
+      };
+
+      const resolveRoomForNode = (node, derived, chapterId) => {
+        if (!node) return null;
+        const id = Number(node.destinationRoomId || node.nodeCode);
+        if (!Number.isNaN(id) && derived.roomsById.has(id)) {
+          return derived.roomsById.get(id);
+        }
+        const chapterKey = `${chapterId}::${node.roomType}`;
+        const fallback = derived.roomsByChapterType.get(chapterKey);
+        if (fallback?.length) return fallback[0];
+        const generic = derived.roomsByChapterType.get(`any::${node.roomType}`);
+        return generic?.[0] || null;
+      };
+
+      const resolveEnemyForNode = (room, derived) => {
+        if (!room) return null;
+        const enemyId = Number(room.enemyId);
+        if (!Number.isNaN(enemyId) && derived.enemiesById.has(enemyId)) {
+          return derived.enemiesById.get(enemyId);
+        }
+        const rarity = room.roomType === 'Boss' ? 'Boss' : room.roomType === 'Elite' ? 'Elite' : 'Normal';
+        const candidates = Array.from(derived.enemiesById.values());
+        return candidates.find(enemy => enemy.rarity === rarity) || candidates[0] || null;
+      };
+
+      const createHeroState = (hero, derived) => {
+        const skills = [hero.signatureSkill, hero.supportSkill, hero.ultimateSkill]
+          .map(id => derived.skillsById.get(Number(id)))
+          .filter(Boolean);
+        const skillTags = Array.from(new Set(skills.map(skill => skill.tag).filter(Boolean)));
+        return {
+          id: Number(hero.id),
+          name: hero.name,
+          role: hero.role,
+          traits: [hero.primaryTrait, hero.secondaryTrait].filter(Boolean),
+          maxHp: Number(hero.baseHp) || 0,
+          hp: Number(hero.baseHp) || 0,
+          baseAtk: Number(hero.baseAtk) || 0,
+          baseDef: Number(hero.baseDef) || 0,
+          baseSpd: Number(hero.baseSpd) || 0,
+          skills,
+          skillTags,
+          portrait: hero.portrait
+        };
+      };
+
+      const cloneHeroes = heroes => heroes.map(hero => ({ ...hero }));
+
+      const getCurrentNode = runState => {
+        const layer = runState.nodesByLayer[runState.layerIndex];
+        if (!layer) return null;
+        return layer.nodes[runState.nodeIndex] || null;
+      };
+
+      const applyRewards = (runState, rewardType, rewardValue, derived) => {
+        let resources = { ...runState.resources };
+        let relics = [...runState.relics];
+        const logs = [];
+
+        if (!rewardType) return { resources, relics, logs };
+
+        const entries = (rewardValue || '').split(',').map(entry => entry.trim()).filter(Boolean);
+
+        if (rewardType === 'Resource') {
+          entries.forEach(entry => {
+            const [res, amountText] = entry.split(':');
+            const key = lowerResourceKey(res);
+            const amount = Number(amountText) || 0;
+            if (key && Object.prototype.hasOwnProperty.call(resources, key)) {
+              resources[key] = Math.max(0, (resources[key] || 0) + amount);
+              logs.push(createLog('reward', `获得 ${res} ${amount}`));
+            }
+          });
+        } else if (rewardType === 'Relic') {
+          const id = Number(entries[0] || rewardValue);
+          if (!Number.isNaN(id)) {
+            const relic = derived.relicsById.get(id);
+            if (relic && !relics.some(r => r.id === id)) {
+              relics = [...relics, { id, name: relic.name, rarity: relic.rarity }];
+              logs.push(createLog('reward', `获得遗物《${relic.name}》`));
+            } else if (relic) {
+              logs.push(createLog('reward', `重复遗物《${relic.name}》转化为 Arcane 6`));
+              resources.arcane = (resources.arcane || 0) + 6;
+            }
+          }
+        } else if (rewardType === 'Item') {
+          const id = Number(entries[0] || rewardValue);
+          const item = derived.equipmentById.get(id);
+          logs.push(createLog('reward', `获得装备蓝图：${item ? item.name : rewardValue}`));
+        } else {
+          logs.push(createLog('reward', `获得奖励：${rewardType} ${rewardValue || ''}`));
+        }
+
+        return { resources, relics, logs };
+      };
+
+      const applyPenalties = (runState, penaltyType, penaltyValue) => {
+        let resources = { ...runState.resources };
+        let heroes = cloneHeroes(runState.heroes);
+        const logs = [];
+
+        if (!penaltyType) return { resources, heroes, logs };
+
+        if (penaltyType === 'LoseResource') {
+          const [res, amountText] = (penaltyValue || '').split(':');
+          const key = lowerResourceKey(res);
+          const amount = Number(amountText) || 0;
+          if (key && Object.prototype.hasOwnProperty.call(resources, key)) {
+            resources[key] = Math.max(0, (resources[key] || 0) - amount);
+            logs.push(createLog('event', `损失 ${res} ${amount}`));
+          }
+        } else if (penaltyType === 'Damage') {
+          const [target, amountText] = (penaltyValue || '').split(':');
+          const amount = Number(amountText) || 0;
+          if (target === 'team') {
+            heroes = heroes.map(hero => ({ ...hero, hp: Math.max(0, hero.hp - amount) }));
+            logs.push(createLog('event', `队伍受到 ${amount} 点群体伤害`));
+          }
+        } else if (penaltyType === 'Debuff') {
+          logs.push(createLog('event', `遭遇异常状态：${penaltyValue}`));
+        }
+
+        return { resources, heroes, logs };
+      };
+
+      const calculateHeroDamage = (hero, skill, enemy, nodeType) => {
+        const baseAtk = hero.baseAtk || 0;
+        const power = skill ? Number(skill.power) || 1 : 1;
+        const scaling = skill ? Number(skill.scaling) || 1 : 1;
+        const traitBonus = hero.traits.includes('Resonance') ? 1.08 : hero.traits.includes('Resolve') ? 1.05 : 1;
+        const typeBonus = nodeType === 'Boss' ? 1.25 : nodeType === 'Elite' ? 1.1 : 1;
+        const random = 0.9 + Math.random() * 0.3;
+        const damage = (baseAtk * 0.6 * power + hero.maxHp * 0.02 * scaling) * traitBonus * typeBonus * random;
+        return Math.max(5, Math.round(damage));
+      };
+
+      const calculateEnemyDamage = (enemy, hero, nodeType) => {
+        const baseAtk = Number(enemy.atk) || 80;
+        const typeBonus = nodeType === 'Boss' ? 1.25 : nodeType === 'Elite' ? 1.15 : 1;
+        const mitigation = 1 - Math.min(0.6, (hero.baseDef || 0) / 600);
+        const random = 0.9 + Math.random() * 0.2;
+        const damage = baseAtk * typeBonus * mitigation * random;
+        return Math.max(4, Math.round(damage));
+      };
+
+      const simulateBattle = (runState, room, enemy) => {
+        const heroes = cloneHeroes(runState.heroes);
+        const logs = [createLog('battle', `遭遇 ${enemy.name || '未知敌人'}`)];
+        const nodeType = room?.roomType || 'Combat';
+        let enemyHp = Number(enemy.hp) || 2000;
+        let round = 1;
+
+        while (round <= 8 && enemyHp > 0 && heroes.some(hero => hero.hp > 0)) {
+          const attackers = heroes.filter(hero => hero.hp > 0);
+          for (const hero of attackers) {
+            const skill = hero.skills[round % hero.skills.length] || hero.skills[0];
+            const damage = calculateHeroDamage(hero, skill, enemy, nodeType);
+            enemyHp -= damage;
+            logs.push(createLog('battle', `${hero.name} 使用 ${skill ? skill.name : '普通攻击'} 造成 ${damage} 伤害`));
+            if (enemyHp <= 0) break;
+          }
+          if (enemyHp <= 0) break;
+
+          const defenders = heroes.filter(hero => hero.hp > 0);
+          if (!defenders.length) break;
+          const target = defenders[Math.floor(Math.random() * defenders.length)];
+          const enemyDamage = calculateEnemyDamage(enemy, target, nodeType);
+          target.hp = Math.max(0, target.hp - enemyDamage);
+          logs.push(createLog('battle', `${enemy.name || '敌人'} 反击 ${target.name}，造成 ${enemyDamage} 伤害`));
+          round += 1;
+        }
+
+        const victory = enemyHp <= 0;
+        logs.push(createLog('battle', victory ? `${enemy.name || '敌人'} 被击败！` : '队伍被迫撤退。'));
+
+        return { victory, heroes, logs };
+      };
+
+      const advanceAfterNode = (prev, payload = {}) => {
+        const nextResources = payload.resources || prev.resources;
+        const nextRelics = payload.relics || prev.relics;
+        const nextHeroes = payload.heroes || prev.heroes;
+        let log = payload.log ? trimLogs(payload.log) : prev.log;
+        let layerIndex = prev.layerIndex;
+        let nodeIndex = prev.nodeIndex + 1;
+        let stage = payload.stage || prev.stage;
+        let summary = payload.summary || prev.summary;
+
+        const layers = prev.nodesByLayer;
+        const currentLayer = layers[layerIndex] || { nodes: [] };
+
+        if (nodeIndex >= currentLayer.nodes.length) {
+          layerIndex += 1;
+          nodeIndex = 0;
+          if (layerIndex >= layers.length) {
+            stage = 'completed';
+            summary = {
+              chapterId: prev.chapterId,
+              resources: nextResources,
+              relics: nextRelics,
+              heroes: nextHeroes
+            };
+            log = trimLogs([...log, createLog('system', '周目完成，成功返回基地。')]);
+          } else {
+            const layerLabel = layers[layerIndex]?.layer ?? layerIndex + 1;
+            log = trimLogs([...log, createLog('system', `前进到第 ${layerLabel} 层。`)]);
+          }
+        }
+
+        return {
+          ...prev,
+          ...payload,
+          resources: nextResources,
+          relics: nextRelics,
+          heroes: nextHeroes,
+          log,
+          layerIndex,
+          nodeIndex,
+          stage,
+          pending: null,
+          summary
+        };
+      };
+
+      const createEventOptions = event => {
+        if (!event) return [];
+        const options = [];
+        if (event.option1Text) {
+          options.push({
+            key: 'option1',
+            label: event.option1Text,
+            requirement: event.option1Requirement,
+            rewardType: event.option1RewardType,
+            rewardValue: event.option1RewardValue,
+            penaltyType: event.option1PenaltyType,
+            penaltyValue: event.option1PenaltyValue
+          });
+        }
+        if (event.option2Text) {
+          options.push({
+            key: 'option2',
+            label: event.option2Text,
+            requirement: event.option2Requirement,
+            rewardType: event.option2RewardType,
+            rewardValue: event.option2RewardValue,
+            penaltyType: event.option2PenaltyType,
+            penaltyValue: event.option2PenaltyValue
+          });
+        }
+        return options;
+      };
+
+      const createMerchantOffers = derived => {
+        const offers = [];
+        if (derived.relicList.length) {
+          const relic = derived.relicList[Math.floor(Math.random() * derived.relicList.length)];
+          offers.push({
+            key: `relic-${relic.id}`,
+            label: relic.name,
+            description: relic.effectSummary || '提供战斗增益',
+            cost: { resource: 'Provision', amount: 18 },
+            reward: { type: 'Relic', value: relic.id }
+          });
+        }
+        if (derived.equipmentList.length) {
+          const item = derived.equipmentList[Math.floor(Math.random() * derived.equipmentList.length)];
+          offers.push({
+            key: `equip-${item.id}`,
+            label: item.name,
+            description: item.upgradeBonus || '强化装备词缀',
+            cost: { resource: 'Crystal', amount: 20 },
+            reward: { type: 'Item', value: item.id }
+          });
+        }
+        return offers;
+      };
+
+      const createRestOptions = () => ([
+        { key: 'restore', label: '冥想回生', description: '恢复全队 35% 生命，获得 5 Arcane', healRatio: 0.35, arcaneGain: 5 },
+        { key: 'supply', label: '整备补给', description: '补充 10 点 Provision', provisionGain: 10 }
+      ]);
+
+      const createIdleRunState = () => ({
+        stage: 'idle',
+        chapterId: null,
+        passive: null,
+        featureRooms: null,
+        layerIndex: 0,
+        nodeIndex: 0,
+        nodesByLayer: [],
+        heroes: [],
+        relics: [],
+        resources: { arcane: 0, crystal: 0, provision: 0 },
+        log: [],
+        pending: null,
+        summary: null
+      });
+
+
       const StatCard = ({ label, value, accent = 'starlight' }) => (
         <div className="glass-soft rounded-2xl px-5 py-4 border border-white/5 flex flex-col gap-1">
           <span className="text-xs uppercase tracking-[0.4em] text-white/50">{label}</span>
@@ -216,6 +586,318 @@
           {subtitle ? <p className="text-sm text-white/60 max-w-2xl">{subtitle}</p> : null}
         </div>
       );
+
+      const HeroStatusList = ({ heroes }) => (
+        <div className="grid md:grid-cols-2 gap-4">
+          {heroes.map(hero => {
+            const hpRatio = hero.maxHp ? Math.max(0, hero.hp) / hero.maxHp : 0;
+            return (
+              <div key={hero.id} className="glass-soft rounded-2xl p-4 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-semibold">{hero.name}</p>
+                  <span className="text-xs text-white/50">{hero.role}</span>
+                </div>
+                <div className="w-full h-2 rounded bg-white/10 overflow-hidden">
+                  <div className="h-full bg-aurora transition-all" style={{ width: `${Math.max(4, hpRatio * 100)}%` }}></div>
+                </div>
+                <p className="text-xs text-white/50">{Math.round(hero.hp)}/{hero.maxHp} HP</p>
+                <div className="flex flex-wrap gap-2">
+                  {hero.traits.map(trait => <Tag key={`${hero.id}-trait-${trait}`} label={trait} tone="veil" />)}
+                  {hero.skillTags.map(tag => <Tag key={`${hero.id}-tag-${tag}`} label={tag} tone="veil" />)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+
+      const LogPanel = ({ logs }) => (
+        <div className="glass-soft rounded-3xl p-4 border border-white/10 max-h-72 overflow-auto scroll-shadow space-y-2">
+          {logs.length === 0 ? <p className="text-sm text-white/40">等待行动...</p> : null}
+          {logs.slice().reverse().map(entry => (
+            <div key={entry.id} className="text-sm text-white/70 leading-relaxed">
+              <span className="text-xs uppercase tracking-[0.35em] text-white/30 mr-2">{entry.type}</span>
+              {entry.message}
+            </div>
+          ))}
+        </div>
+      );
+
+      const EventOverlay = ({ pending, onSelect, onSkip }) => (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] border border-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">{pending.event.title}</h3>
+              <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">放弃</button>
+            </div>
+            <p className="text-sm text-white/70 leading-relaxed">{pending.event.summary}</p>
+            <div className="space-y-3">
+              {pending.options.map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => onSelect(option)}
+                  className="w-full text-left glass-soft rounded-2xl p-4 border border-white/10 hover:border-aurora/60 hover:bg-aurora/10 transition"
+                >
+                  <p className="text-white font-semibold text-base">{option.label}</p>
+                  <div className="flex flex-wrap gap-2 mt-2 text-xs text-white/50">
+                    {option.requirement ? <Tag label={`需求: ${option.requirement}`} tone="veil" /> : <Tag label="无额外需求" tone="veil" />}
+                    {option.rewardType ? <Tag label={`奖励: ${option.rewardType} ${option.rewardValue || ''}`} tone="aurora" /> : null}
+                    {option.penaltyType ? <Tag label={`风险: ${option.penaltyType} ${option.penaltyValue || ''}`} tone="ember" /> : null}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      const MerchantOverlay = ({ pending, onChoose, onSkip }) => (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(540px,90vw)] border border-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">漂泊商人</h3>
+              <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">离开</button>
+            </div>
+            <p className="text-sm text-white/70">挑选一件心仪的物品，或空手离开。</p>
+            <div className="space-y-3">
+              {pending.offers.map((offer, index) => (
+                <div key={offer.key} className="glass-soft rounded-2xl p-4 border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-white font-semibold text-lg">{offer.label}</p>
+                    <Tag label={`价格: ${offer.cost.amount} ${offer.cost.resource}`} tone="veil" />
+                  </div>
+                  <p className="text-sm text-white/70">{offer.description}</p>
+                  <button
+                    onClick={() => onChoose(index)}
+                    className="rounded-full px-4 py-2 bg-aurora/80 text-abyss font-semibold hover:brightness-110"
+                  >
+                    购买
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      const RestOverlay = ({ pending, onChoose, onSkip }) => (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] border border-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">休整选择</h3>
+              <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">继续前进</button>
+            </div>
+            <p className="text-sm text-white/70">短暂的喘息能帮助队伍调整状态，选择合适的行动。</p>
+            <div className="space-y-3">
+              {pending.options.map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => onChoose(option)}
+                  className="w-full glass-soft rounded-2xl p-4 border border-white/10 text-left hover:border-aurora/60 hover:bg-aurora/10 transition"
+                >
+                  <p className="text-white font-semibold text-lg">{option.label}</p>
+                  <p className="text-sm text-white/70 mt-1">{option.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      const RunPanel = ({ data, derived, runState, onStartRun, onResolveNode, onEventChoice, onMerchantChoice, onRestChoice, onSkipInteraction, onReset }) => {
+        const chapters = data.chapters?.list || [];
+        const heroCatalog = data.heroes?.list || [];
+
+        const [selectedChapterId, setSelectedChapterId] = useState(() => chapters[0]?.id);
+        const [selectedHeroIds, setSelectedHeroIds] = useState(() => heroCatalog.slice(0, 4).map(hero => hero.id));
+
+        useEffect(() => {
+          if (chapters.length && !selectedChapterId) setSelectedChapterId(chapters[0].id);
+        }, [chapters, selectedChapterId]);
+
+        useEffect(() => {
+          if (heroCatalog.length && selectedHeroIds.length === 0) {
+            setSelectedHeroIds(heroCatalog.slice(0, 4).map(hero => hero.id));
+          }
+        }, [heroCatalog, selectedHeroIds]);
+
+        const currentNode = runState.stage === 'running' ? getCurrentNode(runState) : null;
+        const currentRoom = currentNode ? resolveRoomForNode(currentNode, derived, runState.chapterId) : null;
+
+        const toggleHero = id => {
+          setSelectedHeroIds(prev => {
+            const exists = prev.includes(id);
+            if (exists) return prev.filter(item => item !== id);
+            if (prev.length >= 4) return prev;
+            return [...prev, id];
+          });
+        };
+
+        const canStart = selectedChapterId && selectedHeroIds.length === 4;
+        const resolveLabelMap = {
+          Event: '处理事件',
+          Merchant: '与商人交谈',
+          Rest: '进行休整',
+          Boss: '发起 Boss 战',
+          Elite: '发起精英战',
+          Combat: '发起战斗'
+        };
+        const resolveLabel = resolveLabelMap[currentRoom?.roomType || currentNode?.roomType] || '处理节点';
+
+        return (
+          <div className="space-y-6">
+            <SectionTitle
+              title="周目运行"
+              subtitle="选择章节与队伍，在浏览器内体验由 Excel 配置驱动的地牢之旅。"
+            />
+            <div className="grid lg:grid-cols-[320px,1fr] gap-6">
+              <div className="space-y-4">
+                <div className="glass-soft rounded-3xl p-5 border border-white/10 space-y-3">
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/40">章节选择</p>
+                  <select
+                    className="glass-soft border border-white/10 rounded-xl px-4 py-2 text-sm bg-transparent"
+                    value={selectedChapterId || ''}
+                    onChange={e => setSelectedChapterId(e.target.value)}
+                    disabled={runState.stage === 'running'}
+                  >
+                    {chapters.map(chapter => (
+                      <option key={chapter.id} value={chapter.id}>{chapter.name}</option>
+                    ))}
+                  </select>
+                  {runState.passive ? <p className="text-xs text-white/50">当前被动：{runState.passive}</p> : null}
+                </div>
+
+                <div className="glass-soft rounded-3xl p-5 border border-white/10 space-y-3">
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/40">英雄编制 (4/4)</p>
+                  <div className="grid gap-2">
+                    {heroCatalog.map(hero => {
+                      const active = selectedHeroIds.includes(hero.id);
+                      return (
+                        <button
+                          key={hero.id}
+                          onClick={() => toggleHero(hero.id)}
+                          disabled={runState.stage === 'running' && !active}
+                          className={`text-left rounded-2xl px-4 py-3 border transition ${active ? 'border-starlight/60 bg-starlight/15 text-white' : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10'}`}
+                        >
+                          <p className="text-sm font-semibold">{hero.name}</p>
+                          <p className="text-xs text-white/50">{hero.role} · HP {hero.baseHp}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {(runState.stage === 'running' || runState.stage === 'completed') && (
+                  <div className="glass-soft rounded-3xl p-5 border border-white/10 space-y-4">
+                    <p className="text-xs uppercase tracking-[0.4em] text-white/40">资源概览</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <StatCard label="Arcane" value={formatNumber(runState.resources.arcane)} accent="aurora" />
+                      <StatCard label="Crystal" value={formatNumber(runState.resources.crystal)} accent="starlight" />
+                      <StatCard label="Provision" value={formatNumber(runState.resources.provision)} accent="ember" />
+                    </div>
+                    {runState.relics.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {runState.relics.map(relic => (
+                          <Tag key={relic.id} label={relic.name} tone="starlight" />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                <LogPanel logs={runState.log} />
+              </div>
+
+              <div className="space-y-4">
+                {runState.stage === 'idle' && (
+                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                    <p className="text-sm text-white/70">挑选章节与 4 名英雄后点击「开始周目」即可自动读取 Excel 数据并进入地牢。</p>
+                    <button
+                      onClick={() => onStartRun(Number(selectedChapterId), selectedHeroIds.map(Number))}
+                      disabled={!canStart}
+                      className={`rounded-full px-6 py-3 text-sm font-semibold transition ${canStart ? 'bg-aurora/80 text-abyss hover:brightness-110' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
+                    >
+                      开始周目
+                    </button>
+                  </div>
+                )}
+
+                {runState.stage === 'running' && currentNode && (
+                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.4em] text-white/40">当前节点</p>
+                        <h3 className="text-xl font-semibold text-white">{currentRoom?.name || currentNode.roomType}</h3>
+                      </div>
+                      <Tag label={currentRoom?.roomType || currentNode.roomType || '未知'} tone="veil" />
+                    </div>
+                    {currentRoom?.description ? <p className="text-sm text-white/70 leading-relaxed">{currentRoom.description}</p> : null}
+                    {currentRoom?.specialRule ? <p className="text-xs text-white/50">特殊规则：{currentRoom.specialRule}</p> : null}
+                    {currentRoom?.rewardType ? <p className="text-xs text-white/50">奖励：{currentRoom.rewardType} {currentRoom.rewardValue || ''}</p> : null}
+                    <button
+                      onClick={onResolveNode}
+                      disabled={!!runState.pending}
+                      className={`rounded-full px-5 py-3 text-sm font-semibold transition ${runState.pending ? 'bg-white/15 text-white/40 cursor-not-allowed' : 'bg-aurora/80 text-abyss hover:brightness-110'}`}
+                    >
+                      {resolveLabel}
+                    </button>
+                    <HeroStatusList heroes={runState.heroes} />
+                  </div>
+                )}
+
+                {runState.stage === 'completed' && runState.summary && (
+                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                    <h3 className="text-xl font-semibold text-white">周目完成</h3>
+                    <p className="text-sm text-white/70">资源结算：</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <StatCard label="Arcane" value={formatNumber(runState.summary.resources.arcane)} accent="aurora" />
+                      <StatCard label="Crystal" value={formatNumber(runState.summary.resources.crystal)} accent="starlight" />
+                      <StatCard label="Provision" value={formatNumber(runState.summary.resources.provision)} accent="ember" />
+                    </div>
+                    {runState.summary.relics?.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {runState.summary.relics.map(relic => <Tag key={relic.id} label={relic.name} tone="starlight" />)}
+                      </div>
+                    ) : null}
+                    <button
+                      onClick={onReset}
+                      className="rounded-full px-5 py-3 text-sm font-semibold bg-aurora/80 text-abyss hover:brightness-110"
+                    >
+                      返回编队
+                    </button>
+                  </div>
+                )}
+
+                {runState.stage === 'failed' && (
+                  <div className="glass-soft rounded-3xl p-6 border border-white/10 space-y-4">
+                    <h3 className="text-xl font-semibold text-white">周目失败</h3>
+                    <p className="text-sm text-white/70">队伍全灭或战斗未能取胜，携带少量资源返程。</p>
+                    <button
+                      onClick={onReset}
+                      className="rounded-full px-5 py-3 text-sm font-semibold bg-aurora/80 text-abyss hover:brightness-110"
+                    >
+                      重新编队
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {runState.pending?.type === 'event' && (
+              <EventOverlay pending={runState.pending} onSelect={onEventChoice} onSkip={onSkipInteraction} />
+            )}
+            {runState.pending?.type === 'merchant' && (
+              <MerchantOverlay pending={runState.pending} onChoose={onMerchantChoice} onSkip={onSkipInteraction} />
+            )}
+            {runState.pending?.type === 'rest' && (
+              <RestOverlay pending={runState.pending} onChoose={onRestChoice} onSkip={onSkipInteraction} />
+            )}
+          </div>
+        );
+      };
 
       const OverviewPanel = ({ data }) => {
         const facilities = data.facilities?.list || [];
@@ -711,6 +1393,170 @@
       const App = () => {
         const { loading, error, data } = useArcaneData();
         const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
+        const [runState, setRunState] = useState(createIdleRunState());
+
+        const derived = useMemo(() => createDerivedMaps(data), [data]);
+
+        const startRun = (chapterId, heroIds) => {
+          const chapters = data.chapters?.list || [];
+          const heroes = data.heroes?.list || [];
+          const chapter = chapters.find(ch => Number(ch.id) === Number(chapterId));
+          if (!chapter) return;
+          const nodesByLayer = buildNodesByLayer(data.mapTemplates?.list || [], chapter.id);
+          const heroStates = heroIds
+            .map(id => heroes.find(hero => Number(hero.id) === Number(id)))
+            .filter(Boolean)
+            .map(hero => createHeroState(hero, derived));
+          if (heroStates.length !== 4) return;
+          setRunState({
+            ...createIdleRunState(),
+            stage: 'running',
+            chapterId: chapter.id,
+            passive: chapter.passiveEffect,
+            featureRooms: chapter.featureRooms,
+            nodesByLayer,
+            heroes: heroStates,
+            resources: {
+              arcane: Number(chapter.startArcane) || 0,
+              crystal: Number(chapter.startCrystal) || 0,
+              provision: Number(chapter.startProvision) || 0
+            },
+            log: [createLog('system', `周目开始：${chapter.name}`)]
+          });
+        };
+
+        const resolveCurrentNode = () => {
+          setRunState(prev => {
+            if (prev.stage !== 'running' || prev.pending) return prev;
+            const node = getCurrentNode(prev);
+            if (!node) return prev;
+            const room = resolveRoomForNode(node, derived, prev.chapterId);
+            if (!room) {
+              const log = trimLogs([...prev.log, createLog('system', '节点数据缺失，视为安全通过。')]);
+              return advanceAfterNode(prev, { log });
+            }
+            const nodeType = room.roomType || node.roomType;
+            if (nodeType === 'Event') {
+              const event = derived.eventsById.get(Number(room.eventId || node.eventId))
+                || (derived.eventsByChapter.get(Number(prev.chapterId)) || derived.eventsByChapter.get('any') || [])[0];
+              if (!event) {
+                const log = trimLogs([...prev.log, createLog('event', '未发现事件，队伍整理装备后继续前进。')]);
+                return advanceAfterNode(prev, { log });
+              }
+              return { ...prev, pending: { type: 'event', event, options: createEventOptions(event) } };
+            }
+            if (nodeType === 'Merchant') {
+              return { ...prev, pending: { type: 'merchant', offers: createMerchantOffers(derived) } };
+            }
+            if (nodeType === 'Rest') {
+              return { ...prev, pending: { type: 'rest', options: createRestOptions() } };
+            }
+            const enemy = resolveEnemyForNode(room, derived);
+            if (!enemy) {
+              const log = trimLogs([...prev.log, createLog('battle', '找不到敌人配置，队伍安然通过。')]);
+              return advanceAfterNode(prev, { log });
+            }
+            const battle = simulateBattle(prev, room, enemy);
+            const baseLog = trimLogs([...prev.log, ...battle.logs]);
+            if (!battle.victory) {
+              return {
+                ...prev,
+                heroes: battle.heroes,
+                log: trimLogs([...baseLog, createLog('system', '队伍被迫撤退，周目失败。')]),
+                stage: 'failed',
+                pending: null
+              };
+            }
+            const reward = applyRewards({ ...prev, heroes: battle.heroes }, room.rewardType, room.rewardValue, derived);
+            const logsAfterReward = trimLogs([...baseLog, ...reward.logs]);
+            return advanceAfterNode(prev, {
+              heroes: battle.heroes,
+              resources: reward.resources,
+              relics: reward.relics,
+              log: logsAfterReward
+            });
+          });
+        };
+
+        const handleEventChoice = option => {
+          setRunState(prev => {
+            if (prev.pending?.type !== 'event') return prev;
+            const reward = applyRewards(prev, option.rewardType, option.rewardValue, derived);
+            const penalty = applyPenalties({ ...prev, resources: reward.resources, heroes: prev.heroes }, option.penaltyType, option.penaltyValue);
+            const combinedResources = penalty.resources || reward.resources;
+            const combinedHeroes = penalty.heroes || prev.heroes;
+            const combinedLogs = trimLogs([...prev.log, ...reward.logs, ...penalty.logs]);
+            return advanceAfterNode(prev, {
+              resources: combinedResources,
+              relics: reward.relics,
+              heroes: combinedHeroes,
+              log: combinedLogs
+            });
+          });
+        };
+
+        const handleMerchantChoice = choice => {
+          setRunState(prev => {
+            if (prev.pending?.type !== 'merchant') return prev;
+            const offer = prev.pending.offers[choice];
+            if (!offer) return prev;
+            const resourceKey = lowerResourceKey(offer.cost.resource);
+            if (!Object.prototype.hasOwnProperty.call(prev.resources, resourceKey)) {
+              const log = trimLogs([...prev.log, createLog('event', '价格无法识别，商人摊手离开。')]);
+              return advanceAfterNode(prev, { log });
+            }
+            if ((prev.resources[resourceKey] || 0) < offer.cost.amount) {
+              const log = trimLogs([...prev.log, createLog('event', `资源不足：需要 ${offer.cost.amount} ${offer.cost.resource}`)]);
+              return { ...prev, log };
+            }
+            const deducted = { ...prev.resources, [resourceKey]: Math.max(0, prev.resources[resourceKey] - offer.cost.amount) };
+            const reward = applyRewards({ ...prev, resources: deducted }, offer.reward.type, offer.reward.value, derived);
+            const logs = trimLogs([...prev.log, createLog('event', `购入 ${offer.label}`), ...reward.logs]);
+            return advanceAfterNode(prev, {
+              resources: reward.resources,
+              relics: reward.relics,
+              log: logs
+            });
+          });
+        };
+
+        const handleRestChoice = option => {
+          setRunState(prev => {
+            if (prev.pending?.type !== 'rest') return prev;
+            let heroes = cloneHeroes(prev.heroes);
+            let resources = { ...prev.resources };
+            const logs = [];
+            if (option.key === 'restore') {
+              heroes = heroes.map(hero => ({
+                ...hero,
+                hp: Math.min(hero.maxHp, hero.hp + hero.maxHp * option.healRatio)
+              }));
+              resources.arcane = (resources.arcane || 0) + option.arcaneGain;
+              logs.push(createLog('event', `队伍恢复 ${Math.round(option.healRatio * 100)}% 生命，获得 Arcane ${option.arcaneGain}`));
+            } else if (option.key === 'supply') {
+              resources.provision = (resources.provision || 0) + option.provisionGain;
+              logs.push(createLog('event', `补充 Provision ${option.provisionGain}`));
+            } else {
+              logs.push(createLog('event', '简单整顿后继续前进。'));
+            }
+            return advanceAfterNode(prev, {
+              heroes,
+              resources,
+              log: trimLogs([...prev.log, ...logs])
+            });
+          });
+        };
+
+        const skipInteraction = () => {
+          setRunState(prev => {
+            if (!prev.pending) return prev;
+            const message = prev.pending.type === 'event' ? '放弃事件机会。' : prev.pending.type === 'merchant' ? '离开商人摊位。' : '离开休整点。';
+            const log = trimLogs([...prev.log, createLog('event', message)]);
+            return advanceAfterNode(prev, { log });
+          });
+        };
+
+        const resetRun = () => setRunState(createIdleRunState());
 
         let content = null;
         if (loading) {
@@ -728,6 +1574,20 @@
             </div>
           );
         } else {
+          if (activeSection === 'run') content = (
+            <RunPanel
+              data={data}
+              derived={derived}
+              runState={runState}
+              onStartRun={startRun}
+              onResolveNode={resolveCurrentNode}
+              onEventChoice={handleEventChoice}
+              onMerchantChoice={index => handleMerchantChoice(index)}
+              onRestChoice={handleRestChoice}
+              onSkipInteraction={skipInteraction}
+              onReset={resetRun}
+            />
+          );
           if (activeSection === 'overview') content = <OverviewPanel data={data} />;
           if (activeSection === 'squad') content = <SquadPanel data={data} />;
           if (activeSection === 'map') content = <MapPanel data={data} />;

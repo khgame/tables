@@ -71,6 +71,10 @@ const TID = {
     fireCriticalThreshold: 90000009,
     gatherWoodGain: 90000010,
     stokeFireGain: 90000011
+  },
+  achievement: {
+    sparkShelter: 60000001,
+    villageAwakens: 60000002
   }
 }
 
@@ -137,12 +141,72 @@ buildSheet({
 })
 
 const jobsData = [
-  { tid: TID.job.gatherer, key: 'gatherer', label: '采集者', description: '在废墟间拾取木材。', produces: { wood: 0.6 }, consumes: {}, baseRate: 1, unlock: {} },
-  { tid: TID.job.trapper, key: 'trapper', label: '设陷者', description: '布设陷阱，零星获取肉与兽皮。', produces: { meat: 0.25, fur: 0.2 }, consumes: {}, baseRate: 1, unlock: { building: TID.building.trap } },
-  { tid: TID.job.hunter, key: 'hunter', label: '猎人', description: '与猎犬出行，稳定带回肉与皮毛。', produces: { meat: 0.45, fur: 0.3 }, consumes: { warmth: 0.02 }, baseRate: 1, unlock: { villagers: 3 } },
-  { tid: TID.job.charcoal_burner, key: 'charcoal_burner', label: '烧炭者', description: '消耗木材以制得木炭。', produces: { charcoal: 0.55 }, consumes: { wood: 1.1 }, baseRate: 1, unlock: { building: TID.building.workshop } },
-  { tid: TID.job.tanner, key: 'tanner', label: '制革匠', description: '处理兽皮，制得皮革。', produces: { leather: 0.28 }, consumes: { fur: 0.6 }, baseRate: 1, unlock: { building: TID.building.workshop } },
-  { tid: TID.job.smelter, key: 'smelter', label: '熔炼师', description: '燃烧木炭冶炼钢材。', produces: { steel: 0.12 }, consumes: { charcoal: 0.5, iron: 0.25 }, baseRate: 1, unlock: { building: TID.building.foundry } }
+  {
+    tid: TID.job.gatherer,
+    key: 'gatherer',
+    label: '采集者',
+    description: '在废墟间拾取木材。',
+    produces: { wood: 0.6 },
+    consumes: {},
+    baseRate: 1,
+    baseCap: 2,
+    unlock: {}
+  },
+  {
+    tid: TID.job.trapper,
+    key: 'trapper',
+    label: '设陷者',
+    description: '布设陷阱，零星获取肉与兽皮。',
+    produces: { meat: 0.25, fur: 0.2 },
+    consumes: {},
+    baseRate: 1,
+    baseCap: 0,
+    unlock: { building: TID.building.trap }
+  },
+  {
+    tid: TID.job.hunter,
+    key: 'hunter',
+    label: '猎人',
+    description: '与猎犬出行，稳定带回肉与皮毛。',
+    produces: { meat: 0.45, fur: 0.3 },
+    consumes: { warmth: 0.02 },
+    baseRate: 1,
+    baseCap: 0,
+    unlock: { resource: 'warmth', min: 80, building: TID.building.hut }
+  },
+  {
+    tid: TID.job.charcoal_burner,
+    key: 'charcoal_burner',
+    label: '烧炭者',
+    description: '消耗木材以制得木炭。',
+    produces: { charcoal: 0.55 },
+    consumes: { wood: 1.1 },
+    baseRate: 1,
+    baseCap: 0,
+    unlock: { building: TID.building.workshop }
+  },
+  {
+    tid: TID.job.tanner,
+    key: 'tanner',
+    label: '制革匠',
+    description: '处理兽皮，制得皮革。',
+    produces: { leather: 0.28 },
+    consumes: { fur: 0.6 },
+    baseRate: 1,
+    baseCap: 0,
+    unlock: { building: TID.building.workshop }
+  },
+  {
+    tid: TID.job.smelter,
+    key: 'smelter',
+    label: '熔炼师',
+    description: '燃烧木炭冶炼钢材。',
+    produces: { steel: 0.12 },
+    consumes: { charcoal: 0.5, iron: 0.25 },
+    baseRate: 1,
+    baseCap: 0,
+    unlock: { building: TID.building.foundry }
+  }
 ]
 
 buildSheet({
@@ -159,8 +223,10 @@ buildSheet({
     ...RESOURCE_KEYS.map(name => ({ header: `Consumes ${name}`, mark: 'float?', desc: name, getter: row => row.consumes?.[name] })),
     { header: '', mark: '}' },
     { header: 'Base Rate', mark: 'float', desc: 'baseRate', path: 'baseRate' },
+    { header: 'Base Cap', mark: 'float', desc: 'baseCap', path: 'baseCap' },
     { header: 'Unlock', mark: '{', desc: 'unlock' },
     { header: 'Unlock Building', mark: 'uint?', desc: 'building', getter: row => row.unlock?.building },
+    { header: 'Unlock Building Count', mark: 'float?', desc: 'buildingCount', getter: row => row.unlock?.buildingCount },
     { header: 'Unlock Resource', mark: 'string?', desc: 'resource', getter: row => row.unlock?.resource },
     { header: 'Unlock Min', mark: 'float?', desc: 'min', getter: row => row.unlock?.min },
     { header: 'Unlock Max', mark: 'float?', desc: 'max', getter: row => row.unlock?.max },
@@ -178,6 +244,7 @@ function createEffectColumns(slotCount, accessorFactory) {
     columns.push({ header: `Effect ${i + 1} Type`, mark: 'string?', desc: 'type', getter: row => accessorFactory(row, i)?.type })
     columns.push({ header: `Effect ${i + 1} Resource`, mark: 'string?', desc: 'resource', getter: row => accessorFactory(row, i)?.resource })
     columns.push({ header: `Effect ${i + 1} Amount`, mark: 'float?', desc: 'amount', getter: row => accessorFactory(row, i)?.amount })
+    columns.push({ header: `Effect ${i + 1} Building`, mark: 'uint?', desc: 'building', getter: row => accessorFactory(row, i)?.building })
     columns.push({ header: `Effect ${i + 1} Job`, mark: 'uint?', desc: 'job', getter: row => accessorFactory(row, i)?.job })
     columns.push({ header: `Effect ${i + 1} Action`, mark: 'uint?', desc: 'action', getter: row => accessorFactory(row, i)?.action })
     columns.push({ header: `Effect ${i + 1} Event`, mark: 'uint?', desc: 'event', getter: row => accessorFactory(row, i)?.event })
@@ -191,66 +258,111 @@ function createEffectColumns(slotCount, accessorFactory) {
 const buildingsData = [
   {
     tid: TID.building.hut,
-    key: 'hut', label: '棚屋', description: '粗糙却温暖的住所，可吸引更多幸存者。',
+    key: 'hut',
+    label: '棚屋',
+    description: '粗糙却温暖的住所，可吸引更多幸存者。',
     cost: { wood: 40, fur: 15 },
+    costScaling: 0.28,
     effects: [
       { type: 'storage', resource: 'villagers', amount: 2 },
+      { type: 'jobCap', job: TID.job.gatherer, amount: 1 },
+      { type: 'jobCap', job: TID.job.hunter, amount: 0.5 },
       { type: 'event', event: TID.event.settler_arrives }
     ],
-    unlock: { resource: 'warmth', min: 40 }, buildTime: 18, repeatable: true, maxCount: 12
+    unlock: { resource: 'warmth', min: 60 },
+    buildTime: 18,
+    repeatable: true,
+    maxCount: 12
   },
   {
     tid: TID.building.trap,
-    key: 'trap', label: '陷阱', description: '散落在林中的陷阱，提供稳定的猎物。',
+    key: 'trap',
+    label: '陷阱',
+    description: '散落在林中的陷阱，提供稳定的猎物。',
     cost: { wood: 25 },
+    costScaling: 0.22,
     effects: [
       { type: 'storage', resource: 'meat', amount: 20 },
       { type: 'storage', resource: 'fur', amount: 20 },
+      { type: 'jobCap', job: TID.job.trapper, amount: 1 },
       { type: 'unlockJob', job: TID.job.trapper }
     ],
-    unlock: { event: TID.event.stranger_fire }, buildTime: 12, repeatable: true, maxCount: 16
+    unlock: { event: TID.event.stranger_fire, building: TID.building.hut, buildingCount: 1 },
+    buildTime: 12,
+    repeatable: true,
+    maxCount: 16
   },
   {
     tid: TID.building.smokehouse,
-    key: 'smokehouse', label: '熏肉房', description: '处理肉类，提高口粮储备。',
+    key: 'smokehouse',
+    label: '熏肉房',
+    description: '处理肉类，提高口粮储备。',
     cost: { wood: 65, meat: 20, fur: 10 },
+    costScaling: 0.18,
     effects: [
       { type: 'storage', resource: 'supplies', amount: 60 },
+      { type: 'jobCap', job: TID.job.hunter, amount: 1 },
       { type: 'unlockAction', action: TID.action.prepare_rations }
     ],
-    unlock: { building: TID.building.trap }, buildTime: 22, repeatable: false, maxCount: 2
+    unlock: { building: TID.building.trap, buildingCount: 1 },
+    buildTime: 22,
+    repeatable: false,
+    maxCount: 2
   },
   {
     tid: TID.building.workshop,
-    key: 'workshop', label: '工坊', description: '装备工具的工坊，开启加工工艺。',
+    key: 'workshop',
+    label: '工坊',
+    description: '装备工具的工坊，开启加工工艺。',
     cost: { wood: 110, fur: 50, leather: 8 },
+    costScaling: 0.2,
     effects: [
+      { type: 'jobCap', job: TID.job.charcoal_burner, amount: 2 },
+      { type: 'jobCap', job: TID.job.tanner, amount: 1.5 },
       { type: 'unlockJob', job: TID.job.charcoal_burner },
       { type: 'unlockJob', job: TID.job.tanner },
       { type: 'unlockAction', action: TID.action.craft_charcoal }
     ],
-    unlock: { villagers: 4 }, buildTime: 28, repeatable: false, maxCount: 2
+    unlock: { villagers: 4, building: TID.building.hut, buildingCount: 3 },
+    buildTime: 28,
+    repeatable: false,
+    maxCount: 2
   },
   {
     tid: TID.building.foundry,
-    key: 'foundry', label: '铸炉', description: '用于冶炼钢材的高温炉。',
+    key: 'foundry',
+    label: '铸炉',
+    description: '用于冶炼钢材的高温炉。',
     cost: { wood: 140, charcoal: 50, iron: 35 },
+    costScaling: 0.22,
     effects: [
-      { type: 'unlockJob', job: TID.job.smelter },
+      { type: 'jobCap', job: TID.job.smelter, amount: 2 },
       { type: 'storage', resource: 'steel', amount: 60 },
+      { type: 'unlockJob', job: TID.job.smelter },
       { type: 'unlockAction', action: TID.action.craft_steel }
     ],
-    unlock: { building: TID.building.workshop }, buildTime: 36, repeatable: false, maxCount: 2
+    unlock: { building: TID.building.workshop, buildingCount: 1 },
+    buildTime: 36,
+    repeatable: false,
+    maxCount: 2
   },
   {
     tid: TID.building.caravanserai,
-    key: 'caravanserai', label: '商旅驿站', description: '接引游商，可交换稀缺物资。',
+    key: 'caravanserai',
+    label: '商旅驿站',
+    description: '接引游商，可交换稀缺物资。',
     cost: { wood: 160, leather: 25, steel: 10 },
+    costScaling: 0.18,
     effects: [
+      { type: 'storage', resource: 'supplies', amount: 120 },
+      { type: 'jobCap', job: TID.job.hunter, amount: 1 },
       { type: 'unlockAction', action: TID.action.trade_with_caravan },
       { type: 'event', event: TID.event.caravan_returns }
     ],
-    unlock: { resource: 'supplies', min: 40 }, buildTime: 32, repeatable: false, maxCount: 1
+    unlock: { resource: 'supplies', min: 40, building: TID.building.hut, buildingCount: 6 },
+    buildTime: 32,
+    repeatable: false,
+    maxCount: 1
   }
 ]
 
@@ -264,7 +376,8 @@ buildSheet({
     { header: 'Cost', mark: '{', desc: 'cost' },
     ...RESOURCE_KEYS.map(name => ({ header: `Cost ${name}`, mark: 'float?', desc: name, getter: row => row.cost?.[name] })),
     { header: '', mark: '}' },
-    ...createEffectColumns(3, (row, idx) => toArray(row.effects)[idx] || null),
+    { header: 'Cost Scaling', mark: 'float?', desc: 'costScaling', path: 'costScaling' },
+    ...createEffectColumns(6, (row, idx) => toArray(row.effects)[idx] || null),
     { header: 'Unlock', mark: '{', desc: 'unlock' },
     { header: 'Unlock Building', mark: 'uint?', desc: 'building', getter: row => row.unlock?.building },
     { header: 'Unlock Resource', mark: 'string?', desc: 'resource', getter: row => row.unlock?.resource },
@@ -288,6 +401,34 @@ const actionsData = [
   { tid: TID.action.craft_charcoal, key: 'craft_charcoal', label: '闷烧木炭', description: '将木材闷烧成木炭。', cooldown: 45, cost: { wood: 20 }, reward: { charcoal: 12 }, unlock: { building: TID.building.workshop }, logStart: '你用土壤封住炉膛。', logResult: '黑亮的木炭堆满炉旁。', offline: true },
   { tid: TID.action.craft_steel, key: 'craft_steel', label: '冶炼钢材', description: '在铸炉中冶炼精钢。', cooldown: 60, cost: { charcoal: 18, iron: 10 }, reward: { steel: 4 }, unlock: { building: TID.building.foundry }, logStart: '你把铁锭推入炽热的炉膛。', logResult: '精钢发出银蓝色的光泽。', offline: true },
   { tid: TID.action.trade_with_caravan, key: 'trade_with_caravan', label: '与商队交易', description: '花费口粮换取铁料与其他资源。', cooldown: 120, cost: { supplies: 12 }, reward: { iron: 8, charcoal: 6, fur: 10 }, unlock: { building: TID.building.caravanserai }, logStart: '你摆出准备好的物资等待商队。', logResult: '商人留下货物与故事，踏雪而去。', offline: false }
+]
+
+const achievementEffectsSlots = 4
+
+const achievementsData = [
+  {
+    tid: TID.achievement.sparkShelter,
+    key: 'spark_shelter',
+    label: '火势渐旺',
+    description: '将炉火升至 60 以上，村民提议搭建棚屋。',
+    trigger: { resource: 'warmth', min: 60 },
+    effects: [
+      { type: 'unlockBuilding', building: TID.building.hut },
+      { type: 'log', message: '篝火驱散寒意，大家提议搭起棚屋。' }
+    ]
+  },
+  {
+    tid: TID.achievement.villageAwakens,
+    key: 'village_awakens',
+    label: '村落初成',
+    description: '建造至少两座棚屋，小村庄开始成形。',
+    trigger: { building: TID.building.hut, buildingCount: 3 },
+    effects: [
+      { type: 'unlockBuilding', building: TID.building.smokehouse },
+      { type: 'unlockBuilding', building: TID.building.workshop },
+      { type: 'log', message: '村民们规划起烟房和工坊，为未来做准备。' }
+    ]
+  }
 ]
 
 buildSheet({
@@ -353,6 +494,26 @@ buildSheet({
     { header: 'Log Message', mark: 'string', desc: 'log', path: 'log' }
   ],
   rows: eventsData
+})
+
+buildSheet({
+  name: 'achievements.xlsx',
+  columns: [
+    { header: 'TID', mark: '@', desc: 'tid', path: 'tid' },
+    { header: 'Achievement Key', mark: 'string', desc: 'key', path: 'key' },
+    { header: 'Label', mark: 'string', desc: 'label', path: 'label' },
+    { header: 'Description', mark: 'string', desc: 'description', path: 'description' },
+    { header: 'Trigger', mark: '{', desc: 'trigger' },
+    { header: 'Trigger Resource', mark: 'string?', desc: 'resource', getter: row => row.trigger?.resource },
+    { header: 'Trigger Min', mark: 'float?', desc: 'min', getter: row => row.trigger?.min },
+    { header: 'Trigger Max', mark: 'float?', desc: 'max', getter: row => row.trigger?.max },
+    { header: 'Trigger Villagers', mark: 'uint?', desc: 'villagers', getter: row => row.trigger?.villagers },
+    { header: 'Trigger Building', mark: 'uint?', desc: 'building', getter: row => row.trigger?.building },
+    { header: 'Trigger Building Count', mark: 'float?', desc: 'buildingCount', getter: row => row.trigger?.buildingCount },
+    { header: '', mark: '}' },
+    ...createEffectColumns(achievementEffectsSlots, (row, idx) => toArray(row.effects)[idx] || null)
+  ],
+  rows: achievementsData
 })
 
 const configData = [

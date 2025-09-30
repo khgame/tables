@@ -32,10 +32,12 @@ window.ADRHooks.useGameState = (initialStateFactory, buildingKeyToTid, actionKey
       base.eventsTriggered = migrateSetValues(parsed.eventsTriggered || [], eventKeyToTid);
       base.permanentUnlocks = {
         actions: migrateSetValues(parsed.permanentUnlocks?.actions || [], actionKeyToTid),
-        jobs: migrateSetValues(parsed.permanentUnlocks?.jobs || [], {})
+        jobs: migrateSetValues(parsed.permanentUnlocks?.jobs || [], {}),
+        buildings: migrateSetValues(parsed.permanentUnlocks?.buildings || [], buildingKeyToTid)
       };
       base.log = (parsed.log || []).slice(-100);
       base.lastTimestamp = parsed.timestamp || Date.now();
+      base.achievementsUnlocked = migrateSetValues(parsed.achievementsUnlocked || [], {});
 
       return base;
     } catch (err) {
@@ -64,10 +66,12 @@ window.ADRHooks.useAutoSave = (stateRef, autosaveIntervalSeconds) => {
         eventsTriggered: Array.from(current.eventsTriggered),
         permanentUnlocks: {
           actions: Array.from(current.permanentUnlocks.actions),
-          jobs: Array.from(current.permanentUnlocks.jobs)
+          jobs: Array.from(current.permanentUnlocks.jobs),
+          buildings: Array.from(current.permanentUnlocks.buildings)
         },
         log: current.log,
-        timestamp: current.lastTimestamp
+        timestamp: current.lastTimestamp,
+        achievementsUnlocked: Array.from(current.achievementsUnlocked)
       };
 
       try {
@@ -88,25 +92,56 @@ window.ADRHooks.useAutoSave = (stateRef, autosaveIntervalSeconds) => {
   }, [stateRef, autosaveIntervalSeconds]);
 };
 
-window.ADRHooks.useGameTick = (helpers, baseTickSeconds, forceUpdate) => {
+window.ADRHooks.useGameTick = (helpers, baseTickSeconds, offlineCapSeconds, forceUpdate) => {
   useEffect(() => {
+    const intervalMs = Math.max(250, (toNumber(baseTickSeconds) || 1) * 500);
+    const offlineLimit = Math.max(0, toNumber(offlineCapSeconds) || 0);
+
+    const current = helpers.stateRef.current;
+    const now = Date.now();
+    const elapsed = Math.max(0, (now - (current.lastTimestamp || now)) / 1000);
+    if (elapsed > 0.1) {
+      const capped = offlineLimit > 0 ? Math.min(elapsed, offlineLimit) : elapsed;
+      if (capped > 0) {
+        const delta = advanceState(current, capped, helpers);
+        current.lastTimestamp = Date.now();
+        const gains = Object.entries(delta)
+          .filter(([, value]) => toNumber(value) > 0)
+          .slice(0, 3)
+          .map(([key, value]) => {
+            const label = helpers.resourceMap?.get?.(key)?.label || key;
+            return `${label}+${toNumber(value).toFixed(1)}`;
+          })
+          .join(', ');
+        if (helpers.pushLog) {
+          helpers.pushLog(
+            current,
+            gains ? `离线收益 ${Math.round(capped)}s：${gains}` : `离线收益 ${Math.round(capped)}s 已结算`,
+            Date.now(),
+            helpers.logLimit || 100
+          );
+        }
+        forceUpdate(x => x + 1);
+      }
+    }
+
     let last = Date.now();
 
     const tickInterval = setInterval(() => {
-      const now = Date.now();
-      const dt = Math.max(0, (now - last) / 1000);
-      last = now;
+      const nowTick = Date.now();
+      const dt = Math.max(0, (nowTick - last) / 1000);
+      last = nowTick;
 
       if (dt <= 0) return;
 
-      const current = helpers.stateRef.current;
-      advanceState(current, dt, helpers);
-      current.lastTimestamp = now;
+      const currentState = helpers.stateRef.current;
+      advanceState(currentState, dt, helpers);
+      currentState.lastTimestamp = nowTick;
       forceUpdate(x => x + 1);
-    }, Math.max(250, (toNumber(baseTickSeconds) || 1) * 500));
+    }, intervalMs);
 
     return () => clearInterval(tickInterval);
-  }, [helpers, baseTickSeconds, forceUpdate]);
+  }, [helpers, baseTickSeconds, offlineCapSeconds, forceUpdate]);
 };
 
 window.ADRHooks.useResetGame = () => {

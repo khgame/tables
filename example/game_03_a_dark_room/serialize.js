@@ -13,6 +13,7 @@ const baseDir = __dirname
 const outDir = Path.resolve(baseDir, 'out')
 
 const tables = [
+  { file: 'achievements.xlsx', stem: 'achievements' },
   { file: 'resources.xlsx', stem: 'resources' },
   { file: 'jobs.xlsx', stem: 'jobs' },
   { file: 'buildings.xlsx', stem: 'buildings' },
@@ -66,6 +67,7 @@ function writeWebDemo(targetDir) {
 
   // Process index.html with data injection
   const replacements = new Map([
+    ['__ACHIEVEMENTS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'achievements.json'))],
     ['__RESOURCES_JSON__', loadJsonForScript(Path.resolve(targetDir, 'resources.json'))],
     ['__JOBS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'jobs.json'))],
     ['__BUILDINGS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'buildings.json'))],

@@ -43,20 +43,35 @@ window.ADRGameLogic.computeCapacities = (resources, buildingsState, buildingMap)
 };
 
 window.ADRGameLogic.checkRequirement = (unlock, state) => {
-  if (!unlock || typeof unlock !== 'object') return true;
+  if (!unlock || typeof unlock !== 'object' || Object.keys(unlock).length === 0) return true;
 
-  const { resources = {}, buildings = {}, actions = {} } = unlock;
+  const resources = unlock.resources || {};
+  const buildings = unlock.buildings || {};
+  const actions = unlock.actions || {};
+  const events = unlock.events || {};
+  const jobs = unlock.jobs || {};
 
-  for (const [key, min] of Object.entries(resources)) {
-    if (toNumber(state.resources[key]) < toNumber(min)) return false;
+  for (const [key, rule] of Object.entries(resources)) {
+    const value = toNumber(state.resources[key]);
+    if (rule.min !== undefined && value < toNumber(rule.min)) return false;
+    if (rule.max !== undefined && value > toNumber(rule.max)) return false;
   }
 
   for (const [tid, min] of Object.entries(buildings)) {
-    if (toNumber(state.buildings[Number(tid)]) < toNumber(min)) return false;
+    const owned = toNumber(state.buildings[Number(tid)]);
+    if (owned < toNumber(min)) return false;
   }
 
   for (const [tid] of Object.entries(actions)) {
     if (!state.permanentUnlocks.actions.has(Number(tid))) return false;
+  }
+
+  for (const [tid] of Object.entries(events)) {
+    if (!state.eventsTriggered.has(Number(tid))) return false;
+  }
+
+  for (const [tid, min] of Object.entries(jobs)) {
+    if (toNumber(state.jobs[Number(tid)]) < toNumber(min)) return false;
   }
 
   return true;
@@ -204,17 +219,28 @@ window.ADRGameLogic.executeEvent = (event, state, helpers, capacities, now) => {
 window.ADRGameLogic.advanceState = (state, seconds, helpers) => {
   if (seconds <= 0) return {};
 
-  const { resources, events, buildingMap } = helpers;
-  const { computeCapacities, applyProduction, executeEvent } = window.ADRGameLogic;
+  const { resources, events, buildingMap, jobs } = helpers;
+  const {
+    computeCapacities,
+    applyProduction,
+    executeEvent,
+    computeJobCaps,
+    enforceJobCaps,
+    processAchievements
+  } = window.ADRGameLogic;
   let remaining = seconds;
   let currentTime = state.lastTimestamp;
   const cumulative = {};
+
+  processAchievements(state, helpers, currentTime);
 
   // 分步模拟，每次最多1秒
   while (remaining > 0) {
     const dt = Math.min(1, remaining);
     currentTime += dt * 1000;
 
+    const jobCaps = computeJobCaps(jobs, state.buildings, buildingMap);
+    enforceJobCaps(state, jobCaps);
     const capacities = computeCapacities(resources, state.buildings, buildingMap);
     const delta = applyProduction(state, dt, helpers, capacities);
 
@@ -227,9 +253,221 @@ window.ADRGameLogic.advanceState = (state, seconds, helpers) => {
       executeEvent(event, state, helpers, capacities, currentTime);
     });
 
+    processAchievements(state, helpers, currentTime);
+
     remaining -= dt;
   }
 
   state.lastTimestamp = currentTime;
   return cumulative;
+};
+
+window.ADRGameLogic.computeJobCaps = (jobs, buildingsState, buildingMap) => {
+  const caps = {};
+
+  jobs.forEach(job => {
+    caps[job.tid] = Math.max(0, toNumber(job.baseCap) || 0);
+  });
+
+  Object.entries(buildingsState || {}).forEach(([tid, count]) => {
+    const total = toNumber(count);
+    if (!total) return;
+
+    const building = buildingMap.get(Number(tid));
+    if (!building) return;
+
+    const effects = normalizeEffects(building.effects);
+    effects.forEach(effect => {
+      if (effect.type === 'jobCap' && effect.job) {
+        const jobTid = Number(effect.job);
+        caps[jobTid] = (caps[jobTid] || 0) + toNumber(effect.amount) * total;
+      }
+    });
+  });
+
+  const normalizedCaps = {};
+  Object.entries(caps).forEach(([tid, value]) => {
+    const capped = Math.max(0, Math.floor(value + 1e-6));
+    normalizedCaps[Number(tid)] = capped;
+  });
+
+  return normalizedCaps;
+};
+
+window.ADRGameLogic.enforceJobCaps = (state, jobCaps) => {
+  let changed = false;
+  Object.entries(jobCaps).forEach(([tid, cap]) => {
+    const current = toNumber(state.jobs[Number(tid)] || 0);
+    if (cap >= 0 && current > cap) {
+      state.jobs[Number(tid)] = cap;
+      changed = true;
+    }
+  });
+  if (changed) {
+    // Remove zero entries for cleanliness
+    Object.keys(state.jobs).forEach(tid => {
+      if (!state.jobs[tid]) delete state.jobs[tid];
+    });
+  }
+};
+
+window.ADRGameLogic.computeScaledCost = (building, currentCount) => {
+  const baseCost = building.cost || {};
+  const scaling = toNumber(building.costScaling) || 0;
+  const factor = scaling ? Math.pow(1 + scaling, currentCount) : 1;
+  const result = {};
+  Object.entries(baseCost).forEach(([resKey, cost]) => {
+    result[resKey] = Math.ceil(toNumber(cost) * factor);
+  });
+  return result;
+};
+
+window.ADRGameLogic.applyBuildingEffectsOnBuild = (building, state, helpers) => {
+  const effects = normalizeEffects(building.effects);
+  if (!effects.length) return;
+
+  state.permanentUnlocks = state.permanentUnlocks || { actions: new Set(), jobs: new Set(), buildings: new Set() };
+  if (!state.permanentUnlocks.actions) state.permanentUnlocks.actions = new Set();
+  if (!state.permanentUnlocks.jobs) state.permanentUnlocks.jobs = new Set();
+  if (!state.permanentUnlocks.buildings) state.permanentUnlocks.buildings = new Set();
+
+  const now = Date.now();
+  const {
+    logLimit,
+    eventMap,
+    resources,
+    buildingMap,
+    jobMap,
+    actionMap
+  } = helpers;
+
+  const capacities = window.ADRGameLogic.computeCapacities(resources, state.buildings, buildingMap);
+
+  effects.forEach(effect => {
+    switch (effect.type) {
+      case 'unlockJob':
+        if (effect.job) {
+          state.permanentUnlocks.jobs.add(Number(effect.job));
+          const jobName = jobMap?.get?.(Number(effect.job))?.label;
+          window.ADRGameLogic.pushLog(state, `新的岗位：${jobName || effect.job}`, now, logLimit);
+        }
+        break;
+      case 'unlockAction':
+        if (effect.action) {
+          state.permanentUnlocks.actions.add(Number(effect.action));
+          const actionName = actionMap?.get?.(Number(effect.action))?.label;
+          window.ADRGameLogic.pushLog(state, `新增行动：${actionName || effect.action}`, now, logLimit);
+        }
+        break;
+      case 'resource':
+        if (effect.resource) {
+          const cap = capacities[effect.resource] ?? Infinity;
+          const before = state.resources[effect.resource] || 0;
+          const after = clamp(before + toNumber(effect.amount), 0, cap);
+          state.resources[effect.resource] = after;
+        }
+        break;
+      case 'log':
+        if (effect.message) {
+          window.ADRGameLogic.pushLog(state, effect.message, now, logLimit);
+        }
+        break;
+      case 'event': {
+        if (!effect.event) break;
+        const eventObj = eventMap.get(Number(effect.event));
+        if (eventObj) {
+          window.ADRGameLogic.executeEvent(eventObj, state, helpers, capacities, now);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  });
+};
+
+window.ADRGameLogic.applyAchievementEffects = (achievement, state, helpers, now) => {
+  state.permanentUnlocks = state.permanentUnlocks || { actions: new Set(), jobs: new Set(), buildings: new Set() };
+  if (!state.permanentUnlocks.actions) state.permanentUnlocks.actions = new Set();
+  if (!state.permanentUnlocks.jobs) state.permanentUnlocks.jobs = new Set();
+  if (!state.permanentUnlocks.buildings) state.permanentUnlocks.buildings = new Set();
+
+  const {
+    logLimit,
+    actionMap,
+    jobMap,
+    buildingMap
+  } = helpers;
+
+  normalizeEffects(achievement.effects).forEach(effect => {
+    let cachedCapacities;
+    const getCapacities = () => {
+      if (!cachedCapacities) {
+        cachedCapacities = window.ADRGameLogic.computeCapacities(
+          helpers.resources || [],
+          state.buildings,
+          helpers.buildingMap || new Map()
+        );
+      }
+      return cachedCapacities;
+    };
+
+    switch (effect.type) {
+      case 'unlockBuilding':
+        if (effect.building) {
+          state.permanentUnlocks.buildings.add(Number(effect.building));
+          const buildingName = buildingMap?.get?.(Number(effect.building))?.label;
+          window.ADRGameLogic.pushLog(state, `建筑解锁：${buildingName || effect.building}`, now, logLimit);
+        }
+        break;
+      case 'unlockAction':
+        if (effect.action) {
+          state.permanentUnlocks.actions.add(Number(effect.action));
+          const actionName = actionMap?.get?.(Number(effect.action))?.label;
+          window.ADRGameLogic.pushLog(state, `新增行动：${actionName || effect.action}`, now, logLimit);
+        }
+        break;
+      case 'unlockJob':
+        if (effect.job) {
+          state.permanentUnlocks.jobs.add(Number(effect.job));
+          const jobName = jobMap?.get?.(Number(effect.job))?.label;
+          window.ADRGameLogic.pushLog(state, `新的岗位：${jobName || effect.job}`, now, logLimit);
+        }
+        break;
+      case 'resource':
+        if (effect.resource) {
+          const cap = getCapacities()[effect.resource] ?? Infinity;
+          const before = state.resources[effect.resource] || 0;
+          const after = clamp(before + toNumber(effect.amount), 0, cap);
+          state.resources[effect.resource] = after;
+        }
+        break;
+      case 'log':
+        if (effect.message) {
+          window.ADRGameLogic.pushLog(state, effect.message, now, logLimit);
+        }
+        break;
+      default:
+        break;
+    }
+  });
+};
+
+window.ADRGameLogic.processAchievements = (state, helpers, now = Date.now()) => {
+  const achievements = helpers.achievements || [];
+  if (!achievements.length) return;
+
+  state.achievementsUnlocked = state.achievementsUnlocked || new Set();
+  state.permanentUnlocks = state.permanentUnlocks || { actions: new Set(), jobs: new Set(), buildings: new Set() };
+  if (!state.permanentUnlocks.buildings) state.permanentUnlocks.buildings = new Set();
+  if (!state.permanentUnlocks.actions) state.permanentUnlocks.actions = new Set();
+  if (!state.permanentUnlocks.jobs) state.permanentUnlocks.jobs = new Set();
+
+  achievements.forEach(ach => {
+    if (state.achievementsUnlocked.has(ach.tid)) return;
+    if (!window.ADRGameLogic.checkRequirement(ach.trigger, state)) return;
+    state.achievementsUnlocked.add(ach.tid);
+    window.ADRGameLogic.pushLog(state, `成就达成：《${ach.label}》`, now, helpers.logLimit || 100);
+    window.ADRGameLogic.applyAchievementEffects(ach, state, helpers, now);
+  });
 };

@@ -10,14 +10,19 @@ const {
   transformJobData,
   transformBuildingData,
   transformActionData,
-  transformEventData
+  transformEventData,
+  transformAchievementData
 } = window.ADRDataTransform;
 const { deriveScene, SCENE_LABELS } = window.ADRSceneConfig;
 const {
   computeCapacities,
   checkRequirement,
   applyProduction,
-  pushLog
+  pushLog,
+  computeJobCaps,
+  computeScaledCost,
+  applyBuildingEffectsOnBuild,
+  enforceJobCaps
 } = window.ADRGameLogic;
 const { StatChip, ResourceCard, ListItem } = window.ADRComponents;
 const { useGameState, useAutoSave, useGameTick, useResetGame } = window.ADRHooks;
@@ -34,10 +39,12 @@ function App() {
   const config = useMemo(() => {
     const res = {};
     Object.values(globalDataset.result || {}).forEach(entry => {
-      res[entry.key] = entry.value;
+      const numeric = toNumber(entry.value);
+      res[entry.key] = Number.isNaN(numeric) ? entry.value : numeric;
     });
     return res;
   }, [globalDataset]);
+  const logLimit = toNumber(config.logLimit) || 100;
 
   // ==================== 数据转换 ====================
   const resourceList = useMemo(() =>
@@ -66,12 +73,18 @@ function App() {
     []
   );
 
+  const achievementList = useMemo(() =>
+    datasetToArray(data.achievements, (row, tid) => transformAchievementData(row, tid, normalizeEffects)),
+    []
+  );
+
   // ==================== 索引构建 ====================
   const resourceMap = useMemo(() => buildLookup(resourceList), [resourceList]);
   const jobMap = useMemo(() => buildLookup(jobList, 'tid'), [jobList]);
   const buildingMap = useMemo(() => buildLookup(buildingList, 'tid'), [buildingList]);
   const actionMap = useMemo(() => buildLookup(actionList, 'tid'), [actionList]);
   const eventMap = useMemo(() => buildLookup(eventList, 'tid'), [eventList]);
+  const achievementMap = useMemo(() => buildLookup(achievementList, 'tid'), [achievementList]);
 
   const buildingKeyToTid = useMemo(() =>
     Object.fromEntries(buildingList.map(b => [b.key, b.tid])),
@@ -103,8 +116,9 @@ function App() {
       actionCooldowns: {},
       eventCooldowns: {},
       eventsTriggered: new Set(),
+      achievementsUnlocked: new Set(),
       log: [],
-      permanentUnlocks: { actions: new Set(), jobs: new Set() },
+      permanentUnlocks: { actions: new Set(), jobs: new Set(), buildings: new Set() },
       lastTimestamp: Date.now()
     };
   }, [resourceList, config]);
@@ -119,31 +133,37 @@ function App() {
   const [, forceUpdate] = useState(0);
 
   // ==================== 辅助对象 ====================
+  const jobCaps = useMemo(() => computeJobCaps(jobList, state.buildings, buildingMap), [jobList, state.buildings, buildingMap]);
+
   const helpers = useMemo(() => ({
     resources: resourceList,
     jobs: jobList,
     buildings: buildingList,
     actions: actionList,
     events: eventList,
+    achievements: achievementList,
     resourceMap,
     jobMap,
     buildingMap,
     actionMap,
     eventMap,
+    achievementMap,
     buildingKeyToTid,
+    config,
+    jobCaps,
     checkRequirement,
     pushLog,
-    logLimit: 100,
+    logLimit,
     stateRef
   }), [
     resourceList, jobList, buildingList, actionList, eventList,
-    resourceMap, jobMap, buildingMap, actionMap, eventMap,
-    buildingKeyToTid, stateRef
+    resourceMap, jobMap, buildingMap, actionMap, eventMap, achievementMap,
+    buildingKeyToTid, config, jobCaps, logLimit, stateRef, achievementList
   ]);
 
   // ==================== 生命周期 ====================
   useAutoSave(stateRef, config.autosaveInterval);
-  useGameTick(helpers, config.baseTickSeconds, forceUpdate);
+  useGameTick(helpers, config.baseTickSeconds, config.offlineCapSeconds, forceUpdate);
 
   // ==================== 派生数据 ====================
   const capacities = useMemo(() =>
@@ -154,6 +174,7 @@ function App() {
   const rates = useMemo(() => {
     const result = {};
     const tempState = JSON.parse(JSON.stringify(state));
+    enforceJobCaps(tempState, helpers.jobCaps || {});
     const delta = applyProduction(tempState, 1, helpers, capacities);
     Object.entries(delta).forEach(([key, value]) => {
       result[key] = value;
@@ -181,7 +202,9 @@ function App() {
   );
 
   const visibleBuildings = useMemo(() =>
-    buildingList.filter(building => checkRequirement(building.unlock, state)),
+    buildingList.filter(building =>
+      state.permanentUnlocks.buildings.has(building.tid) || checkRequirement(building.unlock, state)
+    ),
     [buildingList, state]
   );
 
@@ -202,10 +225,21 @@ function App() {
       if (toNumber(state.resources[resKey]) < toNumber(cost)) return;
     }
 
-    const newState = { ...state };
+    const newState = {
+      ...state,
+      permanentUnlocks: {
+        actions: new Set(state.permanentUnlocks.actions),
+        jobs: new Set(state.permanentUnlocks.jobs),
+        buildings: new Set(state.permanentUnlocks.buildings)
+      }
+    };
 
     for (const [resKey, cost] of Object.entries(action.cost)) {
       newState.resources = { ...newState.resources, [resKey]: newState.resources[resKey] - toNumber(cost) };
+    }
+
+    if (action.logStart) {
+      pushLog(newState, action.logStart, now, helpers.logLimit);
     }
 
     // 处理 reward（直接使用配置表字段）
@@ -218,10 +252,16 @@ function App() {
       });
     }
 
+    if (action.logResult) {
+      pushLog(newState, action.logResult, now, helpers.logLimit);
+    }
+
     // 使用 cooldown 字段（配置表中的字段名）
     if (action.cooldown > 0) {
       newState.actionCooldowns = { ...newState.actionCooldowns, [actionTid]: now + action.cooldown * 1000 };
     }
+
+    newState.permanentUnlocks.actions.add(actionTid);
 
     setState(newState);
   }, [state, actionMap, capacities, helpers.logLimit]);
@@ -234,21 +274,31 @@ function App() {
     if (!building.repeatable && current > 0) return;
     if (building.maxCount > 0 && current >= building.maxCount) return;
 
-    for (const [resKey, cost] of Object.entries(building.cost)) {
+    const scaledCost = computeScaledCost(building, current);
+
+    for (const [resKey, cost] of Object.entries(scaledCost)) {
       if (toNumber(state.resources[resKey]) < toNumber(cost)) return;
     }
 
-    const newState = { ...state };
+    const newState = {
+      ...state,
+      permanentUnlocks: {
+        actions: new Set(state.permanentUnlocks.actions),
+        jobs: new Set(state.permanentUnlocks.jobs),
+        buildings: new Set(state.permanentUnlocks.buildings)
+      }
+    };
 
-    for (const [resKey, cost] of Object.entries(building.cost)) {
+    for (const [resKey, cost] of Object.entries(scaledCost)) {
       newState.resources = { ...newState.resources, [resKey]: newState.resources[resKey] - toNumber(cost) };
     }
 
     newState.buildings = { ...newState.buildings, [buildingTid]: current + 1 };
-    pushLog(newState, `建造了 ${building.label}`, Date.now(), helpers.logLimit);
+    applyBuildingEffectsOnBuild(building, newState, helpers);
+    pushLog(newState, `建造了 ${building.label}（第 ${current + 1} 次）`, Date.now(), helpers.logLimit);
 
     setState(newState);
-  }, [state, buildingMap, helpers.logLimit]);
+  }, [state, buildingMap, helpers]);
 
   const handleAssignJob = useCallback((jobTid, delta) => {
     const job = jobMap.get(jobTid);
@@ -259,15 +309,21 @@ function App() {
     const villagers = toNumber(state.resources.villagers);
 
     const totalAssigned = Object.values(state.jobs).reduce((sum, count) => sum + toNumber(count), 0);
-    const availableVillagers = villagers - totalAssigned + current;
+    const maxJobRatio = Math.min(1, Math.max(0.1, toNumber(config.maxJobRatio) || 1));
+    const maxAssignable = Math.floor(villagers * maxJobRatio);
+    const availableVillagers = Math.max(0, maxAssignable - (totalAssigned - current));
+    const cap = helpers.jobCaps[jobTid] ?? Infinity;
+    const target = Math.min(newCount, current + availableVillagers, cap);
+    if (target === current) return;
 
-    if (newCount > current && newCount > current + availableVillagers) return;
+    const nextJobs = { ...state.jobs, [jobTid]: target };
+    if (!target) delete nextJobs[jobTid];
 
     setState({
       ...state,
-      jobs: { ...state.jobs, [jobTid]: newCount }
+      jobs: nextJobs
     });
-  }, [state, jobMap]);
+  }, [state, jobMap, helpers.jobCaps, config.maxJobRatio]);
 
   const handleReset = useResetGame();
 
@@ -398,20 +454,26 @@ function App() {
             React.createElement('div', { className: 'space-y-1' },
               visibleBuildings.map(building => {
                 const current = state.buildings[building.tid] || 0;
-                const canAfford = Object.entries(building.cost).every(([resKey, cost]) =>
+                const scaledCost = computeScaledCost(building, current);
+                const canAfford = Object.entries(scaledCost).every(([resKey, cost]) =>
                   toNumber(state.resources[resKey]) >= toNumber(cost)
                 );
                 const atMax = building.maxCount > 0 && current >= building.maxCount;
                 const canBuild = canAfford && (!atMax || building.repeatable);
 
-                const costText = Object.entries(building.cost)
+                const costText = Object.entries(scaledCost)
                   .map(([resKey, cost]) => `${resourceMap.get(resKey)?.label || resKey}: ${formatNumber(cost)}`)
                   .join(', ');
 
+                const caption = building.maxCount > 0
+                  ? `${current}/${building.maxCount}`
+                  : `${current}`;
+
                 return React.createElement(ListItem, {
                   key: building.tid,
-                  title: `${building.label} × ${current}`,
+                  title: building.label,
                   subtitle: costText,
+                  caption,
                   tone: canBuild ? 'action' : 'default',
                   onClick: () => handleBuildBuilding(building.tid),
                   disabled: !canBuild
@@ -429,13 +491,25 @@ function App() {
             React.createElement('div', { className: 'space-y-1' },
               visibleJobs.map(job => {
                 const current = state.jobs[job.tid] || 0;
-                const canIncrease = idleVillagers > 0;
+                const cap = helpers.jobCaps[job.tid] ?? Infinity;
+                const canIncrease = idleVillagers > 0 && (cap === Infinity || current < cap);
                 const canDecrease = current > 0;
+                const producesText = Object.entries(job.produces || {})
+                  .filter(([, amt]) => toNumber(amt))
+                  .map(([resKey, amt]) => `${formatNumber(amt, 2)}/s ${resourceMap.get(resKey)?.label || resKey}`)
+                  .join(' · ');
+                const consumesText = Object.entries(job.consumes || {})
+                  .filter(([, amt]) => toNumber(amt))
+                  .map(([resKey, amt]) => `${formatNumber(amt, 2)}/s ${resourceMap.get(resKey)?.label || resKey}`)
+                  .join(' · ');
 
-                return React.createElement('div', { key: job.tid, className: 'bg-black/30 p-2' },
+                return React.createElement('div', { key: job.tid, className: 'bg-black/30 p-2 space-y-1' },
                   React.createElement('div', { className: 'flex items-center justify-between' },
                     React.createElement('div', { className: 'flex-1 min-w-0' },
-                      React.createElement('p', { className: 'text-xs font-medium text-slate-200' }, job.label)
+                      React.createElement('p', { className: 'text-xs font-medium text-slate-200' }, job.label),
+                      cap < Infinity && React.createElement('p', { className: 'text-[10px] text-slate-500 mt-0.5' }, `上限 ${cap}`),
+                      producesText && React.createElement('p', { className: 'text-[10px] text-emerald-300 mt-0.5' }, `产出 ${producesText}`),
+                      consumesText && React.createElement('p', { className: 'text-[10px] text-rose-300' }, `消耗 ${consumesText}`)
                     ),
                     React.createElement('div', { className: 'flex items-center gap-1.5 ml-2' },
                       React.createElement('button', {

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A Dark Room - tables demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Noto Serif SC"', 'serif'],
+              body: ['"Inter"', 'system-ui']
+            },
+            colors: {
+              ember: '#f97316',
+              coal: '#0f1729',
+              ash: '#1f2937',
+              aurora: '#7dd3fc'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="text-slate-100" style="font-family: 'Inter', system-ui; min-height: 100vh; background: #0f1729;">
+    <div id="app"></div>
+
+    <script>
+      window.TABLES_DATA = {
+        resources: __RESOURCES_JSON__,
+        jobs: __JOBS_JSON__,
+        buildings: __BUILDINGS_JSON__,
+        actions: __ACTIONS_JSON__,
+        events: __EVENTS_JSON__,
+        globalConfig: __GLOBAL_JSON__
+      };
+    </script>
+
+    <!-- 模块化脚本按依赖顺序加载 -->
+    <script type="text/babel" src="./utils.js"></script>
+    <script type="text/babel" src="./dataTransform.js"></script>
+    <script type="text/babel" src="./sceneConfig.js"></script>
+    <script type="text/babel" src="./gameLogic.js"></script>
+    <script type="text/babel" src="./hooks.js"></script>
+    <script type="text/babel" src="./components.js"></script>
+    <script type="text/babel" src="./app.new.jsx"></script>
+  </body>
+</html>

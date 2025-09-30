@@ -14,8 +14,7 @@ out-ts/
 out-ts-ts/
 out-ts-ts2/
 example/out/
-example/game_01_minirpg/out/
-example/game_02_click_cookies/out/
+example/**/out/
 example/context.ts
 example/example.json
 example/example.ts
@@ -84,3 +83,5 @@ typings/
 
 # next.js build output
 .next
+
+.claude

@@ -78,10 +78,82 @@
     </script>
 
     <script type="text/babel">
-      const { useMemo, useState, useEffect } = React;
+      const { useMemo, useState, useEffect, useRef } = React;
       const data = window.TABLES_DATA || {};
       const runeTexture = 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(242,163,101,0.12) 100%)';
       const STORAGE_KEY = 'click-cookies-demo-v1';
+
+      const toOwnedSet = (value) => {
+        if (value instanceof Set) return value;
+        return new Set(value || []);
+      };
+
+      const computeArtifactEffects = (artifacts, ownedArtifacts) => {
+        const owned = toOwnedSet(ownedArtifacts);
+        const effects = { globalMultiplier: 1, clickMultiplier: 1, cpsAdditive: 0, producerBoost: new Map() };
+        artifacts.forEach(art => {
+          if (!owned.has(art.id)) return;
+          const type = art.effectType || '';
+          const value = Number(art.effectValue) || 0;
+          if (type === 'globalMultiplier') {
+            effects.globalMultiplier *= value || 1;
+          } else if (type === 'clickMultiplier') {
+            effects.clickMultiplier *= value || 1;
+          } else if (type === 'cpsAdditive') {
+            effects.cpsAdditive += value;
+          } else if (type.startsWith('producerBoost')) {
+            const [, tidStr] = type.split(':');
+            const target = Number(tidStr);
+            const current = effects.producerBoost.get(target) || 1;
+            effects.producerBoost.set(target, current * (value || 1));
+          }
+        });
+        return effects;
+      };
+
+      const computeProducerMultipliers = (upgrades, ownedUpgrades) => {
+        const owned = toOwnedSet(ownedUpgrades);
+        const map = new Map();
+        upgrades.forEach(upg => {
+          const current = map.get(upg.target) ?? 1;
+          if (owned.has(upg.id)) {
+            if (upg.upgradeType === 'multiplier') {
+              map.set(upg.target, current * (Number(upg.value) || 1));
+            } else if (upg.upgradeType === 'additive') {
+              map.set(upg.target, current + (Number(upg.value) || 0));
+            } else {
+              map.set(upg.target, current);
+            }
+          } else if (!map.has(upg.target)) {
+            map.set(upg.target, current);
+          }
+        });
+        return map;
+      };
+
+      const computeBaseCpsTotal = (producers, counts, multipliers, artifactEffects) => (
+        producers.reduce((sum, prod) => {
+          const count = (counts || {})[prod.id] || 0;
+          if (!count) return sum;
+          const upgradeMult = multipliers.get(prod.id) ?? 1;
+          const artifactMult = artifactEffects.producerBoost.get(prod.id) || 1;
+          return sum + (Number(prod.baseCps) || 0) * count * upgradeMult * artifactMult;
+        }, 0)
+      );
+
+      const computePrestigeMultiplier = (config, prestigePoints) => (
+        Math.pow(Number(config.prestigeResetMultiplier) || 1.05, prestigePoints || 0)
+      );
+
+      const computeCpsSnapshot = ({ producers, upgrades, artifacts, config, counts, ownedUpgrades, ownedArtifacts, prestigePoints }) => {
+        const artifactEffects = computeArtifactEffects(artifacts, ownedArtifacts);
+        const upgradeMultipliers = computeProducerMultipliers(upgrades, ownedUpgrades);
+        const baseCpsTotal = computeBaseCpsTotal(producers, counts, upgradeMultipliers, artifactEffects);
+        const prestigeMultiplier = computePrestigeMultiplier(config, prestigePoints);
+        const baseWithGlobal = baseCpsTotal * (artifactEffects.globalMultiplier || 1);
+        const cps = (baseWithGlobal + (artifactEffects.cpsAdditive || 0)) * prestigeMultiplier;
+        return { cps, artifactEffects, upgradeMultipliers, baseCpsTotal, baseWithGlobal, prestigeMultiplier };
+      };
 
       const TABS = [
         { id: 'producers', label: '建筑' },
@@ -337,17 +409,45 @@
             const raw = localStorage.getItem(STORAGE_KEY);
             if (!raw) return null;
             const parsed = JSON.parse(raw);
-            return {
+            const ownedUpgrades = new Set(parsed.ownedUpgrades || []);
+            const ownedArtifacts = new Set(parsed.ownedArtifacts || []);
+            const result = {
               cookies: parsed.cookies || 0,
               totalCookies: parsed.totalCookies || 0,
               producerCounts: parsed.producerCounts || {},
-              ownedUpgrades: new Set(parsed.ownedUpgrades || []),
-              ownedArtifacts: new Set(parsed.ownedArtifacts || []),
+              ownedUpgrades,
+              ownedArtifacts,
               artifactPoints: parsed.artifactPoints || 0,
               prestigePoints: parsed.prestigePoints || 0,
               unlockedAchievements: new Set(parsed.unlockedAchievements || []),
-              log: parsed.log || []
+              log: parsed.log || [],
+              lastActiveAt: Date.now()
             };
+            const lastTimestamp = parsed.timestamp || parsed.lastActiveAt;
+            if (lastTimestamp) {
+              const elapsedSeconds = Math.max(0, (Date.now() - lastTimestamp) / 1000);
+              if (elapsedSeconds > 0) {
+                const snapshot = computeCpsSnapshot({
+                  producers,
+                  upgrades,
+                  artifacts,
+                  config,
+                  counts: result.producerCounts,
+                  ownedUpgrades,
+                  ownedArtifacts,
+                  prestigePoints: result.prestigePoints
+                });
+                const offlineGain = snapshot.cps * elapsedSeconds;
+                if (offlineGain > 0) {
+                  result.cookies += offlineGain;
+                  result.totalCookies += offlineGain;
+                  const message = `离线收益 +${offlineGain.toFixed(1)} 饼干（${elapsedSeconds.toFixed(1)} 秒）`;
+                  const timestamp = new Date().toLocaleTimeString();
+                  result.log = [...result.log.slice(-99), { when: timestamp, message }];
+                }
+              }
+            }
+            return result;
           } catch (err) {
             console.warn('[click-cookies] Failed to load save:', err);
             return null;
@@ -367,27 +467,38 @@
         const [log, setLog] = useState(initial ? initial.log : []);
         const [floaters, setFloaters] = useState([]);
         const [activeTab, setActiveTab] = useState('producers');
+        const lastActiveRef = useRef(initial ? initial.lastActiveAt || Date.now() : Date.now());
 
         const upgradeLookup = useDictionary(upgradesDataset.result || {});
         const artifactLookup = useDictionary(artifactsDataset.result || {});
 
         useEffect(() => {
-          const payload = {
-            cookies,
-            totalCookies,
-            producerCounts,
-            ownedUpgrades: Array.from(ownedUpgrades),
-            ownedArtifacts: Array.from(ownedArtifacts),
-            artifactPoints,
-            prestigePoints,
-            unlockedAchievements: Array.from(unlockedAchievements),
-            log
+          const persist = () => {
+            const now = Date.now();
+            const payload = {
+              cookies,
+              totalCookies,
+              producerCounts,
+              ownedUpgrades: Array.from(ownedUpgrades),
+              ownedArtifacts: Array.from(ownedArtifacts),
+              artifactPoints,
+              prestigePoints,
+              unlockedAchievements: Array.from(unlockedAchievements),
+              log,
+              timestamp: now
+            };
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+              lastActiveRef.current = now;
+            } catch (err) {
+              console.warn('[click-cookies] Failed to save:', err);
+            }
           };
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-          } catch (err) {
-            console.warn('[click-cookies] Failed to save:', err);
-          }
+          persist();
+          window.addEventListener('beforeunload', persist);
+          return () => {
+            window.removeEventListener('beforeunload', persist);
+          };
         }, [cookies, totalCookies, producerCounts, ownedUpgrades, ownedArtifacts, artifactPoints, prestigePoints, unlockedAchievements, log]);
 
         const upgradeUnlockSet = useMemo(() => {
@@ -396,60 +507,48 @@
           return set;
         }, [upgrades, totalCookies]);
 
-        const artifactEffects = useMemo(() => {
-          const effects = { globalMultiplier: 1, clickMultiplier: 1, cpsAdditive: 0, producerBoost: new Map() };
-          artifacts.forEach(art => {
-            if (!ownedArtifacts.has(art.id)) return;
-            const type = art.effectType || '';
-            if (type === 'globalMultiplier') effects.globalMultiplier *= art.effectValue;
-            else if (type === 'clickMultiplier') effects.clickMultiplier *= art.effectValue;
-            else if (type === 'cpsAdditive') effects.cpsAdditive += art.effectValue;
-            else if (type.startsWith('producerBoost')) {
-              const [, tidStr] = type.split(':');
-              const target = Number(tidStr);
-              const current = effects.producerBoost.get(target) || 1;
-              effects.producerBoost.set(target, current * art.effectValue);
-            }
-          });
-          return effects;
-        }, [artifacts, ownedArtifacts]);
+        const artifactEffects = useMemo(
+          () => computeArtifactEffects(artifacts, ownedArtifacts),
+          [artifacts, ownedArtifacts]
+        );
 
-        const producerMultipliers = useMemo(() => {
-          const map = new Map();
-          upgrades.forEach(upg => {
-            const current = map.get(upg.target) || 1;
-            if (ownedUpgrades.has(upg.id)) {
-              if (upg.upgradeType === 'multiplier') map.set(upg.target, current * upg.value);
-              else if (upg.upgradeType === 'additive') map.set(upg.target, current + upg.value);
-            } else if (!map.has(upg.target)) {
-              map.set(upg.target, current);
-            }
-          });
-          return map;
-        }, [upgrades, ownedUpgrades]);
+        const producerMultipliers = useMemo(
+          () => computeProducerMultipliers(upgrades, ownedUpgrades),
+          [upgrades, ownedUpgrades]
+        );
 
-        const prestigeMultiplier = useMemo(() => Math.pow(Number(config.prestigeResetMultiplier) || 1.05, prestigePoints), [config, prestigePoints]);
+        const prestigeMultiplier = useMemo(
+          () => computePrestigeMultiplier(config, prestigePoints),
+          [config, prestigePoints]
+        );
 
-        const baseCpsTotal = useMemo(() => producers.reduce((sum, prod) => {
-          const count = producerCounts[prod.id] || 0;
-          if (!count) return sum;
-          const upgradeMult = producerMultipliers.get(prod.id) || 1;
-          const artMult = artifactEffects.producerBoost.get(prod.id) || 1;
-          return sum + prod.baseCps * count * upgradeMult * artMult;
-        }, 0), [producers, producerCounts, producerMultipliers, artifactEffects]);
+        const baseCpsTotal = useMemo(
+          () => computeBaseCpsTotal(producers, producerCounts, producerMultipliers, artifactEffects),
+          [producers, producerCounts, producerMultipliers, artifactEffects]
+        );
 
-        const cps = useMemo(() => {
-          const base = baseCpsTotal * (artifactEffects.globalMultiplier || 1);
-          return (base + (artifactEffects.cpsAdditive || 0)) * prestigeMultiplier;
-        }, [baseCpsTotal, artifactEffects, prestigeMultiplier]);
+        const baseCpsWithGlobal = useMemo(
+          () => baseCpsTotal * (artifactEffects.globalMultiplier || 1),
+          [baseCpsTotal, artifactEffects]
+        );
+
+        const cps = useMemo(
+          () => (baseCpsWithGlobal + (artifactEffects.cpsAdditive || 0)) * prestigeMultiplier,
+          [baseCpsWithGlobal, artifactEffects, prestigeMultiplier]
+        );
 
         useEffect(() => {
+          let last = Date.now();
+          const tickMs = Math.max(50, (Number(config.tickInterval) || 0.1) * 1000);
           const interval = setInterval(() => {
-            if (cps <= 0) return;
-            const delta = cps * (Number(config.tickInterval) || 0.1);
+            const now = Date.now();
+            const elapsed = (now - last) / 1000;
+            last = now;
+            if (cps <= 0 || elapsed <= 0) return;
+            const delta = cps * elapsed;
             setCookies(prev => prev + delta);
             setTotalCookies(prev => prev + delta);
-          }, Math.max(50, (Number(config.tickInterval) || 0.1) * 1000));
+          }, tickMs);
           return () => clearInterval(interval);
         }, [cps, config.tickInterval]);
 

@@ -63,6 +63,13 @@ tables -i ./example -o ./example/out -f json --silent
 
 如果想展示增量点击类玩法，可参考 `example/game_02_click_cookies/`，运行 `npm run ex:click-cookies`（或 `node example/game_02_click_cookies/serialize.js`）后，会生成建筑 / 升级 / 成就等产物和一个可直接打开的点击饼干 Demo 页面。
 
+如果想查看完整的增量游戏示例，可参考 `example/game_03_a_dark_room/`，这是一个基于经典游戏《A Dark Room》的完整实现。运行 `npm run ex:darkroom` 会自动构建项目并在 `http://localhost:8765` 启动服务器。该示例展示了：
+- 多表联动的复杂游戏系统（资源 / 建筑 / 职业 / 行动 / 事件 / 全局配置）
+- 配置驱动的游戏逻辑（直接使用配置表字段，无需额外转换）
+- React 组件化的 UI 架构（模块化组织：utils / hooks / components / gameLogic / sceneConfig 等）
+- 完整的游戏机制（资源生产消耗、冷却系统、解锁条件、场景切换等）
+- 浏览器存档系统（localStorage 自动保存）
+
 ### Data Structure
 
 默认的 table 结构

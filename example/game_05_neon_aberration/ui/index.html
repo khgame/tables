@@ -27,6 +27,14 @@
       color: #dbeafe;
       display: flex;
       flex-direction: column;
+      transition: background 0.6s ease, color 0.4s ease;
+    }
+    body.night {
+      background:
+        radial-gradient(circle at 20% 10%, rgba(111, 139, 250, 0.22), transparent 58%),
+        radial-gradient(circle at 75% 85%, rgba(17, 196, 245, 0.24), transparent 60%),
+        linear-gradient(160deg, #03040d, #050b1b 50%, #020308 90%);
+      color: #e2e8f0;
     }
     header {
       padding: 28px 48px 10px;
@@ -37,6 +45,9 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+    }
+    body.night header {
+      text-shadow: 0 0 22px rgba(111, 196, 255, 0.65);
     }
     header small {
       color: var(--muted);
@@ -64,6 +75,11 @@
       background: rgba(99, 164, 255, 0.2);
       border-color: var(--accent);
       box-shadow: 0 0 14px rgba(99, 164, 255, 0.25);
+    }
+    body.night nav button.active {
+      background: rgba(167, 139, 250, 0.28);
+      border-color: rgba(167, 139, 250, 0.65);
+      box-shadow: 0 0 18px rgba(167, 139, 250, 0.35);
     }
     main {
       flex: 1;
@@ -93,6 +109,11 @@
       padding: 20px 22px;
       box-shadow: 0 28px 70px rgba(5, 10, 25, 0.45);
       backdrop-filter: blur(10px);
+      }
+    body.night .card {
+      background: rgba(8, 12, 26, 0.9);
+      box-shadow: 0 32px 80px rgba(10, 14, 30, 0.6);
+      border-color: rgba(111, 196, 255, 0.15);
     }
     .card h2 {
       margin: 0 0 14px;
@@ -163,6 +184,10 @@
       font-size: 12px;
       margin-right: 6px;
     }
+    body.night .badge {
+      border-color: rgba(167, 139, 250, 0.6);
+      background: rgba(167, 139, 250, 0.22);
+    }
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -200,6 +225,10 @@
     button.action:hover {
       transform: translateY(-1px);
     }
+    body.night button.action {
+      background: linear-gradient(135deg, rgba(111, 196, 255, 0.8), rgba(167, 139, 250, 0.9));
+      color: #020617;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -230,6 +259,48 @@
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       margin-top: 16px;
     }
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin: 18px 0 8px;
+    }
+    .room-card {
+      background: rgba(23, 30, 49, 0.8);
+      border: 1px solid rgba(99, 164, 255, 0.35);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.18s ease;
+    }
+    .room-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(99, 164, 255, 0.22);
+      border-color: rgba(99, 164, 255, 0.55);
+    }
+    body.night .room-card {
+      background: rgba(11, 17, 31, 0.88);
+      border-color: rgba(167, 139, 250, 0.4);
+    }
+    body.night .room-card:hover {
+      box-shadow: 0 16px 32px rgba(167, 139, 250, 0.28);
+      border-color: rgba(167, 139, 250, 0.65);
+    }
+    .room-card .room-icon {
+      font-size: 24px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .room-card strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .room-card .muted {
+      font-size: 12px;
+    }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
@@ -256,6 +327,7 @@
           <button class="action" id="btn-advance-day">推进 6 小时</button>
           <button class="action" id="btn-reset-day">重置日程</button>
         </div>
+        <div class="room-grid" id="base-rooms"></div>
         <div class="split">
           <div>
             <h3 class="muted">设施升级</h3>
@@ -487,6 +559,23 @@
     function formula(id, fallback = 0) {
       return COMBAT_FORMULAS[id] !== undefined ? COMBAT_FORMULAS[id] : fallback;
     }
+    const ROOM_LAYOUT = [
+      { id: 'workshop', name: '工坊', icon: '🛠', desc: '打造武器、修复装备' },
+      { id: 'chem.lab', name: '化学实验室', icon: '⚗️', desc: '合成血清与药剂' },
+      { id: 'observation', name: '观测甲板', icon: '📡', desc: '扫描异常、递送情报' },
+      { id: 'dormitory', name: '休整宿舍', icon: '🛌', desc: '恢复士气与睡眠' }
+    ];
+    const INVENTORY_LABELS = {
+      resource: '资源',
+      consumable: '药剂',
+      ammo: '弹药',
+      weapon_mod: '模组',
+      loot: '战利品',
+      weapon: '武器',
+      blueprint: '蓝图',
+      implant: '植入体',
+      artifact: '遗物'
+    };
 
     let STATE = null;
 
@@ -539,6 +628,8 @@
     function updateDashboard() {
       const container = document.getElementById('base-dashboard');
       container.innerHTML = '';
+      const isNight = STATE.hour >= 18 || STATE.hour < 6;
+      document.body.classList.toggle('night', isNight);
       const stats = [
         { label: '时间', value: `第 ${STATE.day} 天 · ${STATE.hour}:00` },
         { label: '污染度', value: `${STATE.contamination}` },
@@ -592,6 +683,21 @@
       });
     }
 
+    function renderRooms() {
+      const container = document.getElementById('base-rooms');
+      if (!container) return;
+      container.innerHTML = '';
+      ROOM_LAYOUT.forEach(room => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'room-card';
+        const level = STATE.facilityLevels[room.id] || 0;
+        button.innerHTML = `<span class="room-icon">${room.icon}</span><strong>${room.name}</strong><div class="muted">${room.desc}</div><div class="muted">等级 ${level}</div>`;
+        button.addEventListener('click', () => handleRoomAction(room.id, room));
+        container.appendChild(button);
+      });
+    }
+
     function renderNpc() {
       const container = document.getElementById('base-npc');
       container.innerHTML = '';
@@ -611,10 +717,17 @@
 
     function renderInventory() {
       const container = document.getElementById('inventory-view');
-      const entries = Object.entries(STATE.inventory).map(([key, value]) => `${key}×${value}`);
+      const entries = Object.entries(STATE.inventory).map(([key, value]) => formatInventoryEntry(key, value));
       const favorEntries = Object.entries(STATE.favor).map(([faction, value]) => `好感-${faction}:${value}`);
       const full = [`信用点:${STATE.credits}`, ...favorEntries, ...entries];
       container.innerHTML = full.length ? full.join(' / ') : '库存为空';
+    }
+
+    function formatInventoryEntry(key, value) {
+      if (!key.includes(':')) return `${key}×${value}`;
+      const [type, id] = key.split(':');
+      const label = INVENTORY_LABELS[type] || type;
+      return `${label}-${id}×${value}`;
     }
 
     function populateSelect(selectId, data, formatter) {
@@ -721,7 +834,11 @@
           case 'loot':
           case 'implant':
           case 'artifact':
-            addInventory(`${label}:${payload}`, 1);
+            {
+              const [id, qty] = payload.split('@');
+              const key = id ? `${label}:${id}` : `${label}`;
+              addInventory(key, Number(qty || 1));
+            }
             break;
           case 'task':
             STATE.moraleLog.push(`${source}:${payload}`);
@@ -772,6 +889,7 @@
       updateDashboard();
       renderFacilities();
       renderNpc();
+      renderRooms();
       renderInventory();
       logBase('已将指标重置为初始状态。');
     });
@@ -809,19 +927,41 @@
 
     const tasks = convertResult(DATA.tasks);
     populateSelect('task-select', tasks, task => `${task.facilityId} · ${task.task}`);
-    document.getElementById('btn-run-task').addEventListener('click', () => {
-      const task = findByValue(tasks, document.getElementById('task-select').value);
+
+    function executeTask(task, sourceLabel) {
+      if (!task) {
+        logBase('请选择排程任务。');
+        return false;
+      }
       const requirements = parsePairs(task.requirements);
       if (!consumeList(requirements)) {
-        logBase('资源不足，无法执行排程。');
-        return;
+        logBase(`${sourceLabel || task.task} 资源不足，无法执行。`);
+        return false;
       }
       if (task.effects) applyEffects(task.effects, task.task);
       STATE.hour += 2;
       adjustSurvival(2);
-      logBase(`执行排程：${task.task}。`);
+      logBase(`${sourceLabel || task.task} 已完成。`);
       updateDashboard();
       renderInventory();
+      renderRooms();
+      return true;
+    }
+
+    function handleRoomAction(facilityId, room) {
+      const candidates = tasks.filter(task => task.facilityId === facilityId);
+      if (!candidates.length) {
+        logBase(`${room.name} 当前没有可执行排程。`);
+        return;
+      }
+      const bestTask = candidates.slice().sort((a, b) => (Number(a.priority) || 99) - (Number(b.priority) || 99))[0];
+      executeTask(bestTask, `${room.name} · ${bestTask.task}`);
+      const select = document.getElementById('task-select');
+      if (select) select.value = `${bestTask.sector}-${bestTask.category}-${bestTask.serial}`;
+    }
+
+    document.getElementById('btn-run-task').addEventListener('click', () => {
+      executeTask(findByValue(tasks, document.getElementById('task-select').value));
     });
 
     const missionList = convertResult(DATA.missions);
@@ -1104,6 +1244,7 @@
       populateSelect('mission-select', missionList.filter(m => stateUnlockSatisfied(m.unlock)), mission => `${mission.name} · ${mission.type}`);
       renderFacilities();
       renderNpc();
+      renderRooms();
       renderInventory();
       updateDashboard();
       renderMissionDetail();

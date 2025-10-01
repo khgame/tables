@@ -16,6 +16,7 @@
     "ex:darkroom": "npm run build && node ./example/game_03_a_dark_room/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_03_a_dark_room/out -p 8765 -l",
     "ex:arcane": "npm run build && node ./example/game_04_arcane_depths/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_04_arcane_depths/out -p 8769 -l",
     "test:neon": "npm run build && node ./example/game_05_neon_aberration/_rebuild_data.js && node ./example/game_05_neon_aberration/serialize.js",
+    "start:neon": "npm run test:neon && node ./node_modules/hserve/bin/hserve.js -d ./example/game_05_neon_aberration/out -p 8085 -l",
     "build:site": "node ./scripts/build-site.js",
     "docs:dev": "vitepress dev docs-site",
     "docs:build": "vitepress build docs-site",
@@ -25,7 +26,8 @@
     "test": "npm run build && jest --runInBand",
     "test:watch": "jest --watch",
     "smoke": "npm run build && node ./test/smoke.js",
-    "coverage": "npm run build && jest --coverage --runInBand"
+    "coverage": "npm run build && jest --coverage --runInBand",
+    "ex:nightfall": "npm run build && node ./example/game_06_abyssal_nightfall/_rebuild_data.js && node ./example/game_06_abyssal_nightfall/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_06_abyssal_nightfall/out -p 8086 -l"
   },
   "repository": {
     "type": "git",

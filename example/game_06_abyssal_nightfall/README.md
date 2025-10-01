@@ -15,8 +15,8 @@
 - `context.enums.json` / `context.meta.json`：定义武器分类、攻击形态、伤害类型、敌人家族、技能分支、协同品质等枚举供 TS 序列化引用。
 - `_rebuild_data.js`：可重复生成上述 Excel 的脚本，确保团队能快速覆写示例数值。
 - `serialize.js`：批量导出 JSON / JSONX / TS / TS Interface，并将数据注入 `ui/index.html` 与可玩原型。
-- `ui/index.html`：静态数据面板，展示核心战斗指标（弹道速度、存活时间、技能树、协同卡等）。
-- `ui/engine.html` + `ui/engine.js`：基于 Canvas 的实时战斗原型，可直接读取导出的 JSON 验证闭环体验。
+- `ui/index.html` + `ui/app.js`：战前准备 + 构筑界面，联动 Canvas 原型并消费 tables 导出的 JSON。
+- `ui/engine.js`：基于 Canvas 的实时战斗循环模块，由 `app.js` 调度并驱动升级/协同逻辑。
 
 ## 数值约定
 
@@ -27,14 +27,15 @@
 - **理智消耗**：遗物的 `sanityDrain`、敌人的 `sanityDamage` 均以点数记录，方便与 meta 系统联动。
 - **技能树**：节点 ID 由 `sector + branch + node` 组成，`effects` 字段统一用竖线分隔属性；`requirements` 可混合等级、技能前置等条件。
 - **协同卡**：`prerequisites` 与 `trigger` 统一使用 DSL（如 `weapon:chorus-ray|relic:maelstrom-core`、`sanity:<40`），便于解析。
+- **经验与升级**：每个敌人提供 `xp` 字段；原型中击杀可积累经验、升级触发抽卡并应用技能/协同效果。
+- **UI 风格**：复刻《黎明前 20 分钟》，顶部心形血量 + 右上弹仓条 + 底部经验槽与卡牌升级界面，便于快速对比数值调入后的视觉效果。
 
 ## 快速体验
 
 ```bash
 node example/game_06_abyssal_nightfall/_rebuild_data.js   # 重新生成 Excel 表格
 node example/game_06_abyssal_nightfall/serialize.js        # 导出 JSON/TS/JSONX 并生成 UI & 原型
-open example/game_06_abyssal_nightfall/out/index.html      # 浏览战斗与成长数据可视化
-open example/game_06_abyssal_nightfall/out/engine.html     # 启动 Canvas 战斗原型，验证闭环
+open example/game_06_abyssal_nightfall/out/index.html      # 打开战前配置 + 实时战斗一体页面
 ```
 
 ## 与其他示例的关系
@@ -51,5 +52,5 @@ open example/game_06_abyssal_nightfall/out/engine.html     # 启动 Canvas 战�
 
 - 稳定排序后的 JSON 和带协议头的 JSONX。
 - TypeScript 数据 + Interface（包含 `context.ts` 枚举）。
-- 已被数据填充的 `index.html`，用于快速审阅战斗与成长调参。
-- 可直接游玩的 `engine.html` + `engine.js`，通过 tables 数据驱动完整战斗循环。
+- 已被数据填充的 `index.html` + `app.js`，集成战前准备与 Canvas 原型入口。
+- 保留的 `engine.html` 仍可单独载入 `engine.js`，快速验证战斗循环。

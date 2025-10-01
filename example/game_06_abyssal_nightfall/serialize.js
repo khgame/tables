@@ -81,6 +81,19 @@ function writeWebDemo(targetDir) {
   const destPath = Path.resolve(targetDir, 'index.html');
   fs.writeFileSync(destPath, html, 'utf8');
   console.log('[abyssal-nightfall] wrote web demo index.html');
+
+  const engineHtml = Path.resolve(baseDir, 'ui/engine.html');
+  const engineJs = Path.resolve(baseDir, 'ui/engine.js');
+  const appJs = Path.resolve(baseDir, 'ui/app.js');
+  if (fs.existsSync(engineHtml)) {
+    fs.copyFileSync(engineHtml, Path.resolve(targetDir, 'engine.html'));
+  }
+  if (fs.existsSync(engineJs)) {
+    fs.copyFileSync(engineJs, Path.resolve(targetDir, 'engine.js'));
+  }
+  if (fs.existsSync(appJs)) {
+    fs.copyFileSync(appJs, Path.resolve(targetDir, 'app.js'));
+  }
 }
 
 function loadJsonForScript(filePath) {

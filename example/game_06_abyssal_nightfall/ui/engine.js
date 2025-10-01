@@ -26,7 +26,7 @@ let lastPreset = null;
 
 const SCALE = 16;
 const PLAYER_RADIUS = 16;
-const ENEMY_RADIUS = 18;
+const DEFAULT_ENEMY_RADIUS = 18;
 const BULLET_RADIUS = 4;
 const ENEMY_BULLET_RADIUS = 6;
 const ARENA_PADDING = 48;
@@ -135,14 +135,17 @@ function resolveEnemyTemplate(enemyId) {
   if (!enemyId || !state.enemyLookup || !state.enemyLookup.size) return null;
   const direct = state.enemyLookup.get(enemyId);
   if (direct) return direct;
-  const normalized = normalizeIdentifier(enemyId);
+  const stringId = String(enemyId);
+  const fromString = state.enemyLookup.get(stringId);
+  if (fromString) return fromString;
+  const normalized = normalizeIdentifier(stringId);
   if (normalized) {
     const fromNormalized = state.enemyLookup.get(normalized);
     if (fromNormalized) return fromNormalized;
     const withPrefix = state.enemyLookup.get(`enemy:${normalized}`);
     if (withPrefix) return withPrefix;
   }
-  const loose = state.enemyLookup.get(enemyId.toLowerCase());
+  const loose = state.enemyLookup.get(stringId.toLowerCase());
   if (loose) return loose;
   return null;
 }
@@ -203,6 +206,14 @@ function formatTime(sec) {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
 function xpForLevel(level) {
@@ -278,6 +289,15 @@ function updateHUD() {
   levelLabel.textContent = state.level.toString();
   xpLabel.textContent = `${Math.round(state.xp)} / ${state.xpNeeded}`;
   xpBar.style.width = `${clamp((state.xp / state.xpNeeded) * 100, 0, 100)}%`;
+}
+
+function formatEffects(effectsString) {
+  if (!effectsString) return '';
+  return effectsString.split('|').map(effect => {
+    const [key, value] = effect.split(':');
+    if (!value) return effect;
+    return `${key} ${value}`;
+  }).join(', ');
 }
 
 function queueUpgrade(reason) {
@@ -511,16 +531,105 @@ function spawnWave(waveDef) {
     pushLog(msg);
     return;
   }
+  const formation = waveDef.formation || 'ring';
+  const enemyRadius = template.radius || DEFAULT_ENEMY_RADIUS;
+
   for (let i = 0; i < waveDef.count; i++) {
-    const angle = (Math.PI * 2 * i) / waveDef.count;
-    const radius = waveDef.spawnRadius * SCALE + Math.random() * 24;
-    const x = canvas.width / 2 + Math.cos(angle) * radius;
-    const y = canvas.height / 2 + Math.sin(angle) * radius;
+    let x, y;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const offscreenDist = Math.max(canvas.width, canvas.height) / 2 + 100;
+
+    switch (formation) {
+      case 'ring': {
+        const angle = (Math.PI * 2 * i) / waveDef.count;
+        x = centerX + Math.cos(angle) * offscreenDist;
+        y = centerY + Math.sin(angle) * offscreenDist;
+        break;
+      }
+      case 'arc': {
+        const startAngle = -Math.PI / 3;
+        const arcSpan = (2 * Math.PI) / 3;
+        const angle = startAngle + (arcSpan * i) / (waveDef.count - 1 || 1);
+        x = centerX + Math.cos(angle) * offscreenDist;
+        y = centerY + Math.sin(angle) * offscreenDist;
+        break;
+      }
+      case 'cone': {
+        const baseAngle = Math.PI / 2;
+        const spread = Math.PI / 6;
+        const angle = baseAngle - spread + (2 * spread * i) / (waveDef.count - 1 || 1);
+        x = centerX + Math.cos(angle) * offscreenDist;
+        y = centerY + Math.sin(angle) * offscreenDist;
+        break;
+      }
+      case 'cross': {
+        const direction = i % 4;
+        const offsetInLine = Math.floor(i / 4) * 60;
+        switch (direction) {
+          case 0:
+            x = centerX + offscreenDist;
+            y = centerY + offsetInLine;
+            break;
+          case 1:
+            x = centerX - offscreenDist;
+            y = centerY + offsetInLine;
+            break;
+          case 2:
+            x = centerX + offsetInLine;
+            y = centerY + offscreenDist;
+            break;
+          case 3:
+            x = centerX + offsetInLine;
+            y = centerY - offscreenDist;
+            break;
+        }
+        break;
+      }
+      case 'swarm': {
+        const side = i % 4;
+        const offset = (i / waveDef.count) * (canvas.width * 0.6) - (canvas.width * 0.3);
+        switch (side) {
+          case 0:
+            x = centerX + offscreenDist;
+            y = centerY + offset;
+            break;
+          case 1:
+            x = centerX - offscreenDist;
+            y = centerY + offset;
+            break;
+          case 2:
+            x = centerX + offset;
+            y = centerY + offscreenDist;
+            break;
+          case 3:
+            x = centerX + offset;
+            y = centerY - offscreenDist;
+            break;
+        }
+        break;
+      }
+      case 'line': {
+        const angle = Math.PI;
+        const spacing = 60;
+        const lineOffset = (i - waveDef.count / 2) * spacing;
+        x = centerX + Math.cos(angle) * offscreenDist + Math.cos(angle + Math.PI / 2) * lineOffset;
+        y = centerY + Math.sin(angle) * offscreenDist + Math.sin(angle + Math.PI / 2) * lineOffset;
+        break;
+      }
+      default: {
+        const angle = (Math.PI * 2 * i) / waveDef.count;
+        x = centerX + Math.cos(angle) * offscreenDist;
+        y = centerY + Math.sin(angle) * offscreenDist;
+      }
+    }
+
     state.enemies.push({
       template,
       hp: template.hp,
       x,
       y,
+      radius: enemyRadius,
       speed: template.moveSpeed * SCALE,
       attackTimer: template.attackInterval || 0,
       damage: template.damage,
@@ -646,6 +755,7 @@ function performEnemyAttack(enemy) {
   const template = enemy.template;
   enemy.attackTimer = template.attackInterval;
   const [dirX, dirY] = normalize(state.player.x - enemy.x, state.player.y - enemy.y);
+  const enemyRadius = enemy.radius || DEFAULT_ENEMY_RADIUS;
   switch (template.attackStyle) {
     case 'BURST': {
       const spread = 0.22;
@@ -656,8 +766,8 @@ function performEnemyAttack(enemy) {
         const fx = dirX * cos - dirY * sin;
         const fy = dirX * sin + dirY * cos;
         state.enemyProjectiles.push({
-          x: enemy.x + fx * ENEMY_RADIUS,
-          y: enemy.y + fy * ENEMY_RADIUS,
+          x: enemy.x + fx * enemyRadius,
+          y: enemy.y + fy * enemyRadius,
           vx: fx * template.projectileSpeed * SCALE,
           vy: fy * template.projectileSpeed * SCALE,
           life: template.projectileLifetime,
@@ -753,7 +863,8 @@ function updateEffects(dt) {
         state.enemies.forEach(enemy => {
           if (!enemy.alive) return;
           const dist = length(enemy.x - effect.x, enemy.y - effect.y);
-          if (dist <= effect.radius + ENEMY_RADIUS) {
+          const enemyRadius = enemy.radius || DEFAULT_ENEMY_RADIUS;
+          if (dist <= effect.radius + enemyRadius) {
             enemy.hp -= blast;
             if (enemy.hp <= 0) killEnemy(enemy, '遗物爆裂');
           }
@@ -798,9 +909,10 @@ function updateEnemies(dt) {
     const [nx, ny] = normalize(player.x - enemy.x, player.y - enemy.y);
     enemy.x += nx * enemy.speed * dt;
     enemy.y += ny * enemy.speed * dt;
+    const enemyRadius = enemy.radius || DEFAULT_ENEMY_RADIUS;
     for (const bullet of state.bullets) {
       const dist = length(enemy.x - bullet.x, enemy.y - bullet.y);
-      if (dist <= ENEMY_RADIUS) {
+      if (dist <= enemyRadius) {
         enemy.hp -= bullet.damage;
         bullet.life = -1;
         if (enemy.hp <= 0) {
@@ -811,7 +923,7 @@ function updateEnemies(dt) {
     }
     if (!enemy.alive) return false;
     const distPlayer = length(player.x - enemy.x, player.y - enemy.y);
-    if (distPlayer <= PLAYER_RADIUS + ENEMY_RADIUS) {
+    if (distPlayer <= PLAYER_RADIUS + enemyRadius) {
       applyPlayerDamage(enemy.damage, enemy.template.name, enemy.sanityDamage);
     }
     if (enemy.template.attackInterval) {
@@ -901,9 +1013,10 @@ function renderEnemyProjectiles() {
 
 function renderEnemies() {
   state.enemies.forEach(enemy => {
+    const enemyRadius = enemy.radius || DEFAULT_ENEMY_RADIUS;
     ctx.fillStyle = 'rgba(248,113,113,0.88)';
     ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, ENEMY_RADIUS, 0, Math.PI * 2);
+    ctx.arc(enemy.x, enemy.y, enemyRadius, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#7f1d1d';
     ctx.lineWidth = 2;

@@ -25,9 +25,9 @@ function buildOperators() {
     ...rowsEmpty,
     ['@', '@', '@', 'string', 'string', 'string', 'string', 'uint', 'float', 'uint', 'float', 'float', 'string', 'string'],
     ['sector', 'category', 'serial', 'codename', 'role', 'startWeapon', 'startRelic', 'hp', 'moveSpeed', 'sanityCap', 'reloadBonus', 'critBonus', 'signaturePassive', 'portraitArt'],
-    ['10', '01', '0001', 'Sable Hart', 'Reclaimer', 'weapon:runic-revolver', 'relic:void-orbit', '135', '5.6', '140', '0.92', '0.08', 'passive:precision-lock', 'art/operators/sable.png'],
-    ['10', '01', '0002', 'Iris Calder', 'Beacon', 'weapon:chorus-ray', 'relic:sigil-halo', '120', '5.1', '155', '0.88', '0.15', 'passive:seraph-ward', 'art/operators/iris.png'],
-    ['10', '01', '0003', 'Marlow Reef', 'Harpooner', 'weapon:tidebreaker', 'relic:maelstrom-core', '150', '5.3', '130', '0.96', '0.06', 'passive:undertow-grip', 'art/operators/marlow.png']
+    ['10', '01', '0001', 'Sable Hart', 'Reclaimer', 'weapon:runic-revolver', 'relic:void-orbit', '135', '5.6', '140', '0.92', '0.08', 'passive:precision-lock', 'ui/assets/operators/sable.svg'],
+    ['10', '01', '0002', 'Iris Calder', 'Beacon', 'weapon:chorus-ray', 'relic:sigil-halo', '120', '5.1', '155', '0.88', '0.15', 'passive:seraph-ward', 'ui/assets/operators/iris.svg'],
+    ['10', '01', '0003', 'Marlow Reef', 'Harpooner', 'weapon:tidebreaker', 'relic:maelstrom-core', '150', '5.3', '130', '0.96', '0.06', 'passive:undertow-grip', 'ui/assets/operators/marlow.svg']
   ];
   writeTable('operators.xlsx', rows);
 }

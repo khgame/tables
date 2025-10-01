@@ -46,16 +46,16 @@
         min-height: 100vh;
       }
       .glass-panel {
-        backdrop-filter: blur(24px) saturate(135%);
-        background: linear-gradient(135deg, rgba(21, 30, 56, 0.94), rgba(18, 17, 34, 0.88));
-        box-shadow: 0 28px 60px rgba(10, 12, 24, 0.55);
-        border: none;
+        backdrop-filter: blur(20px) saturate(130%);
+        background: linear-gradient(130deg, rgba(42, 54, 90, 0.96), rgba(26, 30, 55, 0.92));
+        border: 1px solid rgba(115, 148, 255, 0.12);
+        box-shadow: 0 20px 38px rgba(10, 13, 28, 0.32);
       }
       .glass-soft {
-        backdrop-filter: blur(20px) saturate(130%);
-        background: linear-gradient(145deg, rgba(38, 58, 92, 0.9), rgba(28, 33, 60, 0.86));
-        box-shadow: 0 18px 40px rgba(8, 10, 22, 0.45);
-        border: none;
+        backdrop-filter: blur(18px) saturate(125%);
+        background: rgba(33, 41, 70, 0.9);
+        border: 1px solid rgba(142, 173, 255, 0.1);
+        box-shadow: 0 16px 32px rgba(9, 12, 26, 0.28);
       }
       .bg-grid {
         background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
@@ -208,10 +208,10 @@
       };
 
       const tagToneMap = {
-        veil: 'bg-veil/55 text-white/70 shadow-[0_14px_32px_rgba(15,20,38,0.35)]',
-        aurora: 'bg-aurora/25 text-aurora shadow-[0_12px_28px_rgba(78,205,196,0.28)]',
-        ember: 'bg-ember/25 text-ember shadow-[0_12px_28px_rgba(239,131,84,0.28)]',
-        starlight: 'bg-starlight/25 text-starlight shadow-[0_12px_28px_rgba(176,132,247,0.28)]'
+        veil: 'bg-[rgba(68,86,130,0.6)] text-white/75',
+        aurora: 'bg-[rgba(78,205,196,0.22)] text-aurora/80',
+        ember: 'bg-[rgba(239,131,84,0.22)] text-ember/85',
+        starlight: 'bg-[rgba(176,132,247,0.22)] text-starlight/85'
       };
 
       const createLog = (type, message) => ({
@@ -584,7 +584,7 @@
 
 
       const StatCard = ({ label, value, accent = 'starlight' }) => (
-        <div className="glass-soft rounded-2xl px-5 py-4 flex flex-col gap-1 shadow-[0_16px_36px_rgba(6,10,26,0.35)]">
+        <div className={`rounded-2xl px-4 py-3 flex flex-col gap-1 ${accent === 'starlight' ? 'bg-[rgba(176,132,247,0.18)]' : accent === 'aurora' ? 'bg-[rgba(78,205,196,0.18)]' : accent === 'ember' ? 'bg-[rgba(239,131,84,0.18)]' : accent === 'moss' ? 'bg-[rgba(123,211,137,0.18)]' : 'bg-white/12'}`}>
           <span className="text-xs uppercase tracking-[0.4em] text-white/50">{label}</span>
           <span className={`text-2xl font-semibold ${accentClassMap[accent] || 'text-white'}`}>{value}</span>
         </div>
@@ -602,11 +602,11 @@
       );
 
       const HeroStatusList = ({ heroes }) => (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-3.5">
           {heroes.map(hero => {
             const hpRatio = hero.maxHp ? Math.max(0, hero.hp) / hero.maxHp : 0;
             return (
-              <div key={hero.id} className="glass-soft rounded-2xl p-4 space-y-2">
+              <div key={hero.id} className="rounded-2xl p-4 space-y-2 bg-[rgba(45,57,92,0.88)]">
                 <div className="flex items-center justify-between">
                   <p className="text-white font-semibold">{hero.name}</p>
                   <span className="text-xs text-white/50">{hero.role}</span>
@@ -626,7 +626,7 @@
       );
 
       const LogPanel = ({ logs }) => (
-        <div className="glass-soft rounded-3xl p-4 max-h-72 overflow-auto scroll-shadow space-y-2">
+        <div className="rounded-3xl p-4 max-h-64 overflow-auto scroll-shadow space-y-2 bg-[rgba(33,42,70,0.88)]">
           {logs.length === 0 ? <p className="text-sm text-white/40">等待行动...</p> : null}
           {logs.slice().reverse().map(entry => (
             <div key={entry.id} className="text-sm text-white/70 leading-relaxed clamp-3">
@@ -639,7 +639,7 @@
 
       const EventOverlay = ({ pending, onSelect, onSkip }) => (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur" />
           <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">{pending.event.title}</h3>
@@ -651,7 +651,7 @@
                 <button
                   key={option.key}
                   onClick={() => onSelect(option)}
-                  className="w-full text-left glass-soft rounded-2xl p-4 hover:bg-aurora/12 hover:shadow-[0_14px_32px_rgba(78,205,196,0.35)] transition"
+                  className="w-full text-left rounded-2xl p-4 bg-[rgba(47,60,98,0.9)] hover:bg-[rgba(78,205,196,0.16)] transition"
                 >
                   <p className="text-white font-semibold text-base">{option.label}</p>
                   <div className="flex flex-wrap gap-2 mt-2 text-xs text-white/50">
@@ -668,7 +668,7 @@
 
       const MerchantOverlay = ({ pending, onChoose, onSkip }) => (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur" />
           <div className="glass-panel relative rounded-3xl p-6 w-[min(540px,90vw)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">漂泊商人</h3>
@@ -677,7 +677,7 @@
             <p className="text-sm text-white/70">挑选一件心仪的物品，或空手离开。</p>
             <div className="space-y-3">
               {pending.offers.map((offer, index) => (
-                <div key={offer.key} className="glass-soft rounded-2xl p-4 space-y-2">
+                <div key={offer.key} className="rounded-2xl p-4 space-y-2 bg-[rgba(47,60,98,0.9)]">
                   <div className="flex items-center justify-between">
                     <p className="text-white font-semibold text-lg clamp-2">{offer.label}</p>
                     <Tag label={`价格: ${offer.cost.amount} ${offer.cost.resource}`} tone="veil" />
@@ -698,7 +698,7 @@
 
       const RestOverlay = ({ pending, onChoose, onSkip }) => (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur" />
           <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-white">休整选择</h3>
@@ -710,7 +710,7 @@
                 <button
                   key={option.key}
                   onClick={() => onChoose(option)}
-                  className="w-full glass-soft rounded-2xl p-4 text-left hover:bg-aurora/12 hover:shadow-[0_14px_32px_rgba(78,205,196,0.35)] transition"
+                  className="w-full rounded-2xl p-4 text-left bg-[rgba(47,60,98,0.9)] hover:bg-[rgba(78,205,196,0.16)] transition"
                 >
                   <p className="text-white font-semibold text-lg clamp-2">{option.label}</p>
                   <p className="text-sm text-white/70 mt-1">{option.description}</p>
@@ -762,14 +762,14 @@
         const resolveLabel = resolveLabelMap[currentRoom?.roomType || currentNode?.roomType] || '处理节点';
 
         return (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <SectionTitle
               title="周目运行"
               subtitle="选择章节与队伍，在浏览器内体验由 Excel 配置驱动的地牢之旅。"
             />
-            <div className="grid lg:grid-cols-[320px,1fr] gap-6">
-              <div className="space-y-4">
-                <div className="glass-soft rounded-3xl p-5 space-y-3">
+            <div className="grid lg:grid-cols-[320px,1fr] gap-5">
+              <div className="space-y-3.5">
+                <div className="glass-soft rounded-3xl p-4 space-y-2.5">
                   <p className="text-xs uppercase tracking-[0.4em] text-white/40">章节选择</p>
                   <select
                     className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
@@ -784,7 +784,7 @@
                   {runState.passive ? <p className="text-xs text-white/50">当前被动：{runState.passive}</p> : null}
                 </div>
 
-                <div className="glass-soft rounded-3xl p-5 space-y-3">
+                <div className="glass-soft rounded-3xl p-4 space-y-2.5">
                   <p className="text-xs uppercase tracking-[0.4em] text-white/40">英雄编制 (4/4)</p>
                   <div className="grid gap-2">
                     {heroCatalog.map(hero => {
@@ -794,10 +794,10 @@
                           key={hero.id}
                           onClick={() => toggleHero(hero.id)}
                           disabled={runState.stage === 'running' && !active}
-                          className={`text-left rounded-2xl px-4 py-3 transition ${active ? 'bg-starlight/20 text-white shadow-[0_12px_28px_rgba(176,132,247,0.35)]' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(12,18,38,0.35)]'}`}
+                          className={`text-left rounded-2xl px-4 py-3 transition ${active ? 'bg-[rgba(176,132,247,0.26)] text-white' : 'bg-white/10 text-white/70 hover:bg-white/14'}`}
                         >
                           <p className="text-sm font-semibold clamp-2">{hero.name}</p>
-                          <p className="text-xs text-white/50">{hero.role} · HP {hero.baseHp}</p>
+                          <p className="text-xs text-white/60">{hero.role} · HP {hero.baseHp}</p>
                         </button>
                       );
                     })}
@@ -805,7 +805,7 @@
                 </div>
 
                 {(runState.stage === 'running' || runState.stage === 'completed') && (
-                  <div className="glass-soft rounded-3xl p-5 space-y-4">
+                  <div className="glass-soft rounded-3xl p-4 space-y-3.5">
                     <p className="text-xs uppercase tracking-[0.4em] text-white/40">资源概览</p>
                     <div className="grid grid-cols-3 gap-3">
                       <StatCard label="Arcane" value={formatNumber(runState.resources.arcane)} accent="aurora" />
@@ -825,9 +825,9 @@
                 <LogPanel logs={runState.log} />
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {runState.stage === 'idle' && (
-                  <div className="glass-soft rounded-3xl p-6 space-y-4">
+                  <div className="glass-soft rounded-3xl p-5 space-y-3">
                     <p className="text-sm text-white/70">挑选章节与 4 名英雄后点击「开始周目」即可自动读取 Excel 数据并进入地牢。</p>
                     <button
                       onClick={() => onStartRun(Number(selectedChapterId), selectedHeroIds.map(Number))}
@@ -840,7 +840,7 @@
                 )}
 
                 {runState.stage === 'running' && currentNode && (
-                  <div className="glass-soft rounded-3xl p-6 space-y-4">
+                  <div className="glass-soft rounded-3xl p-5 space-y-3.5">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs uppercase tracking-[0.4em] text-white/40">当前节点</p>
@@ -863,7 +863,7 @@
                 )}
 
                 {runState.stage === 'completed' && runState.summary && (
-                  <div className="glass-soft rounded-3xl p-6 space-y-4">
+                  <div className="glass-soft rounded-3xl p-5 space-y-3.5">
                     <h3 className="text-xl font-semibold text-white">周目完成</h3>
                     <p className="text-sm text-white/70">资源结算：</p>
                     <div className="grid grid-cols-3 gap-3">
@@ -886,7 +886,7 @@
                 )}
 
                 {runState.stage === 'failed' && (
-                  <div className="glass-soft rounded-3xl p-6 space-y-4">
+                  <div className="glass-soft rounded-3xl p-5 space-y-3.5">
                     <h3 className="text-xl font-semibold text-white">周目失败</h3>
                     <p className="text-sm text-white/70">队伍全灭或战斗未能取胜，携带少量资源返程。</p>
                     <button

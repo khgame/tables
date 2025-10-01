@@ -10,10 +10,13 @@
 - `enemies.xlsx`：普通敌人数据，覆盖血量、伤害、移动速度、攻击方式、投射物速度/寿命、弱点/抗性以及掉落表。
 - `bosses.xlsx`：关底敌人特化条目（护甲、激怒加成、招式提示图）。
 - `waves.xlsx`：时间轴波次脚本（出现时间、持续、数量、刷怪半径、阵型与设计备注）。
-- `context.enums.json` / `context.meta.json`：定义武器分类、攻击形态、伤害类型、敌人家族等枚举供 TS 序列化引用。
+- `skill_tree.xlsx`：技能树节点，记录分支、层级、父节点、效果、需求、图标——用于驱动角色成长。
+- `synergy_cards.xlsx`：构筑协同卡，定义触发条件、效果加成与品质划分。
+- `context.enums.json` / `context.meta.json`：定义武器分类、攻击形态、伤害类型、敌人家族、技能分支、协同品质等枚举供 TS 序列化引用。
 - `_rebuild_data.js`：可重复生成上述 Excel 的脚本，确保团队能快速覆写示例数值。
-- `serialize.js`：批量导出 JSON / JSONX / TS / TS Interface，并将数据注入 `ui/index.html`。
-- `ui/index.html`：静态数据面板，展示核心战斗指标（弹道速度、存活时间、图形 ID 等）。
+- `serialize.js`：批量导出 JSON / JSONX / TS / TS Interface，并将数据注入 `ui/index.html` 与可玩原型。
+- `ui/index.html`：静态数据面板，展示核心战斗指标（弹道速度、存活时间、技能树、协同卡等）。
+- `ui/engine.html` + `ui/engine.js`：基于 Canvas 的实时战斗原型，可直接读取导出的 JSON 验证闭环体验。
 
 ## 数值约定
 
@@ -22,13 +25,16 @@
 - **战斗方式**：`attackStyle` 字段统一引用 `AttackStyle` 枚举（MANUAL / BURST / BEAM / AUTO / CHANNEL），用于驱动前端逻辑与动画。
 - **特效资产**：`travelSprite`、`impactSprite`、`muzzleSprite`、`telegraphSprite` 等以资源路径标识，对接渲染管线或占位美术。
 - **理智消耗**：遗物的 `sanityDrain`、敌人的 `sanityDamage` 均以点数记录，方便与 meta 系统联动。
+- **技能树**：节点 ID 由 `sector + branch + node` 组成，`effects` 字段统一用竖线分隔属性；`requirements` 可混合等级、技能前置等条件。
+- **协同卡**：`prerequisites` 与 `trigger` 统一使用 DSL（如 `weapon:chorus-ray|relic:maelstrom-core`、`sanity:<40`），便于解析。
 
 ## 快速体验
 
 ```bash
 node example/game_06_abyssal_nightfall/_rebuild_data.js   # 重新生成 Excel 表格
-node example/game_06_abyssal_nightfall/serialize.js        # 导出 JSON/TS/JSONX 并生成 UI
-open example/game_06_abyssal_nightfall/out/index.html      # 浏览战斗数据可视化
+node example/game_06_abyssal_nightfall/serialize.js        # 导出 JSON/TS/JSONX 并生成 UI & 原型
+open example/game_06_abyssal_nightfall/out/index.html      # 浏览战斗与成长数据可视化
+open example/game_06_abyssal_nightfall/out/engine.html     # 启动 Canvas 战斗原型，验证闭环
 ```
 
 ## 与其他示例的关系
@@ -37,10 +43,13 @@ open example/game_06_abyssal_nightfall/out/index.html      # 浏览战斗数据�
 
 1. 手动射击 + 自动遗物共存时的弹道/冷却/理智数值如何在 Excel 中完整描述。
 2. 敌人投射物（速度、寿命、特效）与波次脚本的组合是否足够表达高压节奏。
-3. 导出的 TS 接口与枚举是否支撑前端/脚本编写（`AttackStyle`、`DamageType` 等）。
+3. 技能树、协同卡是否覆盖构筑深度；数据格式是否便于逻辑层解析。
+4. 导出的 TS 接口与枚举是否支撑前端/脚本编写（`AttackStyle`、`SkillBranch`、`SynergyTier` 等）。
+5. Canvas 原型是否能够直接消费 tables 导出的 JSON，体现“数据→玩法”闭环。
 
 运行 `serialize.js` 后可在 `out/` 目录看到：
 
 - 稳定排序后的 JSON 和带协议头的 JSONX。
 - TypeScript 数据 + Interface（包含 `context.ts` 枚举）。
-- 已被数据填充的 `index.html`，用于快速审阅战斗调参。
+- 已被数据填充的 `index.html`，用于快速审阅战斗与成长调参。
+- 可直接游玩的 `engine.html` + `engine.js`，通过 tables 数据驱动完整战斗循环。

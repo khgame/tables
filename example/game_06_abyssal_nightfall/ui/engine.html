@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Abyssal Nightfall Prototype</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #050913 0%, #02040a 55%, #000207 100%);
+        color: #d8e1ff;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      header {
+        padding: 20px 28px;
+        border-bottom: 1px solid rgba(96, 165, 250, 0.25);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(148, 163, 184, 0.08));
+      }
+      h1 {
+        font-size: 24px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      main {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        padding: 20px 28px 32px;
+      }
+      #viewport {
+        position: relative;
+      }
+      canvas {
+        border-radius: 18px;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        background: radial-gradient(circle, rgba(15, 23, 42, 0.92) 0%, rgba(2, 6, 23, 0.92) 70%);
+        box-shadow: 0 24px 60px rgba(2, 6, 23, 0.85);
+        cursor: crosshair;
+      }
+      #hud {
+        min-width: 240px;
+        background: rgba(15, 23, 42, 0.68);
+        border-radius: 16px;
+        padding: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      #hud h2 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+        color: #93c5fd;
+      }
+      .stat-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: rgba(226, 232, 240, 0.8);
+      }
+      .bar {
+        position: relative;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(51, 65, 85, 0.4);
+        overflow: hidden;
+      }
+      .bar span {
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.9), rgba(147, 197, 253, 0.9));
+      }
+      .log {
+        font-size: 12px;
+        line-height: 1.4;
+        max-height: 160px;
+        overflow-y: auto;
+        padding-right: 6px;
+        color: rgba(226, 232, 240, 0.7);
+      }
+      footer {
+        padding: 12px 28px 20px;
+        font-size: 12px;
+        color: rgba(148, 163, 184, 0.8);
+      }
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 18px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 197, 253, 0.8));
+        color: #0b1220;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Abyssal Nightfall Prototype</h1>
+      <p>WASD 移动 · 鼠标瞄准 · 长按鼠标左键射击。存活到 3:00 并击败所有波次即为闭环。</p>
+    </header>
+    <main>
+      <div id="viewport">
+        <canvas id="game" width="960" height="600"></canvas>
+      </div>
+      <aside id="hud">
+        <h2>状态</h2>
+        <div class="stat-line"><span>时间</span><span id="timeLabel">0:00</span></div>
+        <div class="stat-line"><span>波次</span><span id="waveLabel">1</span></div>
+        <div class="stat-line"><span>击杀</span><span id="killLabel">0</span></div>
+        <div class="stat-line"><span>弹药</span><span id="ammoLabel">0/0</span></div>
+        <div class="stat-line"><span>冷却</span><span id="cooldownLabel">0.0s</span></div>
+        <div class="stat-line"><span>理智</span><span id="sanityLabel">100</span></div>
+        <div class="bar"><span id="hpBar" style="width:100%"></span></div>
+        <button id="restartBtn" disabled>重开</button>
+        <h2>日志</h2>
+        <div class="log" id="log"></div>
+      </aside>
+    </main>
+    <footer>
+      数据源自 tables 导出的 `out/*.json`。当前实现为原型，用于验证逻辑闭环与数值可用性。
+    </footer>
+    <script type="module" src="./engine.js"></script>
+  </body>
+</html>

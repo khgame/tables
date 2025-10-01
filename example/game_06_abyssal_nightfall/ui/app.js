@@ -107,6 +107,10 @@ async function bootstrap() {
   backToPrepBtn.addEventListener('click', () => returnToPrep(state.lastPreset), { once: false });
   retryRunBtn.addEventListener('click', retryRun, { once: false });
 
+  if (!layoutEl.classList.contains('persona-enter')) {
+    requestAnimationFrame(() => layoutEl.classList.add('persona-enter'));
+  }
+
   setStatus('数据加载完成，随时可以部署。', 'success');
 }
 
@@ -252,10 +256,11 @@ function renderOperators() {
     operatorListEl.innerHTML = '<div class="card">暂无操作者数据</div>';
     return;
   }
-  state.tables.operators.forEach(operator => {
+  state.tables.operators.forEach((operator, index) => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = `card${operator.tid === state.selection.operatorTid ? ' active' : ''}`;
+    card.style.setProperty('--card-index', index + 1);
     const baseWeapon = lookupReference(state.tables.weapons, operator.startWeapon);
     const baseRelic = lookupReference(state.tables.relics, operator.startRelic);
     const stats = [
@@ -299,10 +304,11 @@ function renderWeapons() {
     weaponListEl.innerHTML = '<div class="card">暂无武器数据</div>';
     return;
   }
-  state.tables.weapons.forEach(weapon => {
+  state.tables.weapons.forEach((weapon, index) => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = `card${weapon.tid === state.selection.weaponTid ? ' active' : ''}`;
+    card.style.setProperty('--card-index', index + 1);
     const stats = [
       { label: '伤害', value: weapon.damage ?? '—' },
       { label: '射速', value: weapon.fireRate != null ? `${weapon.fireRate}s` : '—' },
@@ -350,10 +356,11 @@ function renderRelics() {
     relicListEl.innerHTML = '<div class="card">暂无遗物数据</div>';
     return;
   }
-  state.tables.relics.forEach(relic => {
+  state.tables.relics.forEach((relic, index) => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = `card${relic.tid === state.selection.relicTid ? ' active' : ''}`;
+    card.style.setProperty('--card-index', index + 1);
     const stats = [
       { label: '冷却', value: relic.cooldown != null ? `${relic.cooldown}s` : '—' },
       { label: '持续', value: relic.duration != null ? `${relic.duration}s` : '—' },

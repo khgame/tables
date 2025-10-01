@@ -94,6 +94,10 @@ function writeWebDemo(targetDir) {
   if (fs.existsSync(appJs)) {
     fs.copyFileSync(appJs, Path.resolve(targetDir, 'app.js'));
   }
+  const assetsSrc = Path.resolve(baseDir, 'ui/assets');
+  if (fs.existsSync(assetsSrc)) {
+    fs.copySync(assetsSrc, Path.resolve(targetDir, 'ui/assets'), { overwrite: true });
+  }
 }
 
 function loadJsonForScript(filePath) {

@@ -13,6 +13,10 @@ export type ConvertResult = {
   tids: string[];
   result: Record<string, any>;
   collisions?: Array<{ id: string; first: any; incoming: any }>;
+  meta?: {
+    idSegments: number[];
+    markCols: string[];
+  };
 }
 
 export type Table = {
@@ -41,4 +45,3 @@ export type Serializer = {
   file: (data: Table, fileName: string, imports: string, context?: Context) => string;
   contextDealer?: (context: Context) => string;
 }
-

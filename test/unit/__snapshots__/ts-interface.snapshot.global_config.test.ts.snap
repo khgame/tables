@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ts-interface snapshot (global_config.xlsx) matches snapshot 1`] = `
+"/** this file is auto generated */
+//imports
+        
+export type GlobalConfigTID = string & { readonly __GlobalConfigTID: unique symbol };
+
+export interface IGlobalConfig {
+  ID: number;
+  value: "Map"[];
+  value2: string;
+  describe: string;
+}
+"
+`;

@@ -32,8 +32,26 @@ describe('tsSerializer formatting', () => {
     const data: any = { schema: {}, descLine: {}, markCols: [], convert: { result: { id1: { a: 1 } } } }
     const out = tsSerializer.file(data, 'example', '//imports')
     expect(out).toContain('export interface IExample')
-    expect(out).toContain('const data = ') // includes JSON content
+    expect(out).toContain('const raw = ') // includes JSON content
+    expect(out).toContain('export const exampleTids = raw.tids;')
     expect(out).toContain('export const example: { [tid: string] : IExample }')
+  })
+
+  it('brands tids when metadata is available', () => {
+    const data: any = {
+      schema: {},
+      descLine: {},
+      markCols: [],
+      convert: {
+        result: { id1: { a: 1 } },
+        tids: ['id1'],
+        meta: { idSegments: [0], markCols: ['A'] }
+      }
+    }
+    const out = tsSerializer.file(data, 'example', '//imports')
+    expect(out).toContain('type ExampleTID = string')
+    expect(out).toContain('const toExampleTID =')
+    expect(out).toContain('export const example: Record<ExampleTID, IExample>')
   })
 })
 

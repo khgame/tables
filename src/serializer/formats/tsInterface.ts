@@ -171,6 +171,14 @@ export function dealContext(context: any): string {
 
 export const tsInterfaceSerializer: Serializer = {
   plugins: [tableSchema, tableConvert],
-  file: (data, fileName, imports, context) => `/** this file is auto generated */\n${imports}\n        \nexport interface ${makeInterfaceName(fileName)} ${dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)}\n`,
+  file: (data, fileName, imports, context) => {
+    const interfaceName = makeInterfaceName(fileName)
+    const baseName = interfaceName.startsWith('I') && interfaceName.length > 1 ? interfaceName.slice(1) : interfaceName
+    const tidMeta = (data as any).convert?.meta
+    const tidAlias = Array.isArray(tidMeta?.idSegments) && tidMeta.idSegments.length > 0
+      ? `export type ${baseName}TID = string & { readonly __${baseName}TID: unique symbol };\n\n`
+      : ''
+    return `/** this file is auto generated */\n${imports}\n        \n${tidAlias}export interface ${interfaceName} ${dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)}\n`
+  },
   contextDealer: dealContext
 }

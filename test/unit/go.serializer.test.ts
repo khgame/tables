@@ -185,4 +185,16 @@ describe('go serializer type mapping', () => {
     const code = run({ kind: 'object', fields: [{ name: 'items', type: { kind: 'array' } }] })
     expect(code).toContain('Items []interface{} `json:"items"`')
   })
+
+  it('declares TID helper when convert metadata available', () => {
+    buildSchemaModel.mockReturnValueOnce({ kind: 'object', fields: [] })
+    const code = goSerializer.file({
+      schema: {},
+      descLine: {},
+      markCols: [],
+      convert: { meta: { idSegments: [0], markCols: ['A'] } }
+    } as any, 'example_table', '', {})
+    expect(code).toContain('type ExampleTableTID string')
+    expect(code).toContain('map[ExampleTableTID]ExampleTable')
+  })
 })

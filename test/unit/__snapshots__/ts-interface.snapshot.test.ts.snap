@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ts-interface serializer snapshot (example.xlsx) matches interface shape snapshot 1`] = `
+"/** this file is auto generated */
+//imports
+        
+export type ExampleTID = string & { readonly __ExampleTID: unique symbol };
+
+export interface IExample {
+  ctype: number;
+  building: number;
+  level: number;
+  name: string;
+  upgrage: {
+    to: number;
+    dependency: number[];
+  };
+  product: Array<{
+      tid: number;
+      num: number;
+    }>;
+  cost: Array<{key: string, val: number}>;
+  arr: number[];
+  pair: {key: string, val: number};
+  map: {key: string, val: any}[];
+  nest: Array<Array<number>|boolean[][]>;
+  stars: Array<number|boolean|{key: string, val: number}>;
+  nestedArray: [
+    {data: number},
+    {data: number}|undefined,
+    Array<number|{1: string}>
+  ];
+  ax: number|string;
+}
+"
+`;

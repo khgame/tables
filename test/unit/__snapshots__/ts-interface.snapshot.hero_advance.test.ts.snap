@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ts-interface snapshot (hero_advance.xlsx) matches snapshot 1`] = `
+"/** this file is auto generated */
+//imports
+        
+export type HeroAdvanceTID = string & { readonly __HeroAdvanceTID: unique symbol };
+
+export interface IHeroAdvance {
+  system: number;
+  id: number;
+  star: number;
+  str: number;
+  agi: number;
+  int: number;
+  attr: Array<number>;
+  type: "HERO_TYPE"|"temp";
+}
+"
+`;

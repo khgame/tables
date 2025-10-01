@@ -13,16 +13,41 @@ export const tsSerializer: Serializer = {
   plugins: [tableSchema, tableConvert],
   file: (data, fileName, imports, context) => {
     const interfaceName = makeInterfaceName(fileName)
-    const convert = (data as any).convert
-    const stable = { ...convert, result: sortByKeys(convert.result || {}) }
+    const convert = (data as any).convert || {}
+    const { meta, ...rest } = convert
+    const stable = { ...rest, result: sortByKeys((rest as any).result || {}) }
+    const baseName = interfaceName.startsWith('I') && interfaceName.length > 1 ? interfaceName.slice(1) : interfaceName
+    const camel = interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2)
+    const tidTypeName = `${baseName}TID`
+    const tidHelperName = `to${baseName}TID`
+    const tidAware = Array.isArray(meta?.idSegments) && (meta!.idSegments as number[]).length > 0
+
+    const tidDefs = tidAware
+      ? `type ${tidTypeName} = string & { readonly __${baseName}TID: unique symbol };
+const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${tidTypeName};
+
+`
+      : ''
+
+    const tidsExport = tidAware
+      ? `export const ${camel}Tids: ${tidTypeName}[] = raw.tids.map(${tidHelperName});`
+      : `export const ${camel}Tids = raw.tids;`
+
+    const recordExport = tidAware
+      ? `export const ${camel}: Record<${tidTypeName}, ${interfaceName}> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [${tidHelperName}(tid), value as ${interfaceName}])
+);`
+      : `export const ${camel}: { [tid: string] : ${interfaceName} } = raw.result as any;`
+
     return `/** this file is auto generated */
 ${imports}
         
 export interface ${interfaceName} ${dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)}
 
-const data = ${JSON.stringify(stable, null, 2)}
+${tidDefs}const raw = ${JSON.stringify(stable, null, 2)}
 
-export const ${interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2)}: { [tid: string] : ${interfaceName} } = data.result as any ;
+${tidsExport}
+${recordExport}
 `
   },
   contextDealer: dealContext

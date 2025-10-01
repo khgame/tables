@@ -84,6 +84,14 @@ export function tableConvert(table: Table, context?: any): Table {
     }
   })
 
-  ;(table as any).convert = { tids, result, collisions }
+  ;(table as any).convert = {
+    tids,
+    result,
+    collisions,
+    meta: {
+      idSegments: idSeg,
+      markCols
+    }
+  }
   return table
 }

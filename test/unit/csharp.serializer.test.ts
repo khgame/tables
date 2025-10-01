@@ -100,4 +100,16 @@ describe('csharp serializer type mapping', () => {
     expect(code).toContain('public class TestTable')
     expect(code).toContain('namespace Tables')
   })
+
+  it('emits typed TID definitions when metadata exists', () => {
+    buildSchemaModel.mockReturnValueOnce({ kind: 'object', fields: [] })
+    const code = csharpSerializer.file({
+      schema: {},
+      descLine: {},
+      markCols: [],
+      convert: { meta: { idSegments: [0], markCols: ['A'] } }
+    } as any, 'example_table', '', {})
+    expect(code).toContain('public readonly record struct ExampleTableTID')
+    expect(code).toContain('class ExampleTableTIDConverter : JsonConverter<ExampleTableTID>')
+  })
 })

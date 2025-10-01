@@ -265,6 +265,36 @@
       gap: 14px;
       margin: 18px 0 8px;
     }
+
+    .room-card.visual {
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .room-card.visual canvas {
+      width: 100%;
+      height: 160px;
+      display: block;
+      border-radius: inherit;
+    }
+    .room-card.visual .room-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 14px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(8, 12, 26, 0) 30%, rgba(8, 12, 26, 0.65) 100%);
+    }
+    .room-card.visual .room-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .room-card.visual .room-action {
+      font-size: 13px;
+      color: #e2e8f0;
+    }
     .room-card {
       background: rgba(23, 30, 49, 0.8);
       border: 1px solid rgba(99, 164, 255, 0.35);
@@ -565,6 +595,12 @@
       { id: 'observation', name: '观测甲板', icon: '📡', desc: '扫描异常、递送情报' },
       { id: 'dormitory', name: '休整宿舍', icon: '🛌', desc: '恢复士气与睡眠' }
     ];
+    const NPC_BY_FACILITY = convertResult(DATA.roster).reduce((acc, npc) => {
+      const facility = npc.assignedFacility || 'unassigned';
+      if (!acc[facility]) acc[facility] = [];
+      acc[facility].push(npc.name);
+      return acc;
+    }, {});
     const INVENTORY_LABELS = {
       resource: '资源',
       consumable: '药剂',
@@ -576,6 +612,11 @@
       implant: '植入体',
       artifact: '遗物'
     };
+
+    const ROOM_CANVAS = new Map();
+    const ROOM_OVERLAY = new Map();
+    const ROOM_STATE = new Map();
+    let ROOM_ANIMATING = false;
 
     let STATE = null;
 
@@ -628,6 +669,10 @@
     function updateDashboard() {
       const container = document.getElementById('base-dashboard');
       container.innerHTML = '';
+      ROOM_CANVAS.clear();
+      ROOM_OVERLAY.clear();
+      ROOM_STATE.clear();
+      ROOM_ANIMATING = false;
       const isNight = STATE.hour >= 18 || STATE.hour < 6;
       document.body.classList.toggle('night', isNight);
       const stats = [
@@ -655,6 +700,7 @@
         }
         container.appendChild(card);
       });
+      ROOM_LAYOUT.forEach(room => updateRoomVisual(room.id, performance.now()));
     }
 
     function renderFacilities() {
@@ -688,14 +734,233 @@
       if (!container) return;
       container.innerHTML = '';
       ROOM_LAYOUT.forEach(room => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'room-card';
-        const level = STATE.facilityLevels[room.id] || 0;
-        button.innerHTML = `<span class="room-icon">${room.icon}</span><strong>${room.name}</strong><div class="muted">${room.desc}</div><div class="muted">等级 ${level}</div>`;
-        button.addEventListener('click', () => handleRoomAction(room.id, room));
-        container.appendChild(button);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'room-card visual';
+        const canvas = document.createElement('canvas');
+        canvas.width = 260;
+        canvas.height = 160;
+        wrapper.appendChild(canvas);
+        ROOM_CANVAS.set(room.id, canvas);
+        const overlay = document.createElement('div');
+        overlay.className = 'room-overlay';
+        wrapper.appendChild(overlay);
+        ROOM_OVERLAY.set(room.id, overlay);
+        const label = document.createElement('div');
+        label.style.padding = '10px 14px';
+        label.innerHTML = `<div class="room-icon">${room.icon}</div><strong>${room.name}</strong><div class="muted">${room.desc}</div>`;
+        wrapper.appendChild(label);
+        wrapper.addEventListener('click', () => handleRoomAction(room.id, room));
+        container.appendChild(wrapper);
+        updateRoomVisual(room.id, performance.now());
       });
+    }
+
+    function drawRoomScene(canvas, roomId, progress = 0, theme) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const themeMap = {
+        'workshop': ['rgba(11, 17, 32, 0.92)', 'rgba(255, 196, 82, 0.25)'],
+        'chem.lab': ['rgba(8, 18, 28, 0.9)', 'rgba(94, 234, 212, 0.3)'],
+        'observation': ['rgba(6, 14, 26, 0.88)', 'rgba(99, 164, 255, 0.35)'],
+        'dormitory': ['rgba(16, 12, 28, 0.9)', 'rgba(167, 139, 250, 0.28)']
+      };
+      const [baseColor, accentColor] = themeMap[theme || roomId] || ['rgba(12, 18, 34, 0.9)', 'rgba(99, 164, 255, 0.28)'];
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, baseColor);
+      gradient.addColorStop(1, 'rgba(4, 8, 18, 0.98)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const radial = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 16, canvas.width / 2, canvas.height / 2, 120);
+      radial.addColorStop(0, accentColor);
+      radial.addColorStop(1, 'rgba(8, 12, 26, 0.8)');
+      ctx.fillStyle = radial;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(99, 164, 255, 0.28)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 72, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 36, 0, Math.PI * 2);
+      ctx.stroke();
+
+      if (progress > 0) {
+        ctx.strokeStyle = 'rgba(167, 139, 250, 0.55)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 62, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const pulse = Math.sin(progress * Math.PI * 3) * 6 + 18;
+      ctx.fillStyle = 'rgba(15, 20, 33, 0.92)';
+      ctx.fillRect(18, canvas.height - 38, canvas.width - 36, 26);
+
+      if (roomId === 'workshop') {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(progress * Math.PI * 4);
+        ctx.fillStyle = 'rgba(255, 196, 82, 0.7)';
+        for (let i = 0; i < 3; i++) {
+          ctx.rotate((Math.PI * 2) / 3);
+          ctx.fillRect(0, -6, 68, 12);
+        }
+        ctx.restore();
+        ctx.fillStyle = 'rgba(132, 192, 255, 0.75)';
+        ctx.fillRect(40, 114, 32, 22);
+        ctx.fillRect(84, 114, 32, 22);
+      } else if (roomId === 'chem.lab') {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(progress * Math.PI * 2);
+        ctx.fillStyle = 'rgba(94, 234, 212, 0.45)';
+        for (let i = 0; i < 4; i++) {
+          ctx.rotate(Math.PI / 2);
+          ctx.beginPath();
+          ctx.arc(40, 0, pulse * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.fillStyle = 'rgba(102, 255, 224, 0.75)';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2 - 46, canvas.height / 2, 20, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (roomId === 'observation') {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(progress * Math.PI * 2);
+        ctx.strokeStyle = 'rgba(137, 180, 255, 0.6)';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 4; i++) {
+          ctx.rotate(Math.PI / 2);
+          ctx.beginPath();
+          ctx.arc(48, 0, 18, Math.PI * 0.2, Math.PI * 1.3);
+          ctx.stroke();
+        }
+        ctx.restore();
+        for (let i = 0; i < 4; i++) {
+          const offset = i * 22;
+          ctx.fillStyle = `rgba(88, 166, 255, ${0.45 + i * 0.1})`;
+          ctx.fillRect(canvas.width - 52, 28 + offset, 18, 18);
+          ctx.fillRect(canvas.width - 78, 28 + offset, 18, 18);
+        }
+      } else if (roomId === 'dormitory') {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(progress * Math.PI * 2);
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.55)';
+        ctx.beginPath();
+        ctx.arc(0, 0, pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255, 215, 160, 0.65)';
+        ctx.fillRect(canvas.width / 2 - 54, canvas.height / 2 + 32, 108, 20);
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+        ctx.fillRect(canvas.width / 2 - 50, canvas.height / 2 - 4, 100, 24);
+      }
+    }
+
+    function updateRoomVisual(roomId, timestamp) {
+      const canvas = ROOM_CANVAS.get(roomId);
+      if (!canvas) return false;
+      const animation = ROOM_STATE.get(roomId);
+      let progress = 0;
+      let animating = false;
+      let label = '点击执行';
+      if (animation) {
+        const elapsed = timestamp - animation.start;
+        progress = Math.min(elapsed / animation.durationMs, 1);
+        animating = progress < 1;
+        label = animation.label || label;
+        if (!animating) {
+          ROOM_STATE.delete(roomId);
+          progress = 1;
+        }
+      }
+      drawRoomScene(canvas, roomId, progress, animation?.theme);
+      const overlay = ROOM_OVERLAY.get(roomId);
+      if (overlay) {
+        const level = STATE.facilityLevels[roomId] || 0;
+        const occupants = getRoomOccupants(roomId);
+        overlay.innerHTML = `<div class="room-meta">等级 ${level} · ${occupants}</div><div class="room-action">${animating ? `${label} ${Math.round(progress * 100)}%` : '点击执行'}</div>`;
+      }
+      return animating;
+    }
+
+    function startRoomAnimation(roomId, options = {}) {
+      ROOM_STATE.set(roomId, {
+        start: performance.now(),
+        durationMs: options.durationMs || 2800,
+        label: options.label || '执行中',
+        theme: options.theme || roomId
+      });
+      if (!ROOM_ANIMATING) {
+        ROOM_ANIMATING = true;
+        requestAnimationFrame(animateRooms);
+      }
+    }
+
+    function animateRooms(timestamp) {
+      let active = false;
+      ROOM_LAYOUT.forEach(room => {
+        if (updateRoomVisual(room.id, timestamp)) active = true;
+      });
+      if (active) {
+        requestAnimationFrame(animateRooms);
+      } else {
+        ROOM_ANIMATING = false;
+      }
+    }
+
+    function getRoomOccupants(roomId) {
+      const list = (NPC_BY_FACILITY[roomId] || []);
+      return list.length ? list.join('、') : '无人驻守';
+    }
+      if (roomId === 'workshop') {
+        ctx.fillStyle = 'rgba(132, 192, 255, 0.75)';
+        ctx.fillRect(40, 114, 32, 22);
+        ctx.fillRect(84, 114, 32, 22);
+        ctx.fillRect(canvas.width - 76, 98, 32, 36);
+        ctx.strokeStyle = 'rgba(255, 196, 82, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(40, 114);
+        ctx.lineTo(72, 88);
+        ctx.lineTo(104, 114);
+        ctx.stroke();
+      } else if (roomId === 'chem.lab') {
+        ctx.fillStyle = 'rgba(102, 255, 224, 0.75)';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2 - 46, canvas.height / 2, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(94, 234, 212, 0.4)';
+        ctx.fillRect(canvas.width / 2 + 8, canvas.height / 2 - 28, 28, 56);
+        ctx.strokeStyle = 'rgba(125, 211, 252, 0.5)';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 54, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+      } else if (roomId === 'observation') {
+        for (let i = 0; i < 4; i++) {
+          const offset = i * 22;
+          ctx.fillStyle = `rgba(88, 166, 255, ${0.45 + i * 0.1})`;
+          ctx.fillRect(canvas.width - 52, 28 + offset, 18, 18);
+          ctx.fillRect(canvas.width - 78, 28 + offset, 18, 18);
+        }
+        ctx.strokeStyle = 'rgba(137, 180, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2 - 12, canvas.height / 2, 58, Math.PI * 1.2, Math.PI * 1.8);
+        ctx.stroke();
+      } else if (roomId === 'dormitory') {
+        ctx.fillStyle = 'rgba(255, 215, 160, 0.65)';
+        ctx.fillRect(canvas.width / 2 - 54, canvas.height / 2 + 32, 108, 20);
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+        ctx.fillRect(canvas.width / 2 - 50, canvas.height / 2 - 4, 100, 24);
+        ctx.fillStyle = 'rgba(219, 234, 254, 0.25)';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2 + 84, 38, 14, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     function renderNpc() {
@@ -941,10 +1206,10 @@
       if (task.effects) applyEffects(task.effects, task.task);
       STATE.hour += 2;
       adjustSurvival(2);
+      startRoomAnimation(task.facilityId, { label: task.task, theme: task.facilityId });
       logBase(`${sourceLabel || task.task} 已完成。`);
       updateDashboard();
       renderInventory();
-      renderRooms();
       return true;
     }
 

@@ -32,6 +32,12 @@ const demos = [
     slug: 'arcane-depths',
     title: 'Arcane Depths',
     description: '战术 Roguelike + 基地经营示例，覆盖 jsonx 协议与可视化战斗'
+  },
+  {
+    id: 'game_06_abyssal_nightfall',
+    slug: 'abyssal-nightfall',
+    title: 'Abyssal Nightfall',
+    description: '类 Vampire Survivors 靶场：战前构筑 + Canvas 战斗闭环'
   }
 ]
 

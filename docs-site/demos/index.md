@@ -24,6 +24,12 @@
     description: '战术 Roguelike + 基地经营 Demo：多层章节、构筑小队、地牢线路与 jsonx 协议头输出。',
     play: '/examples/arcane-depths/ui/index.html',
     source: 'https://github.com/khgame/tables/tree/master/example/game_04_arcane_depths'
+  },
+  {
+    title: 'Abyssal Nightfall',
+    description: '类 Vampire Survivors 靶场：战前构筑界面 + Canvas 实时战斗，用 Excel 验证弹道、波次与技能树。',
+    play: '/examples/abyssal-nightfall/index.html',
+    source: 'https://github.com/khgame/tables/tree/master/example/game_06_abyssal_nightfall'
   }
 ]" />
 

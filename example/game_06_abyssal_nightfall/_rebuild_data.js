@@ -97,6 +97,37 @@ function buildWaves() {
   writeTable('waves.xlsx', rows);
 }
 
+function buildSkillTree() {
+  const rows = [
+    ...rowsEmpty,
+    ['@', '@', '@', 'string', 'SkillBranch', 'uint', 'string', 'string', 'string', 'string', 'string'],
+    ['sector', 'branch', 'node', 'name', 'branchName', 'tier', 'parent', 'effects', 'requirements', 'tooltip', 'icon'],
+    ['70', '01', '0001', 'Focal Anchor', 'PRECISION', '1', '', 'crit:+5|stability:+8', 'level:3', '提高命中稳定，解锁精准分支。', 'icons/skill/focal_anchor.png'],
+    ['70', '01', '0002', 'Rapid Siphon', 'PRECISION', '2', 'skill:70010001', 'reload:-6%|crit:+4', 'level:6', '装填更迅速并提升暴击。', 'icons/skill/rapid_siphon.png'],
+    ['70', '01', '0003', 'Zero Point Rounds', 'PRECISION', '3', 'skill:70010002', 'damage:+12|weakPoint:+20%', 'level:9', '子弹穿透时获得额外伤害。', 'icons/skill/zero_point.png'],
+    ['70', '02', '0001', 'Aether Resonance', 'AETHER', '1', '', 'beamDamage:+6|sanityDrain:-2', 'level:4', '持续型武器效率提升。', 'icons/skill/aether_resonance.png'],
+    ['70', '02', '0002', 'Choir Surge', 'AETHER', '2', 'skill:70020001', 'beamRamp:+4/s|radius:+0.8', 'level:7', '光束蓄力更快并扩大范围。', 'icons/skill/choir_surge.png'],
+    ['70', '03', '0001', 'Undertow Grasp', 'TIDES', '1', '', 'pullStrength:+18|frostDamage:+10', 'level:5', '潮汐技能增强牵引力。', 'icons/skill/undertow.png'],
+    ['70', '03', '0002', 'Riptide Collapse', 'TIDES', '2', 'skill:70030001', 'frostShatter:+22|radius:+1.2', 'level:8', '爆裂范围扩大并追加寒霜伤害。', 'icons/skill/riptide_collapse.png'],
+    ['70', '04', '0001', 'Ward Bastion', 'WARD', '1', '', 'shield:+40|sanityRegen:+3', 'level:4', '短期内提高护盾与理智恢复。', 'icons/skill/ward_bastion.png'],
+    ['70', '04', '0002', 'Seraphic Shell', 'WARD', '2', 'skill:70040001', 'shield:+60|beamReflect:15%', 'level:8', '护盾容量增加并反射部分激光。', 'icons/skill/seraphic_shell.png']
+  ];
+  writeTable('skill_tree.xlsx', rows);
+}
+
+function buildSynergyCards() {
+  const rows = [
+    ...rowsEmpty,
+    ['@', '@', '@', 'string', 'SynergyTier', 'string', 'string', 'string', 'string'],
+    ['sector', 'category', 'serial', 'name', 'tier', 'prerequisites', 'effects', 'trigger', 'icon'],
+    ['71', '02', '0001', 'Leviathan Lance', 'MYTHIC', 'weapon:chorus-ray|relic:maelstrom-core', 'beamDamage:+28|pullStrength:+20', 'sanity:<40', 'icons/synergy/leviathan.png'],
+    ['71', '02', '0002', 'Singularity Waltz', 'EPIC', 'weapon:runic-revolver|relic:void-orbit', 'projectileSpeed:+18|orbitals:+1|crit:+6', 'after:reload', 'icons/synergy/singularity.png'],
+    ['71', '02', '0003', 'Seraph Tide', 'RARE', 'relic:sigil-halo|skill:70040002', 'slow:+12%|shield:+30|duration:+2', 'killstreak:15@20s', 'icons/synergy/seraph_tide.png'],
+    ['71', '02', '0004', 'Undertow Battery', 'EPIC', 'weapon:tidebreaker|skill:70030002', 'burstDamage:+24|shardCount:+1', 'after:maelstrom', 'icons/synergy/undertow_battery.png']
+  ];
+  writeTable('synergy_cards.xlsx', rows);
+}
+
 function main() {
   fs.ensureDirSync(baseDir);
   buildOperators();
@@ -105,6 +136,8 @@ function main() {
   buildEnemies();
   buildBosses();
   buildWaves();
+  buildSkillTree();
+  buildSynergyCards();
 }
 
 main();

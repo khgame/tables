@@ -19,7 +19,9 @@ const tables = [
   { file: 'relics.xlsx', stem: 'relics' },
   { file: 'enemies.xlsx', stem: 'enemies' },
   { file: 'bosses.xlsx', stem: 'bosses' },
-  { file: 'waves.xlsx', stem: 'waves' }
+  { file: 'waves.xlsx', stem: 'waves' },
+  { file: 'skill_tree.xlsx', stem: 'skill_tree' },
+  { file: 'synergy_cards.xlsx', stem: 'synergy_cards' }
 ];
 
 const serializerEntries = [
@@ -66,7 +68,9 @@ function writeWebDemo(targetDir) {
     ['__RELICS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'relics.json'))],
     ['__ENEMIES_JSON__', loadJsonForScript(Path.resolve(targetDir, 'enemies.json'))],
     ['__BOSSES_JSON__', loadJsonForScript(Path.resolve(targetDir, 'bosses.json'))],
-    ['__WAVES_JSON__', loadJsonForScript(Path.resolve(targetDir, 'waves.json'))]
+    ['__WAVES_JSON__', loadJsonForScript(Path.resolve(targetDir, 'waves.json'))],
+    ['__SKILLTREE_JSON__', loadJsonForScript(Path.resolve(targetDir, 'skill_tree.json'))],
+    ['__SYNERGY_JSON__', loadJsonForScript(Path.resolve(targetDir, 'synergy_cards.json'))]
   ]);
 
   let html = fs.readFileSync(templatePath, 'utf8');

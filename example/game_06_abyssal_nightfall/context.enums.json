@@ -1,0 +1,36 @@
+{
+  "WeaponCategory": {
+    "SIDEARM": "sidearm",
+    "RIFLE": "rifle",
+    "SHOTGUN": "shotgun",
+    "ARCANE": "arcane",
+    "LAUNCHER": "launcher"
+  },
+  "AttackStyle": {
+    "MANUAL": "manual",
+    "CHANNEL": "channel",
+    "BEAM": "beam",
+    "BURST": "burst",
+    "AUTO": "auto"
+  },
+  "DamageType": {
+    "KINETIC": "kinetic",
+    "VOID": "void",
+    "FROST": "frost",
+    "FIRE": "fire",
+    "LIGHT": "light"
+  },
+  "EnemyFamily": {
+    "SHAMBLER": "shambler",
+    "CULTIST": "cultist",
+    "ABERRATION": "aberration",
+    "CONSTRUCT": "construct",
+    "AVATAR": "avatar"
+  },
+  "ArenaBiome": {
+    "HARBOR": "harbor",
+    "MARKET": "market",
+    "GRAVEYARD": "graveyard",
+    "LIGHTHOUSE": "lighthouse"
+  }
+}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Abyssal Nightfall Data Explorer</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at top, #0a101d 0%, #05070d 55%, #010205 100%);
+        color: #d7e3ff;
+      }
+      header {
+        padding: 32px 40px 20px;
+        background: linear-gradient(135deg, rgba(29, 78, 216, 0.18), rgba(165, 180, 252, 0.12));
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 6px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      main {
+        padding: 24px 40px 80px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+      }
+      section {
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(59, 130, 246, 0.14);
+        border-radius: 14px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 16px 45px rgba(2, 6, 23, 0.65);
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 16px;
+        font-weight: 600;
+        color: #93c5fd;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+      .card {
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(79, 70, 229, 0.2);
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        color: #e0e7ff;
+      }
+      .card p {
+        margin: 0;
+        line-height: 1.45;
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 13px;
+      }
+      code {
+        font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 12px;
+        color: #67e8f9;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Abyssal Nightfall Data Feed</h1>
+      <p>tables ➜ JSON ➜ static viz. Use this sheet to inspect combat tuning (projectile speeds, lifetimes, telegraph art IDs) exported from Excel.</p>
+    </header>
+    <main>
+      <section>
+        <h2>Operators</h2>
+        <div class="list" id="operators"></div>
+      </section>
+      <section>
+        <h2>Weapons</h2>
+        <div class="list" id="weapons"></div>
+      </section>
+      <section>
+        <h2>Relics</h2>
+        <div class="list" id="relics"></div>
+      </section>
+      <section>
+        <h2>Enemies</h2>
+        <div class="list" id="enemies"></div>
+      </section>
+      <section>
+        <h2>Boss Patterns</h2>
+        <div class="list" id="bosses"></div>
+      </section>
+      <section>
+        <h2>Wave Timeline</h2>
+        <div class="list" id="waves"></div>
+      </section>
+    </main>
+    <script>
+      const DATA = {
+        operators: __OPERATORS_JSON__,
+        weapons: __WEAPONS_JSON__,
+        relics: __RELICS_JSON__,
+        enemies: __ENEMIES_JSON__,
+        bosses: __BOSSES_JSON__,
+        waves: __WAVES_JSON__
+      };
+
+      const renderList = (el, items, render) => {
+        el.innerHTML = '';
+        items.forEach((item) => {
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = render(item);
+          el.appendChild(div);
+        });
+      };
+
+      renderList(document.getElementById('operators'), Object.values(DATA.operators.result || {}), (op) => `
+        <h3>${op.profile.codename} <code>${op.meta.tid}</code></h3>
+        <p>Loadout: ${op.loadout.startWeapon} · Passive: ${op.loadout.signaturePassive}</p>
+        <p>Vitals HP ${op.stats.hp} / Sanity ${op.stats.sanityCap} · Speed ${op.stats.moveSpeed} m/s</p>
+      `);
+
+      renderList(document.getElementById('weapons'), Object.values(DATA.weapons.result || {}), (wpn) => `
+        <h3>${wpn.profile.name} <code>${wpn.meta.category}</code></h3>
+        <p>${wpn.stats.damage} ${wpn.stats.damageType} · Fire rate ${wpn.timing.fireRate}s · Reload ${wpn.timing.reload}s</p>
+        <p>Projectile ${wpn.ballistics.projectileSpeed} m/s · Lifetime ${wpn.ballistics.maxLifetime}s · Pattern ${wpn.timing.attackStyle}</p>
+      `);
+
+      renderList(document.getElementById('relics'), Object.values(DATA.relics.result || {}), (rel) => `
+        <h3>${rel.profile.name}</h3>
+        <p>Cooldown ${rel.timing.cooldown}s · Duration ${rel.timing.duration}s · Sanity ${rel.cost.sanityDrain}</p>
+        <p>${rel.effects.summary}</p>
+      `);
+
+      renderList(document.getElementById('enemies'), Object.values(DATA.enemies.result || {}), (enemy) => `
+        <h3>${enemy.profile.name} <code>${enemy.meta.family}</code></h3>
+        <p>HP ${enemy.stats.hp} · Damage ${enemy.stats.damage} · Speed ${enemy.stats.moveSpeed} m/s</p>
+        <p>Attack ${enemy.combat.attackStyle} · Projectile ${enemy.combat.projectileSpeed} m/s (${enemy.combat.projectileLifetime}s)</p>
+      `);
+
+      renderList(document.getElementById('bosses'), Object.values(DATA.bosses.result || {}), (boss) => `
+        <h3>${boss.profile.name}</h3>
+        <p>HP ${boss.stats.hp} · Armor ${boss.stats.armor} · Enrage +${boss.behaviour.enrageSpeed}% speed</p>
+        <p>Signature: ${boss.behaviour.signatureAttack} (telegraph ${boss.behaviour.telegraphSprite})</p>
+      `);
+
+      renderList(document.getElementById('waves'), Object.values(DATA.waves.result || {}), (wave) => `
+        <h3>t=${wave.meta.timestamp}s — ${wave.spawn.enemyId}</h3>
+        <p>Count ${wave.spawn.count} · Radius ${wave.spawn.spawnRadius}m · Pattern ${wave.spawn.formation}</p>
+      `);
+    </script>
+  </body>
+</html>

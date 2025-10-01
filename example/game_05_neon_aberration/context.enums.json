@@ -1,0 +1,129 @@
+{
+  "WeaponArchetype": {
+    "Sidearm": "sidearm",
+    "Shotgun": "shotgun",
+    "Rifle": "rifle",
+    "Psionic": "psionic",
+    "Blade": "blade"
+  },
+  "ModSlot": {
+    "Barrel": "barrel",
+    "Mag": "mag",
+    "Chipset": "chipset",
+    "Catalyst": "catalyst",
+    "Core": "core"
+  },
+  "AmmoType": {
+    "LightRound": "light_round",
+    "ScatterShell": "scatter_shell",
+    "PsiCell": "psi_cell",
+    "None": "none"
+  },
+  "ModRarity": {
+    "Common": "common",
+    "Uncommon": "uncommon",
+    "Rare": "rare",
+    "Epic": "epic",
+    "Legendary": "legendary"
+  },
+  "ResourceClass": {
+    "Bio": "bio",
+    "Circuit": "circuit",
+    "Supply": "supply",
+    "Energy": "energy",
+    "Herb": "herb"
+  },
+  "EnemyFamily": {
+    "Ganger": "Ganger",
+    "Construct": "Construct",
+    "Aberrant": "Aberrant",
+    "Avatar": "Avatar"
+  },
+  "MissionType": {
+    "Recon": "Recon",
+    "Purge": "Purge",
+    "Seal": "Seal",
+    "Escort": "Escort",
+    "Supply": "Supply",
+    "Heist": "Heist"
+  },
+  "ObjectiveKind": {
+    "ScanArea": "ScanArea",
+    "Eliminate": "Eliminate",
+    "SecureIntel": "SecureIntel",
+    "Escort": "Escort",
+    "StabilizeRift": "StabilizeRift",
+    "Defend": "Defend",
+    "HackRoute": "HackRoute"
+  },
+  "TileBiome": {
+    "Urban": "urban",
+    "Transit": "transit",
+    "Docks": "docks",
+    "Icefield": "icefield"
+  },
+  "FacilityType": {
+    "Workshop": "workshop",
+    "ChemLab": "chem.lab",
+    "Observation": "observation",
+    "Dormitory": "dormitory"
+  },
+  "NpcRole": {
+    "Researcher": "Researcher",
+    "Quartermaster": "Quartermaster",
+    "Scout": "Scout",
+    "Defender": "Defender",
+    "Trader": "Trader"
+  },
+  "StatusEffect": {
+    "Bleed": "bleed",
+    "Void": "void",
+    "Slow": "slow",
+    "MindFracture": "mindfracture"
+  },
+  "FacilityTask": {
+    "ForgeMod": "打造 Phantom Suppressor",
+    "BrewSerum": "批量合成抗暴露血清",
+    "ScanAnomaly": "扫描即将发生的异动",
+    "RecoverMorale": "恢复队员士气",
+    "RepairWeapon": "修理 VX-9 Wraith"
+  },
+  "ResearchBranch": {
+    "COM": "COM",
+    "BIO": "BIO",
+    "PSI": "PSI"
+  },
+  "RegionId": {
+    "DistrictHelix": "District-Helix",
+    "DistrictNadir": "District-Nadir",
+    "HarborNexus": "Harbor Nexus",
+    "Rift13": "Rift-13"
+  },
+  "WeatherId": {
+    "Clear": "weather:clear",
+    "Rain": "weather:rain",
+    "Storm": "weather:storm",
+    "Crimson": "weather:crimson"
+  },
+  "VendorType": {
+    "BlackMarket": "black-market",
+    "Scientific": "scientific",
+    "Military": "military"
+  },
+  "EventChoice": {
+    "Assault": "choice:assault",
+    "Negotiate": "choice:negotiate",
+    "Bribe": "choice:bribe",
+    "Divert": "choice:divert",
+    "Fortify": "choice:fortify",
+    "Ritual": "choice:ritual",
+    "Deploy": "choice:deploy",
+    "Evacuate": "choice:evacuate"
+  },
+  "ExposureStage": {
+    "Stage25": "25",
+    "Stage50": "50",
+    "Stage75": "75",
+    "Stage90": "90"
+  }
+}

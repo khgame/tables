@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neon Aberration 互动演示</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #05060b;
+      --panel: rgba(16, 21, 34, 0.88);
+      --panel-strong: rgba(18, 25, 39, 0.95);
+      --accent: #63a4ff;
+      --accent-strong: #a78bfa;
+      --danger: #f87171;
+      --success: #34d399;
+      --warning: #facc15;
+      --muted: #94a3b8;
+      font-family: 'Segoe UI', 'PingFang SC', 'Noto Sans CJK SC', 'Source Han Sans', sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(99, 164, 255, 0.12), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.18), transparent 60%),
+        linear-gradient(155deg, #040712, #0b1321 45%, #05060b 80%);
+      color: #dbeafe;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 28px 48px 10px;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-shadow: 0 0 18px rgba(99, 164, 255, 0.55);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    header small {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    nav {
+      padding: 0 48px 24px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    nav button {
+      background: rgba(17, 24, 39, 0.72);
+      border: 1px solid rgba(99, 164, 255, 0.35);
+      color: #e2e8f0;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 15px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.22s ease;
+    }
+    nav button:hover,
+    nav button.active {
+      background: rgba(99, 164, 255, 0.2);
+      border-color: var(--accent);
+      box-shadow: 0 0 14px rgba(99, 164, 255, 0.25);
+    }
+    main {
+      flex: 1;
+      padding: 0 48px 48px;
+    }
+    .panel {
+      display: none;
+      animation: fadeInUp 0.35s ease;
+    }
+    .panel.active {
+      display: block;
+    }
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+    .grid.columns-2 {
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    }
+    .grid.columns-3 {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: 0 28px 70px rgba(5, 10, 25, 0.45);
+      backdrop-filter: blur(10px);
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: 0.6px;
+    }
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .stat {
+      background: var(--panel-strong);
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(99, 164, 255, 0.22);
+      min-width: 160px;
+    }
+    .stat label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+    }
+    .bar {
+      position: relative;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(51, 65, 85, 0.7);
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(99, 164, 255, 0.85), rgba(167, 139, 250, 0.95));
+      transition: width 0.25s ease;
+    }
+    .list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .list-item {
+      border-left: 3px solid rgba(99, 164, 255, 0.35);
+      padding-left: 12px;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(99, 164, 255, 0.55);
+      background: rgba(99, 164, 255, 0.16);
+      font-size: 12px;
+      margin-right: 6px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 12px 0 18px;
+    }
+    .controls label {
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .controls select,
+    .controls input {
+      margin-top: 4px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(99, 164, 255, 0.4);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: #e2e8f0;
+      min-width: 200px;
+    }
+    button.action {
+      background: linear-gradient(135deg, rgba(99, 164, 255, 0.75), rgba(167, 139, 250, 0.85));
+      border: none;
+      border-radius: 10px;
+      color: #0f172a;
+      padding: 10px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.6px;
+      box-shadow: 0 18px 35px rgba(99, 164, 255, 0.25);
+      transition: transform 0.18s ease;
+    }
+    button.action:hover {
+      transform: translateY(-1px);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    table thead {
+      background: rgba(99, 164, 255, 0.18);
+    }
+    table th,
+    table td {
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      padding: 6px 10px;
+      text-align: left;
+    }
+    pre {
+      background: rgba(9, 13, 23, 0.9);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      border: 1px solid rgba(99, 164, 255, 0.18);
+    }
+    .split {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      margin-top: 16px;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>Neon Aberration · 系统演示</div>
+    <small>涵盖生存循环 · 城市行动 · 战斗推演 · 剧情互动 · 经济流通</small>
+  </header>
+  <nav>
+    <button data-panel="base" class="active">养成房间</button>
+    <button data-panel="map">城市行动</button>
+    <button data-panel="combat">战术战斗</button>
+    <button data-panel="story">剧情与交易</button>
+  </nav>
+  <main>
+    <section id="panel-base" class="panel active">
+      <div class="card">
+        <h2>日常概览</h2>
+        <div class="dashboard" id="base-dashboard"></div>
+        <div class="controls">
+          <button class="action" id="btn-advance-day">推进 6 小时</button>
+          <button class="action" id="btn-reset-day">重置日程</button>
+        </div>
+        <div class="split">
+          <div>
+            <h3 class="muted">设施升级</h3>
+            <div id="base-facilities"></div>
+          </div>
+          <div>
+            <h3 class="muted">驻守人员</h3>
+            <div id="base-npc"></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid columns-2" style="margin-top:18px;">
+        <div class="card">
+          <h2>采集 & 合成</h2>
+          <div class="controls">
+            <label>采集点
+              <select id="gather-select"></select>
+            </label>
+            <button class="action" id="btn-gather">执行采集</button>
+          </div>
+          <div class="controls">
+            <label>合成配方
+              <select id="craft-select"></select>
+            </label>
+            <button class="action" id="btn-craft">开始制作</button>
+          </div>
+          <pre id="base-log">欢迎来到 Haven Spire，安排排程并维持队伍状态。</pre>
+        </div>
+        <div class="card">
+          <h2>设施排程</h2>
+          <div class="controls">
+            <label>排程任务
+              <select id="task-select"></select>
+            </label>
+            <button class="action" id="btn-run-task">执行任务</button>
+          </div>
+          <h3 class="muted">库存 / 货币</h3>
+          <div id="inventory-view"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-map" class="panel">
+      <div class="grid columns-2">
+        <div class="card">
+          <h2>章节进度</h2>
+          <div id="chapter-view"></div>
+          <h3 class="muted" style="margin-top:16px;">当前天气</h3>
+          <div id="weather-view"></div>
+        </div>
+        <div class="card">
+          <h2>区域与任务</h2>
+          <div class="controls">
+            <label>可用任务
+              <select id="mission-select"></select>
+            </label>
+            <button class="action" id="btn-run-mission">执行任务</button>
+          </div>
+          <div id="mission-detail" class="muted"></div>
+          <h3 class="muted" style="margin-top:16px;">城市节点</h3>
+          <div id="map-view"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-combat" class="panel">
+      <div class="card">
+        <h2>战斗模拟</h2>
+        <div class="controls">
+          <label>干员
+            <select id="combat-operator"></select>
+          </label>
+          <label>武器
+            <select id="combat-weapon"></select>
+          </label>
+          <label>敌人
+            <select id="combat-enemy"></select>
+          </label>
+          <label>任务背景
+            <select id="combat-mission"></select>
+          </label>
+        </div>
+        <div class="controls">
+          <label>携行弹药
+            <input id="combat-ammo" type="number" min="0" value="60" />
+          </label>
+          <label>携带药剂
+            <input id="combat-serum" type="number" min="0" value="1" />
+          </label>
+          <button class="action" id="btn-run-combat">开始战斗推演</button>
+        </div>
+        <pre id="combat-result">请选择配置后点击「开始战斗推演」。</pre>
+      </div>
+      <div class="grid columns-2" style="margin-top:18px;">
+        <div class="card">
+          <h2>敌人阶段脚本</h2>
+          <div id="combat-phases" class="muted"></div>
+        </div>
+        <div class="card">
+          <h2>掉落表参考</h2>
+          <div id="combat-loot" class="muted"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-story" class="panel">
+      <div class="grid columns-2">
+        <div class="card">
+          <h2>剧情对话</h2>
+          <div class="controls">
+            <label>对话节点
+              <select id="dialogue-select"></select>
+            </label>
+            <button class="action" id="btn-run-dialogue">进行互动</button>
+          </div>
+          <pre id="dialogue-log">选择对话节点查看剧情分支。</pre>
+        </div>
+        <div class="card">
+          <h2>交易与补给</h2>
+          <div class="controls">
+            <label>商人
+              <select id="vendor-select"></select>
+            </label>
+            <label>商品
+              <select id="shop-select"></select>
+            </label>
+            <button class="action" id="btn-buy-item">购买商品</button>
+          </div>
+          <div class="muted" id="shop-info">选择商人与商品以进行交易。</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const DATA = {
+      operators: __OPERATORS_JSON__ || null,
+      survival: __SURVIVAL_JSON__ || null,
+      gather: __GATHER_JSON__ || null,
+      craft: __CRAFT_JSON__ || null,
+      status: __STATUS_JSON__ || null,
+      facilities: __FACILITY_JSON__ || null,
+      roster: __NPC_ROSTER_JSON__ || null,
+      tasks: __BASE_TASKS_JSON__ || null,
+      vendors: __VENDORS_JSON__ || null,
+      shop: __SHOP_JSON__ || null,
+      missions: __MISSIONS_JSON__ || null,
+      tiles: __MAP_TILES_JSON__ || null,
+      regions: __REGIONS_JSON__ || null,
+      weather: __WEATHER_JSON__ || null,
+      chapters: __CHAPTERS_JSON__ || null,
+      dialogues: __DIALOGUES_JSON__ || null,
+      weapons: __WEAPONS_JSON__ || null,
+      enemies: __ENEMIES_JSON__ || null,
+      loot: __LOOT_JSON__ || null,
+      phases: __PHASES_JSON__ || null,
+      combatFormulas: __COMBAT_FORMULAS_JSON__ || null,
+      events: __EVENTS_JSON__ || null,
+      exposureEvents: __EXPOSURE_EVENTS_JSON__ || null
+    };
+
+    const navButtons = Array.from(document.querySelectorAll('nav button[data-panel]'));
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        navButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+        const target = document.getElementById(`panel-${btn.dataset.panel}`);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    function convertResult(blob) {
+      return blob && blob.result ? Object.values(blob.result) : [];
+    }
+    function convertMap(blob) {
+      return blob && blob.result ? blob.result : {};
+    }
+    function parseList(str) {
+      if (!str) return [];
+      return str.split('|').map(s => s.trim()).filter(Boolean);
+    }
+    function parsePairs(str) {
+      if (!str) return [];
+      return str.split('|').map(s => {
+        const [key, value] = s.split('@');
+        return { key: (key || '').trim(), value: value ? value.trim() : null };
+      }).filter(p => p.key);
+    }
+    function parseKeyValues(str) {
+      if (!str) return {};
+      const cleaned = str.replace(/^\{/, '').replace(/\}$/, '');
+      if (!cleaned) return {};
+      return cleaned.split(',').reduce((acc, seg) => {
+        const [k, v] = seg.split(':');
+        if (!k) return acc;
+        const num = Number((v || '').trim());
+        acc[k.trim()] = Number.isFinite(num) ? num : (v || '').trim();
+        return acc;
+      }, {});
+    }
+
+    const operators = convertResult(DATA.operators);
+    const weapons = convertResult(DATA.weapons);
+    const enemies = convertResult(DATA.enemies);
+    const missionList = convertResult(DATA.missions);
+    const enemyPhases = convertResult(DATA.phases);
+    const lootTables = convertResult(DATA.loot);
+    const weatherList = convertResult(DATA.weather);
+    const SURVIVAL_CONFIG = convertResult(DATA.survival).reduce((acc, stat) => {
+      acc[stat.parameter] = {
+        base: Number(stat.baseValue || 0),
+        min: Number(stat.minValue || 0),
+        max: Number(stat.maxValue || 120),
+        decay: Number(stat.decayPerHour || 0),
+        threshold: Number(stat.threshold || 0),
+        effects: stat.effects || ''
+      };
+      return acc;
+    }, {});
+    const STATUS_LIBRARY = convertResult(DATA.status).reduce((acc, status) => {
+      acc[status.name] = status;
+      return acc;
+    }, {});
+    const COMBAT_FORMULAS = convertResult(DATA.combatFormulas).reduce((acc, entry) => {
+      acc[entry.formulaId] = Number(entry.value || 0);
+      return acc;
+    }, {});
+    function formula(id, fallback = 0) {
+      return COMBAT_FORMULAS[id] !== undefined ? COMBAT_FORMULAS[id] : fallback;
+    }
+
+    let STATE = null;
+
+    function buildFacilityLevels() {
+      const levels = {};
+      convertResult(DATA.facilities).forEach(entry => {
+        const key = entry.facilityId;
+        const lvl = Number(entry.level) || 1;
+        if (!levels[key] || levels[key] < lvl) levels[key] = lvl;
+      });
+      return levels;
+    }
+
+    function createInitialState() {
+      return {
+        day: 1,
+        hour: 8,
+        contamination: 20,
+        morale: 60,
+        focus: Number(operators[0]?.focus || 80),
+        hunger: SURVIVAL_CONFIG.hunger?.base ?? 100,
+        hydration: SURVIVAL_CONFIG.hydration?.base ?? 100,
+        temperature: SURVIVAL_CONFIG.temperature?.base ?? 98,
+        sleep: SURVIVAL_CONFIG.sleep?.base ?? 100,
+        exposure: 18,
+        credits: 320,
+        favor: { Archive: 6, Observation: 4 },
+        inventory: {
+          'resource:0001': 3,
+          'resource:0002': 1,
+          'resource:0003': 6,
+          'resource:0004': 2,
+          'resource:0005': 1,
+          'ammo:light_round': 90,
+          'consumable:serum-alpha': 1
+        },
+        facilityLevels: buildFacilityLevels(),
+        unlockedChapters: new Set(['chapter:1']),
+        unlockedRegions: new Set(['District-Helix']),
+        unlockedMissions: new Set(['mission:3001']),
+        unlockedVendors: new Set(['vendor:forge']),
+        moraleLog: []
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function updateDashboard() {
+      const container = document.getElementById('base-dashboard');
+      container.innerHTML = '';
+      const stats = [
+        { label: '时间', value: `第 ${STATE.day} 天 · ${STATE.hour}:00` },
+        { label: '污染度', value: `${STATE.contamination}` },
+        { label: '士气', value: `${STATE.morale}`, percent: STATE.morale },
+        { label: '暴露', value: `${STATE.exposure}`, percent: STATE.exposure },
+        { label: '饥饿', value: `${STATE.hunger}`, percent: STATE.hunger },
+        { label: '口渴', value: `${STATE.hydration}`, percent: STATE.hydration },
+        { label: '体温', value: `${STATE.temperature}°`, percent: (STATE.temperature / 110) * 100 },
+        { label: '睡眠', value: `${STATE.sleep}`, percent: STATE.sleep },
+        { label: '专注', value: `${STATE.focus}`, percent: (STATE.focus / 120) * 100 }
+      ];
+      stats.forEach(stat => {
+        const card = document.createElement('div');
+        card.className = 'stat';
+        card.innerHTML = `<label>${stat.label}</label><strong>${stat.value}</strong>`;
+        if (stat.percent !== undefined) {
+          const bar = document.createElement('div');
+          bar.className = 'bar';
+          const span = document.createElement('span');
+          span.style.width = `${clamp(stat.percent, 0, 100)}%`;
+          bar.appendChild(span);
+          card.appendChild(bar);
+        }
+        container.appendChild(card);
+      });
+    }
+
+    function renderFacilities() {
+      const container = document.getElementById('base-facilities');
+      container.innerHTML = '';
+      const byFacility = {};
+      convertResult(DATA.facilities).forEach(entry => {
+        const id = entry.facilityId;
+        if (!byFacility[id]) byFacility[id] = [];
+        byFacility[id].push(entry);
+      });
+      Object.entries(byFacility).forEach(([id, levels]) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        const maxLevel = Math.max(...levels.map(l => Number(l.level) || 1));
+        item.innerHTML = `<div><span class="badge">${id}</span>最高等级 ${maxLevel}</div>`;
+        const list = document.createElement('ul');
+        list.className = 'list';
+        levels.sort((a, b) => Number(a.level) - Number(b.level)).forEach(level => {
+          const li = document.createElement('li');
+          li.innerHTML = `Lv.${level.level} · <span class="muted">需求：</span>${parseList(level.requirements).join('， ')}<br><span class="muted">收益：</span>${parseList(level.benefits).join('， ')}<br><span class="muted">维护：</span>${level.maintenance || '—'}`;
+          list.appendChild(li);
+        });
+        item.appendChild(list);
+        container.appendChild(item);
+      });
+    }
+
+    function renderNpc() {
+      const container = document.getElementById('base-npc');
+      container.innerHTML = '';
+      const list = document.createElement('ul');
+      list.className = 'list';
+      convertResult(DATA.roster).forEach(npc => {
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        li.innerHTML = `<div><span class="badge">${npc.role}</span><strong>${npc.name}</strong> · 忠诚 ${npc.loyalty}</div>
+          <div class="muted">能力：${parseList(npc.abilities).join('， ')}</div>
+          <div class="muted">驻守：${npc.assignedFacility}</div>
+          <div class="muted">备注：${npc.notes || '—'}</div>`;
+        list.appendChild(li);
+      });
+      container.appendChild(list);
+    }
+
+    function renderInventory() {
+      const container = document.getElementById('inventory-view');
+      const entries = Object.entries(STATE.inventory).map(([key, value]) => `${key}×${value}`);
+      const favorEntries = Object.entries(STATE.favor).map(([faction, value]) => `好感-${faction}:${value}`);
+      const full = [`信用点:${STATE.credits}`, ...favorEntries, ...entries];
+      container.innerHTML = full.length ? full.join(' / ') : '库存为空';
+    }
+
+    function populateSelect(selectId, data, formatter) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = '';
+      data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = `${item.sector}-${item.category}-${item.serial}`;
+        option.textContent = formatter(item);
+        select.appendChild(option);
+      });
+    }
+
+    function findByValue(list, value) {
+      return list.find(item => `${item.sector}-${item.category}-${item.serial}` === value) || list[0];
+    }
+
+    function logBase(message) {
+      const log = document.getElementById('base-log');
+      log.textContent = `${new Date().toLocaleTimeString()} · ${message}\n` + log.textContent;
+    }
+
+    function adjustSurvival(hours = 1) {
+      Object.entries(SURVIVAL_CONFIG).forEach(([key, cfg]) => {
+        if (STATE[key] === undefined) return;
+        const decay = cfg.decay * hours;
+        let next = STATE[key] - decay;
+        next = clamp(next, cfg.min, cfg.max);
+        STATE[key] = next;
+        if (next <= cfg.threshold && cfg.effects) {
+          applyEffects(cfg.effects, key);
+        }
+      });
+    }
+
+    function addInventory(key, amount = 1) {
+      STATE.inventory[key] = (STATE.inventory[key] || 0) + amount;
+    }
+    function consumeInventory(key, amount = 1) {
+      const current = STATE.inventory[key] || 0;
+      if (current < amount) return false;
+      STATE.inventory[key] = current - amount;
+      if (STATE.inventory[key] <= 0) delete STATE.inventory[key];
+      return true;
+    }
+    function consumeList(list) {
+      for (const { key, value } of list) {
+        const amount = Number(value || 1);
+        if (!consumeInventory(key, amount)) return false;
+      }
+      return true;
+    }
+
+    function applyEffects(effectString, source = 'system') {
+      parseList(effectString).forEach(entry => {
+        if (!entry) return;
+        if (entry.includes('/')) {
+          STATE.moraleLog.push(`${source}:${entry}`);
+          return;
+        }
+        const [label, payloadRaw] = entry.split(':');
+        if (!label) return;
+        const payload = (payloadRaw || '').trim();
+        const numeric = Number(payload.replace('+', ''));
+        switch (label) {
+          case 'morale':
+            STATE.morale = clamp(STATE.morale + (Number.isFinite(numeric) ? numeric : 0), 0, 120);
+            break;
+          case 'focus':
+            STATE.focus = clamp((STATE.focus || 0) + (Number.isFinite(numeric) ? numeric : 0), 0, 120);
+            break;
+          case 'exposure':
+            STATE.exposure = clamp(STATE.exposure + (Number.isFinite(numeric) ? numeric : 0), 0, 120);
+            break;
+          case 'stamina':
+            STATE.inventory['stamina-debt'] = (STATE.inventory['stamina-debt'] || 0) + (Number.isFinite(numeric) ? numeric : 0);
+            break;
+          case 'durability':
+            STATE.inventory['durability-buffer'] = (STATE.inventory['durability-buffer'] || 0) + (Number.isFinite(numeric) ? numeric : 0);
+            break;
+          case 'credits':
+            STATE.credits += Number.isFinite(numeric) ? numeric : 0;
+            break;
+          case 'favor':
+          case 'reputation': {
+            const [faction, amount] = payload.split('@');
+            if (faction) {
+              STATE.favor[faction] = (STATE.favor[faction] || 0) + Number(amount || 0);
+            }
+            break;
+          }
+          case 'resource': {
+            const [id, qty] = payload.split('@');
+            if (id) addInventory(`resource:${id}`, Number(qty || 1));
+            break;
+          }
+          case 'weapon':
+          case 'blueprint':
+            addInventory(`${label}:${payload}`, 1);
+            break;
+          case 'weapon_mod':
+          case 'consumable':
+          case 'ammo':
+          case 'loot':
+          case 'implant':
+          case 'artifact':
+            addInventory(`${label}:${payload}`, 1);
+            break;
+          case 'task':
+            STATE.moraleLog.push(`${source}:${payload}`);
+            break;
+          default:
+            STATE.moraleLog.push(`${source}:${entry}`);
+        }
+      });
+    }
+
+    function describeStatusPayload(payloadString) {
+      const list = parseList(payloadString);
+      if (!list.length) return '无';
+      return list.map(item => {
+        const [id, potency] = item.split(':');
+        const info = STATUS_LIBRARY[id];
+        const suffix = potency ? ` ×${potency}` : '';
+        return info ? `${info.name}${suffix}（${info.effects}）` : item;
+      }).join('， ');
+    }
+
+    document.getElementById('btn-advance-day').addEventListener('click', () => {
+      STATE.hour += 6;
+      if (STATE.hour >= 24) {
+        STATE.hour -= 24;
+        STATE.day += 1;
+        STATE.contamination += 5;
+        STATE.exposure = clamp(STATE.exposure - 6, 0, 100);
+        STATE.morale = clamp(STATE.morale - 3, 0, 120);
+      }
+      adjustSurvival(6);
+      updateDashboard();
+      renderInventory();
+      renderWeather();
+      logBase('推进 6 小时，注意监控饥饿、口渴与睡眠。');
+    });
+
+    document.getElementById('btn-reset-day').addEventListener('click', () => {
+      STATE = createInitialState();
+      refreshChapterUnlocks();
+      refreshRegionUnlocks();
+      ensureMissionUnlocks();
+      populateSelect('mission-select', missionList.filter(m => stateUnlockSatisfied(m.unlock)), mission => `${mission.name} · ${mission.type}`);
+      renderMissionDetail();
+      renderChapterView();
+      renderWeather();
+      renderMapView();
+      updateDashboard();
+      renderFacilities();
+      renderNpc();
+      renderInventory();
+      logBase('已将指标重置为初始状态。');
+    });
+
+    const gatherNodes = convertResult(DATA.gather);
+    populateSelect('gather-select', gatherNodes, node => `${node.name} · ${node.region}`);
+    document.getElementById('btn-gather').addEventListener('click', () => {
+      const node = findByValue(gatherNodes, document.getElementById('gather-select').value);
+      const outputs = parsePairs(node.resource || node.resources);
+      outputs.forEach(({ key, value }) => addInventory(key, Number(value || 1)));
+      STATE.exposure = clamp(STATE.exposure + Number(node.exposureGain || 0), 0, 120);
+      adjustSurvival(2);
+      logBase(`在 ${node.name} 采集，获得 ${outputs.map(o => `${o.key}×${o.value || 1}`).join('， ')}。`);
+      updateDashboard();
+      renderInventory();
+    });
+
+    const recipes = convertResult(DATA.craft);
+    populateSelect('craft-select', recipes, recipe => `${recipe.itemId} · 耗时 ${recipe.time}`);
+    document.getElementById('btn-craft').addEventListener('click', () => {
+      const recipe = findByValue(recipes, document.getElementById('craft-select').value);
+      const inputs = parsePairs(recipe.inputs);
+      if (!consumeList(inputs)) {
+        logBase('材料不足，无法制作。');
+        return;
+      }
+      parsePairs(recipe.outputs).forEach(({ key, value }) => addInventory(key, Number(value || 1)));
+      const craftHours = Math.ceil(Number(recipe.time || 1) / 2);
+      STATE.hour += craftHours;
+      adjustSurvival(craftHours);
+      logBase(`制作完毕：${recipe.outputs}。`);
+      updateDashboard();
+      renderInventory();
+    });
+
+    const tasks = convertResult(DATA.tasks);
+    populateSelect('task-select', tasks, task => `${task.facilityId} · ${task.task}`);
+    document.getElementById('btn-run-task').addEventListener('click', () => {
+      const task = findByValue(tasks, document.getElementById('task-select').value);
+      const requirements = parsePairs(task.requirements);
+      if (!consumeList(requirements)) {
+        logBase('资源不足，无法执行排程。');
+        return;
+      }
+      if (task.effects) applyEffects(task.effects, task.task);
+      STATE.hour += 2;
+      adjustSurvival(2);
+      logBase(`执行排程：${task.task}。`);
+      updateDashboard();
+      renderInventory();
+    });
+
+    const missionList = convertResult(DATA.missions);
+    function ensureMissionUnlocks() {
+      missionList.forEach(m => {
+        const id = `${m.sector}-${m.category}-${m.serial}`;
+        if (stateUnlockSatisfied(m.unlock)) {
+          STATE.unlockedMissions.add(id);
+        }
+      });
+    }
+
+    function refreshChapterUnlocks() {
+      convertResult(DATA.chapters).forEach(chapter => {
+        if (STATE.unlockedChapters.has(chapter.chapterId)) return;
+        const requirement = chapter.unlock;
+        if (!requirement || requirement === 'none') {
+          STATE.unlockedChapters.add(chapter.chapterId);
+          return;
+        }
+        const ok = requirement.split('|').every(token => {
+          const [type, payload] = token.split(':');
+          if (type === 'chapter') return STATE.unlockedChapters.has(`chapter:${payload}`) || STATE.unlockedChapters.has(payload) || chapter.chapterId === `chapter:${payload}`;
+          if (type === 'mission') return Array.from(STATE.unlockedMissions).some(id => id.includes(payload));
+          return true;
+        });
+        if (ok) STATE.unlockedChapters.add(chapter.chapterId);
+      });
+    }
+
+    function refreshRegionUnlocks() {
+      convertResult(DATA.regions).forEach(region => {
+        if (STATE.unlockedRegions.has(region.regionId)) return;
+        if (!region.unlock || region.unlock === 'chapter:1' || stateUnlockSatisfied(region.unlock)) {
+          STATE.unlockedRegions.add(region.regionId);
+        }
+      });
+    }
+    function stateUnlockSatisfied(unlockStr = '') {
+      if (!unlockStr || unlockStr === 'none') return true;
+      const tokens = unlockStr.split('|');
+      return tokens.every(token => {
+        const [type, requirement] = token.split(':');
+        if (type === 'chapter') return STATE.unlockedChapters.has(`chapter:${requirement}`) || STATE.unlockedChapters.has(requirement);
+        if (type === 'mission') return Array.from(STATE.unlockedMissions).some(id => id.includes(requirement));
+        if (type === 'reputation') {
+          const [faction, value] = requirement.split('@');
+          return (STATE.favor[faction] || 0) >= Number(value || 0);
+        }
+        return true;
+      });
+    }
+    document.getElementById('mission-select').addEventListener('change', renderMissionDetail);
+    function renderMissionDetail() {
+      const select = document.getElementById('mission-select');
+      if (!select || !select.options.length) {
+        document.getElementById('mission-detail').innerHTML = '暂无可执行任务';
+        return;
+      }
+      const mission = findByValue(missionList, select.value);
+      if (!mission) return;
+      const detail = document.getElementById('mission-detail');
+      detail.innerHTML = `<div>地点：${mission.sectorRef} · 天气要求：${mission.weatherReq || '任意'}</div>
+      <div>目标：${parseList(mission.objectives).join(' / ')}</div>
+      <div>奖励：${parseList(mission.rewards).join(' / ')}</div>
+      <div>失败后果：${mission.failImpact || '—'}</div>`;
+    }
+    renderMissionDetail();
+
+    document.getElementById('btn-run-mission').addEventListener('click', () => {
+      const mission = findByValue(missionList, document.getElementById('mission-select').value);
+      if (!mission) return;
+      const weatherOk = mission.weatherReq === 'any' || currentWeather().weatherId === mission.weatherReq;
+      if (!weatherOk) {
+        document.getElementById('mission-detail').innerHTML += '<div style="color:#facc15;margin-top:6px;">天气不合适，建议等待。</div>';
+        return;
+      }
+      applyEffects(mission.rewards, mission.name);
+      const exposureGain = formula('exposure.baseGain', 10) + (mission.type === 'Seal' ? formula('exposure.bonus.seal', 8) : 0);
+      STATE.contamination = clamp(STATE.contamination + 6, 0, 200);
+      STATE.morale = clamp(STATE.morale + 4, 0, 120);
+      STATE.exposure = clamp(STATE.exposure + exposureGain, 0, 120);
+      adjustSurvival(3);
+      STATE.unlockedMissions.add(`mission:${mission.serial}`);
+      if (mission.unlock) mission.unlock.split('|').forEach(token => {
+        const [type, payload] = token.split(':');
+        if (type === 'chapter') STATE.unlockedChapters.add(`chapter:${payload}`);
+        if (type === 'unlock') STATE.unlockedRegions.add(payload);
+      });
+      refreshChapterUnlocks();
+      refreshRegionUnlocks();
+      ensureMissionUnlocks();
+      populateSelect('mission-select', missionList.filter(m => stateUnlockSatisfied(m.unlock)), mission => `${mission.name} · ${mission.type}`);
+      renderMissionDetail();
+      renderChapterView();
+      renderWeather();
+      renderMapView();
+      updateDashboard();
+      renderInventory();
+      logBase(`已完成任务：${mission.name}`);
+    });
+
+    function currentWeather() {
+      if (!weatherList.length) {
+        return { weatherId: 'weather:clear', name: '晴空', effects: '', duration: '-' };
+      }
+      const cycleIndex = (STATE.day + Math.floor(STATE.hour / 6)) % weatherList.length;
+      return weatherList[cycleIndex];
+    }
+
+    function renderChapterView() {
+      const container = document.getElementById('chapter-view');
+      container.innerHTML = '';
+      const list = document.createElement('ul');
+      list.className = 'list';
+      convertResult(DATA.chapters).forEach(chapter => {
+        const unlocked = STATE.unlockedChapters.has(chapter.chapterId);
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        li.innerHTML = `<div><span class="badge">${chapter.chapterId}</span><strong>${chapter.name}</strong> · ${unlocked ? '已解锁' : '待解锁'}</div>
+          <div class="muted">概要：${chapter.summary}</div>
+          <div class="muted">奖励：${chapter.reward}</div>`;
+        list.appendChild(li);
+      });
+      container.appendChild(list);
+    }
+
+    function renderWeather() {
+      const container = document.getElementById('weather-view');
+      const weather = currentWeather();
+      container.innerHTML = `<div><span class="badge">${weather.weatherId}</span>${weather.name}</div>
+        <div class="muted">持续：${weather.duration} · 效果：${weather.effects}</div>`;
+    }
+
+    function renderMapView() {
+      const container = document.getElementById('map-view');
+      container.innerHTML = '';
+      const list = document.createElement('ul');
+      list.className = 'list';
+      convertResult(DATA.regions).forEach(region => {
+        const unlocked = STATE.unlockedRegions.has(region.regionId);
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        li.innerHTML = `<div><span class="badge">${region.regionId}</span><strong>${region.name}</strong> · ${unlocked ? '已解锁' : '未解锁'}</div>
+          <div class="muted">环境：${region.environment} · 影响：${region.modifiers}</div>`;
+        list.appendChild(li);
+      });
+      container.appendChild(list);
+    }
+
+    populateSelect('combat-operator', operators, op => `${op.codename} · ${op.archetype}`);
+    populateSelect('combat-weapon', weapons, w => `${w.name} · ${w.archetype}`);
+    populateSelect('combat-enemy', enemies, e => `${e.name} · ${e.family}`);
+    populateSelect('combat-mission', missionList, m => `${m.name}`);
+
+    function renderCombatDetails() {
+      const enemy = findByValue(enemies, document.getElementById('combat-enemy').value);
+      const phases = enemyPhases.filter(p => (enemy.phases || '').includes(p.phaseId));
+      const loot = lootTables.filter(l => l.tableId === enemy.lootTable);
+      const phaseContainer = document.getElementById('combat-phases');
+      phaseContainer.innerHTML = phases.length ? phases.map(p => `${p.phaseId} | 阶段 ${p.stage} | 行为 ${p.behaviour} | 触发 ${p.transitions}`).join('\n') : '无特定阶段。';
+      const lootContainer = document.getElementById('combat-loot');
+      lootContainer.innerHTML = loot.length ? loot.map(l => `${l.entries} (${l.notes || ''})`).join('\n') : '暂无掉落表数据。';
+    }
+    document.getElementById('combat-enemy').addEventListener('change', renderCombatDetails);
+    renderCombatDetails();
+
+    document.getElementById('btn-run-combat').addEventListener('click', () => {
+      const operator = findByValue(operators, document.getElementById('combat-operator').value);
+      const weapon = findByValue(weapons, document.getElementById('combat-weapon').value);
+      const enemy = findByValue(enemies, document.getElementById('combat-enemy').value);
+      const mission = findByValue(missionList, document.getElementById('combat-mission').value);
+      const ammoCarried = Number(document.getElementById('combat-ammo').value || 0);
+      const serumCount = Number(document.getElementById('combat-serum').value || 0);
+
+      const resist = parseKeyValues(enemy.resistances);
+      let kinetic = Number(weapon.kineticDamage || 0) * (1 - (resist.kinetic || 0));
+      let voidDamage = Number(weapon.voidDamage || 0) * (1 - (resist.void || 0));
+      let chemical = Number(weapon.chemicalDamage || 0) * (1 - (resist.chemical || 0));
+      const baseDamage = kinetic + voidDamage + chemical;
+      const focusBoost = Number(operator.focus || 0) * formula('damage.focusMultiplier', 0.25);
+      const totalDamage = Math.max(baseDamage + focusBoost, 1);
+      const enemyHp = Number(enemy.hp || 200);
+      const hitsNeeded = Math.ceil(enemyHp / totalDamage);
+      const ammoEachShot = weapon.ammoType === 'none'
+        ? formula('ammo.perShot.none', 0)
+        : formula(`ammo.perShot.${weapon.ammoType}`, formula('ammo.perShot.default', 1));
+      const ammoUsage = hitsNeeded * ammoEachShot;
+      const ammoSufficient = ammoUsage <= ammoCarried || ammoEachShot === 0;
+
+      const durabilityPerHit = formula(`durability.perHit.${(weapon.archetype || '').toLowerCase()}`, weapon.ammoType === 'none' ? formula('durability.perHit.blade', 1) : formula('durability.perHit.ranged', 2));
+      let durabilityLoss = hitsNeeded * durabilityPerHit;
+      const serumUsage = hitsNeeded > 6 && serumCount > 0 ? 1 : 0;
+      const survivalCost = {
+        stamina: Number(weapon.staminaCost || 0) * hitsNeeded * formula('stamina.perShot.multiplier', 1),
+        exposure: formula('exposure.baseGain', 10) + (mission && mission.type === 'Seal' ? formula('exposure.bonus.seal', 8) : 0)
+      };
+
+      const statusDescription = describeStatusPayload(weapon.statusPayload);
+      const enemyAfflict = describeStatusPayload(enemy.inflict);
+
+      const combatResult = {
+        干员: `${operator.codename} (${operator.archetype})`,
+        武器: `${weapon.name} (${weapon.archetype})`,
+        敌人: `${enemy.name} (${enemy.family})`,
+        任务: mission ? mission.name : '自由战斗',
+        每击伤害: totalDamage.toFixed(1),
+        预计射击次数: hitsNeeded,
+        所需弹药: ammoUsage,
+        弹药是否足够: ammoSufficient ? '是' : '否',
+        耐久消耗: durabilityLoss,
+        状态附带: statusDescription,
+        敌人施加状态: enemyAfflict,
+        暴露增量: survivalCost.exposure,
+        体力消耗: survivalCost.stamina,
+        血清使用: serumUsage,
+        结论: ammoSufficient ? '有机会胜利' : '弹药不足，建议补给'
+      };
+
+      if (ammoSufficient) {
+        STATE.exposure = clamp(STATE.exposure + survivalCost.exposure, 0, 120);
+        STATE.morale = clamp(STATE.morale + 6, 0, 120);
+        STATE.inventory['durability-loss'] = (STATE.inventory['durability-loss'] || 0) + durabilityLoss;
+        adjustSurvival(Math.max(1, Math.ceil(hitsNeeded / 4)));
+      }
+      document.getElementById('combat-result').textContent = JSON.stringify(combatResult, null, 2);
+      updateDashboard();
+    });
+
+    const dialogues = convertResult(DATA.dialogues);
+    populateSelect('dialogue-select', dialogues, d => `${d.dialogueId} · ${d.speaker}`);
+    document.getElementById('btn-run-dialogue').addEventListener('click', () => {
+      const dialogue = findByValue(dialogues, document.getElementById('dialogue-select').value);
+      if (!dialogue) return;
+      const log = document.getElementById('dialogue-log');
+      const choices = parseList(dialogue.choices);
+      const effects = dialogue.effects || '';
+      log.textContent = `${dialogue.speaker}: ${dialogue.line}\n选项：${choices.join(' / ')}\n效果：${effects}`;
+      if (effects) applyEffects(effects, dialogue.dialogueId);
+      updateDashboard();
+    });
+
+    const vendors = convertResult(DATA.vendors);
+    populateSelect('vendor-select', vendors, vendor => `${vendor.name}`);
+    document.getElementById('vendor-select').addEventListener('change', updateShopSelect);
+    function updateShopSelect() {
+      const vendor = findByValue(vendors, document.getElementById('vendor-select').value);
+      if (!vendor) {
+        document.getElementById('shop-info').textContent = '尚无可用商人';
+        return;
+      }
+      const inventory = convertResult(DATA.shop).filter(item => item.vendorId === vendor.vendorId);
+      populateSelect('shop-select', inventory, item => `${item.itemId} · ${item.cost} ${item.currency}`);
+      document.getElementById('shop-info').textContent = `${vendor.name}（类型：${vendor.type}）`;
+    }
+    updateShopSelect();
+
+    document.getElementById('btn-buy-item').addEventListener('click', () => {
+      const vendor = findByValue(vendors, document.getElementById('vendor-select').value);
+      const inventory = convertResult(DATA.shop).filter(item => item.vendorId === vendor.vendorId);
+      const item = findByValue(inventory, document.getElementById('shop-select').value);
+      if (!item) return;
+      if (item.currency === 'credits') {
+        if (STATE.credits < Number(item.cost || 0)) {
+          document.getElementById('shop-info').textContent = '信用点不足';
+          return;
+        }
+        STATE.credits -= Number(item.cost || 0);
+      }
+      addInventory(item.itemId, 1);
+      document.getElementById('shop-info').textContent = `已购买 ${item.itemId}`;
+      renderInventory();
+    });
+
+    function initSelectors() {
+      STATE = createInitialState();
+      refreshChapterUnlocks();
+      refreshRegionUnlocks();
+      ensureMissionUnlocks();
+      populateSelect('mission-select', missionList.filter(m => stateUnlockSatisfied(m.unlock)), mission => `${mission.name} · ${mission.type}`);
+      renderFacilities();
+      renderNpc();
+      renderInventory();
+      updateDashboard();
+      renderMissionDetail();
+      renderChapterView();
+      renderWeather();
+      renderMapView();
+    }
+
+    initSelectors();
+  </script>
+</body>
+</html>

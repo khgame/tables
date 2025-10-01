@@ -33,7 +33,7 @@ ID     value        ...                    describe ...
 | 写法（按列拆分） | 说明 |
 | ---------------- | ---- |
 | `@`              | 当前列用于拼接 TID（主键） |
-| `uint` / `int` / `float` / `string` / `bool` / `tid` | 基础类型，由 `@khgame/schema` 提供 |
+| `tid` | 基础类型，由 `@khgame/schema` 提供，**用于跨表引用**，详见 [最佳实践 - 跨表引用](best-practices.md#跨表引用外键关联) |
 | `Array` `<` `T` `>` 或直接 `Array<T>` | 动态数组，转换结果为 `T[]` |
 | `[` `T` `]`      | 与 `Array<T>` 等价，常用于短写 |
 | `{` `...` `}`    | 对象字面量，字段名来自描述行 |
@@ -91,4 +91,4 @@ A: id    B: level     C: name        D: product                            E: re
 
 - 所有序列化器会在输出前对 `result` 的键排序，保证重复构建的产物差异最小化。
 
-更多：见 [插件与扩展点](plugins.md) · [序列化器与上下文](serializers.md)。
+更多：见 [插件与扩展点](plugins.md) · [序列化器与上下文](serializers.md) · [最佳实践](best-practices.md)。

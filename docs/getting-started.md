@@ -62,4 +62,4 @@ serialize('./example/example.xlsx', './out', { 'example.ts': tsSerializer, 'exam
 - 第 2 行：字段描述行（输出键名/注释）
 - 第 3 行起：数据行
 
-详见 [概念与约定](concepts.md)。
+详见 [概念与约定](concepts.md) 和 [最佳实践](best-practices.md)。

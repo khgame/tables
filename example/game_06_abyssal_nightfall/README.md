@@ -36,6 +36,8 @@
 node example/game_06_abyssal_nightfall/_rebuild_data.js   # 重新生成 Excel 表格
 node example/game_06_abyssal_nightfall/serialize.js        # 导出 JSON/TS/JSONX 并生成 UI & 原型
 open example/game_06_abyssal_nightfall/out/index.html      # 打开战前配置 + 实时战斗一体页面
+# 或者
+npm run ex:nightfall:dev                                   # 自动重建并通过 Vite dev server 预览
 ```
 
 ## 与其他示例的关系

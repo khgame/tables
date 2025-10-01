@@ -17,6 +17,7 @@
     "ex:arcane": "npm run build && node ./example/game_04_arcane_depths/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_04_arcane_depths/out -p 8769 -l",
     "ex:neon": "npm run build && node ./example/game_05_neon_aberration/_rebuild_data.js && node ./example/game_05_neon_aberration/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_05_neon_aberration/out -p 8085 -l",
     "ex:neon:demo": "npm run build && node ./example/game_05_neon_aberration/_rebuild_data.js && node ./example/game_05_neon_aberration/serialize.js && npm --prefix ./example/game_05_neon_aberration/demo run dev",
+    "ex:nightfall:dev": "node ./example/game_06_abyssal_nightfall/_rebuild_data.js && node ./example/game_06_abyssal_nightfall/serialize.js && npx vite --config example/game_06_abyssal_nightfall/vite.config.js",
     "build:site": "node ./scripts/build-site.js",
     "docs:dev": "vitepress dev docs-site",
     "docs:build": "vitepress build docs-site",

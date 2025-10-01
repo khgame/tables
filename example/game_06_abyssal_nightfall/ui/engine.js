@@ -72,6 +72,7 @@ const state = {
   library: null,
   currentPreset: null,
   bossTemplates: [],
+  enemyLookup: new Map(),
   runId: 0,
   lastSummary: null
 };
@@ -107,6 +108,11 @@ function normalizeSlug(name = '') {
   return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
+function normalizeIdentifier(value = '') {
+  const slug = normalizeSlug(value).replace(/^-+|-+$/g, '');
+  return slug;
+}
+
 function findBySlug(list, slug, fallbackIndex = 0) {
   if (!list.length) return null;
   if (!slug) return list[fallbackIndex] || list[0];
@@ -123,6 +129,53 @@ function findBySlug(list, slug, fallbackIndex = 0) {
 function findByTid(list, tid) {
   if (!tid) return null;
   return list.find(entry => entry.tid === tid) || null;
+}
+
+function resolveEnemyTemplate(enemyId) {
+  if (!enemyId || !state.enemyLookup || !state.enemyLookup.size) return null;
+  const direct = state.enemyLookup.get(enemyId);
+  if (direct) return direct;
+  const normalized = normalizeIdentifier(enemyId);
+  if (normalized) {
+    const fromNormalized = state.enemyLookup.get(normalized);
+    if (fromNormalized) return fromNormalized;
+    const withPrefix = state.enemyLookup.get(`enemy:${normalized}`);
+    if (withPrefix) return withPrefix;
+  }
+  const loose = state.enemyLookup.get(enemyId.toLowerCase());
+  if (loose) return loose;
+  return null;
+}
+
+function buildEnemyIndex(list) {
+  const lookup = new Map();
+  list.forEach(entry => {
+    if (!entry) return;
+    const { tid, name, family } = entry;
+    if (tid) {
+      lookup.set(tid, entry);
+      lookup.set(tid.toLowerCase(), entry);
+      const shortTid = tid.replace(/^enemy:/i, '');
+      if (shortTid && shortTid !== tid) {
+        lookup.set(shortTid, entry);
+        lookup.set(`enemy:${shortTid}`, entry);
+      }
+    }
+    const slugName = normalizeIdentifier(name);
+    if (slugName) {
+      lookup.set(slugName, entry);
+      lookup.set(`enemy:${slugName}`, entry);
+    }
+    if (family) {
+      const familySlug = normalizeIdentifier(family);
+      if (familySlug) {
+        lookup.set(familySlug, entry);
+        lookup.set(`enemy:${familySlug}`, entry);
+      }
+      lookup.set(family.toLowerCase(), entry);
+    }
+  });
+  return lookup;
 }
 
 function pushLog(message) {
@@ -452,7 +505,12 @@ function addShield(amount) {
 
 function spawnWave(waveDef) {
   const template = resolveEnemyTemplate(waveDef.enemyId);
-  if (!template) return;
+  if (!template) {
+    const msg = `未找到敌人模板：${waveDef.enemyId}`;
+    console.warn('[abyssal-nightfall]', msg);
+    pushLog(msg);
+    return;
+  }
   for (let i = 0; i < waveDef.count; i++) {
     const angle = (Math.PI * 2 * i) / waveDef.count;
     const radius = waveDef.spawnRadius * SCALE + Math.random() * 24;
@@ -1054,6 +1112,7 @@ function bootstrap(resources, preset = {}) {
   state.library = { operators, weapons, relics, enemies, bosses, waves, skillTree, synergyCards };
   state.enemyTemplates = enemies;
   state.bossTemplates = bosses;
+  state.enemyLookup = buildEnemyIndex(enemies);
   state.waves = waves;
   state.skillTree = skillTree;
   state.synergyCards = synergyCards;

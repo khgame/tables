@@ -91,14 +91,14 @@ function buildBosses() {
 function buildWaves() {
   const rows = [
     ...rowsEmpty,
-    ['@', '@', '@', 'uint', 'uint', 'string', 'uint', 'float', 'string', 'string'],
+    ['@', '@', '@', 'uint', 'uint', 'tid', 'uint', 'float', 'string', 'string'],
     ['sector', 'category', 'serial', 'timestamp', 'duration', 'enemyId', 'count', 'spawnRadius', 'formation', 'notes'],
-    ['60', '08', '0001', '45', '30', 'enemy:shambler', '18', '11.5', 'ring', 'Opening probe; stays outside melee range.'],
-    ['60', '08', '0002', '95', '40', 'enemy:cultist', '12', '9.0', 'arc', 'Choir acolytes chant, boosting nearby allies.'],
-    ['60', '08', '0003', '150', '35', 'enemy:abyssal-howler', '8', '7.5', 'cone', 'Howlers arrive after fog surge; manage sanity bleed.'],
-    ['60', '08', '0004', '210', '45', 'enemy:null-sentinel', '5', '13.5', 'cross', 'Sentinels sweep beams while shamblers close in.'],
-    ['60', '08', '0005', '240', '40', 'enemy:myriad-fragment', '16', '8.0', 'swarm', 'Fragments dash in packs forcing kite routes.'],
-    ['60', '08', '0006', '270', '50', 'enemy:harbor-dredger', '6', '10.5', 'line', 'Dredgers charge straight for the beacon core.']
+    ['60', '08', '0001', '45', '30', '40060001', '18', '11.5', 'ring', 'Opening probe; stays outside melee range.'],
+    ['60', '08', '0002', '95', '40', '40060002', '12', '9.0', 'arc', 'Choir acolytes chant, boosting nearby allies.'],
+    ['60', '08', '0003', '150', '35', '40060003', '8', '7.5', 'cone', 'Howlers arrive after fog surge; manage sanity bleed.'],
+    ['60', '08', '0004', '210', '45', '40060004', '5', '13.5', 'cross', 'Sentinels sweep beams while shamblers close in.'],
+    ['60', '08', '0005', '240', '40', '40060006', '16', '8.0', 'swarm', 'Fragments dash in packs forcing kite routes.'],
+    ['60', '08', '0006', '270', '50', '40060005', '6', '10.5', 'line', 'Dredgers charge straight for the beacon core.']
   ];
   writeTable('waves.xlsx', rows);
 }

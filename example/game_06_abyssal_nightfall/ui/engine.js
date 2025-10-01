@@ -40,6 +40,17 @@ const controls = {
   aimY: 0
 };
 
+const assetCache = {
+  images: new Map(),
+  audio: new Map(),
+  imagePromises: new Map(),
+  audioPromises: new Map()
+};
+
+const DEFAULT_PROJECTILE_SCALE = 0.6;
+const DEFAULT_IMPACT_SCALE = 1.0;
+const DEFAULT_PLAYER_SPRITE_SCALE = 0.9;
+
 const state = {
   mode: 'loading',
   time: 0,
@@ -74,7 +85,8 @@ const state = {
   bossTemplates: [],
   enemyLookup: new Map(),
   runId: 0,
-  lastSummary: null
+  lastSummary: null,
+  assets: assetCache
 };
 
 function loadJson(file) {
@@ -102,6 +114,152 @@ async function loadResources() {
 
 function toArray(converted) {
   return Object.entries(converted.result || {}).map(([tid, payload]) => ({ tid, ...payload }));
+}
+
+function resolveAssetPath(path) {
+  if (!path) return '';
+  if (/^https?:/i.test(path)) return path;
+  if (path.startsWith('./') || path.startsWith('/')) return path;
+  return `./${path}`;
+}
+
+function loadImageAsset(path) {
+  if (!path) return Promise.resolve(null);
+  if (assetCache.images.has(path)) return Promise.resolve(assetCache.images.get(path));
+  if (assetCache.imagePromises.has(path)) return assetCache.imagePromises.get(path);
+  const resolved = resolveAssetPath(path);
+  const promise = new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      assetCache.images.set(path, img);
+      assetCache.imagePromises.delete(path);
+      resolve(img);
+    };
+    img.onerror = err => {
+      assetCache.imagePromises.delete(path);
+      console.warn('[abyssal-nightfall] failed to load image asset', path, err);
+      resolve(null);
+    };
+    img.src = resolved;
+  });
+  assetCache.imagePromises.set(path, promise);
+  return promise;
+}
+
+function loadAudioAsset(path) {
+  if (!path) return Promise.resolve(null);
+  if (assetCache.audio.has(path)) return Promise.resolve(assetCache.audio.get(path));
+  if (assetCache.audioPromises.has(path)) return assetCache.audioPromises.get(path);
+  const resolved = resolveAssetPath(path);
+  const audio = new Audio();
+  audio.preload = 'auto';
+  const promise = new Promise(resolve => {
+    const cleanup = () => {
+      audio.removeEventListener('canplaythrough', onReady);
+      audio.removeEventListener('error', onError);
+    };
+    const onReady = () => {
+      cleanup();
+      assetCache.audio.set(path, audio);
+      assetCache.audioPromises.delete(path);
+      resolve(audio);
+    };
+    const onError = err => {
+      cleanup();
+      assetCache.audioPromises.delete(path);
+      console.warn('[abyssal-nightfall] failed to load audio asset', path, err);
+      resolve(null);
+    };
+    audio.addEventListener('canplaythrough', onReady, { once: true });
+    audio.addEventListener('error', onError, { once: true });
+  });
+  audio.src = resolved;
+  audio.load();
+  assetCache.audioPromises.set(path, promise);
+  return promise;
+}
+
+async function preloadAssets(library) {
+  if (!library) return;
+  const { imagePaths, audioPaths } = collectAssetPaths(library);
+  const imagePromises = Array.from(imagePaths).map(loadImageAsset);
+  const audioPromises = Array.from(audioPaths).map(loadAudioAsset);
+  await Promise.all([...imagePromises, ...audioPromises]);
+  state.assets = assetCache;
+}
+
+function collectAssetPaths(library = {}) {
+  const imagePaths = new Set();
+  const audioPaths = new Set();
+
+  (library.operators || []).forEach(operator => {
+    if (operator.sprite) imagePaths.add(operator.sprite);
+    if (operator.portraitArt) imagePaths.add(operator.portraitArt);
+  });
+
+  (library.weapons || []).forEach(weapon => {
+    ['travelSprite', 'impactSprite', 'muzzleSprite'].forEach(key => {
+      if (weapon[key]) imagePaths.add(weapon[key]);
+    });
+    if (weapon.fireSfx) audioPaths.add(weapon.fireSfx);
+    if (weapon.impactSfx) audioPaths.add(weapon.impactSfx);
+  });
+
+  (library.relics || []).forEach(relic => {
+    if (relic.vfxSprite) imagePaths.add(relic.vfxSprite);
+    if (relic.sfxCue) audioPaths.add(relic.sfxCue);
+  });
+
+  (library.enemies || []).forEach(enemy => {
+    if (enemy.projectileSprite) imagePaths.add(enemy.projectileSprite);
+    if (enemy.impactSprite) imagePaths.add(enemy.impactSprite);
+  });
+
+  (library.bosses || []).forEach(boss => {
+    if (boss.telegraphSprite) imagePaths.add(boss.telegraphSprite);
+  });
+
+  return { imagePaths, audioPaths };
+}
+
+function getCachedImage(path) {
+  if (!path) return null;
+  return assetCache.images.get(path) || null;
+}
+
+function getCachedAudio(path) {
+  if (!path) return null;
+  return assetCache.audio.get(path) || null;
+}
+
+function playSound(path, options = {}) {
+  if (!path) return;
+  const base = getCachedAudio(path);
+  if (!base) return;
+  try {
+    const instance = base.cloneNode(true);
+    if (options.volume !== undefined) {
+      instance.volume = clamp(options.volume, 0, 1);
+    } else {
+      instance.volume = base.volume || 1;
+    }
+    instance.currentTime = 0;
+    instance.play().catch(() => {});
+  } catch (err) {
+    console.warn('[abyssal-nightfall] unable to play sound', path, err);
+  }
+}
+
+function drawSprite(image, x, y, { angle = 0, scale = 1, alpha = 1 } = {}) {
+  if (!image) return;
+  ctx.save();
+  ctx.translate(x, y);
+  if (angle) ctx.rotate(angle);
+  if (alpha !== 1) ctx.globalAlpha = alpha;
+  const width = image.width * scale;
+  const height = image.height * scale;
+  ctx.drawImage(image, -width / 2, -height / 2, width, height);
+  ctx.restore();
 }
 
 function normalizeSlug(name = '') {
@@ -361,15 +519,21 @@ function buildUpgradeOptions(reason) {
   const options = [];
   shuffle(skillCandidates);
   shuffle(synergyCandidates);
-  if (skillCandidates.length) {
-    options.push(...skillCandidates.slice(0, 2).map(node => ({ type: 'skill', data: node, description: node.tooltip })));
+
+  // Always try to provide 3 skill options first
+  if (skillCandidates.length >= 3) {
+    options.push(...skillCandidates.slice(0, 3).map(node => ({ type: 'skill', data: node, description: node.tooltip })));
+  } else if (skillCandidates.length > 0) {
+    options.push(...skillCandidates.map(node => ({ type: 'skill', data: node, description: node.tooltip })));
+    // Fill remaining slots with synergies if available
+    if (options.length < 3 && synergyCandidates.length) {
+      options.push(...synergyCandidates.slice(0, 3 - options.length).map(card => ({ type: 'synergy', data: card, description: card.trigger || '协同效果常驻生效。' })));
+    }
+  } else if (synergyCandidates.length) {
+    // No skills available, show synergies
+    options.push(...synergyCandidates.slice(0, 3).map(card => ({ type: 'synergy', data: card, description: card.trigger || '协同效果常驻生效。' })));
   }
-  if (options.length < 3 && synergyCandidates.length) {
-    options.push(...synergyCandidates.slice(0, 3 - options.length).map(card => ({ type: 'synergy', data: card, description: card.trigger || '协同效果常驻生效。' })));
-  }
-  if (!options.length && skillCandidates.length) {
-    options.push({ type: 'skill', data: skillCandidates[0], description: skillCandidates[0].tooltip });
-  }
+
   return options;
 }
 
@@ -512,6 +676,30 @@ function applyEffectToken(token) {
     case 'damageMultiplier':
       state.stats.damageBonusMultiplier *= 1 + numericValue / 100;
       break;
+    case 'maxHp':
+      if (state.player) {
+        state.player.hpMax += numericValue;
+        state.player.hp += numericValue;
+      }
+      break;
+    case 'hpRegen':
+      state.stats.hpRegen = (state.stats.hpRegen || 0) + numericValue;
+      break;
+    case 'shieldRegen':
+      state.stats.shieldRegen = (state.stats.shieldRegen || 0) + numericValue;
+      break;
+    case 'moveSpeed':
+      state.stats.moveSpeedBonus = (state.stats.moveSpeedBonus || 0) + numericValue;
+      break;
+    case 'invulnTime':
+      state.stats.invulnTimeBonus = (state.stats.invulnTimeBonus || 0) + numericValue;
+      break;
+    case 'luckBonus':
+    case 'ammoEfficiency':
+    case 'xpBonus':
+      // These are passive effects tracked but not immediately applied
+      state.stats[key] = (state.stats[key] || 0) + numericValue;
+      break;
     default:
       break;
   }
@@ -650,8 +838,10 @@ function handleInput(dt) {
   if (keys.has('KeyD')) dx += 1;
   if (dx !== 0 || dy !== 0) {
     const [nx, ny] = normalize(dx, dy);
-    state.player.x += nx * state.player.moveSpeed * dt;
-    state.player.y += ny * state.player.moveSpeed * dt;
+    const moveSpeedBonus = state.stats.moveSpeedBonus || 0;
+    const finalMoveSpeed = state.player.moveSpeed * (1 + moveSpeedBonus / 100);
+    state.player.x += nx * finalMoveSpeed * dt;
+    state.player.y += ny * finalMoveSpeed * dt;
   }
   state.player.x = clamp(state.player.x, ARENA_PADDING, canvas.width - ARENA_PADDING);
   state.player.y = clamp(state.player.y, ARENA_PADDING, canvas.height - ARENA_PADDING);
@@ -678,6 +868,7 @@ function handleInput(dt) {
 
 function fireWeapon() {
   const weapon = state.weapon;
+  if (!weapon) return;
   weapon.ammo -= 1;
   weapon.fireTimer = weapon.baseFireRate * state.stats.fireRateMultiplier;
   if (weapon.ammo <= 0) {
@@ -697,8 +888,13 @@ function fireWeapon() {
     vx: fx * speed,
     vy: fy * speed,
     life: weapon.template.projectileLifetime,
-    damage: computeShotDamage()
+    damage: computeShotDamage(),
+    angle: Math.atan2(fy, fx),
+    sprite: weapon.travelSprite,
+    scale: weapon.projectileScale || DEFAULT_PROJECTILE_SCALE
   });
+  spawnMuzzleFlash(state.player.x, state.player.y, fx, fy);
+  playSound(weapon.fireSfx, { volume: 0.85 });
 }
 
 function computeShotDamage() {
@@ -710,6 +906,37 @@ function computeShotDamage() {
     pushLog('暴击造成额外伤害');
   }
   return damage;
+}
+
+function spawnMuzzleFlash(originX, originY, fx, fy) {
+  if (!state.weapon || !state.weapon.muzzleSprite) return;
+  const angle = Math.atan2(fy, fx);
+  const distance = PLAYER_RADIUS + 10;
+  const x = originX + fx * distance;
+  const y = originY + fy * distance;
+  state.effects.push({
+    type: 'muzzle',
+    x,
+    y,
+    angle,
+    sprite: state.weapon.muzzleSprite,
+    elapsed: 0,
+    duration: 0.16,
+    scale: (state.weapon.projectileScale || DEFAULT_PROJECTILE_SCALE) * 1.25
+  });
+}
+
+function spawnImpactEffect(x, y) {
+  if (!state.weapon || !state.weapon.impactSprite) return;
+  state.effects.push({
+    type: 'impact',
+    x,
+    y,
+    sprite: state.weapon.impactSprite,
+    elapsed: 0,
+    duration: 0.28,
+    scale: state.weapon.impactScale || state.weapon.projectileScale || DEFAULT_IMPACT_SCALE
+  });
 }
 
 function applyPlayerDamage(amount, source, sanityLoss = 0, options = {}) {
@@ -728,7 +955,11 @@ function applyPlayerDamage(amount, source, sanityLoss = 0, options = {}) {
   if (remaining <= 0) return;
   state.player.hp -= remaining;
   state.sanity = Math.max(0, state.sanity - sanityLoss);
-  if (!options.bypassInvuln) state.invulnTimer = options.invuln || 0.8;
+  if (!options.bypassInvuln) {
+    const baseInvuln = options.invuln || 0.8;
+    const invulnBonus = state.stats.invulnTimeBonus || 0;
+    state.invulnTimer = baseInvuln + invulnBonus;
+  }
   if (options.log !== false) pushLog(`${source} 造成 ${Math.round(remaining)} 伤害`);
   if (state.player.hp <= 0) gameOver('defeat', '你倒在邪潮之中。');
 }
@@ -742,7 +973,9 @@ function killEnemy(enemy, source = '射击') {
 }
 
 function gainXp(amount) {
-  state.xp += amount;
+  const xpBonus = state.stats.xpBonus || 0;
+  const finalXp = amount * (1 + xpBonus / 100);
+  state.xp += finalXp;
   while (state.xp >= state.xpNeeded) {
     state.xp -= state.xpNeeded;
     state.level += 1;
@@ -915,6 +1148,10 @@ function updateEnemies(dt) {
       if (dist <= enemyRadius) {
         enemy.hp -= bullet.damage;
         bullet.life = -1;
+        spawnImpactEffect(bullet.x, bullet.y);
+        if (state.weapon && state.weapon.impactSfx) {
+          playSound(state.weapon.impactSfx, { volume: 0.75 });
+        }
         if (enemy.hp <= 0) {
           killEnemy(enemy);
           break;
@@ -973,8 +1210,9 @@ function renderGrid() {
 }
 
 function renderPlayer() {
+  const { x, y } = state.player;
   ctx.save();
-  ctx.translate(state.player.x, state.player.y);
+  ctx.translate(x, y);
   if (state.player.shield > 0) {
     const ratio = Math.min(1, state.player.shield / (state.player.shieldMax || state.player.shield));
     ctx.strokeStyle = 'rgba(147,197,253,0.85)';
@@ -983,22 +1221,46 @@ function renderPlayer() {
     ctx.arc(0, 0, PLAYER_RADIUS + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ratio);
     ctx.stroke();
   }
-  ctx.fillStyle = '#60a5fa';
-  ctx.beginPath();
-  ctx.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#bfdbfe';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  const sprite = state.player.sprite;
+  if (sprite) {
+    const angle = Math.atan2(controls.aimY, controls.aimX);
+    const scale = state.player.spriteScale || DEFAULT_PLAYER_SPRITE_SCALE;
+    ctx.save();
+    ctx.rotate(angle);
+    const width = sprite.width * scale;
+    const height = sprite.height * scale;
+    ctx.drawImage(sprite, -width / 2, -height / 2, width, height);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(191,219,254,0.45)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath();
+    ctx.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#bfdbfe';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
 function renderBullets() {
-  ctx.fillStyle = '#f97316';
   state.bullets.forEach(bullet => {
-    ctx.beginPath();
-    ctx.arc(bullet.x, bullet.y, BULLET_RADIUS, 0, Math.PI * 2);
-    ctx.fill();
+    if (bullet.sprite) {
+      drawSprite(bullet.sprite, bullet.x, bullet.y, {
+        angle: bullet.angle !== undefined ? bullet.angle : Math.atan2(bullet.vy, bullet.vx),
+        scale: bullet.scale || DEFAULT_PROJECTILE_SCALE
+      });
+    } else {
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.arc(bullet.x, bullet.y, BULLET_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+    }
   });
 }
 
@@ -1051,6 +1313,24 @@ function renderEffects() {
       ctx.fillStyle = 'rgba(147,197,253,0.38)';
       ctx.fillRect(0, -effect.width, effect.length, effect.width * 2);
       ctx.restore();
+    } else if (effect.type === 'impact' && effect.sprite) {
+      const ratio = clamp(effect.elapsed / effect.duration, 0, 1);
+      const alpha = 1 - ratio;
+      const scale = effect.scale || DEFAULT_IMPACT_SCALE;
+      drawSprite(effect.sprite, effect.x, effect.y, {
+        angle: effect.angle || 0,
+        scale,
+        alpha: alpha * 0.95
+      });
+    } else if (effect.type === 'muzzle' && effect.sprite) {
+      const ratio = clamp(effect.elapsed / effect.duration, 0, 1);
+      const alpha = 1 - ratio;
+      const scale = (effect.scale || 1) * (1 - 0.25 * ratio);
+      drawSprite(effect.sprite, effect.x, effect.y, {
+        angle: effect.angle || 0,
+        scale,
+        alpha
+      });
     }
   });
 }
@@ -1067,9 +1347,22 @@ function renderGameOverTint() {
 function update(dt) {
   state.time += dt;
   state.invulnTimer = Math.max(0, state.invulnTimer - dt);
+
+  // Sanity regeneration
   if (state.stats.sanityRegen > 0 && state.sanity < state.sanityCap) {
     state.sanity = clamp(state.sanity + state.stats.sanityRegen * dt, 0, state.sanityCap);
   }
+
+  // HP regeneration
+  if (state.stats.hpRegen > 0 && state.player && state.player.hp < state.player.hpMax) {
+    state.player.hp = clamp(state.player.hp + state.stats.hpRegen * dt, 0, state.player.hpMax);
+  }
+
+  // Shield regeneration
+  if (state.stats.shieldRegen > 0 && state.player && state.player.shield < state.player.shieldMax) {
+    state.player.shield = clamp(state.player.shield + state.stats.shieldRegen * dt, 0, state.player.shieldMax);
+  }
+
   updateRelic(dt);
   handleInput(dt);
   updateBullets(dt);
@@ -1212,17 +1505,23 @@ function activateRelic() {
   pushLog(`释放遗物：${template.name}`);
 }
 
-function bootstrap(resources, preset = {}) {
-  const operators = toArray(resources.operators);
-  const weapons = toArray(resources.weapons);
-  const relics = toArray(resources.relics);
-  const enemies = toArray(resources.enemies);
+function parseLibrary(resources = {}) {
+  const operators = toArray(resources.operators || { result: {} });
+  const weapons = toArray(resources.weapons || { result: {} });
+  const relics = toArray(resources.relics || { result: {} });
+  const enemies = toArray(resources.enemies || { result: {} });
   const bosses = resources.bosses ? toArray(resources.bosses) : [];
-  const waves = toArray(resources.waves).sort((a, b) => a.timestamp - b.timestamp);
-  const skillTree = toArray(resources.skillTree);
-  const synergyCards = toArray(resources.synergyCards);
+  const waves = toArray(resources.waves || { result: {} }).sort((a, b) => a.timestamp - b.timestamp);
+  const skillTree = toArray(resources.skillTree || { result: {} });
+  const synergyCards = toArray(resources.synergyCards || { result: {} });
 
-  state.library = { operators, weapons, relics, enemies, bosses, waves, skillTree, synergyCards };
+  return { operators, weapons, relics, enemies, bosses, waves, skillTree, synergyCards };
+}
+
+function bootstrap(library, preset = {}) {
+  const { operators = [], weapons = [], relics = [], enemies = [], bosses = [], waves = [], skillTree = [], synergyCards = [] } = library || {};
+
+  state.library = library;
   state.enemyTemplates = enemies;
   state.bossTemplates = bosses;
   state.enemyLookup = buildEnemyIndex(enemies);
@@ -1276,7 +1575,9 @@ function bootstrap(resources, preset = {}) {
     hpMax: operator.hp,
     moveSpeed: operator.moveSpeed * SCALE,
     shield: 0,
-    shieldMax: 0
+    shieldMax: 0,
+    sprite: getCachedImage(operator.sprite),
+    spriteScale: Number(operator.spriteScale) || DEFAULT_PLAYER_SPRITE_SCALE
   };
 
   if (weaponTemplate) {
@@ -1290,7 +1591,14 @@ function bootstrap(resources, preset = {}) {
       baseProjectileSpeed: weaponTemplate.projectileSpeed,
       ammo: weaponTemplate.magazine,
       fireTimer: 0,
-      reloadTimer: 0
+      reloadTimer: 0,
+      travelSprite: getCachedImage(weaponTemplate.travelSprite),
+      impactSprite: getCachedImage(weaponTemplate.impactSprite),
+      muzzleSprite: getCachedImage(weaponTemplate.muzzleSprite),
+      projectileScale: Number(weaponTemplate.projectileScale) || DEFAULT_PROJECTILE_SCALE,
+      impactScale: Number(weaponTemplate.impactScale) || DEFAULT_IMPACT_SCALE,
+      fireSfx: weaponTemplate.fireSfx || null,
+      impactSfx: weaponTemplate.impactSfx || null
     };
   } else {
     state.weapon = null;
@@ -1325,7 +1633,14 @@ function bootstrap(resources, preset = {}) {
     damageBonusMultiplier: 1,
     relicDamageFlat: 0,
     beamReflect: 0,
-    maelstromSlow: 0
+    maelstromSlow: 0,
+    hpRegen: 0,
+    shieldRegen: 0,
+    moveSpeedBonus: 0,
+    invulnTimeBonus: 0,
+    luckBonus: 0,
+    ammoEfficiency: 0,
+    xpBonus: 0
   };
 
   const weaponName = weaponTemplate ? weaponTemplate.name : '无武器';
@@ -1366,7 +1681,9 @@ function applyLifecycleOptions(options = {}) {
 export async function startGame(preset = {}, options = {}) {
   applyLifecycleOptions(options);
   const resources = await ensureResources();
-  bootstrap(resources, preset || {});
+  const library = parseLibrary(resources);
+  await preloadAssets(library);
+  bootstrap(library, preset || {});
 }
 
 export function tableToArray(converted) {

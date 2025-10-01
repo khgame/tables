@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Aberration — Playable Demo</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(circle at 20% 20%, rgba(99, 164, 255, 0.15), transparent 60%),
+          radial-gradient(circle at 80% 80%, rgba(167, 139, 250, 0.18), transparent 65%),
+          linear-gradient(160deg, #040712, #070d18 50%, #03040a 90%);
+        font-family: 'Segoe UI', 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+        color: #e2e8f0;
+      }
+      #hud {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        z-index: 10;
+      }
+      .badge {
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(99, 164, 255, 0.5);
+        border-radius: 12px;
+        padding: 8px 14px;
+        font-size: 13px;
+        letter-spacing: 0.3px;
+        box-shadow: 0 12px 32px rgba(5, 8, 20, 0.35);
+      }
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud"></div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

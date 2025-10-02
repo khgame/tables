@@ -17,6 +17,18 @@ const imgSizeEl = document.getElementById('imgSize');
 const gridCountEl = document.getElementById('gridCount');
 const tileCountEl = document.getElementById('tileCount');
 const ctx = previewCanvas.getContext('2d');
+const dirButtons = Array.from(document.querySelectorAll('.dir-btn'));
+const selectedTileLabel = document.getElementById('selectedTileLabel');
+const boardCanvas = document.getElementById('boardCanvas');
+const boardCtx = boardCanvas.getContext('2d');
+const boardColsInput = document.getElementById('boardCols');
+const boardRowsInput = document.getElementById('boardRows');
+const resizeBoardBtn = document.getElementById('resizeBoard');
+const clearBoardBtn = document.getElementById('clearBoard');
+const exportBoardBtn = document.getElementById('exportBoardJson');
+const boardStatus = document.getElementById('boardStatus');
+
+const DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
 
 const PRESET_TILES = [
   {
@@ -36,8 +48,188 @@ const state = {
   imageUrlIsObject: false,
   tiles: [],
   selectedIndex: null,
-  scale: 1
+  scale: 1,
+  connectivity: {},
+  board: {
+    cols: 8,
+    rows: 8,
+    cells: []
+  }
 };
+
+function setBoardStatus(message, kind = 'info') {
+  if (!boardStatus) return;
+  boardStatus.textContent = message;
+  boardStatus.dataset.kind = kind;
+}
+
+function createEmptyConnectivity() {
+  return DIRECTIONS.reduce((acc, dir) => {
+    acc[dir] = false;
+    return acc;
+  }, {});
+}
+
+function ensureConnectivity(tileId) {
+  if (!state.connectivity[tileId]) {
+    state.connectivity[tileId] = createEmptyConnectivity();
+  }
+  return state.connectivity[tileId];
+}
+
+function refreshConnectivityUI() {
+  if (!selectedTileLabel || !dirButtons.length) return;
+  if (state.selectedIndex == null || !state.tiles[state.selectedIndex]) {
+    selectedTileLabel.textContent = '未选中 tile';
+    dirButtons.forEach(btn => {
+      btn.classList.remove('active');
+      btn.disabled = true;
+    });
+    return;
+  }
+  const tile = state.tiles[state.selectedIndex];
+  selectedTileLabel.textContent = tile.id;
+  const conn = ensureConnectivity(tile.id);
+  dirButtons.forEach(btn => {
+    const dir = btn.dataset.dir;
+    if (!dir) return;
+    btn.disabled = false;
+    btn.classList.toggle('active', Boolean(conn[dir]));
+  });
+}
+
+function toggleDirection(dir) {
+  if (state.selectedIndex == null || !state.tiles[state.selectedIndex]) {
+    setStatus('请先选择一个 tile。', 'error');
+    return;
+  }
+  const tile = state.tiles[state.selectedIndex];
+  const entry = ensureConnectivity(tile.id);
+  entry[dir] = !entry[dir];
+  refreshConnectivityUI();
+}
+
+function initBoard(cols = state.board.cols, rows = state.board.rows) {
+  const parsedCols = Math.max(1, Number.parseInt(cols, 10) || 1);
+  const parsedRows = Math.max(1, Number.parseInt(rows, 10) || 1);
+  state.board.cols = parsedCols;
+  state.board.rows = parsedRows;
+  state.board.cells = Array.from({ length: parsedRows }, () => Array(parsedCols).fill(null));
+  if (boardColsInput) boardColsInput.value = String(parsedCols);
+  if (boardRowsInput) boardRowsInput.value = String(parsedRows);
+  drawBoard();
+  setBoardStatus(`画板：${parsedCols} × ${parsedRows}`, 'success');
+}
+
+function resizeBoardFromInputs() {
+  const cols = Math.max(1, Number.parseInt(boardColsInput.value, 10) || 1);
+  const rows = Math.max(1, Number.parseInt(boardRowsInput.value, 10) || 1);
+  initBoard(cols, rows);
+}
+
+function clearBoard() {
+  state.board.cells.forEach(row => row.fill(null));
+  drawBoard();
+  setBoardStatus('画板已清空', 'info');
+}
+
+function getSelectedTile() {
+  if (state.selectedIndex == null) return null;
+  return state.tiles[state.selectedIndex] || null;
+}
+
+function drawBoard() {
+  if (!boardCanvas || !boardCtx) return;
+  const cols = state.board.cols;
+  const rows = state.board.rows;
+  const tileWidth = Number.parseInt(tileWidthInput.value, 10) || 64;
+  const tileHeight = Number.parseInt(tileHeightInput.value, 10) || 64;
+
+  boardCanvas.width = cols * tileWidth;
+  boardCanvas.height = rows * tileHeight;
+
+  boardCtx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
+  boardCtx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+  boardCtx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
+
+  if (state.image) {
+    const tileMap = new Map(state.tiles.map(tile => [tile.id, tile]));
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const tileId = state.board.cells[row]?.[col];
+        if (!tileId) continue;
+        const tile = tileMap.get(tileId);
+        if (!tile) continue;
+        boardCtx.drawImage(
+          state.image,
+          tile.x,
+          tile.y,
+          tile.width,
+          tile.height,
+          col * tileWidth,
+          row * tileHeight,
+          tileWidth,
+          tileHeight
+        );
+      }
+    }
+  }
+
+  boardCtx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+  for (let c = 0; c <= cols; c += 1) {
+    const x = c * tileWidth + 0.5;
+    boardCtx.beginPath();
+    boardCtx.moveTo(x, 0);
+    boardCtx.lineTo(x, boardCanvas.height);
+    boardCtx.stroke();
+  }
+  for (let r = 0; r <= rows; r += 1) {
+    const y = r * tileHeight + 0.5;
+    boardCtx.beginPath();
+    boardCtx.moveTo(0, y);
+    boardCtx.lineTo(boardCanvas.width, y);
+    boardCtx.stroke();
+  }
+}
+
+function handleBoardPaint(event) {
+  if (!boardCanvas) return;
+  const rect = boardCanvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const tileWidth = Number.parseInt(tileWidthInput.value, 10) || 64;
+  const tileHeight = Number.parseInt(tileHeightInput.value, 10) || 64;
+  const col = Math.floor(x / tileWidth);
+  const row = Math.floor(y / tileHeight);
+  if (col < 0 || col >= state.board.cols || row < 0 || row >= state.board.rows) return;
+
+  if (event.type === 'contextmenu') {
+    event.preventDefault();
+    state.board.cells[row][col] = null;
+    drawBoard();
+    return;
+  }
+
+  const tile = getSelectedTile();
+  if (!tile) {
+    setBoardStatus('请先在左侧列表选择一个 tile。', 'error');
+    return;
+  }
+  state.board.cells[row][col] = tile.id;
+  drawBoard();
+}
+
+function exportBoard() {
+  const { cols, rows, cells } = state.board;
+  const data = {
+    cols,
+    rows,
+    cells
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  downloadBlob('tileset_board.json', blob);
+  setBoardStatus('画板 JSON 已导出。', 'success');
+}
 
 function setStatus(message, kind = 'info') {
   statusEl.textContent = message;
@@ -112,9 +304,18 @@ function updateTiles() {
 
   state.tiles = tiles;
   state.selectedIndex = tiles.length ? 0 : null;
+  const validIds = new Set(tiles.map(tile => tile.id));
+  Object.keys(state.connectivity).forEach(id => {
+    if (!validIds.has(id)) {
+      delete state.connectivity[id];
+    }
+  });
+  tiles.forEach(tile => ensureConnectivity(tile.id));
   drawPreview();
   renderTileList();
   updateSummary();
+  refreshConnectivityUI();
+  drawBoard();
 
   setStatus(tiles.length ? `已生成 ${tiles.length} 个切片` : '未生成切片，请调整参数。');
 }
@@ -128,6 +329,8 @@ function clearCanvas() {
   tileCountEl.textContent = '0';
   state.tiles = [];
   state.selectedIndex = null;
+  refreshConnectivityUI();
+  drawBoard();
 }
 
 function drawPreview() {
@@ -201,6 +404,7 @@ function renderTileList() {
       state.selectedIndex = index;
       drawPreview();
       renderTileList();
+      refreshConnectivityUI();
     });
 
     tileListEl.appendChild(item);
@@ -245,7 +449,9 @@ function buildExportData() {
       width: tile.width,
       height: tile.height,
       row: tile.row,
-      col: tile.col
+      col: tile.col,
+      connections: DIRECTIONS.filter(dir => ensureConnectivity(tile.id)[dir]),
+      connectivity: { ...ensureConnectivity(tile.id) }
     }))
   };
 }
@@ -279,9 +485,9 @@ function exportCsv() {
     setStatus('没有可导出的切片，请先上传素材。', 'error');
     return;
   }
-  const header = 'id,x,y,width,height,row,col\n';
+  const header = 'id,x,y,width,height,row,col,connections\n';
   const rows = data.tiles
-    .map(tile => `${tile.id},${tile.x},${tile.y},${tile.width},${tile.height},${tile.row},${tile.col}`)
+    .map(tile => `${tile.id},${tile.x},${tile.y},${tile.width},${tile.height},${tile.row},${tile.col},${tile.connections.join('|')}`)
     .join('\n');
   const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
   const prefix = idPrefixInput.value.trim() || 'tile';
@@ -314,6 +520,7 @@ function reset() {
   state.image = null;
   state.tiles = [];
   state.selectedIndex = null;
+  state.connectivity = {};
   if (state.imageUrl && state.imageUrlIsObject) {
     URL.revokeObjectURL(state.imageUrl);
   }
@@ -391,4 +598,37 @@ copyJsonBtn.addEventListener('click', copyJson);
 resetBtn.addEventListener('click', reset);
 
 initPresetList();
+refreshConnectivityUI();
+initBoard();
 setStatus('等待素材上传或选择候选素材…');
+
+dirButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const dir = btn.dataset.dir;
+    if (!dir) return;
+    toggleDirection(dir);
+  });
+});
+
+if (boardCanvas) {
+  boardCanvas.addEventListener('click', handleBoardPaint);
+  boardCanvas.addEventListener('contextmenu', handleBoardPaint);
+}
+
+if (resizeBoardBtn) {
+  resizeBoardBtn.addEventListener('click', () => {
+    resizeBoardFromInputs();
+  });
+}
+
+if (clearBoardBtn) {
+  clearBoardBtn.addEventListener('click', () => {
+    clearBoard();
+  });
+}
+
+if (exportBoardBtn) {
+  exportBoardBtn.addEventListener('click', () => {
+    exportBoard();
+  });
+}

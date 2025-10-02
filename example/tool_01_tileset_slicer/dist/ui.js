@@ -44,6 +44,8 @@ const selectedTileLabel = document.getElementById('selectedTileLabel');
 const topologyShell = document.getElementById('topologyShell');
 const topologyTabs = Array.from(document.querySelectorAll('.topology-tab'));
 const topologyPanes = Array.from(document.querySelectorAll('.topology-pane'));
+const mainTabs = Array.from(document.querySelectorAll('.main-tab'));
+const mainPanes = Array.from(document.querySelectorAll('.main-pane'));
 const tileRoleSelect = document.getElementById('tileRole');
 const tileGroupInput = document.getElementById('tileGroup');
 const tileGroupDataList = document.getElementById('tileGroupOptions');
@@ -667,7 +669,7 @@ async function handleBoardImportFile(event) {
         const tileWidth = parseNumberInput(tileWidthInput, json.tileWidth ?? 64);
         const tileHeight = parseNumberInput(tileHeightInput, json.tileHeight ?? 64);
         drawBoard(tileWidth, tileHeight);
-        setActiveTopologyTab('board');
+        setActiveMainTab('painting');
         if (result.missing) {
             setImportStatus(`画板导入完成，但忽略 ${result.missing} 个未知 tile。`, 'info');
         }
@@ -764,6 +766,10 @@ function getActiveTopology() {
     const active = topologyTabs.find(tab => tab.classList.contains('active'));
     return active?.dataset.topology ?? null;
 }
+function getActiveMainTab() {
+    const active = mainTabs.find(tab => tab.classList.contains('active'));
+    return active?.dataset.main ?? null;
+}
 function setActiveTopologyTab(tab) {
     topologyTabs.forEach(button => {
         const isActive = button.dataset.topology === tab;
@@ -779,11 +785,16 @@ function setActiveTopologyTab(tab) {
 function syncTopologyTabByRole(role) {
     if (!topologyTabs.length)
         return;
+    if (getActiveMainTab() !== 'marking') {
+        if (topologyShell)
+            topologyShell.dataset.role = role ?? 'neutral';
+        return;
+    }
     const current = getActiveTopology();
-    if (role === 'road' && current !== 'board' && current !== 'import') {
+    if (role === 'road' && current !== 'import') {
         setActiveTopologyTab('road');
     }
-    else if (role === 'area' && current !== 'board' && current !== 'import') {
+    else if (role === 'area' && current !== 'import') {
         setActiveTopologyTab('area');
     }
     if (topologyShell)
@@ -881,6 +892,16 @@ function initInputs() {
     Object.entries(areaCornerInputs).forEach(([dir, input]) => {
         input?.addEventListener('change', () => handleAreaCornerChange(dir));
     });
+    document.querySelectorAll('[data-trigger="importTileset"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            importTilesetInput?.click();
+        });
+    });
+    document.querySelectorAll('[data-trigger="importBoard"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            importBoardInput?.click();
+        });
+    });
 }
 function initCanvasHover() {
     if (!previewCanvas)
@@ -923,8 +944,36 @@ export function initApp() {
     initDirectionButtons();
     initBoardEvents();
     initCanvasHover();
+    initMainTabs();
     initTopologyTabs();
     refreshAfterTilesUpdated();
     setStatus('等待素材上传或选择候选素材…', 'info');
     setImportStatus('等待导入 JSON…', 'info');
+}
+function setActiveMainTab(tab) {
+    if (!mainTabs.length)
+        return;
+    mainTabs.forEach(button => {
+        const isActive = button.dataset.main === tab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    mainPanes.forEach(pane => {
+        const isActive = pane.dataset.mainPane === tab;
+        pane.classList.toggle('active', isActive);
+        pane.hidden = !isActive;
+    });
+}
+function initMainTabs() {
+    if (!mainTabs.length)
+        return;
+    mainTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.main;
+            if (!target)
+                return;
+            setActiveMainTab(target);
+        });
+    });
+    setActiveMainTab('marking');
 }

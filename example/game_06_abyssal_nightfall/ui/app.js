@@ -7,6 +7,8 @@ import {
   getCurrentPreset
 } from './engine.js';
 
+import { stopBgm } from './engine.js';
+
 const layoutEl = document.querySelector('.layout');
 const prepRoot = document.getElementById('prepRoot');
 const gameRoot = document.getElementById('gameRoot');
@@ -41,6 +43,7 @@ const state = {
     skillTree: [],
     synergyCards: [],
     waves: [],
+    enemies: [],
     bosses: []
   },
   selection: {
@@ -75,6 +78,7 @@ async function bootstrap() {
   state.tables.skillTree = tableToArray(resources.skillTree);
   state.tables.synergyCards = tableToArray(resources.synergyCards);
   state.tables.waves = tableToArray(resources.waves);
+  state.tables.enemies = tableToArray(resources.enemies);
   state.tables.bosses = resources.bosses ? tableToArray(resources.bosses) : [];
 
   const defaultOperator = state.tables.operators[0] || null;
@@ -169,6 +173,7 @@ function returnToPrep(preset) {
   prepRoot.classList.remove('hidden');
   state.isLaunching = false;
   startRunBtn.disabled = false;
+  stopBgm();
   if (preset) {
     applyPreset(preset, { markManual: true });
   }
@@ -259,10 +264,11 @@ function renderOperators() {
   state.tables.operators.forEach((operator, index) => {
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = `card${operator.tid === state.selection.operatorTid ? ' active' : ''}`;
+    card.className = `card operator-card${operator.tid === state.selection.operatorTid ? ' active' : ''}`;
     card.style.setProperty('--card-index', index + 1);
     const baseWeapon = lookupReference(state.tables.weapons, operator.startWeapon);
     const baseRelic = lookupReference(state.tables.relics, operator.startRelic);
+    const portraitUrl = resolveAssetUrl(operator.portraitArt);
     const stats = [
       { label: '理智', value: operator.sanityCap },
       { label: '移速', value: `${operator.moveSpeed} m/s` },
@@ -270,26 +276,23 @@ function renderOperators() {
       { label: '装填', value: `${Math.round((operator.reloadBonus || 1) * 100)}%` }
     ];
     card.innerHTML = `
-      <div class="card-header">
-        <div>
-          <div class="card-title">${operator.codename}</div>
-          <div class="card-subtitle">${operator.role || 'Operator'}</div>
+      <div class="card-visual" style="background-image:url('${portraitUrl}')"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-role">${operator.role || '操作者'}</span>
+          <span class="card-hitpoint">HP ${operator.hp}</span>
         </div>
-        <span class="tag">HP ${operator.hp}</span>
+        <h3 class="card-name">${operator.codename}</h3>
+        <ul class="card-stats">
+          ${stats
+            .map(stat => `<li><span>${stat.label}</span><strong>${stat.value}</strong></li>`)
+            .join('')}
+        </ul>
+        <div class="card-chips">
+          <span class="chip">初始武器：${baseWeapon ? baseWeapon.name : '—'}</span>
+          <span class="chip">起始遗物：${baseRelic ? baseRelic.name : '—'}</span>
+        </div>
       </div>
-      <div class="stat-grid">
-        ${stats
-          .map(
-            stat => `
-              <div class="stat-cell">
-                <span>${stat.label}</span>
-                <strong>${stat.value}</strong>
-              </div>
-            `
-          )
-          .join('')}
-      </div>
-      <p class="card-notes">武器 ${baseWeapon ? baseWeapon.name : '—'} · 遗物 ${baseRelic ? baseRelic.name : '—'}</p>
     `;
     card.addEventListener('click', () => {
       selectOperator(operator.tid);
@@ -307,8 +310,9 @@ function renderWeapons() {
   state.tables.weapons.forEach((weapon, index) => {
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = `card${weapon.tid === state.selection.weaponTid ? ' active' : ''}`;
+    card.className = `card weapon-card${weapon.tid === state.selection.weaponTid ? ' active' : ''}`;
     card.style.setProperty('--card-index', index + 1);
+    const iconUrl = resolveAssetUrl(weapon.travelSprite || weapon.muzzleSprite);
     const stats = [
       { label: '伤害', value: weapon.damage ?? '—' },
       { label: '射速', value: weapon.fireRate != null ? `${weapon.fireRate}s` : '—' },
@@ -318,26 +322,24 @@ function renderWeapons() {
       { label: '寿命', value: weapon.projectileLifetime != null ? `${weapon.projectileLifetime}s` : '—' }
     ];
     card.innerHTML = `
-      <div class="card-header">
-        <div>
-          <div class="card-title">${weapon.name}</div>
-          <div class="card-subtitle">${weapon.categoryName} • ${weapon.attackStyle}</div>
+      <div class="card-visual" style="background-image:url('${iconUrl}')"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-role">${weapon.categoryName}</span>
+          <span class="card-hitpoint">${formatDamageType(weapon.damageType)}</span>
         </div>
-        <span class="tag">${weapon.damageType}</span>
+        <h3 class="card-name">${weapon.name}</h3>
+        <ul class="card-stats">
+          ${stats
+            .map(stat => `<li><span>${stat.label}</span><strong>${stat.value}</strong></li>`)
+            .join('')}
+        </ul>
+        <div class="card-chips">
+          <span class="chip">${formatAttackStyle(weapon.attackStyle)}</span>
+          <span class="chip">弹道范围 ${weapon.maxRange ?? '—'} m</span>
+        </div>
+        <p class="card-note">${weapon.notes || '——'}</p>
       </div>
-      <div class="stat-grid">
-        ${stats
-          .map(
-            stat => `
-              <div class="stat-cell">
-                <span>${stat.label}</span>
-                <strong>${stat.value}</strong>
-              </div>
-            `
-          )
-          .join('')}
-      </div>
-      <p class="card-notes">${weapon.notes || '——'}</p>
     `;
     card.addEventListener('click', () => {
       state.flags.manualWeapon = true;
@@ -359,8 +361,9 @@ function renderRelics() {
   state.tables.relics.forEach((relic, index) => {
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = `card${relic.tid === state.selection.relicTid ? ' active' : ''}`;
+    card.className = `card relic-card${relic.tid === state.selection.relicTid ? ' active' : ''}`;
     card.style.setProperty('--card-index', index + 1);
+    const iconUrl = resolveAssetUrl(relic.vfxSprite);
     const stats = [
       { label: '冷却', value: relic.cooldown != null ? `${relic.cooldown}s` : '—' },
       { label: '持续', value: relic.duration != null ? `${relic.duration}s` : '—' },
@@ -368,25 +371,20 @@ function renderRelics() {
       { label: '理智', value: relic.sanityDrain ?? '—' }
     ];
     card.innerHTML = `
-      <div class="card-header">
-        <div>
-          <div class="card-title">${relic.name}</div>
-          <div class="card-subtitle">${(relic.school || '').toUpperCase()} • ${relic.activationStyle}</div>
+      <div class="card-visual" style="background-image:url('${iconUrl}')"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <span class="card-role">${relic.school || '遗物'}</span>
+          <span class="card-hitpoint">${formatActivationStyle(relic.activationStyle)}</span>
         </div>
+        <h3 class="card-name">${relic.name}</h3>
+        <ul class="card-stats">
+          ${stats
+            .map(stat => `<li><span>${stat.label}</span><strong>${stat.value}</strong></li>`)
+            .join('')}
+        </ul>
+        <p class="card-note">${formatEffectsText(relic.effects)}</p>
       </div>
-      <div class="stat-grid">
-        ${stats
-          .map(
-            stat => `
-              <div class="stat-cell">
-                <span>${stat.label}</span>
-                <strong>${stat.value}</strong>
-              </div>
-            `
-          )
-          .join('')}
-      </div>
-      <p class="card-notes">${formatEffectsText(relic.effects)}</p>
     `;
     card.addEventListener('click', () => {
       state.flags.manualRelic = true;
@@ -419,18 +417,22 @@ function renderSkillTreePreview() {
     })
     .slice(0, 8);
   skillTreeListEl.innerHTML = items
-    .map(
-      node => `
-        <div class="info-card">
-          <div class="info-title">
-            <span class="tag">${node.branchName || node.branch}</span>
-            <span class="info-name">${node.name}</span>
+    .map(node => {
+      const iconUrl = resolveAssetUrl(node.icon);
+      return `
+        <div class="info-card skill-card" data-branch="${node.branchName || node.branch}">
+          <div class="info-icon" style="background-image:url('${iconUrl}')"></div>
+          <div class="info-main">
+            <div class="info-title">
+              <span class="tag">${node.branchName || node.branch}</span>
+              <span class="info-name">${node.name}</span>
+            </div>
+            <div class="info-body">${formatEffectsText(node.effects)}</div>
+            <div class="info-footer">需求 ${formatRequirementsText(node.requirements)}</div>
           </div>
-          <div class="info-body">${formatEffectsText(node.effects)}</div>
-          <div class="info-footer">需求 ${formatRequirementsText(node.requirements)}</div>
         </div>
-      `
-    )
+      `;
+    })
     .join('');
 }
 
@@ -443,18 +445,22 @@ function renderSynergyPreview() {
     .sort((a, b) => (a.tier || '').localeCompare(b.tier || ''))
     .slice(0, 8);
   synergyListEl.innerHTML = items
-    .map(
-      card => `
-        <div class="info-card">
-          <div class="info-title">
-            <span class="tag">${card.tier}</span>
-            <span class="info-name">${card.name}</span>
+    .map(card => {
+      const iconUrl = resolveAssetUrl(card.icon);
+      return `
+        <div class="info-card synergy-card" data-rarity="${(card.tier || '').toLowerCase()}">
+          <div class="info-icon" style="background-image:url('${iconUrl}')"></div>
+          <div class="info-main">
+            <div class="info-title">
+              <span class="tag">${card.tier}</span>
+              <span class="info-name">${card.name}</span>
+            </div>
+            <div class="info-body">${formatEffectsText(card.effects)}</div>
+            <div class="info-footer">${formatTriggerText(card.trigger)}</div>
           </div>
-          <div class="info-body">${formatEffectsText(card.effects)}</div>
-          <div class="info-footer">${formatTriggerText(card.trigger)}</div>
         </div>
-      `
-    )
+      `;
+    })
     .join('');
 }
 
@@ -467,18 +473,23 @@ function renderWaveTimeline() {
     .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
     .slice(0, 6);
   waveListEl.innerHTML = items
-    .map(
-      wave => `
-        <div class="info-card">
-          <div class="info-title">
-            <span class="tag">T+${wave.timestamp}s</span>
-            <span class="info-name">${formatIdentifier(wave.enemyId)}</span>
+    .map(wave => {
+      const template = findByTid(state.tables.enemies, String(wave.enemyId));
+      const iconUrl = template && template.sprite ? resolveAssetUrl(template.sprite) : '';
+      return `
+        <div class="info-card wave-card">
+          <div class="info-icon" style="background-image:url('${iconUrl}')"></div>
+          <div class="info-main">
+            <div class="info-title">
+              <span class="tag">T+${wave.timestamp}s</span>
+              <span class="info-name">${template ? template.name : formatIdentifier(wave.enemyId)}</span>
+            </div>
+            <div class="info-body">数量 ${wave.count} · 阵型 ${wave.formation || '未知'}</div>
+            <div class="info-footer">${wave.notes || '——'}</div>
           </div>
-          <div class="info-body">数量 ${wave.count} · 阵型 ${wave.formation || '未知'}</div>
-          <div class="info-footer">${wave.notes || '——'}</div>
         </div>
-      `
-    )
+      `;
+    })
     .join('');
 }
 
@@ -489,27 +500,36 @@ function renderSummary() {
   const upcoming = [...state.tables.waves]
     .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
     .slice(0, 3)
-    .map(wave => `T+${wave.timestamp}s ${formatIdentifier(wave.enemyId)} ×${wave.count}`);
+    .map(wave => {
+      const template = findByTid(state.tables.enemies, String(wave.enemyId));
+      return {
+        text: `T+${wave.timestamp}s ${template ? template.name : formatIdentifier(wave.enemyId)} ×${wave.count}`,
+        icon: template && template.sprite ? resolveAssetUrl(template.sprite) : ''
+      };
+    });
 
   const summaryItems = [
     {
       label: '主武器',
       primary: weapon ? weapon.name : '未选择',
       secondary: weapon
-        ? `${weapon.damage ?? '—'} ${weapon.damageType ?? ''} · 射速 ${weapon.fireRate ?? '—'}s · 弹匣 ${weapon.magazine ?? '—'}`
-        : '请选择一件主武器'
+        ? `伤害 ${weapon.damage ?? '—'} · 射速 ${weapon.fireRate ?? '—'}s · 弹匣 ${weapon.magazine ?? '—'}`
+        : '请选择一件主武器',
+      icon: weapon ? resolveAssetUrl(weapon.travelSprite || weapon.muzzleSprite) : ''
     },
     {
       label: '遗物',
       primary: relic ? relic.name : '未配置',
       secondary: relic
         ? `冷却 ${relic.cooldown ?? '—'}s · 持续 ${relic.duration ?? '—'}s · 理智 ${relic.sanityDrain ?? '—'}`
-        : '请选择一件遗物'
+        : '请选择一件遗物',
+      icon: relic ? resolveAssetUrl(relic.vfxSprite) : ''
     },
     {
       label: '敌情',
-      primary: upcoming[0] || '等待情报',
-      secondary: upcoming.slice(1).join(' / ') || '开场压力较低，专注清线'
+      primary: upcoming[0] ? upcoming[0].text : '等待情报',
+      secondary: upcoming.slice(1).map(item => item.text).join(' / ') || '开场压力较低，专注清线',
+      icon: upcoming[0] ? upcoming[0].icon : ''
     }
   ];
 
@@ -517,9 +537,12 @@ function renderSummary() {
     .map(
       item => `
         <div class="summary-card">
-          <span class="summary-label">${item.label}</span>
-          <div class="summary-primary">${item.primary}</div>
-          <div class="summary-secondary">${item.secondary}</div>
+          <div class="summary-icon" style="background-image:url('${item.icon}')"></div>
+          <div class="summary-content">
+            <span class="summary-label">${item.label}</span>
+            <div class="summary-primary">${item.primary}</div>
+            <div class="summary-secondary">${item.secondary}</div>
+          </div>
         </div>
       `
     )
@@ -537,35 +560,41 @@ function renderHeroPreview() {
   const relic = findByTid(state.tables.relics, state.selection.relicTid) || lookupReference(state.tables.relics, operator.startRelic);
   const stats = [
     { label: '生命', value: operator.hp },
-    { label: '移速', value: `${operator.moveSpeed} m/s` },
-    { label: '理智', value: operator.sanityCap }
+    { label: '理智上限', value: operator.sanityCap },
+    { label: '移动速度', value: `${operator.moveSpeed} m/s` },
+    { label: '暴击率', value: `${Math.round((operator.critBonus || 0) * 100)}%` },
+    { label: '装填效率', value: `${Math.round((operator.reloadBonus || 1) * 100)}%` }
   ];
   const passiveLabel = formatIdentifier(operator.signaturePassive);
   const portraitUrl = resolveAssetUrl(operator.portraitArt);
+  const weaponIcon = weapon ? resolveAssetUrl(weapon.travelSprite || weapon.muzzleSprite) : '';
+  const relicIcon = relic ? resolveAssetUrl(relic.vfxSprite) : '';
   heroPreviewEl.innerHTML = `
-    <div class="hero-art" style="background-image:url('${portraitUrl}')"></div>
-    <div class="hero-title">
-      <span class="hero-role">${operator.role || 'Operator'}</span>
-      <h2>${operator.codename}</h2>
+    <div class="hero-head">
+      <div class="hero-portrait" style="background-image:url('${portraitUrl}')"></div>
+      <div class="hero-meta">
+        <span class="hero-role">${operator.role || '操作者'}</span>
+        <h2>${operator.codename}</h2>
+        <p class="hero-passive">被动：${passiveLabel}</p>
+      </div>
     </div>
-    <div class="hero-stats-row">
+    <ul class="hero-metrics">
       ${stats
-        .map(
-          stat => `
-            <div class="hero-stat">
-              <span>${stat.label}</span>
-              <strong>${stat.value}</strong>
-            </div>
-          `
-        )
+        .map(stat => `<li><span>${stat.label}</span><strong>${stat.value}</strong></li>`)
         .join('')}
+    </ul>
+    <div class="hero-loadout-icons">
+      <div class="loadout-item">
+        <div class="loadout-icon" style="background-image:url('${weaponIcon}')"></div>
+        <span>主武器</span>
+        <strong>${weapon ? weapon.name : '未配置'}</strong>
+      </div>
+      <div class="loadout-item">
+        <div class="loadout-icon" style="background-image:url('${relicIcon}')"></div>
+        <span>遗物</span>
+        <strong>${relic ? relic.name : '未配置'}</strong>
+      </div>
     </div>
-    <div class="hero-loadout">
-      <div class="hero-loadout-row"><span>初始武器</span><strong>${weapon ? weapon.name : '—'}</strong></div>
-      <div class="hero-loadout-row"><span>起始遗物</span><strong>${relic ? relic.name : '—'}</strong></div>
-      <div class="hero-loadout-row"><span>装填修正</span><strong>${Math.round((operator.reloadBonus || 1) * 100)}%</strong></div>
-    </div>
-    <div class="hero-note">暴击 ${(operator.critBonus ? Math.round(operator.critBonus * 100) : 0)}% · 被动 ${passiveLabel}</div>
   `;
 }
 
@@ -625,18 +654,38 @@ function applyPreset(preset, { markManual = false } = {}) {
 }
 
 function resolveEntry(list, key, fallbackTid) {
-  if (!list || !list.length) return null;
+  if (!Array.isArray(list) || !list.length) return null;
+
+  const candidateKeys = [];
   if (key) {
-    const direct = list.find(entry => entry.tid === key);
-    if (direct) return direct;
+    candidateKeys.push(key, stripTypePrefix(key));
+  }
+
+  for (const candidate of candidateKeys) {
+    const tid = candidate != null ? String(candidate).trim() : '';
+    if (!tid) continue;
+    const match = list.find(entry => String(entry.tid) === tid);
+    if (match) return match;
+  }
+
+  if (key) {
     const normalized = normalizeKey(key);
-    const slugMatch = list.find(entry => normalizeKey(entry.name) === normalized);
-    if (slugMatch) return slugMatch;
+    if (normalized) {
+      const slugMatch = list.find(entry => normalizeKey(entry.name) === normalized || normalizeKey(entry.tid) === normalized);
+      if (slugMatch) return slugMatch;
+    }
   }
+
   if (fallbackTid) {
-    const fallback = list.find(entry => entry.tid === fallbackTid);
-    if (fallback) return fallback;
+    const fallbackCandidates = [fallbackTid, stripTypePrefix(fallbackTid)];
+    for (const candidate of fallbackCandidates) {
+      const tid = candidate != null ? String(candidate).trim() : '';
+      if (!tid) continue;
+      const fallback = list.find(entry => String(entry.tid) === tid);
+      if (fallback) return fallback;
+    }
   }
+
   return list[0] || null;
 }
 
@@ -646,23 +695,48 @@ function findByTid(list, tid) {
 }
 
 function lookupReference(list, key) {
-  if (!key || !Array.isArray(list)) return null;
+  if (!Array.isArray(list) || !key) return null;
+
+  const candidateKeys = [key, stripTypePrefix(key)];
+  for (const candidate of candidateKeys) {
+    const tid = candidate != null ? String(candidate).trim() : '';
+    if (!tid) continue;
+    const match = list.find(entry => String(entry.tid) === tid);
+    if (match) return match;
+  }
+
   const normalized = normalizeKey(key);
-  return list.find(entry => entry.tid === key || normalizeKey(entry.name) === normalized) || null;
+  if (!normalized) return null;
+  return list.find(entry => normalizeKey(entry.name) === normalized || normalizeKey(entry.tid) === normalized) || null;
+}
+
+function stripTypePrefix(value) {
+  const raw = String(value ?? '').trim();
+  const colonIndex = raw.indexOf(':');
+  if (colonIndex === -1) return raw;
+  return raw.slice(colonIndex + 1);
 }
 
 function normalizeKey(value) {
-  return String(value || '')
+  const stripped = stripTypePrefix(value);
+  if (!stripped) return '';
+  return stripped
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-');
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function formatEffectsText(effects = '') {
   if (!effects) return '——';
   return effects
     .split('|')
-    .map(token => token.trim().replace(':', ' '))
+    .map(token => token.trim())
     .filter(Boolean)
+    .map(token => {
+      const [key, value] = token.split(':');
+      if (!value) return key;
+      return `${key.replace(/_/g, ' ')} ${value}`;
+    })
     .join(' · ');
 }
 
@@ -683,9 +757,19 @@ function formatTriggerText(trigger = '') {
     .map(token => token.trim())
     .filter(Boolean)
     .map(token => {
-      const [key, value] = token.split(':');
-      if (!value) return formatIdentifier(key);
-      return `${formatIdentifier(key)} ${formatIdentifier(value)}`;
+      if (token.startsWith('sanity:<')) {
+        const threshold = token.split('<')[1];
+        return `理智低于 ${threshold}`;
+      }
+      if (token.startsWith('after:')) {
+        return `触发源：${formatIdentifier(token.slice(6))}`;
+      }
+      if (token.startsWith('killstreak:')) {
+        const [, payload] = token.split(':');
+        const [count, window] = payload.split('@');
+        return `在 ${window} 内连杀 ${count} 次`;
+      }
+      return formatIdentifier(token);
     })
     .join(' · ');
 }
@@ -698,6 +782,44 @@ function formatIdentifier(value) {
     .filter(Boolean)
     .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join(' ');
+}
+
+const ATTACK_STYLE_LABELS = {
+  MANUAL: '手动射击',
+  AUTO: '自动火力',
+  BURST: '爆裂点射',
+  BEAM: '持续光束',
+  CHANNEL: '引导施放'
+};
+
+const ACTIVATION_STYLE_LABELS = {
+  AUTO: '自动触发',
+  BURST: '蓄力爆发',
+  CHANNEL: '引导',
+  MANUAL: '手动释放'
+};
+
+const DAMAGE_TYPE_LABELS = {
+  KINETIC: '动能',
+  VOID: '虚空',
+  FROST: '霜寒',
+  FIRE: '灼热',
+  LIGHT: '光耀'
+};
+
+function formatAttackStyle(style) {
+  if (!style) return '未知形态';
+  return ATTACK_STYLE_LABELS[style] || style;
+}
+
+function formatActivationStyle(style) {
+  if (!style) return '未知方式';
+  return ACTIVATION_STYLE_LABELS[style] || style;
+}
+
+function formatDamageType(type) {
+  if (!type) return '未知伤害';
+  return DAMAGE_TYPE_LABELS[type] || type;
 }
 
 function resolveAssetUrl(path) {

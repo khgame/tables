@@ -11,7 +11,7 @@
 
 - [最小 RPG 项目（game_01_minirpg）](minirpg.md) — 多段 `@` 组合 ID + 全局配置示例
 - [点饼干（game_02_click_cookies）](click-cookies.md)
-- 小黑屋 - 挂机游戏
-- 卡牌 RPG
-- 生存游戏
+- [小黑屋 - 挂机游戏（game_03_a_dark_room）](../game_03_a_dark_room/README.md)
+- [卡牌 RPG（game_04_arcane_depths）](../game_04_arcane_depths/README.md)
 - [吸血鬼幸存者类（game_06_abyssal_nightfall）](../vampire-survivors-like/README.md)
+- [Neon Aberration 生存 ARPG（game_05_neon_aberration）](neon-aberration.md)

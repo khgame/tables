@@ -689,12 +689,14 @@ const BRUSH_MODE_MAP = {
     grass: 'paint',
     road: 'line',
     edge: 'rect',
+    fill: 'fill',
     erase: 'erase',
 };
 const BRUSH_LABELS = {
     paint: '画笔',
     line: '连线',
     rect: '矩形',
+    fill: '填充',
     erase: '擦除',
 };
 let currentBrushTileId = null;
@@ -794,6 +796,32 @@ function getRectanglePoints(start, end) {
     }
     return points;
 }
+function getFloodFillPoints(start, target, replacement) {
+    if (target === replacement)
+        return [];
+    const points = [];
+    const queue = [start];
+    const visited = new Set();
+    const key = (row, col) => `${row}:${col}`;
+    while (queue.length) {
+        const cell = queue.shift();
+        const id = key(cell.row, cell.col);
+        if (visited.has(id))
+            continue;
+        visited.add(id);
+        if (cell.row < 0 || cell.row >= state.board.rows || cell.col < 0 || cell.col >= state.board.cols)
+            continue;
+        const current = state.board.cells[cell.row]?.[cell.col] ?? null;
+        if (current !== target)
+            continue;
+        points.push(cell);
+        queue.push({ row: cell.row - 1, col: cell.col });
+        queue.push({ row: cell.row + 1, col: cell.col });
+        queue.push({ row: cell.row, col: cell.col - 1 });
+        queue.push({ row: cell.row, col: cell.col + 1 });
+    }
+    return points;
+}
 function resetBrushSession() {
     isPainting = false;
     brushStart = null;
@@ -807,8 +835,25 @@ function handleBoardPointerDown(event) {
     if (!cell)
         return;
     const tileId = activeBrush === 'erase' ? null : getSelectedTile()?.id ?? null;
-    if (activeBrush !== 'erase' && !tileId) {
+    if (activeBrush !== 'erase' && activeBrush !== 'fill' && !tileId) {
         setBoardStatus('请先选择一个 tile。', 'error');
+        return;
+    }
+    if (activeBrush === 'fill') {
+        if (!tileId) {
+            setBoardStatus('填充前请选中目标 tile。', 'error');
+            return;
+        }
+        const target = state.board.cells[cell.row]?.[cell.col] ?? null;
+        const points = getFloodFillPoints(cell, target, tileId);
+        if (!points.length) {
+            setBoardStatus('填充：无需变化。', 'info');
+        }
+        else {
+            const applied = applyBrushToCells(points, tileId);
+            setBoardStatus(`填充：覆盖 ${applied} 格`, 'success');
+        }
+        resetBrushSession();
         return;
     }
     event.preventDefault();

@@ -274,12 +274,6 @@ function renderTileList() {
   const image = state.image;
   if (!image || !state.tiles.length) return;
 
-  const firstTile = state.tiles[0];
-  if (firstTile) {
-    tileListEl.style.setProperty('--tile-thumb-width', `${firstTile.width}px`);
-    tileListEl.style.setProperty('--tile-thumb-height', `${firstTile.height}px`);
-  }
-
   state.tiles.forEach((tile, index) => {
     const item = document.createElement('button');
     item.type = 'button';
@@ -290,8 +284,10 @@ function renderTileList() {
 
     const thumbWrapper = document.createElement('div');
     thumbWrapper.className = 'tile-thumb';
-    thumbWrapper.style.width = `${tile.width}px`;
-    thumbWrapper.style.height = `${tile.height}px`;
+    const displayWidth = Math.min(Math.max(tile.width, 72), 144);
+    const displayHeight = Math.min(Math.max(tile.height, 72), 144);
+    thumbWrapper.style.width = `${displayWidth}px`;
+    thumbWrapper.style.height = `${displayHeight}px`;
 
     const tileCanvas = document.createElement('canvas');
     tileCanvas.width = tile.width;
@@ -300,8 +296,8 @@ function renderTileList() {
     if (tileCtx) {
       tileCtx.drawImage(image, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
     }
-    tileCanvas.style.width = `${tile.width}px`;
-    tileCanvas.style.height = `${tile.height}px`;
+    tileCanvas.style.width = `${displayWidth}px`;
+    tileCanvas.style.height = `${displayHeight}px`;
     tileCanvas.style.imageRendering = 'pixelated';
     thumbWrapper.appendChild(tileCanvas);
 
@@ -311,6 +307,11 @@ function renderTileList() {
     thumbWrapper.appendChild(caption);
 
     item.appendChild(thumbWrapper);
+
+    if (index === 0) {
+      tileListEl.style.setProperty('--tile-thumb-width', `${displayWidth}px`);
+      tileListEl.style.setProperty('--tile-thumb-height', `${displayHeight}px`);
+    }
 
     item.addEventListener('click', () => {
       setSelectedIndex(index);

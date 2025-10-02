@@ -1,5 +1,6 @@
 const Path = require('path');
 const fs = require('fs-extra');
+const { execSync } = require('child_process');
 const {
   serialize,
   serializeContext,
@@ -51,6 +52,7 @@ function main() {
     console.log(`[abyssal-nightfall] serialized ${file}`);
   }
 
+  compileUiScripts();
   writeWebDemo(outDir);
   console.log(`[abyssal-nightfall] artifacts written to ${outDir}`);
 }
@@ -83,21 +85,51 @@ function writeWebDemo(targetDir) {
   console.log('[abyssal-nightfall] wrote web demo index.html');
 
   const engineHtml = Path.resolve(baseDir, 'ui/engine.html');
-  const engineJs = Path.resolve(baseDir, 'ui/engine.js');
-  const appJs = Path.resolve(baseDir, 'ui/app.js');
   if (fs.existsSync(engineHtml)) {
     fs.copyFileSync(engineHtml, Path.resolve(targetDir, 'engine.html'));
-  }
-  if (fs.existsSync(engineJs)) {
-    fs.copyFileSync(engineJs, Path.resolve(targetDir, 'engine.js'));
-  }
-  if (fs.existsSync(appJs)) {
-    fs.copyFileSync(appJs, Path.resolve(targetDir, 'app.js'));
   }
   const assetsSrc = Path.resolve(baseDir, 'ui/assets');
   if (fs.existsSync(assetsSrc)) {
     fs.copySync(assetsSrc, Path.resolve(targetDir, 'ui/assets'), { overwrite: true });
   }
+}
+
+function compileUiScripts() {
+  const projectPath = Path.resolve(baseDir, 'ui/tsconfig.json');
+  if (!fs.existsSync(projectPath)) {
+    console.warn('[abyssal-nightfall] ui/tsconfig.json missing, skip TS compilation');
+    return;
+  }
+  console.log('[abyssal-nightfall] compiling UI TypeScript');
+  execSync(`npx tsc --project "${projectPath}"`, { stdio: 'inherit', cwd: baseDir });
+  const scriptsDir = Path.resolve(baseDir, 'out/scripts');
+  fixImportExtensions(scriptsDir);
+}
+
+function fixImportExtensions(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = Path.resolve(dir, entry.name);
+    if (entry.isDirectory()) {
+      fixImportExtensions(fullPath);
+      continue;
+    }
+    if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
+    let content = fs.readFileSync(fullPath, 'utf8');
+    const updated = content
+      .replace(/(import\s+[^'";]+?from\s+['"])(\.{1,2}\/[^'";]+?)(['"])/g, (_, prefix, spec, suffix) => `${prefix}${appendJsExtension(spec)}${suffix}`)
+      .replace(/(export\s+[^'";]+?from\s+['"])(\.{1,2}\/[^'";]+?)(['"])/g, (_, prefix, spec, suffix) => `${prefix}${appendJsExtension(spec)}${suffix}`)
+      .replace(/(import\(\s*['"])(\.{1,2}\/[^'";]+?)(['"]\s*\))/g, (_, prefix, spec, suffix) => `${prefix}${appendJsExtension(spec)}${suffix}`);
+    if (updated !== content) {
+      fs.writeFileSync(fullPath, updated, 'utf8');
+    }
+  }
+}
+
+function appendJsExtension(spec) {
+  if (spec.endsWith('.js') || spec.endsWith('.json') || spec.endsWith('.css')) return spec;
+  return `${spec}.js`;
 }
 
 function loadJsonForScript(filePath) {

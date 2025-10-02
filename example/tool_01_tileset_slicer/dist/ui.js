@@ -220,8 +220,23 @@ function renderTileList() {
         item.title = `${tile.id} | (${tile.x}, ${tile.y})${tile.groupId ? ` · 组:${tile.groupId}` : ''}`;
         const thumbWrapper = document.createElement('div');
         thumbWrapper.className = 'tile-thumb';
-        const displayWidth = Math.min(Math.max(tile.width, 72), 144);
-        const displayHeight = Math.min(Math.max(tile.height, 72), 144);
+        const minDisplay = 72;
+        const maxDisplay = 160;
+        const maxScale = 6;
+        const scaleX = Math.min(maxScale, Math.max(1, Math.floor(Math.max(minDisplay, tile.width) / tile.width)));
+        const scaleY = Math.min(maxScale, Math.max(1, Math.floor(Math.max(minDisplay, tile.height) / tile.height)));
+        let displayWidth = tile.width * scaleX;
+        let displayHeight = tile.height * scaleY;
+        if (displayWidth > maxDisplay) {
+            const clampScale = Math.max(1, Math.floor(maxDisplay / tile.width));
+            displayWidth = tile.width * clampScale;
+        }
+        if (displayHeight > maxDisplay) {
+            const clampScale = Math.max(1, Math.floor(maxDisplay / tile.height));
+            displayHeight = tile.height * clampScale;
+        }
+        displayWidth = Math.max(displayWidth, minDisplay);
+        displayHeight = Math.max(displayHeight, minDisplay);
         thumbWrapper.style.width = `${displayWidth}px`;
         thumbWrapper.style.height = `${displayHeight}px`;
         const tileCanvas = document.createElement('canvas');
@@ -240,6 +255,10 @@ function renderTileList() {
         caption.textContent = tile.id;
         thumbWrapper.appendChild(caption);
         item.appendChild(thumbWrapper);
+        if (index === 0) {
+            tileListEl.style.setProperty('--tile-thumb-width', `${displayWidth}px`);
+            tileListEl.style.setProperty('--tile-thumb-height', `${displayHeight}px`);
+        }
         if (index === 0) {
             tileListEl.style.setProperty('--tile-thumb-width', `${displayWidth}px`);
             tileListEl.style.setProperty('--tile-thumb-height', `${displayHeight}px`);

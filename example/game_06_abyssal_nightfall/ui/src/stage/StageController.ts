@@ -191,7 +191,7 @@ export class StageController {
         { x, y },
         { radius: enemyRadius, sprite, spritePath, spriteScale: template.spriteScale || 1 }
       );
-      enemy.speed = (template.moveSpeed ?? 0) * SCALE;
+      enemy.speed = enemy.baseSpeed;
       const waveIndex = this.state.nextWaveIndex;
       const softening = EARLY_WAVE_ADJUSTMENTS.find(config => waveIndex < config.maxWave);
       if (softening) {

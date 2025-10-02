@@ -374,6 +374,7 @@ export class CombatRuntime {
     }
 
     this.updateRelic(dt);
+    this.updateMeleePulse(dt);
     this.handleInput(dt);
     this.updateBullets(dt);
     this.updateEnemyProjectiles(dt);
@@ -438,34 +439,87 @@ export class CombatRuntime {
   private fireWeapon(): void {
     const weapon = this.state.weapon;
     const player = this.state.player;
-    if (!weapon || !player) return;
+    const stats = this.state.stats;
+    if (!weapon || !player || !stats) return;
     weapon.ammo -= 1;
-    weapon.fireTimer = weapon.baseFireRate * (this.state.stats?.fireRateMultiplier ?? 1);
+    const fireRateScale = Math.max(0.1, stats.fireRateMultiplier || 1);
+    weapon.fireTimer = weapon.baseFireRate / fireRateScale;
     if (weapon.ammo <= 0) {
-      weapon.reloadTimer = weapon.baseReload * (this.state.stats?.reloadMultiplier ?? 1);
+      const reloadScale = Math.max(0.1, stats.reloadMultiplier || 1);
+      weapon.reloadTimer = weapon.baseReload * reloadScale;
     }
     const [dirX, dirY] = normalize(this.controls.aimX, this.controls.aimY);
-    const spread = Math.max(0, (weapon.baseSpread || 0) * (this.state.stats?.spreadMultiplier ?? 1));
-    const offset = spread > 0 ? (Math.random() - 0.5) * (spread * Math.PI / 180) : 0;
-    const cos = Math.cos(offset);
-    const sin = Math.sin(offset);
-    const fx = dirX * cos - dirY * sin;
-    const fy = dirX * sin + dirY * cos;
-    const speed = (weapon.baseProjectileSpeed + (this.state.stats?.projectileSpeedBonus ?? 0)) * SCALE;
-    this.state.bullets.push(
-      new Projectile(
+    const spread = Math.max(0, (weapon.baseSpread || 0) * (stats.spreadMultiplier || 1));
+    const randomSpread = spread > 0 ? (Math.random() - 0.5) * ((spread * Math.PI) / 180) : 0;
+    const totalProjectiles = Math.max(1, 1 + Math.floor(stats.projectileSplit || 0));
+    const splitAngleDeg = Math.max(0, stats.projectileSplitAngle || 0);
+    const splitAngleRad = (splitAngleDeg * Math.PI) / 180;
+    const projectileScaleBonus = Math.max(0, 1 + (stats.projectileSizeBonus || 0) / 100);
+    const baseSpeed = (weapon.baseProjectileSpeed + (stats.projectileSpeedBonus || 0)) * SCALE;
+    const projectileLifetime = weapon.template.projectileLifetime ?? 1.2;
+    const baseDamage = this.computeShotDamage();
+    const pierce = Math.max(0, Math.floor(stats.projectilePierce || 0));
+    const ricochet = Math.max(0, Math.floor(stats.projectileRicochet || 0));
+    const ricochetRadius = Math.max(60, stats.projectileRicochetRadius || 160);
+    const slowAmount = Math.max(0, Math.min(0.9, stats.elementalSlow || 0));
+    const slowDuration = Math.max(0, stats.elementalSlowDuration || 0);
+
+    const spawnShot = (offset: number) => {
+      const cos = Math.cos(offset);
+      const sin = Math.sin(offset);
+      const fx = dirX * cos - dirY * sin;
+      const fy = dirX * sin + dirY * cos;
+      const projectileScale = weapon.projectileScale * projectileScaleBonus;
+      const projectile = new Projectile(
         player.x + fx * PLAYER_RADIUS,
         player.y + fy * PLAYER_RADIUS,
-        fx * speed,
-        fy * speed,
-        weapon.template.projectileLifetime ?? 1.2,
-        this.computeShotDamage(),
+        fx * baseSpeed,
+        fy * baseSpeed,
+        projectileLifetime,
+        baseDamage,
         weapon.travelSprite,
-        weapon.projectileScale
-      )
-    );
-    this.spawnMuzzleFlash(player.x, player.y, fx, fy);
+        projectileScale,
+        {
+          pierce,
+          ricochet,
+          radius: BULLET_RADIUS * projectileScaleBonus,
+          slowAmount,
+          slowDuration
+        }
+      );
+      projectile.extra = { ricochetRadius } as Record<string, unknown>;
+      this.state.bullets.push(projectile);
+    };
+
+    if (totalProjectiles === 1) {
+      spawnShot(randomSpread);
+    } else {
+      for (let i = 0; i < totalProjectiles; i++) {
+        const t = totalProjectiles === 1 ? 0 : i / (totalProjectiles - 1);
+        const centered = t - 0.5;
+        const offset = randomSpread + centered * splitAngleRad;
+        spawnShot(offset);
+      }
+    }
+
+    this.spawnMuzzleFlash(player.x, player.y, dirX, dirY);
     if (weapon.fireSfx) this.assets.playSound(weapon.fireSfx, { volume: 0.85 });
+  }
+
+  private findRicochetTarget(origin: EnemyUnit, bullet: Projectile, radius: number): EnemyUnit | null {
+    let closest: EnemyUnit | null = null;
+    let bestDistance = radius;
+    for (const candidate of this.state.enemies) {
+      if (!candidate.alive) continue;
+      if (candidate.id === origin.id) continue;
+      if (bullet.hitSet.has(candidate.id)) continue;
+      const dist = length(candidate.x - origin.x, candidate.y - origin.y);
+      if (dist < bestDistance) {
+        bestDistance = dist;
+        closest = candidate;
+      }
+    }
+    return closest;
   }
 
   private computeShotDamage(): number {
@@ -627,31 +681,69 @@ export class CombatRuntime {
     if (!player) return;
     this.state.enemies = this.state.enemies.filter(enemy => {
       if (!enemy.alive) return false;
+      enemy.updateStatus(dt);
       const [nx, ny] = normalize(player.x - enemy.x, player.y - enemy.y);
       enemy.x += nx * enemy.speed * dt;
       enemy.y += ny * enemy.speed * dt;
       const enemyRadius = enemy.radius || PLAYER_RADIUS;
       for (const bullet of this.state.bullets) {
+        if (bullet.life <= 0) continue;
+        if (bullet.hitSet.has(enemy.id)) continue;
+        const bulletRadius = bullet.radius ?? BULLET_RADIUS;
         const dist = length(enemy.x - bullet.x, enemy.y - bullet.y);
-        if (dist <= enemyRadius) {
-          enemy.hp -= bullet.damage;
-          bullet.life = -1;
-          this.spawnImpactEffect(bullet.x, bullet.y);
-          if (this.state.weapon && this.state.weapon.impactSfx) {
-            this.assets.playSound(this.state.weapon.impactSfx, { volume: 0.75 });
-          }
-          if (enemy.hp <= 0) {
-            this.killEnemy(enemy);
-            break;
+        if (dist > enemyRadius + bulletRadius) continue;
+
+        enemy.hp -= bullet.damage;
+        bullet.hitSet.add(enemy.id);
+        if (bullet.slowAmount > 0 && bullet.slowDuration > 0) {
+          enemy.applySlow(bullet.slowAmount, bullet.slowDuration);
+        }
+        this.spawnImpactEffect(bullet.x, bullet.y);
+        if (this.state.weapon && this.state.weapon.impactSfx) {
+          this.assets.playSound(this.state.weapon.impactSfx, { volume: 0.75 });
+        }
+
+        let consumeBullet = true;
+        if (enemy.hp <= 0) {
+          this.killEnemy(enemy);
+        }
+
+        if (enemy.alive) {
+          if (bullet.pierce > 0) {
+            bullet.pierce -= 1;
+            bullet.life = Math.max(bullet.life, 0.05);
+            consumeBullet = false;
+          } else if (bullet.ricochet > 0) {
+            const ricochetRadius = Number(bullet.extra.ricochetRadius) || (this.state.stats?.projectileRicochetRadius ?? 160);
+            const nextTarget = this.findRicochetTarget(enemy, bullet, ricochetRadius);
+            if (nextTarget) {
+              bullet.ricochet -= 1;
+              const [rx, ry] = normalize(nextTarget.x - enemy.x, nextTarget.y - enemy.y);
+              const speed = Math.max(20, Math.hypot(bullet.vx, bullet.vy));
+              bullet.x = enemy.x;
+              bullet.y = enemy.y;
+              bullet.vx = rx * speed;
+              bullet.vy = ry * speed;
+              bullet.angle = Math.atan2(bullet.vy, bullet.vx);
+              bullet.life = Math.max(bullet.life, 0.24);
+              consumeBullet = false;
+            }
           }
         }
+
+        if (consumeBullet) {
+          bullet.life = -1;
+        }
+
+        if (!enemy.alive) break;
       }
+
       if (!enemy.alive) return false;
       const distPlayer = length(player.x - enemy.x, player.y - enemy.y);
       if (distPlayer <= PLAYER_RADIUS + enemyRadius) {
         const contactDamage = Math.max(enemy.damage ?? 0, CONTACT_DAMAGE_MIN);
         const contactSanity = enemy.sanityDamage ?? Math.max(1, Math.round(contactDamage * 0.25));
-        this.applyPlayerDamage(contactDamage, enemy.template.name, contactSanity);
+        this.applyPlayerDamage(contactDamage, enemy.template.name, contactSanity, { contact: true });
       }
       if (enemy.template.attackInterval) {
         enemy.attackTimer = Math.max(0, enemy.attackTimer - dt);
@@ -682,6 +774,46 @@ export class CombatRuntime {
       }
     });
     this.state.enemyProjectiles = this.state.enemyProjectiles.filter(projectile => projectile.life > 0);
+  }
+
+  private updateMeleePulse(dt: number): void {
+    const stats = this.state.stats;
+    const player = this.state.player;
+    if (!stats || !player) return;
+    if (stats.meleePulseDamage <= 0) return;
+
+    const interval = Math.max(0.4, stats.meleePulseInterval || 1.8);
+    if (this.state.meleePulseTimer <= 0) {
+      this.state.meleePulseTimer = interval;
+      const radius = Math.max(40, stats.meleePulseRadius || 80);
+      const hits = this.emitMeleePulse(player.x, player.y, radius, stats.meleePulseDamage);
+      if (hits > 0) {
+        pushLog(this.state, this.dom, `护盾冲击震退 ${hits} 个敌人`);
+      }
+    }
+    this.state.meleePulseTimer -= dt;
+  }
+
+  private emitMeleePulse(cx: number, cy: number, radius: number, damage: number): number {
+    let hits = 0;
+    const pulseSprite = this.assets.getImage('fx/relics/seraph_beacon.png');
+    this.state.effects.push(new EffectInstance('impact', cx, cy, 0.28, pulseSprite, Math.max(1, radius / 32)));
+    for (const enemy of this.state.enemies) {
+      if (!enemy.alive) continue;
+      const enemyRadius = enemy.radius || PLAYER_RADIUS;
+      const dist = length(enemy.x - cx, enemy.y - cy);
+      if (dist <= radius + enemyRadius) {
+        enemy.hp -= damage;
+        hits += 1;
+        if (enemy.hp <= 0) {
+          this.killEnemy(enemy);
+        }
+      }
+    }
+    if (hits > 0) {
+      this.assets.playSound('ui/assets/sfx/weapons/umbral_scattergun_hit.wav', { volume: 0.55 });
+    }
+    return hits;
   }
 
   private updateEffects(dt: number): void {
@@ -775,10 +907,14 @@ export class CombatRuntime {
     }
   }
 
-  private applyPlayerDamage(amount: number, source: string, sanityLoss = 0): void {
+  private applyPlayerDamage(amount: number, source: string, sanityLoss = 0, context: { contact?: boolean } = {}): void {
     if (!this.state.player) return;
     if (this.state.invulnTimer > 0) return;
-    const { remaining, absorbed } = this.state.player.applyDamage(amount);
+    let finalAmount = amount;
+    if (context.contact && this.state.stats) {
+      finalAmount *= Math.max(0, 1 - (this.state.stats.contactDamageResist || 0));
+    }
+    const { remaining, absorbed } = this.state.player.applyDamage(finalAmount);
     if (absorbed > 0) {
       this.state.effects.push(new EffectInstance('shield', this.state.player.x, this.state.player.y, 0.18, null, 1));
     }

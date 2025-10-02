@@ -108,15 +108,18 @@ function buildSkillTree() {
     ...rowsEmpty,
     ['@', '@', '@', 'string', 'SkillBranch', 'uint', 'string', 'string', 'string', 'string', 'string'],
     ['sector', 'branch', 'node', 'name', 'branchName', 'tier', 'parent', 'effects', 'requirements', 'tooltip', 'icon'],
-    ['70', '01', '0001', '聚焦锚点', '精准', '1', '', '暴击:+5|稳定:+8', 'level:3', '提高命中稳定，解锁精准分支。', 'icons/skill/focal_anchor.png'],
-    ['70', '01', '0002', '极速虹吸', '精准', '2', 'skill:70010001', '装填:-6%|暴击:+4', 'level:6', '装填更迅速并提升暴击。', 'icons/skill/rapid_siphon.png'],
-    ['70', '01', '0003', '零点穿透', '精准', '3', 'skill:70010002', '伤害:+12|弱点:+20%', 'level:9', '子弹穿透时获得额外伤害。', 'icons/skill/zero_point.png'],
-    ['70', '02', '0001', '以太共振', '以太', '1', '', '光束伤害:+6|理智消耗:-2', 'level:4', '持续型武器效率提升。', 'icons/skill/aether_resonance.png'],
-    ['70', '02', '0002', '合唱激流', '以太', '2', 'skill:70020001', '蓄力:+4/s|半径:+0.8', 'level:7', '光束蓄力更快并扩大范围。', 'icons/skill/choir_surge.png'],
-    ['70', '03', '0001', '回涌之握', '潮汐', '1', '', '牵引:+18|霜寒伤害:+10', 'level:5', '潮汐技能增强牵引力。', 'icons/skill/undertow.png'],
-    ['70', '03', '0002', '裂潮坠落', '潮汐', '2', 'skill:70030001', '霜裂:+22|范围:+1.2', 'level:8', '爆裂范围扩大并追加寒霜伤害。', 'icons/skill/riptide_collapse.png'],
-    ['70', '04', '0001', '护域壁垒', '守御', '1', '', '护盾:+40|理智恢复:+3', 'level:4', '短期内提高护盾与理智恢复。', 'icons/skill/ward_bastion.png'],
-    ['70', '04', '0002', '炽天护壳', '守御', '2', 'skill:70040001', '护盾:+60|反射:15%', 'level:8', '护盾容量增加并反射部分激光。', 'icons/skill/seraphic_shell.png']
+    ['70', '01', '0001', '裂变弹匣', '弹道', '1', '', 'split:+1|splitAngle:+12|damage:+6', 'level:3', '将弹道裂变为额外子弹，基础火力提升。', 'icons/skill/focal_anchor.png'],
+    ['70', '01', '0002', '轨迹稳流', '弹道', '2', 'skill:70010001', 'stability:+14|projectileSize:+18|projectileSpeed:+8', 'level:6', '导流装置压制散布，并扩大弹道厚度。', 'icons/skill/rapid_siphon.png'],
+    ['70', '01', '0003', '深域贯穿', '弹道', '3', 'skill:70010002', 'pierce:+2|crit:+5|damage:+10', 'level:9', '强化穿甲结构并提升暴击输出。', 'icons/skill/zero_point.png'],
+    ['70', '02', '0001', '棱镜导光', '能量', '1', '', 'damage:+6|sanityDrain:-6|projectileSize:+18', 'level:4|weaponAttack:BEAM', '棱镜束缚能量消耗，同时扩大光束宽度。', 'icons/skill/aether_resonance.png'],
+    ['70', '02', '0002', '谐振折叠', '能量', '2', 'skill:70020001', 'damageMultiplier:+8|projectileSpeed:+14|stability:+8', 'level:7|weaponAttack:BEAM', '折叠振镜提高能量聚焦与射速。', 'icons/skill/choir_surge.png'],
+    ['70', '02', '0003', '相干放射', '能量', '3', 'skill:70020002', 'ricochet:+1|crit:+6|damage:+12', 'level:10|weaponAttack:BEAM', '相干腔反复震荡，使光束可在敌间折射。', 'icons/skill/zero_point.png'],
+    ['70', '03', '0001', '相位壁垒', '护卫', '1', '', 'shield:+60|contactResist:+25|sanityRegen:+3', 'level:4', '展开相位护壁，降低接触伤害并补充理智。', 'icons/skill/ward_bastion.png'],
+    ['70', '03', '0002', '护盾崩击', '护卫', '2', 'skill:70030001', 'meleeDamage:+70|meleeRadius:+20|meleeInterval:-0.5', 'level:7', '护盾冲击形成短距爆发，持续清理近身威胁。', 'icons/skill/seraphic_shell.png'],
+    ['70', '03', '0003', '寂光回响', '护卫', '3', 'skill:70030002', 'beamReflect:20%|shieldRegen:+16|invulnTime:+0.4', 'level:10', '护盾折射寂光，可短暂反弹能量。', 'icons/skill/ward_bastion.png'],
+    ['70', '04', '0001', '术式镀层', '工坊', '1', '', 'projectileSize:+24|elementSlow:+18|elementSlowDuration:+1.4', 'level:5', '在弹体上刻蚀术式，对命中目标施加霜蚀减速。', 'icons/skill/undertow.png'],
+    ['70', '04', '0002', '弹道精铸', '工坊', '2', 'skill:70040001', 'split:+1|splitAngle:+4|pierce:+1', 'level:8', '精铸枪管令术弹再次分裂并保持贯穿。', 'icons/skill/riptide_collapse.png'],
+    ['70', '04', '0003', '秘火迸流', '工坊', '3', 'skill:70040002', 'damageMultiplier:+12|luckBonus:+12|projectileSpeed:+16', 'level:11', '秘火符文强化弹速与掉落运势。', 'icons/skill/choir_surge.png']
   ];
   writeTable('skill_tree.xlsx', rows);
 }
@@ -126,10 +129,10 @@ function buildSynergyCards() {
     ...rowsEmpty,
     ['@', '@', '@', 'string', 'SynergyTier', 'string', 'string', 'string', 'string'],
     ['sector', 'category', 'serial', 'name', 'tier', 'prerequisites', 'effects', 'trigger', 'icon'],
-    ['71', '02', '0001', '深渊利维坦矛', 'MYTHIC', 'weapon:20020002|relic:30050003', '光束伤害:+28|牵引力:+20', 'sanity:<40', 'icons/synergy/leviathan.png'],
-    ['71', '02', '0002', '奇点圆舞', 'EPIC', 'weapon:20020001|relic:30050001', '弹速:+18|环轨:+1|暴击:+6', 'after:reload', 'icons/synergy/singularity.png'],
-    ['71', '02', '0003', '炽天潮汐', 'RARE', 'relic:30050002|skill:70040002', '减速:+12%|护盾:+30|持续:+2', 'killstreak:15@20s', 'icons/synergy/seraph_tide.png'],
-    ['71', '02', '0004', '逆潮蓄能阵', 'EPIC', 'weapon:20020003|skill:70030002', '爆发伤害:+24|碎片:+1', 'after:maelstrom', 'icons/synergy/undertow_battery.png']
+    ['71', '02', '0001', '深渊利维坦矛', 'MYTHIC', 'weapon:20020002|relic:30050003', 'damage:+24|pullStrength:+20', 'sanity:<40', 'icons/synergy/leviathan.png'],
+    ['71', '02', '0002', '奇点圆舞', 'EPIC', 'weapon:20020001|relic:30050001', 'projectileSpeed:+18|split:+1|crit:+6', 'after:reload', 'icons/synergy/singularity.png'],
+    ['71', '02', '0003', '炽天潮汐', 'RARE', 'relic:30050002|skill:70030002', 'slow:+12%|shield:+30|duration:+2', 'killstreak:15@20s', 'icons/synergy/seraph_tide.png'],
+    ['71', '02', '0004', '逆潮蓄能阵', 'EPIC', 'weapon:20020003|skill:70040002', 'damageMultiplier:+12|ricochet:+1', 'after:maelstrom', 'icons/synergy/undertow_battery.png']
   ];
   writeTable('synergy_cards.xlsx', rows);
 }

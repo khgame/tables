@@ -1,4 +1,5 @@
 import type { EnemyRow, RelicRow, WeaponRow } from '../core/types';
+import { BULLET_RADIUS } from './constants';
 
 export class PlayerUnit {
   public hp: number;
@@ -105,12 +106,15 @@ export class RelicInstance {
   constructor(public readonly template: RelicRow) {}
 }
 
+let enemyIdCounter = 0;
+
 export class EnemyUnit {
   public hp: number;
   public x: number;
   public y: number;
   public radius: number;
   public speed: number;
+  public readonly baseSpeed: number;
   public attackTimer: number;
   public damage: number;
   public sanityDamage: number;
@@ -123,6 +127,9 @@ export class EnemyUnit {
   public projectileSpeedScale = 1;
   public projectileLifetimeScale = 1;
   public disableProjectiles = false;
+  public slowAmount = 0;
+  public slowTimer = 0;
+  public readonly id: string;
 
   constructor(
     public readonly template: EnemyRow,
@@ -138,7 +145,8 @@ export class EnemyUnit {
     this.x = position.x;
     this.y = position.y;
     this.radius = options.radius;
-    this.speed = (template.moveSpeed ?? 0) * 16;
+    this.baseSpeed = (template.moveSpeed ?? 0) * 16;
+    this.speed = this.baseSpeed;
     this.attackTimer = template.attackInterval ?? 2.4;
     this.damage = template.damage ?? 8;
     this.sanityDamage = template.sanityDamage ?? 0;
@@ -146,11 +154,36 @@ export class EnemyUnit {
     this.spritePath = options.spritePath ?? null;
     this.spriteScale = options.spriteScale ?? 1;
     this.animPhase = Math.random() * Math.PI * 2;
+    this.id = `${template.tid}-${enemyIdCounter++}`;
+  }
+
+  updateStatus(dt: number): void {
+    if (this.slowTimer > 0) {
+      this.slowTimer = Math.max(0, this.slowTimer - dt);
+      if (this.slowTimer === 0) {
+        this.slowAmount = 0;
+      }
+    }
+    const slowFactor = Math.max(0.1, 1 - this.slowAmount);
+    this.speed = this.baseSpeed * slowFactor;
+  }
+
+  applySlow(amount: number, duration: number): void {
+    if (amount <= 0 || duration <= 0) return;
+    this.slowAmount = Math.max(this.slowAmount, amount);
+    this.slowTimer = Math.max(this.slowTimer, duration);
   }
 }
 
 export class Projectile {
   public angle: number;
+  public pierce: number;
+  public ricochet: number;
+  public radius: number;
+  public slowAmount: number;
+  public slowDuration: number;
+  public hitSet: Set<string>;
+  public extra: Record<string, unknown>;
   constructor(
     public x: number,
     public y: number,
@@ -159,9 +192,23 @@ export class Projectile {
     public life: number,
     public damage: number,
     public sprite: HTMLImageElement | null,
-    public scale: number
+    public scale: number,
+    options: {
+      pierce?: number;
+      ricochet?: number;
+      radius?: number;
+      slowAmount?: number;
+      slowDuration?: number;
+    } = {}
   ) {
     this.angle = Math.atan2(vy, vx);
+    this.pierce = Math.max(0, options.pierce ?? 0);
+    this.ricochet = Math.max(0, options.ricochet ?? 0);
+    this.radius = Math.max(2, options.radius ?? BULLET_RADIUS);
+    this.slowAmount = Math.max(0, options.slowAmount ?? 0);
+    this.slowDuration = Math.max(0, options.slowDuration ?? 0);
+    this.hitSet = new Set();
+    this.extra = {};
   }
 }
 

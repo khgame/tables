@@ -33,6 +33,12 @@ export interface GameStats {
   reloadMultiplier: number;
   spreadMultiplier: number;
   projectileSpeedBonus: number;
+  projectileSplit: number;
+  projectileSplitAngle: number;
+  projectileSizeBonus: number;
+  projectilePierce: number;
+  projectileRicochet: number;
+  projectileRicochetRadius: number;
   critBonus: number;
   critDamageBonus: number;
   sanityRegen: number;
@@ -51,6 +57,12 @@ export interface GameStats {
   luckBonus: number;
   ammoEfficiency: number;
   xpBonus: number;
+  elementalSlow: number;
+  elementalSlowDuration: number;
+  meleePulseDamage: number;
+  meleePulseRadius: number;
+  meleePulseInterval: number;
+  contactDamageResist: number;
 }
 
 export class GameState {
@@ -74,6 +86,7 @@ export class GameState {
   sanity = 120;
   invulnTimer = 0;
   stats: GameStats | null = null;
+  meleePulseTimer = 0;
   level = 1;
   xp = 0;
   xpNeeded = 60;
@@ -100,6 +113,12 @@ export class GameState {
       reloadMultiplier: 1,
       spreadMultiplier: 1,
       projectileSpeedBonus: 0,
+      projectileSplit: 0,
+      projectileSplitAngle: 10,
+      projectileSizeBonus: 0,
+      projectilePierce: 0,
+      projectileRicochet: 0,
+      projectileRicochetRadius: 160,
       critBonus: 0,
       critDamageBonus: 0,
       sanityRegen: 0,
@@ -117,8 +136,15 @@ export class GameState {
       invulnTimeBonus: 0,
       luckBonus: 0,
       ammoEfficiency: 0,
-      xpBonus: 0
+      xpBonus: 0,
+      elementalSlow: 0,
+      elementalSlowDuration: 0,
+      meleePulseDamage: 0,
+      meleePulseRadius: 80,
+      meleePulseInterval: 1.8,
+      contactDamageResist: 0
     };
+    this.meleePulseTimer = 0;
   }
 
   clearTransient(): void {

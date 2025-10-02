@@ -1,5 +1,5 @@
 import type { AssetManager } from '../core/assets';
-import { normalizeSlug } from '../core/utils';
+import { normalizeSlug, normalizeIdentifier } from '../core/utils';
 import type { GameDom } from '../core/dom';
 import type {
   GameLibrary,
@@ -223,6 +223,31 @@ export class ProgressionManager {
       if (!value) return true;
       if (kind === 'level') return this.state.level >= Number(value);
       if (kind === 'skill') return this.state.unlockedSkills.has(value);
+      if (kind === 'weapon') {
+        if (!this.state.weapon) return false;
+        const tid = this.state.weapon.template.tid;
+        return tid.endsWith(value) || normalizeSlug(this.state.weapon.template.name) === value;
+      }
+      if (kind === 'weaponAttack') {
+        if (!this.state.weapon) return false;
+        const attackStyle = this.state.weapon.template.attackStyle || '';
+        return normalizeIdentifier(attackStyle) === normalizeIdentifier(value);
+      }
+      if (kind === 'weaponDamage') {
+        if (!this.state.weapon) return false;
+        const damageType = this.state.weapon.template.damageType || '';
+        return normalizeIdentifier(damageType) === normalizeIdentifier(value);
+      }
+      if (kind === 'weaponCategory') {
+        if (!this.state.weapon) return false;
+        const category = this.state.weapon.template.categoryName || '';
+        return normalizeIdentifier(category) === normalizeIdentifier(value);
+      }
+      if (kind === 'relic') {
+        if (!this.state.relic) return false;
+        const tid = this.state.relic.template.tid;
+        return tid.endsWith(value) || normalizeSlug(this.state.relic.template.name) === value;
+      }
       return true;
     });
   }
@@ -310,7 +335,15 @@ export class ProgressionManager {
       sanityRegen: s => (s.stats!.sanityRegen += numericValue),
       beamReflect: s => (s.stats!.beamReflect = Math.min(0.8, s.stats!.beamReflect + numericValue / 100)),
       projectileSpeed: s => (s.stats!.projectileSpeedBonus += numericValue),
+      split: s => (s.stats!.projectileSplit = Math.max(0, (s.stats!.projectileSplit || 0) + Math.round(numericValue))),
+      splitAngle: s => (s.stats!.projectileSplitAngle = Math.max(0, (s.stats!.projectileSplitAngle || 0) + numericValue)),
+      projectileSize: s => (s.stats!.projectileSizeBonus = (s.stats!.projectileSizeBonus || 0) + numericValue),
+      pierce: s => (s.stats!.projectilePierce = Math.max(0, (s.stats!.projectilePierce || 0) + Math.round(numericValue))),
+      ricochet: s => (s.stats!.projectileRicochet = Math.max(0, (s.stats!.projectileRicochet || 0) + Math.round(numericValue))),
+      ricochetRadius: s => (s.stats!.projectileRicochetRadius = Math.max(40, (s.stats!.projectileRicochetRadius || 0) + numericValue)),
       slow: s => (s.stats!.maelstromSlow += numericValue / 100),
+      elementalSlow: s => (s.stats!.elementalSlow = Math.min(0.9, (s.stats!.elementalSlow || 0) + numericValue / 100)),
+      elementalSlowDuration: s => (s.stats!.elementalSlowDuration = Math.max(0, (s.stats!.elementalSlowDuration || 0) + numericValue)),
       duration: s => (s.stats!.relicDurationBonus += numericValue),
       damageMultiplier: s => (s.stats!.damageBonusMultiplier *= 1 + numericValue / 100),
       hpRegen: s => (s.stats!.hpRegen = (s.stats!.hpRegen || 0) + numericValue),
@@ -319,7 +352,14 @@ export class ProgressionManager {
       invulnTime: s => (s.stats!.invulnTimeBonus = (s.stats!.invulnTimeBonus || 0) + numericValue),
       luckBonus: s => (s.stats!.luckBonus = (s.stats!.luckBonus || 0) + numericValue),
       ammoEfficiency: s => (s.stats!.ammoEfficiency = (s.stats!.ammoEfficiency || 0) + numericValue),
-      xpBonus: s => (s.stats!.xpBonus = (s.stats!.xpBonus || 0) + numericValue)
+      xpBonus: s => (s.stats!.xpBonus = (s.stats!.xpBonus || 0) + numericValue),
+      meleeDamage: s => (s.stats!.meleePulseDamage = (s.stats!.meleePulseDamage || 0) + numericValue),
+      meleeRadius: s => (s.stats!.meleePulseRadius = Math.max(20, (s.stats!.meleePulseRadius || 0) + numericValue)),
+      meleeInterval: s => (s.stats!.meleePulseInterval = Math.max(0.3, (s.stats!.meleePulseInterval || 1.8) + numericValue)),
+      contactResist: s => {
+        const current = s.stats!.contactDamageResist || 0;
+        s.stats!.contactDamageResist = Math.min(0.9, Math.max(0, current + numericValue / 100));
+      }
     } as Record<string, StatsMutator>;
 
     if (key === 'shield') {

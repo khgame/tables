@@ -66,12 +66,13 @@ function buildEnemies() {
     ...rowsEmpty,
     ['@', '@', '@', 'string', 'EnemyFamily', 'uint', 'uint', 'float', 'float', 'AttackStyle', 'float', 'float', 'float', 'string', 'string', 'DamageType', 'DamageType', 'string', 'uint', 'string', 'uint', 'string', 'float', 'string', 'string', 'string'],
     ['sector', 'category', 'serial', 'name', 'family', 'hp', 'damage', 'moveSpeed', 'radius', 'attackStyle', 'attackInterval', 'projectileSpeed', 'projectileLifetime', 'projectileSprite', 'impactSprite', 'weakness', 'resistance', 'lootTable', 'sanityDamage', 'combatNotes', 'xp', 'sprite', 'spriteScale', 'deathSprite', 'deathSfx', 'attackSfx'],
-    ['40', '06', '0001', '裂界餍爬者', 'SHAMBLER', '220', '24', '3.4', '12', 'AUTO', '1.80', '14', '0.90', 'fx/projectiles/spittle.png', 'fx/impact/slime.png', 'FIRE', 'VOID', 'loot:ichor_minor', '6', '投掷腐质胆汁，落地后留下灼蚀雾。', '18', 'ui/assets/topdown/top-down-shooter/characters/head/13.png', '0.9', 'ui/assets/topdown/top-down-shooter/effects/explosion.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-2.wav', 'ui/assets/topdown/top-down-shooter/sounds/shoot-2.wav'],
-    ['40', '06', '0002', '聆渊歌祭徒', 'CULTIST', '260', '32', '3.1', '14', 'BURST', '2.40', '22', '0.85', 'fx/projectiles/choir_note.png', 'fx/impact/chorus.png', 'LIGHT', 'VOID', 'loot:choir_cache', '9', '三连音符袭击，第三发附加畏惧层。', '26', 'ui/assets/topdown/top-down-shooter/characters/head/7.png', '0.92', 'ui/assets/topdown/top-down-shooter/effects/4.png', 'ui/assets/topdown/top-down-shooter/sounds/death.wav', 'ui/assets/topdown/top-down-shooter/sounds/shoot-3.wav'],
-    ['40', '06', '0003', '渊喉呼嚎者', 'ABERRATION', '340', '36', '4.0', '16', 'MANUAL', '2.80', '0', '0.00', 'fx/projectiles/howl_wave.png', 'fx/impact/howl.png', 'LIGHT', 'FROST', 'loot:howler_pouch', '12', '扇形震荡波附加 3 秒理智流失。', '32', 'ui/assets/topdown/top-down-shooter/characters/head/4.png', '0.95', 'ui/assets/topdown/top-down-shooter/effects/3.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-3.wav', 'ui/assets/topdown/top-down-shooter/sounds/sword-2.wav'],
-    ['40', '06', '0004', '虚壳哨兵', 'CONSTRUCT', '420', '42', '2.6', '18', 'BEAM', '1.45', '60', '0.50', 'fx/projectiles/null_beam.png', 'fx/impact/null_burn.png', 'VOID', 'KINETIC', 'loot:sentinel_cache', '10', '扫射光束前有 0.6 秒警示。', '38', 'ui/assets/topdown/top-down-shooter/characters/turret/1.png', '1.05', 'ui/assets/topdown/top-down-shooter/effects/5.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-1.wav', 'ui/assets/topdown/top-down-shooter/sounds/alert.wav'],
+    ['40', '06', '0001', '裂界餍爬者', 'SHAMBLER', '220', '24', '3.4', '12', 'AUTO', '1.80', '18', '0.90', 'fx/projectiles/spittle.png', 'fx/impact/slime.png', 'FIRE', 'VOID', 'loot:ichor_minor', '6', '投掷腐质胆汁，落地后留下灼蚀雾。', '18', 'ui/assets/topdown/top-down-shooter/characters/body/3.png', '0.9', 'ui/assets/topdown/top-down-shooter/effects/explosion.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-2.wav', 'ui/assets/topdown/top-down-shooter/sounds/shoot-2.wav'],
+    ['40', '06', '0002', '聆渊歌祭徒', 'CULTIST', '260', '32', '3.1', '14', 'BURST', '2.40', '22', '0.85', 'fx/projectiles/choir_note.png', 'fx/impact/chorus.png', 'LIGHT', 'VOID', 'loot:choir_cache', '9', '三连音符袭击，第三发附加畏惧层。', '26', 'ui/assets/topdown/top-down-shooter/characters/body/2.png', '0.94', 'ui/assets/topdown/top-down-shooter/effects/4.png', 'ui/assets/topdown/top-down-shooter/sounds/death.wav', 'ui/assets/topdown/top-down-shooter/sounds/shoot-3.wav'],
+    ['40', '06', '0003', '渊喉呼嚎者', 'ABERRATION', '340', '36', '3.6', '16', 'BURST', '2.60', '28', '0.70', 'fx/projectiles/howl_wave.png', 'fx/impact/howl.png', 'LIGHT', 'FROST', 'loot:howler_pouch', '12', '扇形震荡波附加 3 秒理智流失。', '32', 'ui/assets/topdown/top-down-shooter/characters/body/1.png', '0.92', 'ui/assets/topdown/top-down-shooter/effects/3.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-3.wav', 'ui/assets/topdown/top-down-shooter/sounds/sword-2.wav'],
+    ['40', '06', '0004', '虚壳哨兵', 'CONSTRUCT', '420', '42', '2.6', '18', 'BEAM', '1.45', '64', '0.60', 'fx/projectiles/null_beam.png', 'fx/impact/null_burn.png', 'VOID', 'KINETIC', 'loot:sentinel_cache', '10', '扫射光束前有 0.6 秒警示。', '38', 'ui/assets/topdown/top-down-shooter/characters/turret/2.png', '1.05', 'ui/assets/topdown/top-down-shooter/effects/5.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-1.wav', 'ui/assets/topdown/top-down-shooter/sounds/alert.wav'],
     ['40', '06', '0005', '堕港掘锚者', 'CONSTRUCT', '520', '55', '2.2', '24', 'MANUAL', '1.10', '0', '0.00', 'fx/projectiles/dredger_slam.png', 'fx/impact/dredger_slam.png', 'FIRE', 'KINETIC', 'loot:dredger_core', '14', '冲撞灯塔并引发地震波，需快速躲避。', '46', 'ui/assets/topdown/top-down-shooter/characters/tank.png', '0.85', 'ui/assets/topdown/top-down-shooter/effects/explosion.png', 'ui/assets/topdown/top-down-shooter/sounds/explosion-3.wav', 'ui/assets/topdown/top-down-shooter/sounds/flame-thrower.wav'],
-    ['40', '06', '0006', '无数碎影', 'ABERRATION', '160', '18', '4.8', '10', 'BURST', '1.90', '26', '0.75', 'fx/projectiles/fragment_dart.png', 'fx/impact/fragment_spark.png', 'LIGHT', 'VOID', 'loot:fragment_cache', '8', '群猎碎片成群而行，形成交叉弹雨。', '20', 'ui/assets/topdown/top-down-shooter/effects/1.png', '1.0', 'ui/assets/topdown/top-down-shooter/effects/2.png', 'ui/assets/topdown/top-down-shooter/sounds/shoot-destroy.wav', 'ui/assets/topdown/top-down-shooter/sounds/shoot-1.wav']
+    ['40', '06', '0006', '无数碎影', 'ABERRATION', '130', '14', '3.6', '10', 'BURST', '2.40', '18', '0.90', 'fx/projectiles/fragment_dart.png', 'fx/impact/fragment_spark.png', 'LIGHT', 'VOID', 'loot:fragment_cache', '6', '碎影快速游走射击，首波练习走位。', '16', 'ui/assets/topdown/top-down-shooter/characters/head/9.png', '0.8', 'ui/assets/topdown/top-down-shooter/effects/2.png', 'ui/assets/topdown/top-down-shooter/sounds/shoot-destroy.wav', 'ui/assets/topdown/top-down-shooter/sounds/shoot-1.wav'],
+    ['40', '06', '0007', '虚潮行者', 'SHAMBLER', '150', '12', '2.9', '16', 'MANUAL', '0', '0', '0', '', '', 'LIGHT', 'VOID', 'loot:ichor_minor', '4', '只会贴身缠斗的虚潮行者，用来熟悉位移。', '14', 'ui/assets/topdown/top-down-shooter/characters/head/5.png', '0.88', 'ui/assets/topdown/top-down-shooter/effects/explosion.png', 'ui/assets/topdown/top-down-shooter/sounds/death.wav', '']
   ];
   writeTable('enemies.xlsx', rows);
 }
@@ -93,12 +94,13 @@ function buildWaves() {
     ...rowsEmpty,
     ['@', '@', '@', 'uint', 'uint', 'tid', 'uint', 'float', 'string', 'string'],
     ['sector', 'category', 'serial', 'timestamp', 'duration', 'enemyId', 'count', 'spawnRadius', 'formation', 'notes'],
-    ['60', '08', '0001', '3', '25', '40060001', '12', '11.5', 'ring', '先遣侦查，保持距离发射腐质胆汁。'],
-    ['60', '08', '0002', '35', '30', '40060002', '10', '9.0', 'arc', '歌祭徒吟唱增幅附近同伴。'],
-    ['60', '08', '0003', '75', '30', '40060003', '8', '7.5', 'cone', '雾潮袭来后出现呼嚎者，注意理智流失。'],
-    ['60', '08', '0004', '115', '35', '40060004', '6', '13.5', 'cross', '虚壳哨兵扫描横扫，伴随餍爬者挤压。'],
-    ['60', '08', '0005', '160', '35', '40060006', '14', '8.0', 'swarm', '碎影成群突进，逼迫频繁拉扯走位。'],
-    ['60', '08', '0006', '210', '40', '40060005', '8', '10.5', 'line', '掘锚者直冲核心，需迅速打断。']
+    ['60', '08', '0001', '3', '20', '40060007', '8', '12.0', 'ring', '虚潮行者只会缠斗，练习走位与护盾。'],
+    ['60', '08', '0002', '28', '22', '40060006', '10', '8.5', 'swarm', '碎影涌入，速度快但血量低。'],
+    ['60', '08', '0003', '54', '26', '40060001', '12', '10.5', 'ring', '餍爬者投掷腐质胆汁，学会绕开溅射区。'],
+    ['60', '08', '0004', '86', '30', '40060002', '10', '9.0', 'arc', '歌祭徒三连音袭击，持续走位或击杀增幅者。'],
+    ['60', '08', '0005', '124', '32', '40060003', '8', '8.5', 'cone', '呼嚎者扇形震荡波附理智流失，利用空挡反击。'],
+    ['60', '08', '0006', '164', '34', '40060004', '6', '13.5', 'cross', '虚壳哨兵有 0.6 秒警示后扫射光束，注意走位。'],
+    ['60', '08', '0007', '206', '40', '40060005', '8', '10.5', 'line', '掘锚者冲撞灯塔并引发震波，及时打断或闪避。']
   ];
   writeTable('waves.xlsx', rows);
 }
@@ -108,18 +110,18 @@ function buildSkillTree() {
     ...rowsEmpty,
     ['@', '@', '@', 'string', 'SkillBranch', 'uint', 'string', 'string', 'string', 'string', 'string'],
     ['sector', 'branch', 'node', 'name', 'branchName', 'tier', 'parent', 'effects', 'requirements', 'tooltip', 'icon'],
-    ['70', '01', '0001', '裂变弹匣', '弹道', '1', '', 'split:+1|splitAngle:+12|damage:+6', 'level:3', '将弹道裂变为额外子弹，基础火力提升。', 'icons/skill/focal_anchor.png'],
-    ['70', '01', '0002', '轨迹稳流', '弹道', '2', 'skill:70010001', 'stability:+14|projectileSize:+18|projectileSpeed:+8', 'level:6', '导流装置压制散布，并扩大弹道厚度。', 'icons/skill/rapid_siphon.png'],
-    ['70', '01', '0003', '深域贯穿', '弹道', '3', 'skill:70010002', 'pierce:+2|crit:+5|damage:+10', 'level:9', '强化穿甲结构并提升暴击输出。', 'icons/skill/zero_point.png'],
-    ['70', '02', '0001', '棱镜导光', '能量', '1', '', 'damage:+6|sanityDrain:-6|projectileSize:+18', 'level:4|weaponAttack:BEAM', '棱镜束缚能量消耗，同时扩大光束宽度。', 'icons/skill/aether_resonance.png'],
-    ['70', '02', '0002', '谐振折叠', '能量', '2', 'skill:70020001', 'damageMultiplier:+8|projectileSpeed:+14|stability:+8', 'level:7|weaponAttack:BEAM', '折叠振镜提高能量聚焦与射速。', 'icons/skill/choir_surge.png'],
-    ['70', '02', '0003', '相干放射', '能量', '3', 'skill:70020002', 'ricochet:+1|crit:+6|damage:+12', 'level:10|weaponAttack:BEAM', '相干腔反复震荡，使光束可在敌间折射。', 'icons/skill/zero_point.png'],
-    ['70', '03', '0001', '相位壁垒', '护卫', '1', '', 'shield:+60|contactResist:+25|sanityRegen:+3', 'level:4', '展开相位护壁，降低接触伤害并补充理智。', 'icons/skill/ward_bastion.png'],
-    ['70', '03', '0002', '护盾崩击', '护卫', '2', 'skill:70030001', 'meleeDamage:+70|meleeRadius:+20|meleeInterval:-0.5', 'level:7', '护盾冲击形成短距爆发，持续清理近身威胁。', 'icons/skill/seraphic_shell.png'],
-    ['70', '03', '0003', '寂光回响', '护卫', '3', 'skill:70030002', 'beamReflect:20%|shieldRegen:+16|invulnTime:+0.4', 'level:10', '护盾折射寂光，可短暂反弹能量。', 'icons/skill/ward_bastion.png'],
-    ['70', '04', '0001', '术式镀层', '工坊', '1', '', 'projectileSize:+24|elementSlow:+18|elementSlowDuration:+1.4', 'level:5', '在弹体上刻蚀术式，对命中目标施加霜蚀减速。', 'icons/skill/undertow.png'],
-    ['70', '04', '0002', '弹道精铸', '工坊', '2', 'skill:70040001', 'split:+1|splitAngle:+4|pierce:+1', 'level:8', '精铸枪管令术弹再次分裂并保持贯穿。', 'icons/skill/riptide_collapse.png'],
-    ['70', '04', '0003', '秘火迸流', '工坊', '3', 'skill:70040002', 'damageMultiplier:+12|luckBonus:+12|projectileSpeed:+16', 'level:11', '秘火符文强化弹速与掉落运势。', 'icons/skill/choir_surge.png']
+    ['70', '01', '0001', '裂变弹匣', '弹道', '1', '', 'multiShot:2|damage:+6', 'level:3', '触发时连续射出两轮弹幕。', 'icons/skill/ballistic-tier1.svg'],
+    ['70', '01', '0002', '轨迹稳流', '弹道', '2', 'skill:70010001', 'multiShot:3|stability:+12|projectileSize:+12|multiShotAngle:4', 'level:6', '连续三轮射击并稳定弹道。', 'icons/skill/ballistic-tier2.svg'],
+    ['70', '01', '0003', '深域贯穿', '弹道', '3', 'skill:70010002', 'multiShot:4|pierce:+1|ricochet:+1', 'level:9', '连续四轮射击并令子弹贯穿弹射。', 'icons/skill/ballistic-tier3.svg'],
+    ['70', '02', '0001', '棱镜导光', '能量', '1', '', 'damage:+6|sanityDrain:-6|projectileSize:+18', 'level:4|weaponAttack:BEAM', '棱镜束缚能量消耗，同时扩大光束宽度。', 'icons/skill/energy-tier1.svg'],
+    ['70', '02', '0002', '谐振折叠', '能量', '2', 'skill:70020001', 'damageMultiplier:+8|projectileSpeed:+14|stability:+8', 'level:7|weaponAttack:BEAM', '折叠振镜提高能量聚焦与射速。', 'icons/skill/energy-tier2.svg'],
+    ['70', '02', '0003', '相干放射', '能量', '3', 'skill:70020002', 'ricochet:+1|crit:+6|damage:+12', 'level:10|weaponAttack:BEAM', '相干腔反复震荡，使光束可在敌间折射。', 'icons/skill/energy-tier3.svg'],
+    ['70', '03', '0001', '相位壁垒', '护卫', '1', '', 'shield:+60|contactResist:+25|sanityRegen:+3', 'level:4', '展开相位护壁，降低接触伤害并补充理智。', 'icons/skill/guardian-tier1.svg'],
+    ['70', '03', '0002', '护盾崩击', '护卫', '2', 'skill:70030001', 'meleeDamage:+70|meleeRadius:+20|meleeInterval:-0.5', 'level:7', '护盾冲击形成短距爆发，持续清理近身威胁。', 'icons/skill/guardian-tier2.svg'],
+    ['70', '03', '0003', '寂光回响', '护卫', '3', 'skill:70030002', 'beamReflect:20%|shieldRegen:+16|invulnTime:+0.4', 'level:10', '护盾折射寂光，可短暂反弹能量。', 'icons/skill/guardian-tier3.svg'],
+    ['70', '04', '0001', '术式镀层', '工坊', '1', '', 'projectileSize:+24|elementSlow:+18|elementSlowDuration:+1.2', 'level:5', '在弹体上刻蚀术式，对命中目标施加霜蚀减速。', 'icons/skill/workshop-tier1.svg'],
+    ['70', '04', '0002', '弹道精铸', '工坊', '2', 'skill:70040001', 'split:+1|splitAngle:+4|pierce:+1', 'level:8', '精铸枪管令术弹再次分裂并保持贯穿。', 'icons/skill/workshop-tier2.svg'],
+    ['70', '04', '0003', '秘火迸流', '工坊', '3', 'skill:70040002', 'damageMultiplier:+12|luckBonus:+12|projectileSpeed:+16', 'level:11', '秘火符文强化弹速与掉落运势。', 'icons/skill/workshop-tier3.svg']
   ];
   writeTable('skill_tree.xlsx', rows);
 }

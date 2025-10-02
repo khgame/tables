@@ -344,6 +344,8 @@ export class ProgressionManager {
       pierce: s => (s.stats!.projectilePierce = Math.max(0, (s.stats!.projectilePierce || 0) + Math.round(numericValue))),
       ricochet: s => (s.stats!.projectileRicochet = Math.max(0, (s.stats!.projectileRicochet || 0) + Math.round(numericValue))),
       ricochetRadius: s => (s.stats!.projectileRicochetRadius = Math.max(40, (s.stats!.projectileRicochetRadius || 0) + numericValue)),
+      multiShot: s => (s.stats!.multiShotCount = Math.max(s.stats!.multiShotCount || 1, Math.round(numericValue))),
+      multiShotAngle: s => (s.stats!.multiShotAngle = (s.stats!.multiShotAngle || 0) + numericValue),
       slow: s => (s.stats!.maelstromSlow += numericValue / 100),
       elementalSlow: s => (s.stats!.elementalSlow = Math.min(0.9, (s.stats!.elementalSlow || 0) + numericValue / 100)),
       elementalSlowDuration: s => (s.stats!.elementalSlowDuration = Math.max(0, (s.stats!.elementalSlowDuration || 0) + numericValue)),

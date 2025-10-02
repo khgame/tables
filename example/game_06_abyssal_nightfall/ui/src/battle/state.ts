@@ -39,6 +39,8 @@ export interface GameStats {
   projectilePierce: number;
   projectileRicochet: number;
   projectileRicochetRadius: number;
+  multiShotCount: number;
+  multiShotAngle: number;
   critBonus: number;
   critDamageBonus: number;
   sanityRegen: number;
@@ -119,6 +121,8 @@ export class GameState {
       projectilePierce: 0,
       projectileRicochet: 0,
       projectileRicochetRadius: 160,
+      multiShotCount: 1,
+      multiShotAngle: 0,
       critBonus: 0,
       critDamageBonus: 0,
       sanityRegen: 0,

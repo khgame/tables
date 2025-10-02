@@ -454,6 +454,9 @@ export class CombatRuntime {
     const totalProjectiles = Math.max(1, 1 + Math.floor(stats.projectileSplit || 0));
     const splitAngleDeg = Math.max(0, stats.projectileSplitAngle || 0);
     const splitAngleRad = (splitAngleDeg * Math.PI) / 180;
+    const multiShotCount = Math.max(1, Math.floor(stats.multiShotCount || 1));
+    const multiShotAngleDeg = stats.multiShotAngle || 0;
+    const degToRad = Math.PI / 180;
     const projectileScaleBonus = Math.max(0, 1 + (stats.projectileSizeBonus || 0) / 100);
     const baseSpeed = (weapon.baseProjectileSpeed + (stats.projectileSpeedBonus || 0)) * SCALE;
     const projectileLifetime = weapon.template.projectileLifetime ?? 1.2;
@@ -491,14 +494,26 @@ export class CombatRuntime {
       this.state.bullets.push(projectile);
     };
 
-    if (totalProjectiles === 1) {
-      spawnShot(randomSpread);
+    const spawnVolley = (baseOffset: number) => {
+      if (totalProjectiles === 1) {
+        spawnShot(baseOffset);
+      } else {
+        for (let i = 0; i < totalProjectiles; i++) {
+          const t = totalProjectiles === 1 ? 0 : i / (totalProjectiles - 1);
+          const centered = t - 0.5;
+          const offset = baseOffset + centered * splitAngleRad;
+          spawnShot(offset);
+        }
+      }
+    };
+
+    if (multiShotCount === 1) {
+      spawnVolley(randomSpread);
     } else {
-      for (let i = 0; i < totalProjectiles; i++) {
-        const t = totalProjectiles === 1 ? 0 : i / (totalProjectiles - 1);
-        const centered = t - 0.5;
-        const offset = randomSpread + centered * splitAngleRad;
-        spawnShot(offset);
+      for (let volley = 0; volley < multiShotCount; volley++) {
+        const centered = multiShotCount === 1 ? 0 : volley / (multiShotCount - 1) - 0.5;
+        const extraOffset = centered * multiShotAngleDeg * degToRad;
+        spawnVolley(randomSpread + extraOffset);
       }
     }
 
@@ -565,6 +580,77 @@ export class CombatRuntime {
         0.42,
         deathSprite,
         enemy.spriteScale ? enemy.spriteScale * 1.1 : DEFAULT_IMPACT_SCALE
+      )
+    );
+  }
+
+  private resolveEnemyProjectileSprite(path: string | null): HTMLImageElement | null {
+    if (!path) return null;
+    const sprite = this.assets.getImage(path);
+    if (!sprite && !this.missingProjectileSpriteLogged.has(path)) {
+      this.missingProjectileSpriteLogged.add(path);
+      void this.assets.loadImage(path).then(img => {
+        if (img) {
+          this.missingProjectileSpriteLogged.delete(path);
+        }
+      });
+    }
+    return sprite;
+  }
+
+  private spawnEnemyProjectile(
+    enemy: EnemyUnit,
+    template: EnemyRow,
+    dirX: number,
+    dirY: number,
+    overrides: {
+      damage?: number;
+      sanity?: number;
+      speed?: number;
+      lifetime?: number;
+      spritePath?: string | null;
+      label?: string | null;
+      origin?: { x: number; y: number };
+    } = {}
+  ): void {
+    if (enemy.disableProjectiles) return;
+    const [nx, ny] = normalize(dirX, dirY);
+    const directionX = nx || 1;
+    const directionY = ny || 0;
+    const enemyRadius = enemy.radius || PLAYER_RADIUS;
+    const originX = overrides.origin?.x ?? enemy.x;
+    const originY = overrides.origin?.y ?? enemy.y;
+    const spawnX = originX + directionX * enemyRadius;
+    const spawnY = originY + directionY * enemyRadius;
+
+    const baseSpeed = overrides.speed ?? (template.projectileSpeed ?? 24);
+    const speedScale = enemy.projectileSpeedScale || 1;
+    const projectileSpeed = baseSpeed * speedScale * SCALE;
+
+    const baseLifetime = overrides.lifetime ?? (template.projectileLifetime ?? 1.4);
+    const lifetimeScale = enemy.projectileLifetimeScale || (speedScale < 1 ? 1 / speedScale : 1);
+    const lifetime = Math.max(0.1, baseLifetime * lifetimeScale);
+
+    const damage = overrides.damage ?? (template.damage ?? 12);
+    const sanity = overrides.sanity ?? (template.sanityDamage ?? 6);
+
+    const spritePath = overrides.spritePath ?? template.projectileSprite ?? null;
+    const sprite = this.resolveEnemyProjectileSprite(spritePath);
+    const scale = template.projectileScale || 0.9;
+
+    this.state.enemyProjectiles.push(
+      new EnemyProjectile(
+        spawnX,
+        spawnY,
+        directionX * projectileSpeed,
+        directionY * projectileSpeed,
+        lifetime,
+        damage,
+        sanity,
+        overrides.label ?? template.name,
+        sprite,
+        spritePath,
+        scale
       )
     );
   }
@@ -819,11 +905,50 @@ export class CombatRuntime {
   private updateEffects(dt: number): void {
     this.state.effects = this.state.effects.filter(effect => {
       effect.elapsed += dt;
+      if (effect.type === 'telegraph' && !effect.detonated && effect.elapsed >= effect.duration) {
+        effect.detonated = true;
+        this.resolveTelegraphEffect(effect);
+      }
       if (effect.type === 'maelstrom') {
         // placeholder for special handling; keep effect alive until duration ends
       }
       return effect.elapsed <= effect.duration;
     });
+  }
+
+  private resolveTelegraphEffect(effect: EffectInstance): void {
+    const extra = effect.extra as
+      | {
+          enemyId?: string;
+          origin?: { x: number; y: number };
+          dirX?: number;
+          dirY?: number;
+          damage?: number;
+          sanity?: number;
+          speed?: number;
+          lifetime?: number;
+          spritePath?: string | null;
+          sound?: string;
+        }
+      | undefined;
+    if (!extra) return;
+    const enemy = extra.enemyId ? this.state.enemies.find(e => e.id === extra.enemyId && e.alive) : null;
+    if (!enemy) return;
+    const dirX = extra.dirX ?? 0;
+    const dirY = extra.dirY ?? 0;
+    this.spawnEnemyProjectile(enemy, enemy.template, dirX, dirY, {
+      damage: extra.damage,
+      sanity: extra.sanity,
+      speed: extra.speed,
+      lifetime: extra.lifetime,
+      spritePath: extra.spritePath ?? enemy.template.projectileSprite ?? null,
+      label: `${enemy.template.name} 光束`,
+      origin: extra.origin
+    });
+    if (extra.sound) {
+      this.assets.playSound(extra.sound, { volume: 0.75 });
+    }
+    pushLog(this.state, this.dom, `${enemy.template.name} 的光束释放！`);
   }
 
   private performEnemyAttack(enemy: EnemyUnit): void {
@@ -832,38 +957,8 @@ export class CombatRuntime {
     const template = enemy.template;
     enemy.attackTimer = (template.attackInterval ?? 0) * (enemy.attackIntervalScale || 1);
     const [dirX, dirY] = normalize(player.x - enemy.x, player.y - enemy.y);
-    const enemyRadius = enemy.radius || PLAYER_RADIUS;
-    const projectileSprite = template.projectileSprite ? this.assets.getImage(template.projectileSprite) : null;
-    if (!projectileSprite && template.projectileSprite && !this.missingProjectileSpriteLogged.has(template.projectileSprite)) {
-      this.missingProjectileSpriteLogged.add(template.projectileSprite);
-      console.warn('[abyssal-nightfall] 等待载入投射物贴图', template.name, template.projectileSprite);
-      void this.assets.loadImage(template.projectileSprite).then(img => {
-        if (img) this.missingProjectileSpriteLogged.delete(template.projectileSprite!);
-      });
-    }
-
-    const pushProjectile = (vx: number, vy: number, damage: number, sanity: number) => {
-      const speedScale = enemy.projectileSpeedScale || 1;
-      const projectileSpeed = (template.projectileSpeed ?? 0) * SCALE * speedScale;
-      const baseLifetime = template.projectileLifetime ?? 1.4;
-      const lifetimeScale = enemy.projectileLifetimeScale || (speedScale < 1 ? 1 / speedScale : 1);
-      const lifetime = baseLifetime * lifetimeScale;
-      this.state.enemyProjectiles.push(
-        new EnemyProjectile(
-          enemy.x + vx,
-          enemy.y + vy,
-          dirX * projectileSpeed,
-          dirY * projectileSpeed,
-          lifetime,
-          damage,
-          sanity,
-          template.name,
-          projectileSprite,
-          template.projectileSprite || null,
-          template.projectileScale || 0.9
-        )
-      );
-    };
+    const spritePath = template.projectileSprite || null;
+    const projectileSprite = this.resolveEnemyProjectileSprite(spritePath);
 
     if (enemy.disableProjectiles) {
       return;
@@ -878,27 +973,43 @@ export class CombatRuntime {
           const sin = Math.sin(offset);
           const fx = dirX * cos - dirY * sin;
           const fy = dirX * sin + dirY * cos;
-          pushProjectile(fx * enemyRadius, fy * enemyRadius, Math.round((template.damage ?? 12) * 0.6), Math.round((template.sanityDamage ?? 6) * 0.5));
+          this.spawnEnemyProjectile(enemy, template, fx, fy, {
+            damage: Math.round((template.damage ?? 12) * 0.6),
+            sanity: Math.round((template.sanityDamage ?? 6) * 0.5)
+          });
         }
         break;
       }
       case 'AUTO': {
-        pushProjectile(dirX * enemyRadius, dirY * enemyRadius, template.damage ?? 12, template.sanityDamage ?? 6);
+        this.spawnEnemyProjectile(enemy, template, dirX, dirY, {
+          damage: template.damage ?? 12,
+          sanity: template.sanityDamage ?? 6
+        });
         break;
       }
       case 'BEAM': {
+        const warmup = template.projectileLifetime ?? 0.6;
         pushLog(this.state, this.dom, `${template.name} 凝聚能量，发射光束！`);
         this.state.effects.push(
-          new EffectInstance('telegraph', enemy.x, enemy.y, 1.6, projectileSprite, template.projectileScale || 1, Math.atan2(dirY, dirX), {
+          new EffectInstance('telegraph', enemy.x, enemy.y, warmup, projectileSprite, (template.projectileScale || 1.1) * 1.1, Math.atan2(dirY, dirX), {
+            enemyId: enemy.id,
             origin: { x: enemy.x, y: enemy.y },
             dirX,
-            dirY
+            dirY,
+            damage: template.damage ?? 18,
+            sanity: template.sanityDamage ?? 8,
+            speed: template.projectileSpeed ?? 64,
+            lifetime: template.projectileLifetime ?? 0.6,
+            spritePath
           })
         );
         break;
       }
       default: {
-        pushProjectile(dirX * enemyRadius, dirY * enemyRadius, template.damage ?? 10, template.sanityDamage ?? 5);
+        this.spawnEnemyProjectile(enemy, template, dirX, dirY, {
+          damage: template.damage ?? 10,
+          sanity: template.sanityDamage ?? 5
+        });
       }
     }
 

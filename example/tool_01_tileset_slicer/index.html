@@ -48,6 +48,28 @@
         </div>
       </section>
 
+      <section class="summary-bar" aria-label="切片概览">
+        <div class="summary-stats" role="group">
+          <div class="stat-pill">
+            <span class="stat-label">原始尺寸</span>
+            <span id="imgSize" class="stat-value">—</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">列 × 行</span>
+            <span id="gridCount" class="stat-value">—</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Tile 总数</span>
+            <span id="tileCount" class="stat-value">0</span>
+          </div>
+        </div>
+        <div class="summary-strip">
+          <div class="tile-strip inline">
+            <div id="tileList" class="tile-list" role="listbox" aria-label="切片列表"></div>
+          </div>
+        </div>
+      </section>
+
       <div class="main-tabs" role="tablist">
         <button type="button" class="main-tab active" data-main="marking" aria-selected="true">数据标注</button>
         <button type="button" class="main-tab" data-main="painting" aria-selected="false">基于当前标注数据绘图</button>
@@ -62,29 +84,6 @@
             </div>
           </div>
           <aside class="marking-side">
-            <div class="summary-card" aria-labelledby="summaryTitle">
-              <div class="summary-head">
-                <h2 id="summaryTitle">切片概览</h2>
-                <dl>
-                  <div>
-                    <dt>原始尺寸</dt>
-                    <dd><span id="imgSize">—</span></dd>
-                  </div>
-                  <div>
-                    <dt>列 × 行</dt>
-                    <dd><span id="gridCount">—</span></dd>
-                  </div>
-                  <div>
-                    <dt>Tile 总数</dt>
-                    <dd><span id="tileCount">0</span></dd>
-                  </div>
-                </dl>
-              </div>
-              <div class="tile-strip inline">
-                <div id="tileList" class="tile-list" role="listbox"></div>
-              </div>
-            </div>
-
             <div class="marking-grid card">
               <h2>网格参数</h2>
               <p class="hint">调整切片网格参数，自动刷新预览。</p>

@@ -234,6 +234,23 @@ button.ghost:hover {
   transform: translateY(-1px);
 }
 
+.import-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.import-note {
+  font-size: 12px;
+  color: rgba(168, 178, 220, 0.7);
+}
+
 .main-tabs {
   display: flex;
   gap: 8px;

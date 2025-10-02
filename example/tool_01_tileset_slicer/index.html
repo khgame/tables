@@ -153,7 +153,6 @@
               <div class="topology-tabs" role="tablist">
                 <button type="button" class="topology-tab active" data-topology="road" aria-selected="true">道路标注</button>
                 <button type="button" class="topology-tab" data-topology="area" aria-selected="false">区域标注</button>
-                <button type="button" class="topology-tab" data-topology="import" aria-selected="false">导入配置</button>
               </div>
               <div class="topology-pane active" data-topology-pane="road" role="tabpanel">
                 <h2>道路标注</h2>
@@ -218,16 +217,16 @@
                   </div>
                 </div>
               </div>
-              <div class="topology-pane" data-topology-pane="import" role="tabpanel" hidden>
-                <h2>导入配置</h2>
-                <p class="hint">加载之前导出的切片或画板 JSON，快速恢复标注与排布。</p>
-                <div class="import-actions">
-                  <button type="button" class="import-button" data-trigger="importTileset">导入切片 JSON</button>
-                  <button type="button" class="import-button ghost" data-trigger="importBoard">导入画板 JSON</button>
-                </div>
-                <p class="import-note">提示：切片 JSON 会尝试匹配当前素材尺寸；若 meta.source 可访问，也会自动加载原始图片。</p>
-                <span id="importStatus" aria-live="polite"></span>
+            </div>
+            <div class="import-card card">
+              <h2>导入配置</h2>
+              <p class="hint">加载之前导出的切片或画板 JSON，快速恢复标注与排布。</p>
+              <div class="import-actions">
+                <button type="button" class="import-button" data-trigger="importTileset">导入切片 JSON</button>
+                <button type="button" class="import-button ghost" data-trigger="importBoard">导入画板 JSON</button>
               </div>
+              <p class="import-note">提示：切片 JSON 会尝试匹配当前素材尺寸；若 meta.source 可访问，也会自动加载原始图片。</p>
+              <span id="importStatus" aria-live="polite"></span>
             </div>
           </aside>
         </div>
@@ -276,6 +275,16 @@
                 <button type="button" class="event-btn" data-event="trigger">添加触发器</button>
                 <button type="button" class="event-btn" data-event="loot">添加掉落点</button>
               </div>
+            </div>
+            <div class="import-card card">
+              <h2>导入配置</h2>
+              <p class="hint">加载之前导出的切片或画板 JSON，快速恢复标注与排布。</p>
+              <div class="import-actions">
+                <button type="button" class="import-button" data-trigger="importTileset">导入切片 JSON</button>
+                <button type="button" class="import-button ghost" data-trigger="importBoard">导入画板 JSON</button>
+              </div>
+              <p class="import-note">提示：切片 JSON 会尝试匹配当前素材尺寸；若 meta.source 可访问，也会自动加载原始图片。</p>
+              <span id="importStatus" aria-live="polite"></span>
             </div>
           </aside>
         </div>

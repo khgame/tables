@@ -13,115 +13,107 @@
     </header>
 
     <main>
-      <section class="image-panel">
-        <div class="image-preview">
-          <div class="image-tools">
-            <label class="file-input">
-              <span>选择素材图 (PNG/JPG)</span>
-              <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
-            </label>
-            <button id="resetBtn" type="button" class="ghost">清空</button>
-          </div>
-          <canvas id="preview" width="960" height="540"></canvas>
-          <div id="overlayInfo" class="overlay" hidden></div>
-        </div>
-        <aside class="image-meta">
-          <div class="image-actions">
-            <div class="action-group">
-              <h3>标注数据</h3>
-              <div class="action-buttons">
-                <button id="exportJson" type="button">导出 JSON</button>
-                <button id="exportCsv" type="button">导出 CSV</button>
-                <button id="copyJson" type="button" class="ghost">复制 JSON</button>
-                <label class="import-button" data-inline>
-                  <input id="importTilesetInput" type="file" accept="application/json" />
-                  导入切片 JSON
-                </label>
-              </div>
-            </div>
-            <div class="action-group">
-              <h3>绘图数据</h3>
-              <div class="action-buttons">
-                <button id="exportBoardJson" type="button">导出画板 JSON</button>
-                <label class="import-button ghost" data-inline>
-                  <input id="importBoardInput" type="file" accept="application/json" />
-                  导入画板 JSON
-                </label>
-              </div>
-            </div>
-            <span id="status" aria-live="polite"></span>
-          </div>
-
-          <div class="preset-section">
+      <section class="toolbar">
+        <div class="toolbar-left">
+          <label class="file-input">
+            <span>选择素材图 (PNG/JPG)</span>
+            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          </label>
+          <button id="resetBtn" type="button" class="ghost">清空</button>
+          <div class="preset-strip">
             <span class="preset-label">候选 tileset</span>
             <div id="presetList" class="preset-list" role="list"></div>
           </div>
-
-          <div class="summary-card" aria-labelledby="summaryTitle">
-            <div class="summary-head">
-              <h2 id="summaryTitle">切片概览</h2>
-              <dl>
-                <div>
-                  <dt>原始尺寸</dt>
-                  <dd><span id="imgSize">—</span></dd>
-                </div>
-                <div>
-                  <dt>列 × 行</dt>
-                  <dd><span id="gridCount">—</span></dd>
-                </div>
-                <div>
-                  <dt>Tile 总数</dt>
-                  <dd><span id="tileCount">0</span></dd>
-                </div>
-              </dl>
+        </div>
+        <div class="toolbar-right">
+          <div class="action-cluster">
+            <span class="cluster-title">标注数据</span>
+            <div class="action-buttons">
+              <button id="exportJson" type="button">导出 JSON</button>
+              <button id="exportCsv" type="button">导出 CSV</button>
+              <button id="copyJson" type="button" class="ghost">复制 JSON</button>
+              <button type="button" class="import-button" data-trigger="importTileset">导入 JSON</button>
             </div>
-            <div class="summary-list">
-              <h3>预览列表</h3>
+          </div>
+          <div class="action-cluster">
+            <span class="cluster-title">绘图数据</span>
+            <div class="action-buttons">
+              <button id="exportBoardJson" type="button">导出画板 JSON</button>
+              <button type="button" class="import-button ghost" data-trigger="importBoard">导入画板 JSON</button>
+            </div>
+          </div>
+          <span id="status" aria-live="polite"></span>
+        </div>
+      </section>
+
+      <div class="main-tabs" role="tablist">
+        <button type="button" class="main-tab active" data-main="marking" aria-selected="true">数据标注</button>
+        <button type="button" class="main-tab" data-main="painting" aria-selected="false">基于当前标注数据绘图</button>
+      </div>
+
+      <section class="main-pane active" data-main-pane="marking" role="tabpanel">
+        <div class="marking-content">
+          <div class="preview-panel">
+            <div class="preview-wrapper">
+              <canvas id="preview" width="960" height="540"></canvas>
+              <div id="overlayInfo" class="overlay" hidden></div>
+            </div>
+            <div class="tile-strip">
               <div id="tileList" class="tile-list"></div>
             </div>
           </div>
-        </aside>
-      </section>
-
-      <section class="main-switcher" aria-label="主要功能">
-        <div class="main-tabs" role="tablist">
-          <button type="button" class="main-tab active" data-main="marking" aria-selected="true">数据标注</button>
-          <button type="button" class="main-tab" data-main="painting" aria-selected="false">基于当前标注数据绘图</button>
-        </div>
-
-        <div class="main-pane active" data-main-pane="marking" role="tabpanel">
-          <div class="marking-grid card">
-            <h2>网格参数</h2>
-            <p class="hint">调整切片网格参数，自动刷新切片预览。</p>
-            <div class="control-grid">
-              <label>
-                <span>Tile 宽度</span>
-                <input id="tileWidth" type="number" min="1" value="64" />
-              </label>
-              <label>
-                <span>Tile 高度</span>
-                <input id="tileHeight" type="number" min="1" value="64" />
-              </label>
-              <label>
-                <span>边距 Margin</span>
-                <input id="margin" type="number" min="0" value="0" />
-              </label>
-              <label>
-                <span>间距 Spacing</span>
-                <input id="spacing" type="number" min="0" value="0" />
-              </label>
-              <label>
-                <span>ID 前缀</span>
-                <input id="idPrefix" type="text" placeholder="tile" value="tile" />
-              </label>
-              <label>
-                <span>起始索引</span>
-                <input id="startIndex" type="number" value="0" />
-              </label>
+          <aside class="marking-side">
+            <div class="summary-card" aria-labelledby="summaryTitle">
+              <div class="summary-head">
+                <h2 id="summaryTitle">切片概览</h2>
+                <dl>
+                  <div>
+                    <dt>原始尺寸</dt>
+                    <dd><span id="imgSize">—</span></dd>
+                  </div>
+                  <div>
+                    <dt>列 × 行</dt>
+                    <dd><span id="gridCount">—</span></dd>
+                  </div>
+                  <div>
+                    <dt>Tile 总数</dt>
+                    <dd><span id="tileCount">0</span></dd>
+                  </div>
+                </dl>
+              </div>
             </div>
-          </div>
 
-          <div class="marking-split">
+            <div class="marking-grid card">
+              <h2>网格参数</h2>
+              <p class="hint">调整切片网格参数，自动刷新预览。</p>
+              <div class="control-grid">
+                <label>
+                  <span>Tile 宽度</span>
+                  <input id="tileWidth" type="number" min="1" value="64" />
+                </label>
+                <label>
+                  <span>Tile 高度</span>
+                  <input id="tileHeight" type="number" min="1" value="64" />
+                </label>
+                <label>
+                  <span>边距 Margin</span>
+                  <input id="margin" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  <span>间距 Spacing</span>
+                  <input id="spacing" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  <span>ID 前缀</span>
+                  <input id="idPrefix" type="text" placeholder="tile" value="tile" />
+                </label>
+                <label>
+                  <span>起始索引</span>
+                  <input id="startIndex" type="number" value="0" />
+                </label>
+              </div>
+            </div>
+
             <div class="inspector-card">
               <h2>元属性</h2>
               <div class="inspector-grid">
@@ -234,58 +226,61 @@
                 <span id="importStatus" aria-live="polite"></span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="main-pane" data-main-pane="painting" role="tabpanel" hidden>
-          <div class="painting-intro">
-            <h2>绘制工具</h2>
-            <p class="hint">基于已有标注数据，快速搭建地表及事件预览。Brush 功能处于预览阶段。</p>
-          </div>
-          <div class="painting-layout">
-            <div class="board-pane">
-              <div class="board-controls">
-                <label>
-                  <span>列数</span>
-                  <input id="boardCols" type="number" min="1" value="8" />
-                </label>
-                <label>
-                  <span>行数</span>
-                  <input id="boardRows" type="number" min="1" value="8" />
-                </label>
-                <button id="resizeBoard" type="button">调整画板</button>
-                <button id="clearBoard" type="button" class="ghost">清空画板</button>
-              </div>
-              <div class="board-wrapper">
-                <canvas id="boardCanvas" width="512" height="512" role="img" aria-label="tileset 画板"></canvas>
-              </div>
-              <div class="board-actions">
-                <span id="boardStatus" aria-live="polite"></span>
-              </div>
-            </div>
-            <aside class="brush-panel">
-              <div class="brush-card">
-                <h3>Brush 工具</h3>
-                <div class="brush-grid">
-                  <button type="button" class="brush-btn" data-brush="grass">草地铺设</button>
-                  <button type="button" class="brush-btn" data-brush="road">道路铺设</button>
-                  <button type="button" class="brush-btn" data-brush="edge">边缘修饰</button>
-                  <button type="button" class="brush-btn" data-brush="erase">擦除</button>
-                </div>
-              </div>
-              <div class="brush-card">
-                <h3>事件点</h3>
-                <div class="event-grid">
-                  <button type="button" class="event-btn" data-event="spawn">添加出生点</button>
-                  <button type="button" class="event-btn" data-event="trigger">添加触发器</button>
-                  <button type="button" class="event-btn" data-event="loot">添加掉落点</button>
-                </div>
-              </div>
-            </aside>
-          </div>
+          </aside>
         </div>
       </section>
-    </main></main>
+
+      <section class="main-pane" data-main-pane="painting" role="tabpanel" hidden>
+        <div class="painting-intro">
+          <h2>绘制工具</h2>
+          <p class="hint">基于已有标注数据，快速搭建地表及事件预览。Brush 功能处于预览阶段。</p>
+        </div>
+        <div class="painting-layout">
+          <div class="board-pane">
+            <div class="board-controls">
+              <label>
+                <span>列数</span>
+                <input id="boardCols" type="number" min="1" value="8" />
+              </label>
+              <label>
+                <span>行数</span>
+                <input id="boardRows" type="number" min="1" value="8" />
+              </label>
+              <button id="resizeBoard" type="button">调整画板</button>
+              <button id="clearBoard" type="button" class="ghost">清空画板</button>
+            </div>
+            <div class="board-wrapper">
+              <canvas id="boardCanvas" width="512" height="512" role="img" aria-label="tileset 画板"></canvas>
+            </div>
+            <div class="board-actions">
+              <span id="boardStatus" aria-live="polite"></span>
+            </div>
+          </div>
+          <aside class="brush-panel">
+            <div class="brush-card">
+              <h3>Brush 工具</h3>
+              <div class="brush-grid">
+                <button type="button" class="brush-btn" data-brush="grass">草地铺设</button>
+                <button type="button" class="brush-btn" data-brush="road">道路铺设</button>
+                <button type="button" class="brush-btn" data-brush="edge">边缘修饰</button>
+                <button type="button" class="brush-btn" data-brush="erase">擦除</button>
+              </div>
+            </div>
+            <div class="brush-card">
+              <h3>事件点</h3>
+              <div class="event-grid">
+                <button type="button" class="event-btn" data-event="spawn">添加出生点</button>
+                <button type="button" class="event-btn" data-event="trigger">添加触发器</button>
+                <button type="button" class="event-btn" data-event="loot">添加掉落点</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <input id="importTilesetInput" type="file" accept="application/json" hidden />
+      <input id="importBoardInput" type="file" accept="application/json" hidden />
+    </main></main></main>
 
     <footer>
       <small>

@@ -1,0 +1,93 @@
+/** this file is auto generated */
+import * as TableContext from "./context";
+        
+export interface IFacilities {
+  familyCode: number;
+  facilityCode: number;
+  levelCode: number;
+  variantCode: number;
+  sequence: number;
+  name: string;
+  type: "FacilityType";
+  level: number;
+  unlockResource: "ResourceType";
+  unlockAmount: number;
+  effectSummary: string;
+  unlockRequirement: string|undefined;
+}
+
+type FacilitiesTID = string & { readonly __FacilitiesTID: unique symbol };
+const toFacilitiesTID = (value: string): FacilitiesTID => value as FacilitiesTID;
+
+const raw = {
+  "tids": [
+    "70010100",
+    "70020100",
+    "70030100",
+    "70040100"
+  ],
+  "result": {
+    "70010100": {
+      "familyCode": 70,
+      "facilityCode": 1,
+      "levelCode": 1,
+      "variantCode": 0,
+      "sequence": 1,
+      "name": "营地核心 - 熔心炉",
+      "type": "Camp",
+      "level": 1,
+      "unlockResource": "Crystal",
+      "unlockAmount": 40,
+      "effectSummary": "进入余烬裂隙时额外获得护盾",
+      "unlockRequirement": "章节10010100通关"
+    },
+    "70020100": {
+      "familyCode": 70,
+      "facilityCode": 2,
+      "levelCode": 1,
+      "variantCode": 0,
+      "sequence": 1,
+      "name": "工坊 - 星锻台",
+      "type": "Workshop",
+      "level": 1,
+      "unlockResource": "Arcane",
+      "unlockAmount": 55,
+      "effectSummary": "制造装备时可随机附加词缀",
+      "unlockRequirement": "完成研究71010000"
+    },
+    "70030100": {
+      "familyCode": 70,
+      "facilityCode": 3,
+      "levelCode": 1,
+      "variantCode": 0,
+      "sequence": 1,
+      "name": "图书馆 - 远星室",
+      "type": "Library",
+      "level": 1,
+      "unlockResource": "Crystal",
+      "unlockAmount": 60,
+      "effectSummary": "解锁星界技能研究支线",
+      "unlockRequirement": "解锁英雄Eiden"
+    },
+    "70040100": {
+      "familyCode": 70,
+      "facilityCode": 4,
+      "levelCode": 1,
+      "variantCode": 0,
+      "sequence": 1,
+      "name": "方尖塔 - 共鸣柱",
+      "type": "Spire",
+      "level": 1,
+      "unlockResource": "Arcane",
+      "unlockAmount": 70,
+      "effectSummary": "提供全队被动能量回复+0.2",
+      "unlockRequirement": "成就91010000达成"
+    }
+  },
+  "collisions": []
+}
+
+export const facilitiesTids: FacilitiesTID[] = raw.tids.map(toFacilitiesTID);
+export const facilities: Record<FacilitiesTID, IFacilities> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toFacilitiesTID(tid), value as IFacilities])
+);

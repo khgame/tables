@@ -1,0 +1,98 @@
+/** this file is auto generated */
+import * as TableContext from "./context";
+        
+export interface IOperators {
+  sector: number;
+  category: number;
+  serial: number;
+  codename: string;
+  role: string;
+  startWeapon: string;
+  startRelic: string;
+  hp: number;
+  moveSpeed: number;
+  sanityCap: number;
+  reloadBonus: number;
+  critBonus: number;
+  signaturePassive: string;
+  portraitArt: string;
+  sprite: string;
+  spriteScale: number;
+  themeTrack: string;
+}
+
+type OperatorsTID = string & { readonly __OperatorsTID: unique symbol };
+const toOperatorsTID = (value: string): OperatorsTID => value as OperatorsTID;
+
+const raw = {
+  "tids": [
+    "10010001",
+    "10010002",
+    "10010003"
+  ],
+  "result": {
+    "10010001": {
+      "sector": 10,
+      "category": 1,
+      "serial": 1,
+      "codename": "萨布尔「霓虹猎手」",
+      "role": "霓虹清剿者",
+      "startWeapon": "weapon:20020001",
+      "startRelic": "relic:30050001",
+      "hp": 135,
+      "moveSpeed": 5.6,
+      "sanityCap": 140,
+      "reloadBonus": 0.92,
+      "critBonus": 0.08,
+      "signaturePassive": "passive:precision-lock",
+      "portraitArt": "ui/assets/operators/sable.svg",
+      "sprite": "ui/assets/actors/sable.png",
+      "spriteScale": 0.9,
+      "themeTrack": "ui/assets/topdown/top-down-shooter/music/theme-1.ogg"
+    },
+    "10010002": {
+      "sector": 10,
+      "category": 1,
+      "serial": 2,
+      "codename": "伊莉丝「破晓灯塔」",
+      "role": "共鸣信标师",
+      "startWeapon": "weapon:20020002",
+      "startRelic": "relic:30050002",
+      "hp": 120,
+      "moveSpeed": 5.1,
+      "sanityCap": 155,
+      "reloadBonus": 0.88,
+      "critBonus": 0.15,
+      "signaturePassive": "passive:seraph-ward",
+      "portraitArt": "ui/assets/operators/iris.svg",
+      "sprite": "ui/assets/actors/iris.png",
+      "spriteScale": 0.92,
+      "themeTrack": "ui/assets/topdown/top-down-shooter/music/theme-2.ogg"
+    },
+    "10010003": {
+      "sector": 10,
+      "category": 1,
+      "serial": 3,
+      "codename": "马洛「潮汐制裁」",
+      "role": "深渊猎手",
+      "startWeapon": "weapon:20020003",
+      "startRelic": "relic:30050003",
+      "hp": 150,
+      "moveSpeed": 5.3,
+      "sanityCap": 130,
+      "reloadBonus": 0.96,
+      "critBonus": 0.06,
+      "signaturePassive": "passive:undertow-grip",
+      "portraitArt": "ui/assets/operators/marlow.svg",
+      "sprite": "ui/assets/actors/marlow.png",
+      "spriteScale": 0.88,
+      "themeTrack": "ui/assets/topdown/top-down-shooter/music/theme-3.ogg"
+    }
+  },
+  "collisions": []
+}
+
+export const operatorsTids: OperatorsTID[] = raw.tids.map(toOperatorsTID);
+export const operators: Record<OperatorsTID, IOperators> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toOperatorsTID(tid), value as IOperators])
+);

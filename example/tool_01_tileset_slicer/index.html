@@ -92,19 +92,96 @@
                 <div id="tileList" class="tile-list"></div>
               </div>
             </div>
-            <div class="connectivity-card">
-              <h2>联通标注</h2>
-              <p class="hint">选择某个 tile 后，点击方向按钮标记可连通的边。</p>
-              <div class="direction-grid" aria-live="polite">
-                <button type="button" data-dir="nw" class="dir-btn" title="西北">↖</button>
-                <button type="button" data-dir="n" class="dir-btn" title="北">↑</button>
-                <button type="button" data-dir="ne" class="dir-btn" title="东北">↗</button>
-                <button type="button" data-dir="w" class="dir-btn" title="西">←</button>
-                <div class="dir-center" id="selectedTileLabel">未选中 tile</div>
-                <button type="button" data-dir="e" class="dir-btn" title="东">→</button>
-                <button type="button" data-dir="sw" class="dir-btn" title="西南">↙</button>
-                <button type="button" data-dir="s" class="dir-btn" title="南">↓</button>
-                <button type="button" data-dir="se" class="dir-btn" title="东南">↘</button>
+            <div class="inspector-stack">
+              <div class="inspector-card">
+                <h2>属性</h2>
+                <div class="inspector-grid">
+                  <label>
+                    <span>类型</span>
+                    <select id="tileRole"></select>
+                  </label>
+                  <label>
+                    <span>分组</span>
+                    <input id="tileGroup" type="text" list="tileGroupOptions" placeholder="例如 grass_path" />
+                    <datalist id="tileGroupOptions"></datalist>
+                  </label>
+                  <label>
+                    <span>渲染层</span>
+                    <select id="tileLayer"></select>
+                  </label>
+                  <label>
+                    <span>可通行</span>
+                    <select id="tilePassable">
+                      <option value="true">可通行</option>
+                      <option value="false">阻挡</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>限定通行者</span>
+                    <input id="tilePassableFor" type="text" placeholder="player, vehicle" />
+                  </label>
+                  <label>
+                    <span>标签</span>
+                    <input id="tileTags" type="text" placeholder="grass, wet" />
+                  </label>
+                </div>
+              </div>
+              <div class="topology-card" id="topologyCard">
+                <h2>拓扑标注</h2>
+                <p class="hint">道路：点击方向按钮标记四/八向连通；区域：填写中心与边/角地形。</p>
+                <div class="direction-grid" aria-live="polite">
+                  <button type="button" data-dir="nw" class="dir-btn" title="西北">↖</button>
+                  <button type="button" data-dir="n" class="dir-btn" title="北">↑</button>
+                  <button type="button" data-dir="ne" class="dir-btn" title="东北">↗</button>
+                  <button type="button" data-dir="w" class="dir-btn" title="西">←</button>
+                  <div class="dir-center" id="selectedTileLabel">未选中 tile</div>
+                  <button type="button" data-dir="e" class="dir-btn" title="东">→</button>
+                  <button type="button" data-dir="sw" class="dir-btn" title="西南">↙</button>
+                  <button type="button" data-dir="s" class="dir-btn" title="南">↓</button>
+                  <button type="button" data-dir="se" class="dir-btn" title="东南">↘</button>
+                </div>
+                <div class="area-controls">
+                  <label class="area-center">
+                    <span>中心</span>
+                    <input id="areaCenter" type="text" placeholder="草地" />
+                  </label>
+                  <div class="area-edge-grid">
+                    <label>
+                      <span>北</span>
+                      <input id="areaEdgeN" type="text" placeholder="grass_edge" />
+                    </label>
+                    <label>
+                      <span>东</span>
+                      <input id="areaEdgeE" type="text" placeholder="grass_edge" />
+                    </label>
+                    <label>
+                      <span>南</span>
+                      <input id="areaEdgeS" type="text" placeholder="grass_edge" />
+                    </label>
+                    <label>
+                      <span>西</span>
+                      <input id="areaEdgeW" type="text" placeholder="grass_edge" />
+                    </label>
+                  </div>
+                  <div class="area-corner-grid">
+                    <label>
+                      <span>西北</span>
+                      <input id="areaCornerNW" type="text" placeholder="grass_corner" />
+                    </label>
+                    <label>
+                      <span>东北</span>
+                      <input id="areaCornerNE" type="text" placeholder="grass_corner" />
+                    </label>
+                    <label>
+                      <span>东南</span>
+                      <input id="areaCornerSE" type="text" placeholder="grass_corner" />
+                    </label>
+                    <label>
+                      <span>西南</span>
+                      <input id="areaCornerSW" type="text" placeholder="grass_corner" />
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -169,6 +246,6 @@
       </small>
     </footer>
 
-    <script src="script.js" type="module"></script>
+    <script src="dist/main.js" type="module"></script>
   </body>
 </html>

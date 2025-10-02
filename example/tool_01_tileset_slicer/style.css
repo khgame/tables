@@ -562,6 +562,12 @@ canvas {
   transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
+.dir-btn[data-kind='corner'] {
+  font-size: 20px;
+  font-family: 'IBM Plex Mono', 'Menlo', monospace;
+  letter-spacing: -0.08em;
+}
+
 .dir-btn:hover {
   background: rgba(37, 99, 235, 0.28);
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);

@@ -9,7 +9,7 @@ export const ALL_DIRECTIONS: Direction[] = [...CARDINAL_DIRECTIONS, ...DIAGONAL_
 export type TileRole = 'neutral' | 'road' | 'area' | 'decor';
 export const TILE_ROLES: TileRole[] = ['neutral', 'road', 'area', 'decor'];
 
-export type TileLayer = 'ground' | 'overlay' | 'ceiling';
+export type TileLayer = string;
 export const TILE_LAYERS: TileLayer[] = ['ground', 'overlay', 'ceiling'];
 
 export interface TileMeta {

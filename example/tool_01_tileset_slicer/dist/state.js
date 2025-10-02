@@ -1,4 +1,4 @@
-import { ALL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
+import { ALL_DIRECTIONS, CARDINAL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
 const DEFAULT_TILE_META = {
     passable: true,
     passableFor: [],
@@ -241,6 +241,14 @@ export function setRoadConnection(tile, dir, value) {
     }
     const topology = ensureRoad(tile);
     topology.connections[dir] = value;
+}
+export function setRoadConnectionsMask(tile, mask) {
+    const topology = ensureRoad(tile);
+    const safeMask = mask & 0b1111;
+    CARDINAL_DIRECTIONS.forEach((direction, index) => {
+        const enabled = (safeMask & (1 << index)) !== 0;
+        topology.connections[direction] = enabled;
+    });
 }
 function ensureArea(tile) {
     if (!tile.area) {

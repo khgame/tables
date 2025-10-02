@@ -318,6 +318,7 @@ button.ghost:hover {
   flex-direction: column;
   gap: 14px;
   height: 100%;
+  min-height: 540px;
 }
 
 .preview-wrapper {
@@ -328,15 +329,18 @@ button.ghost:hover {
   box-shadow: inset 0 0 0 1px rgba(118, 130, 196, 0.2);
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 18px;
+  min-height: 540px;
+  max-height: 70vh;
 }
 
 .preview-wrapper canvas {
   display: block;
   image-rendering: pixelated;
   width: auto;
-  height: 100%;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
 }
@@ -530,47 +534,13 @@ button.ghost:hover {
   display: block;
 }
 
-.direction-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 48px);
-  grid-template-rows: repeat(3, 48px);
-  gap: 8px;
+.road-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.dir-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(26, 30, 52, 0.9);
-  color: rgba(232, 236, 255, 0.9);
-  font-size: 18px;
-  border: none;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(98, 116, 212, 0.35);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-}
-
-.dir-btn[data-kind='corner'] {
-  font-size: 22px;
-  font-family: 'IBM Plex Mono', 'Menlo', monospace;
-  letter-spacing: -0.06em;
-}
-
-.dir-btn:hover {
-  background: rgba(86, 136, 255, 0.35);
-  box-shadow: 0 12px 24px rgba(86, 136, 255, 0.35);
-}
-
-.dir-btn.active {
-  background: linear-gradient(95deg, rgba(87, 135, 255, 0.9), rgba(139, 84, 255, 0.85));
-  box-shadow: 0 14px 32px rgba(82, 128, 255, 0.45);
-  transform: translateY(-1px);
-}
-
-.dir-center {
+.road-selected {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -580,6 +550,97 @@ button.ghost:hover {
   font-size: 12px;
   padding: 8px;
   box-shadow: inset 0 0 0 1px rgba(86, 110, 198, 0.2);
+}
+
+.road-variant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 10px;
+}
+
+.road-variant-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(26, 30, 52, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(98, 116, 212, 0.35);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.road-variant-btn:hover {
+  background: rgba(86, 136, 255, 0.32);
+  box-shadow: 0 12px 24px rgba(86, 136, 255, 0.28);
+}
+
+.road-variant-btn.active {
+  background: linear-gradient(95deg, rgba(87, 135, 255, 0.9), rgba(139, 84, 255, 0.85));
+  box-shadow: 0 14px 32px rgba(82, 128, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.road-variant-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: inset 0 0 0 1px rgba(98, 116, 212, 0.18);
+}
+
+.road-variant-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.road-diagonal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.road-diagonal-label {
+  font-size: 12px;
+  color: rgba(168, 178, 220, 0.75);
+}
+
+.road-diagonal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+  gap: 8px;
+}
+
+.road-diagonal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(26, 30, 52, 0.9);
+  color: rgba(232, 236, 255, 0.9);
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(98, 116, 212, 0.35);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.road-diagonal-btn:hover {
+  background: rgba(86, 136, 255, 0.35);
+  box-shadow: 0 12px 24px rgba(86, 136, 255, 0.35);
+}
+
+.road-diagonal-btn.active {
+  background: linear-gradient(95deg, rgba(87, 135, 255, 0.9), rgba(139, 84, 255, 0.85));
+  box-shadow: 0 14px 32px rgba(82, 128, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.road-diagonal-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: inset 0 0 0 1px rgba(98, 116, 212, 0.18);
 }
 
 .area-controls {

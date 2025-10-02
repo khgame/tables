@@ -297,6 +297,15 @@ export function setRoadConnection(tile: TileSlice, dir: Direction, value: boolea
   topology.connections[dir] = value;
 }
 
+export function setRoadConnectionsMask(tile: TileSlice, mask: number) {
+  const topology = ensureRoad(tile);
+  const safeMask = mask & 0b1111;
+  CARDINAL_DIRECTIONS.forEach((direction, index) => {
+    const enabled = (safeMask & (1 << index)) !== 0;
+    topology.connections[direction] = enabled;
+  });
+}
+
 function ensureArea(tile: TileSlice): AreaTopology {
   if (!tile.area) {
     tile.area = createEmptyAreaTopology();

@@ -157,17 +157,19 @@
               </div>
               <div class="topology-pane active" data-topology-pane="road" role="tabpanel">
                 <h2>道路标注</h2>
-                <p class="hint">点击方向按钮标记四/八向联通，支持转角。</p>
-                <div class="direction-grid" aria-live="polite">
-                  <button type="button" data-dir="nw" data-kind="corner" class="dir-btn" title="西北转角">┏</button>
-                  <button type="button" data-dir="n" class="dir-btn" title="北向联通">↑</button>
-                  <button type="button" data-dir="ne" data-kind="corner" class="dir-btn" title="东北转角">┓</button>
-                  <button type="button" data-dir="w" class="dir-btn" title="西向联通">←</button>
-                  <div class="dir-center" id="selectedTileLabel">未选中 tile</div>
-                  <button type="button" data-dir="e" class="dir-btn" title="东向联通">→</button>
-                  <button type="button" data-dir="sw" data-kind="corner" class="dir-btn" title="西南转角">┗</button>
-                  <button type="button" data-dir="s" class="dir-btn" title="南向联通">↓</button>
-                  <button type="button" data-dir="se" data-kind="corner" class="dir-btn" title="东南转角">┛</button>
+                <p class="hint">选择连通预设快速标记四向道路，可选补充对角转角。</p>
+                <div class="road-panel">
+                  <div class="road-selected" id="selectedTileLabel">未选中 tile</div>
+                  <div class="road-variant-grid" id="roadVariantGrid" aria-live="polite" role="listbox"></div>
+                  <div class="road-diagonal-section">
+                    <span class="road-diagonal-label">角落连通（可选）</span>
+                    <div class="road-diagonal-grid">
+                      <button type="button" data-dir="nw" class="road-diagonal-btn" title="西北转角">┏</button>
+                      <button type="button" data-dir="ne" class="road-diagonal-btn" title="东北转角">┓</button>
+                      <button type="button" data-dir="se" class="road-diagonal-btn" title="东南转角">┛</button>
+                      <button type="button" data-dir="sw" class="road-diagonal-btn" title="西南转角">┗</button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="topology-pane" data-topology-pane="area" role="tabpanel" hidden>

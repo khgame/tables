@@ -4,6 +4,7 @@ import {
   CardinalDirection,
   DiagonalDirection,
   Direction,
+  RoadTopology,
   TILE_LAYERS,
   TILE_ROLES,
   TileLayer,
@@ -30,6 +31,7 @@ import {
   setBoardDimensions,
   setHoverIndex,
   setSelectedIndex,
+  setRoadConnectionsMask,
   setTileGroup,
   setTileLayer,
   setTilePassable,
@@ -123,7 +125,36 @@ const areaCornerInputs: Record<DiagonalDirection, HTMLInputElement | null> = {
 const ctx = previewCanvas?.getContext('2d') ?? null;
 const boardCtx = boardCanvas?.getContext('2d') ?? null;
 
-const directionButtons: HTMLButtonElement[] = Array.from(document.querySelectorAll<HTMLButtonElement>('.dir-btn'));
+const roadVariantContainer = document.getElementById('roadVariantGrid');
+const roadVariantButtons: HTMLButtonElement[] = [];
+const diagonalButtons: HTMLButtonElement[] = Array.from(document.querySelectorAll<HTMLButtonElement>('.road-diagonal-btn'));
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const DIRECTION_LABELS: Record<CardinalDirection, string> = {
+  n: '北',
+  e: '东',
+  s: '南',
+  w: '西',
+};
+const ROAD_MASK_LABEL_OVERRIDES: Record<number, string> = {
+  0: '孤立',
+  3: '拐角 · 东北',
+  5: '直线 · 南北',
+  6: '拐角 · 东南',
+  7: '三向 · 缺西',
+  9: '拐角 · 西北',
+  10: '直线 · 东西',
+  11: '三向 · 缺北',
+  12: '拐角 · 西南',
+  13: '三向 · 缺东',
+  14: '三向 · 缺南',
+  15: '十字',
+};
+const ROAD_VARIANT_ORDER: number[] = [0, 1, 2, 4, 8, 5, 10, 3, 6, 12, 9, 7, 11, 13, 14, 15];
+const ROAD_VARIANTS = ROAD_VARIANT_ORDER.map(mask => ({
+  mask,
+  label: buildRoadVariantLabel(mask),
+}));
+
 
 function setStatus(message: string, kind: 'info' | 'success' | 'error' = 'info') {
   if (!statusEl) return;
@@ -171,6 +202,80 @@ function refreshGroupDatalist() {
     option.value = groupId;
     tileGroupDataList.appendChild(option);
   });
+}
+
+
+function buildRoadVariantLabel(mask: number): string {
+  const safeMask = mask & 0b1111;
+  const override = ROAD_MASK_LABEL_OVERRIDES[safeMask];
+  if (override) return override;
+  if (!safeMask) return '孤立';
+  const parts = CARDINAL_DIRECTIONS
+    .map((dir, index) => ((safeMask & (1 << index)) !== 0 ? DIRECTION_LABELS[dir] : null))
+    .filter((value): value is string => Boolean(value));
+  return parts.join(' + ');
+}
+
+function computeRoadMask(road?: RoadTopology): number {
+  if (!road) return 0;
+  return CARDINAL_DIRECTIONS.reduce((mask, dir, index) => (road.connections[dir] ? mask | (1 << index) : mask), 0);
+}
+
+function createRoadVariantIcon(mask: number): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 40 40');
+  svg.setAttribute('class', 'road-variant-icon');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const base = document.createElementNS(SVG_NS, 'rect');
+  base.setAttribute('x', '3');
+  base.setAttribute('y', '3');
+  base.setAttribute('width', '34');
+  base.setAttribute('height', '34');
+  base.setAttribute('rx', '8');
+  base.setAttribute('fill', 'rgba(16, 21, 38, 0.85)');
+  base.setAttribute('stroke', 'rgba(94, 122, 205, 0.4)');
+  svg.appendChild(base);
+
+  const safeMask = mask & 0b1111;
+  const segmentPaths: Record<CardinalDirection, string> = {
+    n: 'M20 8 L20 20',
+    e: 'M32 20 L20 20',
+    s: 'M20 32 L20 20',
+    w: 'M8 20 L20 20',
+  };
+
+  CARDINAL_DIRECTIONS.forEach((dir, index) => {
+    if ((safeMask & (1 << index)) === 0) return;
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', segmentPaths[dir]);
+    path.setAttribute('stroke', '#d8e4ff');
+    path.setAttribute('stroke-width', '4');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('fill', 'none');
+    svg.appendChild(path);
+  });
+
+  const center = document.createElementNS(SVG_NS, 'circle');
+  center.setAttribute('cx', '20');
+  center.setAttribute('cy', '20');
+  center.setAttribute('r', '4.2');
+  center.setAttribute('fill', '#f5f7ff');
+  svg.appendChild(center);
+
+  return svg;
+}
+
+function createRoadVariantButton(mask: number, label: string): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'road-variant-btn';
+  button.dataset.mask = String(mask);
+  const title = label || '孤立';
+  button.title = `道路连通：${title}`;
+  button.setAttribute('aria-label', `道路连通：${title}`);
+  button.appendChild(createRoadVariantIcon(mask));
+  return button;
 }
 
 function drawPreview() {
@@ -391,15 +496,15 @@ function updateRoleSelector() {
 function updateLayerSelector() {
   if (!tileLayerSelect) return;
   tileLayerSelect.innerHTML = '';
-  const layerLabels: Record<TileLayer, string> = {
+  const layerLabels: Record<string, string> = {
     ground: '地表',
     overlay: '覆盖',
     ceiling: '顶层',
   };
-  TILE_LAYERS.forEach(layer => {
+  TILE_LAYERS.forEach((layer: TileLayer) => {
     const option = document.createElement('option');
     option.value = layer;
-    option.textContent = layerLabels[layer];
+    option.textContent = layerLabels[layer] ?? layer;
     tileLayerSelect.appendChild(option);
   });
 }
@@ -417,7 +522,11 @@ function updateInspectorUI() {
     if (areaCenterInput) areaCenterInput.value = '';
     Object.values(areaEdgeInputs).forEach(input => input && (input.value = ''));
     Object.values(areaCornerInputs).forEach(input => input && (input.value = ''));
-    directionButtons.forEach(btn => {
+    roadVariantButtons.forEach(button => {
+      button.disabled = true;
+      button.classList.remove('active');
+    });
+    diagonalButtons.forEach(btn => {
       btn.disabled = true;
       btn.classList.remove('active');
     });
@@ -436,19 +545,28 @@ function updateInspectorUI() {
 
   const isRoad = tile.role === 'road';
   const isArea = tile.role === 'area';
+  const roadMask = computeRoadMask(tile.road);
 
-  directionButtons.forEach(btn => {
-    const dir = btn.dataset.dir as Direction | undefined;
-    if (!dir) return;
+  roadVariantButtons.forEach(button => {
+    const maskValue = Number.parseInt(button.dataset.mask ?? '0', 10);
+    button.disabled = !isRoad;
+    if (!isRoad) {
+      button.classList.remove('active');
+      return;
+    }
+    const isActive = maskValue === roadMask;
+    button.classList.toggle('active', isActive);
+  });
+
+  diagonalButtons.forEach(btn => {
+    const dir = btn.dataset.dir as DiagonalDirection | undefined;
     btn.disabled = !isRoad;
+    if (!dir) return;
     if (!isRoad) {
       btn.classList.remove('active');
       return;
     }
-    const topology = tile.road;
-    const active = dir === 'ne' || dir === 'se' || dir === 'sw' || dir === 'nw'
-      ? Boolean(topology?.diagonals[dir])
-      : Boolean(topology?.connections[dir as Exclude<Direction, DiagonalDirection>]);
+    const active = Boolean(tile.road?.diagonals[dir]);
     btn.classList.toggle('active', active);
   });
 
@@ -640,7 +758,8 @@ async function copyJson() {
   }
 }
 
-function handleDirectionToggle(button: HTMLButtonElement) {
+
+function handleRoadVariantSelect(mask: number) {
   const tile = getSelectedTile();
   if (!tile) {
     setStatus('请先选择一个 tile。', 'error');
@@ -650,10 +769,24 @@ function handleDirectionToggle(button: HTMLButtonElement) {
     setStatus('当前 tile 类型不是道路，无法设置联通。', 'error');
     return;
   }
-  const dir = button.dataset.dir as Direction | undefined;
+  setRoadConnectionsMask(tile, mask);
+  updateInspectorUI();
+}
+
+function handleDiagonalToggle(button: HTMLButtonElement) {
+  const tile = getSelectedTile();
+  if (!tile) {
+    setStatus('请先选择一个 tile。', 'error');
+    return;
+  }
+  if (tile.role !== 'road') {
+    setStatus('当前 tile 类型不是道路，无法设置联通。', 'error');
+    return;
+  }
+  const dir = button.dataset.dir as DiagonalDirection | undefined;
   if (!dir) return;
   toggleRoadConnection(tile, dir);
-  button.classList.toggle('active');
+  updateInspectorUI();
 }
 
 function handleBoardPaint(event: MouseEvent) {
@@ -853,44 +986,117 @@ function getActiveMainTab(): string | null {
   return active?.dataset.main ?? null;
 }
 
-function setActiveTopologyTab(tab: string) {
+function setActiveTopologyTab(tab: string | null) {
+  if (!topologyTabs.length) return;
+  let target = tab;
+  if (target) {
+    const targetButton = topologyTabs.find(button => button.dataset.topology === target && !button.hidden);
+    if (!targetButton) {
+      target = null;
+    }
+  }
+  if (!target) {
+    const fallback = topologyTabs.find(button => !button.hidden);
+    if (!fallback) {
+      topologyTabs.forEach(button => {
+        button.classList.remove('active');
+        button.setAttribute('aria-selected', 'false');
+      });
+      topologyPanes.forEach(pane => {
+        pane.classList.remove('active');
+        pane.hidden = true;
+      });
+      return;
+    }
+    target = fallback.dataset.topology ?? null;
+  }
+  if (!target) return;
   topologyTabs.forEach(button => {
-    const isActive = button.dataset.topology === tab;
+    const isActive = button.dataset.topology === target;
     button.classList.toggle('active', isActive);
     button.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
   topologyPanes.forEach(pane => {
-    const isActive = pane.dataset.topologyPane === tab;
+    const isActive = pane.dataset.topologyPane === target;
     pane.classList.toggle('active', isActive);
     pane.hidden = !isActive;
   });
 }
 
+
 function syncTopologyTabByRole(role: TileRole | null) {
-  if (!topologyTabs.length) return;
-  if (getActiveMainTab() !== 'marking') {
-    if (topologyShell) topologyShell.dataset.role = role ?? 'neutral';
+  if (topologyShell) {
+    topologyShell.dataset.role = role ?? 'neutral';
+  }
+  if (!topologyTabs.length) {
+    if (topologyShell) topologyShell.hidden = true;
+    setActiveTopologyTab(null);
     return;
   }
-  const current = getActiveTopology();
-  if (role === 'road' && current !== 'import') {
-    setActiveTopologyTab('road');
-  } else if (role === 'area' && current !== 'import') {
-    setActiveTopologyTab('area');
+
+  const showRoad = role === 'road';
+  const showArea = role === 'area';
+  const showShell = showRoad || showArea;
+
+  topologyTabs.forEach(button => {
+    const topology = button.dataset.topology;
+    let hidden = !showShell;
+    if (topology === 'road') {
+      hidden = !showRoad;
+    } else if (topology === 'area') {
+      hidden = !showArea;
+    }
+    button.hidden = hidden;
+    if (hidden) {
+      button.classList.remove('active');
+      button.setAttribute('aria-selected', 'false');
+    }
+  });
+
+  topologyPanes.forEach(pane => {
+    const topology = pane.dataset.topologyPane;
+    let hidden = !showShell;
+    if (topology === 'road') {
+      hidden = !showRoad;
+    } else if (topology === 'area') {
+      hidden = !showArea;
+    }
+    pane.hidden = hidden;
+    if (hidden) {
+      pane.classList.remove('active');
+    }
+  });
+
+  if (topologyShell) {
+    topologyShell.hidden = !showShell;
   }
-  if (topologyShell) topologyShell.dataset.role = role ?? 'neutral';
+
+  if (showRoad) {
+    setActiveTopologyTab('road');
+    if (getActiveMainTab() !== 'marking') {
+      setActiveMainTab('marking');
+    }
+  } else if (showArea) {
+    setActiveTopologyTab('area');
+    if (getActiveMainTab() !== 'marking') {
+      setActiveMainTab('marking');
+    }
+  } else {
+    setActiveTopologyTab(null);
+  }
 }
 
 function initTopologyTabs() {
   if (!topologyTabs.length) return;
   topologyTabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      if (tab.hidden) return;
       const target = tab.dataset.topology;
       if (!target) return;
       setActiveTopologyTab(target);
     });
   });
-  setActiveTopologyTab('road');
+  setActiveTopologyTab(null);
 }
 
 function initPresetList() {
@@ -913,9 +1119,22 @@ function initPresetList() {
   });
 }
 
-function initDirectionButtons() {
-  directionButtons.forEach(button => {
-    button.addEventListener('click', () => handleDirectionToggle(button));
+
+function initRoadVariants() {
+  if (!roadVariantContainer) return;
+  roadVariantContainer.innerHTML = '';
+  roadVariantButtons.length = 0;
+  ROAD_VARIANTS.forEach(variant => {
+    const button = createRoadVariantButton(variant.mask, variant.label);
+    button.addEventListener('click', () => handleRoadVariantSelect(variant.mask));
+    roadVariantContainer.appendChild(button);
+    roadVariantButtons.push(button);
+  });
+}
+
+function initDiagonalButtons() {
+  diagonalButtons.forEach(button => {
+    button.addEventListener('click', () => handleDiagonalToggle(button));
   });
 }
 
@@ -1012,7 +1231,8 @@ export function initApp() {
   refreshGroupDatalist();
   initPresetList();
   initInputs();
-  initDirectionButtons();
+  initRoadVariants();
+  initDiagonalButtons();
   initBoardEvents();
   initCanvasHover();
   initMainTabs();

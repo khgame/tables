@@ -29,21 +29,24 @@ export class ProgressionManager {
       name: '应急火力',
       branch: '应急',
       effects: 'damage:8',
-      description: '立即提升主要武器伤害 +8。'
+      description: '立即提升主要武器伤害 +8。',
+      icon: 'icons/skill/zero_point.png'
     },
     {
       key: 'resilience',
       name: '战术恢复',
       branch: '应急',
       effects: 'hpRegen:12|sanityRegen:8',
-      description: '持续恢复生命与理智，稳定后排节奏。'
+      description: '持续恢复生命与理智，稳定后排节奏。',
+      icon: 'icons/skill/ward_bastion.png'
     },
     {
       key: 'aegis',
       name: '防御矩阵',
       branch: '应急',
       effects: 'shield:40|invulnTime:0.6',
-      description: '立即获得护盾并延长短暂无敌时间。'
+      description: '立即获得护盾并延长短暂无敌时间。',
+      icon: 'icons/skill/seraphic_shell.png'
     }
   ];
 
@@ -405,6 +408,7 @@ export class ProgressionManager {
     branch: string;
     effects: string;
     description: string;
+    icon?: string;
   }): UpgradeOption {
     const tidSuffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     const node: SkillNodeRow = {
@@ -414,7 +418,8 @@ export class ProgressionManager {
       branchName: seed.branch,
       tier: 0,
       effects: seed.effects,
-      tooltip: seed.description
+      tooltip: seed.description,
+      icon: seed.icon
     };
     return {
       type: 'skill',

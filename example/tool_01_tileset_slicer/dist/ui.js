@@ -42,8 +42,8 @@ const importStatus = document.getElementById('importStatus');
 const presetListEl = document.getElementById('presetList');
 const selectedTileLabel = document.getElementById('selectedTileLabel');
 const topologyShell = document.getElementById('topologyShell');
-const topologyTabs = Array.from(document.querySelectorAll('.topology-tab'));
-const topologyPanes = Array.from(document.querySelectorAll('.topology-pane'));
+const roadTopologyPane = document.querySelector('[data-topology-pane="road"]');
+const areaTopologyPane = document.querySelector('[data-topology-pane="area"]');
 const mainTabs = Array.from(document.querySelectorAll('.main-tab'));
 const mainPanes = Array.from(document.querySelectorAll('.main-pane'));
 const tileRoleSelect = document.getElementById('tileRole');
@@ -905,127 +905,29 @@ function handleAreaCornerChange(dir) {
         return;
     setAreaCorner(tile, dir, input.value);
 }
-function getActiveTopology() {
-    const active = topologyTabs.find(tab => tab.classList.contains('active'));
-    return active?.dataset.topology ?? null;
-}
 function getActiveMainTab() {
     const active = mainTabs.find(tab => tab.classList.contains('active'));
     return active?.dataset.main ?? null;
-}
-function setActiveTopologyTab(tab) {
-    if (!topologyTabs.length)
-        return;
-    let target = tab;
-    if (target) {
-        const targetButton = topologyTabs.find(button => button.dataset.topology === target && !button.hidden);
-        if (!targetButton) {
-            target = null;
-        }
-    }
-    if (!target) {
-        const fallback = topologyTabs.find(button => !button.hidden);
-        if (!fallback) {
-            topologyTabs.forEach(button => {
-                button.classList.remove('active');
-                button.setAttribute('aria-selected', 'false');
-            });
-            topologyPanes.forEach(pane => {
-                pane.classList.remove('active');
-                pane.hidden = true;
-            });
-            return;
-        }
-        target = fallback.dataset.topology ?? null;
-    }
-    if (!target)
-        return;
-    topologyTabs.forEach(button => {
-        const isActive = button.dataset.topology === target;
-        button.classList.toggle('active', isActive);
-        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
-    topologyPanes.forEach(pane => {
-        const isActive = pane.dataset.topologyPane === target;
-        pane.classList.toggle('active', isActive);
-        pane.hidden = !isActive;
-    });
 }
 function syncTopologyTabByRole(role) {
     if (topologyShell) {
         topologyShell.dataset.role = role ?? 'neutral';
     }
-    if (!topologyTabs.length) {
-        if (topologyShell)
-            topologyShell.hidden = true;
-        setActiveTopologyTab(null);
-        return;
-    }
     const showRoad = role === 'road';
     const showArea = role === 'area';
     const showShell = showRoad || showArea;
-    topologyTabs.forEach(button => {
-        const topology = button.dataset.topology;
-        let hidden = !showShell;
-        if (topology === 'road') {
-            hidden = !showRoad;
-        }
-        else if (topology === 'area') {
-            hidden = !showArea;
-        }
-        button.hidden = hidden;
-        if (hidden) {
-            button.classList.remove('active');
-            button.setAttribute('aria-selected', 'false');
-        }
-    });
-    topologyPanes.forEach(pane => {
-        const topology = pane.dataset.topologyPane;
-        let hidden = !showShell;
-        if (topology === 'road') {
-            hidden = !showRoad;
-        }
-        else if (topology === 'area') {
-            hidden = !showArea;
-        }
-        pane.hidden = hidden;
-        if (hidden) {
-            pane.classList.remove('active');
-        }
-    });
+    if (roadTopologyPane) {
+        roadTopologyPane.hidden = !showRoad;
+    }
+    if (areaTopologyPane) {
+        areaTopologyPane.hidden = !showArea;
+    }
     if (topologyShell) {
         topologyShell.hidden = !showShell;
     }
-    if (showRoad) {
-        setActiveTopologyTab('road');
-        if (getActiveMainTab() !== 'marking') {
-            setActiveMainTab('marking');
-        }
+    if (showShell && getActiveMainTab() !== 'marking') {
+        setActiveMainTab('marking');
     }
-    else if (showArea) {
-        setActiveTopologyTab('area');
-        if (getActiveMainTab() !== 'marking') {
-            setActiveMainTab('marking');
-        }
-    }
-    else {
-        setActiveTopologyTab(null);
-    }
-}
-function initTopologyTabs() {
-    if (!topologyTabs.length)
-        return;
-    topologyTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            if (tab.hidden)
-                return;
-            const target = tab.dataset.topology;
-            if (!target)
-                return;
-            setActiveTopologyTab(target);
-        });
-    });
-    setActiveTopologyTab(null);
 }
 function initPresetList() {
     if (!presetListEl)
@@ -1172,7 +1074,6 @@ export function initApp() {
     initBoardEvents();
     initCanvasHover();
     initMainTabs();
-    initTopologyTabs();
     refreshAfterTilesUpdated();
     setStatus('等待素材上传或选择候选素材…', 'info');
     setImportStatus('等待导入 JSON…', 'info');

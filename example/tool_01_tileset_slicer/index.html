@@ -151,11 +151,7 @@
             </div>
 
             <div class="topology-shell" id="topologyShell">
-              <div class="topology-tabs" role="tablist">
-                <button type="button" class="topology-tab active" data-topology="road" aria-selected="true">道路标注</button>
-                <button type="button" class="topology-tab" data-topology="area" aria-selected="false">区域标注</button>
-              </div>
-              <div class="topology-pane active" data-topology-pane="road" role="tabpanel">
+              <div class="topology-pane" data-topology-pane="road" role="group" hidden>
                 <h2>道路标注</h2>
                 <p class="hint">选择连通预设快速标记四向道路，可选补充对角转角。</p>
                 <div class="road-panel">
@@ -172,7 +168,7 @@
                   </div>
                 </div>
               </div>
-              <div class="topology-pane" data-topology-pane="area" role="tabpanel" hidden>
+              <div class="topology-pane" data-topology-pane="area" role="group" hidden>
                 <h2>区域标注</h2>
                 <p class="hint">填写中心素材与边/角地形，便于生成地形过渡。</p>
                 <div class="area-controls">

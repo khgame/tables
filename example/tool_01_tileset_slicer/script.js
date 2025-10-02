@@ -18,9 +18,22 @@ const gridCountEl = document.getElementById('gridCount');
 const tileCountEl = document.getElementById('tileCount');
 const ctx = previewCanvas.getContext('2d');
 
+const PRESET_TILES = [
+  {
+    id: 'nightfall_city',
+    label: 'Nightfall Tileset (96×96)',
+    path: './samples/nightfall_tileset.png',
+    tileWidth: 96,
+    tileHeight: 96,
+    margin: 0,
+    spacing: 0
+  }
+];
+
 const state = {
   image: null,
   imageUrl: '',
+  imageUrlIsObject: false,
   tiles: [],
   selectedIndex: null,
   scale: 1
@@ -37,9 +50,11 @@ function loadImageFile(file) {
   const img = new Image();
   img.onload = () => {
     state.image = img;
-    if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
+    if (state.imageUrl && state.imageUrlIsObject) URL.revokeObjectURL(state.imageUrl);
     state.imageUrl = url;
+    state.imageUrlIsObject = true;
     updateTiles();
+    setStatus(`已加载 ${file.name}`);
   };
   img.onerror = () => {
     URL.revokeObjectURL(url);
@@ -299,11 +314,62 @@ function reset() {
   state.image = null;
   state.tiles = [];
   state.selectedIndex = null;
-  if (state.imageUrl) {
+  if (state.imageUrl && state.imageUrlIsObject) {
     URL.revokeObjectURL(state.imageUrl);
-    state.imageUrl = '';
   }
+  state.imageUrl = '';
+  state.imageUrlIsObject = false;
   setStatus('已重置。');
+}
+
+async function loadPreset(preset) {
+  setStatus(`正在加载 ${preset.label}…`);
+  try {
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        state.image = img;
+        if (state.imageUrl && state.imageUrlIsObject) {
+          URL.revokeObjectURL(state.imageUrl);
+        }
+        state.imageUrl = preset.path;
+        state.imageUrlIsObject = false;
+        tileWidthInput.value = String(preset.tileWidth ?? tileWidthInput.value);
+        tileHeightInput.value = String(preset.tileHeight ?? tileHeightInput.value);
+        marginInput.value = String(preset.margin ?? marginInput.value);
+        spacingInput.value = String(preset.spacing ?? spacingInput.value);
+        updateTiles();
+        resolve();
+      };
+      img.onerror = reject;
+      img.src = preset.path;
+    });
+    setStatus(`已加载候选 ${preset.label}`, 'success');
+  } catch (error) {
+    console.error('[tileset] preset load failed', error);
+    setStatus('候选素材加载失败，请检查文件是否存在。', 'error');
+  }
+}
+
+function initPresetList() {
+  const container = document.getElementById('presetList');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!PRESET_TILES.length) {
+    const empty = document.createElement('span');
+    empty.textContent = '暂无候选';
+    empty.style.opacity = '0.7';
+    container.appendChild(empty);
+    return;
+  }
+  PRESET_TILES.forEach(preset => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'preset-item';
+    button.textContent = preset.label;
+    button.addEventListener('click', () => loadPreset(preset));
+    container.appendChild(button);
+  });
 }
 
 fileInput.addEventListener('change', event => {
@@ -324,4 +390,5 @@ exportCsvBtn.addEventListener('click', exportCsv);
 copyJsonBtn.addEventListener('click', copyJson);
 resetBtn.addEventListener('click', reset);
 
-setStatus('等待素材上传…');
+initPresetList();
+setStatus('等待素材上传或选择候选素材…');

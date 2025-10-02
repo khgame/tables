@@ -41,6 +41,9 @@ const importBoardInput = document.getElementById('importBoardInput');
 const importStatus = document.getElementById('importStatus');
 const presetListEl = document.getElementById('presetList');
 const selectedTileLabel = document.getElementById('selectedTileLabel');
+const topologyShell = document.getElementById('topologyShell');
+const topologyTabs = Array.from(document.querySelectorAll('.topology-tab'));
+const topologyPanes = Array.from(document.querySelectorAll('.topology-pane'));
 const tileRoleSelect = document.getElementById('tileRole');
 const tileGroupInput = document.getElementById('tileGroup');
 const tileGroupDataList = document.getElementById('tileGroupOptions');
@@ -48,7 +51,6 @@ const tileLayerSelect = document.getElementById('tileLayer');
 const tilePassableSelect = document.getElementById('tilePassable');
 const tilePassableForInput = document.getElementById('tilePassableFor');
 const tileTagsInput = document.getElementById('tileTags');
-const topologyCard = document.getElementById('topologyCard');
 const areaCenterInput = document.getElementById('areaCenter');
 const areaEdgeInputs = {
     n: document.getElementById('areaEdgeN'),
@@ -329,8 +331,9 @@ function updateInspectorUI() {
             btn.disabled = true;
             btn.classList.remove('active');
         });
-        if (topologyCard)
-            topologyCard.dataset.role = 'neutral';
+        if (topologyShell)
+            topologyShell.dataset.role = 'neutral';
+        syncTopologyTabByRole(null);
         return;
     }
     if (selectedTileLabel)
@@ -380,9 +383,10 @@ function updateInspectorUI() {
         input.value = isArea ? tile.area?.corners?.[dir] ?? '' : '';
         input.disabled = !isArea;
     });
-    if (topologyCard) {
-        topologyCard.dataset.role = tile.role;
+    if (topologyShell) {
+        topologyShell.dataset.role = tile.role;
     }
+    syncTopologyTabByRole(tile.role);
 }
 function refreshSelectionUI() {
     renderTileList();
@@ -663,6 +667,7 @@ async function handleBoardImportFile(event) {
         const tileWidth = parseNumberInput(tileWidthInput, json.tileWidth ?? 64);
         const tileHeight = parseNumberInput(tileHeightInput, json.tileHeight ?? 64);
         drawBoard(tileWidth, tileHeight);
+        setActiveTopologyTab('board');
         if (result.missing) {
             setImportStatus(`画板导入完成，但忽略 ${result.missing} 个未知 tile。`, 'info');
         }
@@ -694,6 +699,7 @@ function handleRoleChange() {
     setTileRole(tile, role);
     updateInspectorUI();
     renderTileList();
+    syncTopologyTabByRole(role);
 }
 function handleGroupChange() {
     const tile = getSelectedTile();
@@ -753,6 +759,48 @@ function handleAreaCornerChange(dir) {
     if (!tile || !input)
         return;
     setAreaCorner(tile, dir, input.value);
+}
+function getActiveTopology() {
+    const active = topologyTabs.find(tab => tab.classList.contains('active'));
+    return active?.dataset.topology ?? null;
+}
+function setActiveTopologyTab(tab) {
+    topologyTabs.forEach(button => {
+        const isActive = button.dataset.topology === tab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    topologyPanes.forEach(pane => {
+        const isActive = pane.dataset.topologyPane === tab;
+        pane.classList.toggle('active', isActive);
+        pane.hidden = !isActive;
+    });
+}
+function syncTopologyTabByRole(role) {
+    if (!topologyTabs.length)
+        return;
+    const current = getActiveTopology();
+    if (role === 'road' && current !== 'board' && current !== 'import') {
+        setActiveTopologyTab('road');
+    }
+    else if (role === 'area' && current !== 'board' && current !== 'import') {
+        setActiveTopologyTab('area');
+    }
+    if (topologyShell)
+        topologyShell.dataset.role = role ?? 'neutral';
+}
+function initTopologyTabs() {
+    if (!topologyTabs.length)
+        return;
+    topologyTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.topology;
+            if (!target)
+                return;
+            setActiveTopologyTab(target);
+        });
+    });
+    setActiveTopologyTab('road');
 }
 function initPresetList() {
     if (!presetListEl)
@@ -875,6 +923,7 @@ export function initApp() {
     initDirectionButtons();
     initBoardEvents();
     initCanvasHover();
+    initTopologyTabs();
     refreshAfterTilesUpdated();
     setStatus('等待素材上传或选择候选素材…', 'info');
     setImportStatus('等待导入 JSON…', 'info');

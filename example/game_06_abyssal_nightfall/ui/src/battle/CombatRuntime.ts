@@ -730,9 +730,6 @@ export class CombatRuntime {
     };
 
     if (enemy.disableProjectiles) {
-      const contactDamage = Math.max(template.damage ?? 8, CONTACT_DAMAGE_MIN);
-      const contactSanity = template.sanityDamage ?? Math.max(1, Math.round(contactDamage * 0.25));
-      this.applyPlayerDamage(contactDamage, template.name, contactSanity);
       return;
     }
 

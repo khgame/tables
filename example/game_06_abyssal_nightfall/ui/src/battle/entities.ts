@@ -208,11 +208,19 @@ export class EffectInstance {
     const width = this.sprite.width;
     const height = this.sprite.height || width;
     if (!width || !height) return;
-    if (width > height) {
-      const frames = Math.max(1, Math.floor(width / height));
+    const horizontalRatio = width / height;
+    const verticalRatio = height / width;
+    const H_THRESHOLD = 1.2;
+    if (horizontalRatio > H_THRESHOLD) {
+      const frames = Math.max(1, Math.round(horizontalRatio));
       this.frameCount = frames;
-      this.frameWidth = Math.floor(width / frames);
+      this.frameWidth = Math.max(1, Math.floor(width / frames));
       this.frameHeight = height;
+    } else if (verticalRatio > H_THRESHOLD) {
+      const frames = Math.max(1, Math.round(verticalRatio));
+      this.frameCount = frames;
+      this.frameWidth = width;
+      this.frameHeight = Math.max(1, Math.floor(height / frames));
     } else {
       this.frameCount = 1;
       this.frameWidth = width;

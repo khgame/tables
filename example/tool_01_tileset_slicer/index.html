@@ -126,116 +126,117 @@
                   </label>
                 </div>
               </div>
-              <div class="topology-card" id="topologyCard">
-                <h2>拓扑标注</h2>
-                <p class="hint">道路：点击方向按钮标记四/八向连通；区域：填写中心与边/角地形。</p>
-                <div class="direction-grid" aria-live="polite">
-                  <button type="button" data-dir="nw" data-kind="corner" class="dir-btn" title="西北转角">┏</button>
-                  <button type="button" data-dir="n" class="dir-btn" title="北向联通">↑</button>
-                  <button type="button" data-dir="ne" data-kind="corner" class="dir-btn" title="东北转角">┓</button>
-                  <button type="button" data-dir="w" class="dir-btn" title="西向联通">←</button>
-                  <div class="dir-center" id="selectedTileLabel">未选中 tile</div>
-                  <button type="button" data-dir="e" class="dir-btn" title="东向联通">→</button>
-                  <button type="button" data-dir="sw" data-kind="corner" class="dir-btn" title="西南转角">┗</button>
-                  <button type="button" data-dir="s" class="dir-btn" title="南向联通">↓</button>
-                  <button type="button" data-dir="se" data-kind="corner" class="dir-btn" title="东南转角">┛</button>
+              <div class="topology-shell" id="topologyShell">
+                <div class="topology-tabs" role="tablist">
+                  <button type="button" class="topology-tab active" data-topology="road" aria-selected="true">道路标注</button>
+                  <button type="button" class="topology-tab" data-topology="area" aria-selected="false">区域标注</button>
+                  <button type="button" class="topology-tab" data-topology="board" aria-selected="false">画板</button>
+                  <button type="button" class="topology-tab" data-topology="import" aria-selected="false">导入配置</button>
                 </div>
-                <div class="area-controls">
-                  <label class="area-center">
-                    <span>中心</span>
-                    <input id="areaCenter" type="text" placeholder="草地" />
-                  </label>
-                  <div class="area-edge-grid">
+                <div class="topology-pane active" data-topology-pane="road" role="tabpanel">
+                  <h2>道路标注</h2>
+                  <p class="hint">点击方向按钮标记四/八向联通，支持转角。</p>
+                  <div class="direction-grid" aria-live="polite">
+                    <button type="button" data-dir="nw" data-kind="corner" class="dir-btn" title="西北转角">┏</button>
+                    <button type="button" data-dir="n" class="dir-btn" title="北向联通">↑</button>
+                    <button type="button" data-dir="ne" data-kind="corner" class="dir-btn" title="东北转角">┓</button>
+                    <button type="button" data-dir="w" class="dir-btn" title="西向联通">←</button>
+                    <div class="dir-center" id="selectedTileLabel">未选中 tile</div>
+                    <button type="button" data-dir="e" class="dir-btn" title="东向联通">→</button>
+                    <button type="button" data-dir="sw" data-kind="corner" class="dir-btn" title="西南转角">┗</button>
+                    <button type="button" data-dir="s" class="dir-btn" title="南向联通">↓</button>
+                    <button type="button" data-dir="se" data-kind="corner" class="dir-btn" title="东南转角">┛</button>
+                  </div>
+                </div>
+                <div class="topology-pane" data-topology-pane="area" role="tabpanel" hidden>
+                  <h2>区域标注</h2>
+                  <p class="hint">填写中心素材与边/角地形，便于生成地形过渡。</p>
+                  <div class="area-controls">
+                    <label class="area-center">
+                      <span>中心</span>
+                      <input id="areaCenter" type="text" placeholder="grass_center" />
+                    </label>
+                    <div class="area-edge-grid">
+                      <label>
+                        <span>北</span>
+                        <input id="areaEdgeN" type="text" placeholder="grass_edge" />
+                      </label>
+                      <label>
+                        <span>东</span>
+                        <input id="areaEdgeE" type="text" placeholder="grass_edge" />
+                      </label>
+                      <label>
+                        <span>南</span>
+                        <input id="areaEdgeS" type="text" placeholder="grass_edge" />
+                      </label>
+                      <label>
+                        <span>西</span>
+                        <input id="areaEdgeW" type="text" placeholder="grass_edge" />
+                      </label>
+                    </div>
+                    <div class="area-corner-grid">
+                      <label>
+                        <span>西北</span>
+                        <input id="areaCornerNW" type="text" placeholder="grass_corner" />
+                      </label>
+                      <label>
+                        <span>东北</span>
+                        <input id="areaCornerNE" type="text" placeholder="grass_corner" />
+                      </label>
+                      <label>
+                        <span>东南</span>
+                        <input id="areaCornerSE" type="text" placeholder="grass_corner" />
+                      </label>
+                      <label>
+                        <span>西南</span>
+                        <input id="areaCornerSW" type="text" placeholder="grass_corner" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="topology-pane" data-topology-pane="board" role="tabpanel" hidden>
+                  <h2>画板</h2>
+                  <p class="hint">使用当前选中的 tile 在画板上排布示例组合，验证衔接效果。</p>
+                  <div class="board-controls">
                     <label>
-                      <span>北</span>
-                      <input id="areaEdgeN" type="text" placeholder="grass_edge" />
+                      <span>列数</span>
+                      <input id="boardCols" type="number" min="1" value="8" />
                     </label>
                     <label>
-                      <span>东</span>
-                      <input id="areaEdgeE" type="text" placeholder="grass_edge" />
+                      <span>行数</span>
+                      <input id="boardRows" type="number" min="1" value="8" />
                     </label>
-                    <label>
-                      <span>南</span>
-                      <input id="areaEdgeS" type="text" placeholder="grass_edge" />
+                    <button id="resizeBoard" type="button">调整画板</button>
+                    <button id="clearBoard" type="button" class="ghost">清空画板</button>
+                  </div>
+                  <div class="board-wrapper">
+                    <canvas id="boardCanvas" width="512" height="512" role="img" aria-label="tileset 画板"></canvas>
+                  </div>
+                  <div class="board-actions">
+                    <button id="exportBoardJson" type="button">导出画板 JSON</button>
+                    <span id="boardStatus" aria-live="polite"></span>
+                  </div>
+                </div>
+                <div class="topology-pane" data-topology-pane="import" role="tabpanel" hidden>
+                  <h2>导入配置</h2>
+                  <p class="hint">加载之前导出的切片或画板 JSON，快速恢复标注与排布。</p>
+                  <div class="import-actions">
+                    <label class="import-button">
+                      <input id="importTilesetInput" type="file" accept="application/json" />
+                      导入切片 JSON
                     </label>
-                    <label>
-                      <span>西</span>
-                      <input id="areaEdgeW" type="text" placeholder="grass_edge" />
+                    <label class="import-button ghost">
+                      <input id="importBoardInput" type="file" accept="application/json" />
+                      导入画板 JSON
                     </label>
                   </div>
-                  <div class="area-corner-grid">
-                    <label>
-                      <span>西北</span>
-                      <input id="areaCornerNW" type="text" placeholder="grass_corner" />
-                    </label>
-                    <label>
-                      <span>东北</span>
-                      <input id="areaCornerNE" type="text" placeholder="grass_corner" />
-                    </label>
-                    <label>
-                      <span>东南</span>
-                      <input id="areaCornerSE" type="text" placeholder="grass_corner" />
-                    </label>
-                    <label>
-                      <span>西南</span>
-                      <input id="areaCornerSW" type="text" placeholder="grass_corner" />
-                    </label>
-                  </div>
+                  <p class="import-note">提示：切片 JSON 会尝试匹配当前素材尺寸；若 meta.source 可访问，也会自动加载原始图片。</p>
+                  <span id="importStatus" aria-live="polite"></span>
                 </div>
               </div>
             </div>
           </div>
         </aside>
-      </section>
-
-      <section class="tool-panel" aria-label="工具面板">
-        <div class="panel-tabs" role="tablist">
-          <button type="button" class="panel-tab active" data-tab-target="board" role="tab" aria-selected="true">画板</button>
-          <button type="button" class="panel-tab" data-tab-target="import" role="tab" aria-selected="false">导入配置</button>
-        </div>
-        <div class="panel-content">
-          <div class="panel-pane active" data-pane="board" role="tabpanel">
-            <div class="board-pane">
-              <p class="hint">使用当前选中的 tile 在画板上绘制地图。</p>
-              <div class="board-controls">
-                <label>
-                  <span>列数</span>
-                  <input id="boardCols" type="number" min="1" value="8" />
-                </label>
-                <label>
-                  <span>行数</span>
-                  <input id="boardRows" type="number" min="1" value="8" />
-                </label>
-                <button id="resizeBoard" type="button">调整画板</button>
-                <button id="clearBoard" type="button" class="ghost">清空画板</button>
-              </div>
-              <div class="board-wrapper">
-                <canvas id="boardCanvas" width="512" height="512" role="img" aria-label="tileset 画板"></canvas>
-              </div>
-              <div class="board-actions">
-                <button id="exportBoardJson" type="button">导出画板 JSON</button>
-                <span id="boardStatus" aria-live="polite"></span>
-              </div>
-            </div>
-          </div>
-          <div class="panel-pane" data-pane="import" role="tabpanel" hidden>
-            <div class="import-panel">
-              <p class="hint">导入之前导出的 JSON，快速恢复切片联通信息或画板布局。</p>
-              <div class="import-actions">
-                <label class="import-button">
-                  <input id="importTilesetInput" type="file" accept="application/json" />
-                  导入切片 JSON
-                </label>
-                <label class="import-button ghost">
-                  <input id="importBoardInput" type="file" accept="application/json" />
-                  导入画板 JSON
-                </label>
-              </div>
-              <p class="import-note">提示：切片 JSON 会尝试匹配当前素材尺寸；若 meta.source 可访问，也会自动加载原始图片。</p>
-              <span id="importStatus" aria-live="polite"></span>
-            </div>
-          </div>
-        </div>
       </section>
     </main>
 

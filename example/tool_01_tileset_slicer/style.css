@@ -64,12 +64,10 @@ main {
 }
 
 .controls {
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 14px;
-  padding: 14px clamp(12px, 2.6vw, 22px);
-  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.42);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(160deg, rgba(22, 27, 48, 0.9), rgba(20, 24, 40, 0.82));
+  border-radius: 16px;
+  padding: 16px clamp(14px, 2.8vw, 26px);
+  box-shadow: 0 18px 38px rgba(7, 10, 18, 0.42);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -277,14 +275,14 @@ canvas {
 }
 
 .summary-card {
-  background: rgba(11, 18, 36, 0.82);
-  border-radius: 12px;
-  padding: 14px;
-  border: 1px solid rgba(59, 130, 246, 0.22);
+  background: linear-gradient(170deg, rgba(18, 25, 46, 0.92), rgba(15, 20, 34, 0.82));
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+  box-shadow: 0 12px 36px rgba(7, 10, 18, 0.38);
 }
 
 .summary-card h2,
@@ -320,16 +318,24 @@ canvas {
   min-height: 0;
 }
 
-.inspector-card,
-.topology-card {
-  background: rgba(11, 18, 36, 0.8);
-  border-radius: 14px;
+.inspector-card {
+  background: linear-gradient(170deg, rgba(20, 27, 50, 0.92), rgba(18, 25, 45, 0.86));
+  border-radius: 16px;
   padding: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.25);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 0;
+  box-shadow: 0 16px 40px rgba(6, 9, 18, 0.42);
+}
+
+.topology-shell {
+  background: linear-gradient(170deg, rgba(19, 25, 46, 0.95), rgba(17, 22, 38, 0.9));
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 18px 42px rgba(6, 9, 18, 0.4);
 }
 
 .inspector-grid {
@@ -360,64 +366,48 @@ canvas {
   opacity: 0.45;
 }
 
-.tool-panel {
-  background: rgba(11, 18, 36, 0.82);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  border-radius: 14px;
+.topology-tabs {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.35);
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.panel-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.25);
-  background: rgba(15, 23, 42, 0.55);
-}
-
-.panel-tab {
+.topology-tab {
   padding: 8px 18px;
   border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: rgba(226, 232, 240, 0.75);
+  background: rgba(72, 85, 180, 0.18);
+  color: rgba(224, 231, 255, 0.82);
   font-weight: 600;
+  border: none;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
-.panel-tab.active {
-  background: rgba(59, 130, 246, 0.28);
-  border-color: rgba(59, 130, 246, 0.55);
-  color: #f8fafc;
+.topology-tab.active {
+  background: linear-gradient(92deg, rgba(86, 136, 255, 0.85), rgba(125, 76, 255, 0.78));
+  color: #f8fbff;
+  box-shadow: 0 10px 24px rgba(74, 118, 255, 0.32);
+  transform: translateY(-1px);
 }
 
-.panel-content {
-  padding: 16px clamp(12px, 3vw, 22px) 18px;
-}
-
-.panel-pane {
+.topology-pane {
   display: none;
+  background: rgba(13, 18, 32, 0.6);
+  border-radius: 14px;
+  padding: 16px;
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px rgba(86, 136, 255, 0.06);
 }
 
-.panel-pane.active {
+.topology-pane.active {
   display: block;
 }
 
-.panel-pane[hidden] {
+.topology-pane[hidden] {
   display: none !important;
 }
 
 .board-pane {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.import-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -429,6 +419,7 @@ canvas {
   gap: 10px;
 }
 
+
 .import-button {
   position: relative;
   overflow: hidden;
@@ -437,25 +428,24 @@ canvas {
   justify-content: center;
   padding: 8px 18px;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.65);
+  border: none;
+  background: rgba(57, 71, 170, 0.2);
   color: rgba(226, 232, 240, 0.9);
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
 }
 
 .import-button.ghost {
-  background: rgba(24, 31, 52, 0.65);
+  background: rgba(90, 60, 180, 0.22);
 }
 
 .import-button.ghost:hover {
-  background: rgba(129, 140, 248, 0.2);
-  border-color: rgba(129, 140, 248, 0.45);
+  background: rgba(138, 91, 255, 0.32);
 }
 
 .import-button:hover {
-  background: rgba(59, 130, 246, 0.22);
-  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(86, 136, 255, 0.28);
+  box-shadow: 0 6px 18px rgba(86, 136, 255, 0.32);
 }
 
 .import-button input {
@@ -612,13 +602,13 @@ canvas {
 }
 
 .board-wrapper {
-  background: rgba(15, 23, 42, 0.65);
-  border-radius: 12px;
-  padding: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(11, 16, 29, 0.72);
+  border-radius: 14px;
+  padding: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: inset 0 0 0 1px rgba(86, 136, 255, 0.08);
 }
 
 .board-actions {
@@ -660,13 +650,14 @@ canvas {
 
 .tile-item:hover,
 .tile-item.active {
-  border-color: rgba(59, 130, 246, 0.55);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.22);
+  border-color: transparent;
+  box-shadow: 0 10px 26px rgba(76, 124, 255, 0.32);
   transform: translateY(-1px);
 }
 
 .tile-item.is-hover {
-  border-color: rgba(148, 163, 184, 0.45);
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(148, 163, 184, 0.28);
 }
 
 .tile-thumb {

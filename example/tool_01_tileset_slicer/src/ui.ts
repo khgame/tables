@@ -290,6 +290,11 @@ function renderTileList() {
     if (tileCtx) {
       tileCtx.drawImage(image, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
     }
+    tileCanvas.style.width = `${tile.width}px`;
+    tileCanvas.style.height = `${tile.height}px`;
+    tileCanvas.style.imageRendering = 'pixelated';
+    thumbWrapper.style.width = `${tile.width}px`;
+    thumbWrapper.style.height = `${tile.height}px`;
     thumbWrapper.appendChild(tileCanvas);
     item.appendChild(thumbWrapper);
 

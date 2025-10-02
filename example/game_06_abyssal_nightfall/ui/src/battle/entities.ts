@@ -119,6 +119,9 @@ export class EnemyUnit {
   public spriteScale: number;
   public animPhase: number;
   public alive = true;
+  public attackIntervalScale = 1;
+  public projectileSpeedScale = 1;
+  public disableProjectiles = false;
 
   constructor(
     public readonly template: EnemyRow,
@@ -183,6 +186,9 @@ export type EffectType = 'muzzle' | 'impact' | 'maelstrom' | 'shield' | 'telegra
 export class EffectInstance {
   public elapsed = 0;
   public detonated = false;
+  public frameCount = 1;
+  public frameWidth = 0;
+  public frameHeight = 0;
   constructor(
     public readonly type: EffectType,
     public x: number,
@@ -192,7 +198,27 @@ export class EffectInstance {
     public scale: number,
     public angle = 0,
     public extra: Record<string, unknown> = {}
-  ) {}
+  ) {
+    this.updateFrameInfo();
+  }
+
+  updateFrameInfo(): void {
+    if (!this.sprite) return;
+    if (this.frameWidth && this.frameHeight) return;
+    const width = this.sprite.width;
+    const height = this.sprite.height || width;
+    if (!width || !height) return;
+    if (width > height) {
+      const frames = Math.max(1, Math.floor(width / height));
+      this.frameCount = frames;
+      this.frameWidth = Math.floor(width / frames);
+      this.frameHeight = height;
+    } else {
+      this.frameCount = 1;
+      this.frameWidth = width;
+      this.frameHeight = height;
+    }
+  }
 }
 
 export type DropType = 'sanity' | 'hp' | 'shield' | 'xp' | 'ammo' | 'relic_charge';

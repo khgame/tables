@@ -8,8 +8,23 @@ import { DEFAULT_ENEMY_RADIUS, SCALE } from '../battle/constants';
 import { EnemyUnit } from '../battle/entities';
 
 const EARLY_WAVE_ADJUSTMENTS = [
-  { maxWave: 3, hpScale: 0.65, damageScale: 0.6, attackDelay: 1.2 },
-  { maxWave: 5, hpScale: 0.85, damageScale: 0.8, attackDelay: 0.6 }
+  {
+    maxWave: 2,
+    hpScale: 0.5,
+    damageScale: 0.5,
+    attackIntervalScale: 1.9,
+    initialAttackDelay: 1.5,
+    projectileSpeedScale: 0.45,
+    disableProjectiles: true
+  },
+  {
+    maxWave: 4,
+    hpScale: 0.75,
+    damageScale: 0.7,
+    attackIntervalScale: 1.5,
+    initialAttackDelay: 0.8,
+    projectileSpeedScale: 0.65
+  }
 ];
 
 export class StageController {
@@ -167,8 +182,11 @@ export class StageController {
       const softening = EARLY_WAVE_ADJUSTMENTS.find(config => waveIndex < config.maxWave);
       if (softening) {
         enemy.hp = Math.max(1, Math.round(enemy.hp * softening.hpScale));
-        enemy.damage = Math.max(4, Math.round((enemy.damage ?? 6) * softening.damageScale));
-        enemy.attackTimer += softening.attackDelay;
+        enemy.damage = Math.max(3, Math.round((enemy.damage ?? 6) * softening.damageScale));
+        enemy.attackIntervalScale = softening.attackIntervalScale ?? 1;
+        enemy.projectileSpeedScale = softening.projectileSpeedScale ?? 1;
+        enemy.disableProjectiles = Boolean(softening.disableProjectiles);
+        enemy.attackTimer += softening.initialAttackDelay ?? 0;
       }
       this.state.enemies.push(enemy);
     }

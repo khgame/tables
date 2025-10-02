@@ -698,7 +698,7 @@ export class CombatRuntime {
     const player = this.state.player;
     if (!player) return;
     const template = enemy.template;
-    enemy.attackTimer = template.attackInterval ?? 0;
+    enemy.attackTimer = (template.attackInterval ?? 0) * (enemy.attackIntervalScale || 1);
     const [dirX, dirY] = normalize(player.x - enemy.x, player.y - enemy.y);
     const enemyRadius = enemy.radius || PLAYER_RADIUS;
     const projectileSprite = template.projectileSprite ? this.assets.getImage(template.projectileSprite) : null;
@@ -711,12 +711,13 @@ export class CombatRuntime {
     }
 
     const pushProjectile = (vx: number, vy: number, damage: number, sanity: number) => {
+      const projectileSpeed = (template.projectileSpeed ?? 0) * SCALE * (enemy.projectileSpeedScale || 1);
       this.state.enemyProjectiles.push(
         new EnemyProjectile(
           enemy.x + vx,
           enemy.y + vy,
-          dirX * (template.projectileSpeed ?? 0) * SCALE,
-          dirY * (template.projectileSpeed ?? 0) * SCALE,
+          dirX * projectileSpeed,
+          dirY * projectileSpeed,
           template.projectileLifetime ?? 1.4,
           damage,
           sanity,
@@ -727,6 +728,13 @@ export class CombatRuntime {
         )
       );
     };
+
+    if (enemy.disableProjectiles) {
+      const contactDamage = Math.max(template.damage ?? 8, CONTACT_DAMAGE_MIN);
+      const contactSanity = template.sanityDamage ?? Math.max(1, Math.round(contactDamage * 0.25));
+      this.applyPlayerDamage(contactDamage, template.name, contactSanity);
+      return;
+    }
 
     switch (template.attackStyle) {
       case 'BURST': {
@@ -1001,22 +1009,43 @@ export class CombatRuntime {
     const { ctx } = this.dom;
     ctx.save();
     this.state.effects.forEach(effect => {
+      ctx.save();
       ctx.translate(effect.x, effect.y);
       if (effect.sprite) {
+        effect.updateFrameInfo();
         const scale = effect.scale || 1;
         const alpha = 1 - effect.elapsed / effect.duration;
         ctx.globalAlpha = Math.max(0, alpha);
         ctx.rotate(effect.angle || 0);
+        const frameCount = Math.max(1, effect.frameCount);
+        const progress = Math.min(0.999, Math.max(0, effect.elapsed / effect.duration));
+        const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+        const frameWidth = effect.frameWidth || effect.sprite.width;
+        const frameHeight = effect.frameHeight || effect.sprite.height;
+        const drawWidth = frameWidth * scale;
+        const drawHeight = frameHeight * scale;
         ctx.drawImage(
           effect.sprite,
-          (-effect.sprite.width * scale) / 2,
-          (-effect.sprite.height * scale) / 2,
-          effect.sprite.width * scale,
-          effect.sprite.height * scale
+          frameWidth * frameIndex,
+          0,
+          frameWidth,
+          frameHeight,
+          -drawWidth / 2,
+          -drawHeight / 2,
+          drawWidth,
+          drawHeight
         );
+        ctx.globalAlpha = 1;
+      } else if (effect.type === 'maelstrom') {
+        const radius = Math.max(40, effect.scale * 0.5);
+        const alpha = 0.35 * (1 - effect.elapsed / effect.duration);
+        ctx.strokeStyle = `rgba(96, 165, 250, ${Math.max(0, alpha)})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.stroke();
       }
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalAlpha = 1;
+      ctx.restore();
     });
     ctx.restore();
   }

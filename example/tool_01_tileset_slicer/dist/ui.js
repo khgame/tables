@@ -210,6 +210,11 @@ function renderTileList() {
     const image = state.image;
     if (!image || !state.tiles.length)
         return;
+    const firstTile = state.tiles[0];
+    if (firstTile) {
+        tileListEl.style.setProperty('--tile-thumb-width', `${firstTile.width}px`);
+        tileListEl.style.setProperty('--tile-thumb-height', `${firstTile.height}px`);
+    }
     state.tiles.forEach((tile, index) => {
         const item = document.createElement('button');
         item.type = 'button';
@@ -217,8 +222,11 @@ function renderTileList() {
         item.dataset.index = String(index);
         if (index === state.selectedIndex)
             item.classList.add('active');
+        item.title = `${tile.id} | (${tile.x}, ${tile.y})${tile.groupId ? ` · 组:${tile.groupId}` : ''}`;
         const thumbWrapper = document.createElement('div');
         thumbWrapper.className = 'tile-thumb';
+        thumbWrapper.style.width = `${tile.width}px`;
+        thumbWrapper.style.height = `${tile.height}px`;
         const tileCanvas = document.createElement('canvas');
         tileCanvas.width = tile.width;
         tileCanvas.height = tile.height;
@@ -226,21 +234,15 @@ function renderTileList() {
         if (tileCtx) {
             tileCtx.drawImage(image, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
         }
+        tileCanvas.style.width = `${tile.width}px`;
+        tileCanvas.style.height = `${tile.height}px`;
+        tileCanvas.style.imageRendering = 'pixelated';
         thumbWrapper.appendChild(tileCanvas);
+        const caption = document.createElement('span');
+        caption.className = 'tile-caption';
+        caption.textContent = tile.id;
+        thumbWrapper.appendChild(caption);
         item.appendChild(thumbWrapper);
-        const label = document.createElement('div');
-        label.className = 'tile-label';
-        label.textContent = tile.id;
-        item.appendChild(label);
-        const info = document.createElement('div');
-        info.className = 'tile-meta';
-        const parts = [];
-        parts.push(`(${tile.x}, ${tile.y})`);
-        if (tile.groupId)
-            parts.push(`组:${tile.groupId}`);
-        parts.push(tile.role === 'neutral' ? '普通' : tile.role === 'road' ? '道路' : tile.role === 'area' ? '区域' : '装饰');
-        info.textContent = parts.join(' · ');
-        item.appendChild(info);
         item.addEventListener('click', () => {
             setSelectedIndex(index);
             refreshSelectionUI();

@@ -152,20 +152,10 @@
 
             <div class="topology-shell" id="topologyShell">
               <div class="topology-pane" data-topology-pane="road" role="group" hidden>
-                <h2>道路标注</h2>
-                <p class="hint">选择连通预设快速标记四向道路，可选补充对角转角。</p>
+                <h2>道路连通</h2>
                 <div class="road-panel">
                   <div class="road-selected" id="selectedTileLabel">未选中 tile</div>
                   <div class="road-variant-grid" id="roadVariantGrid" aria-live="polite" role="listbox"></div>
-                  <div class="road-diagonal-section">
-                    <span class="road-diagonal-label">角落连通（可选）</span>
-                    <div class="road-diagonal-grid">
-                      <button type="button" data-dir="nw" class="road-diagonal-btn" title="西北转角">┏</button>
-                      <button type="button" data-dir="ne" class="road-diagonal-btn" title="东北转角">┓</button>
-                      <button type="button" data-dir="se" class="road-diagonal-btn" title="东南转角">┛</button>
-                      <button type="button" data-dir="sw" class="road-diagonal-btn" title="西南转角">┗</button>
-                    </div>
-                  </div>
                 </div>
               </div>
               <div class="topology-pane" data-topology-pane="area" role="group" hidden>

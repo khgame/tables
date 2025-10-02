@@ -127,7 +127,7 @@ const boardCtx = boardCanvas?.getContext('2d') ?? null;
 
 const roadVariantContainer = document.getElementById('roadVariantGrid');
 const roadVariantButtons: HTMLButtonElement[] = [];
-const diagonalButtons: HTMLButtonElement[] = Array.from(document.querySelectorAll<HTMLButtonElement>('.road-diagonal-btn'));
+const brushButtons: HTMLButtonElement[] = Array.from(document.querySelectorAll<HTMLButtonElement>('.brush-btn'));
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DIRECTION_LABELS: Record<CardinalDirection, string> = {
   n: '北',
@@ -154,6 +154,12 @@ const ROAD_VARIANTS = ROAD_VARIANT_ORDER.map(mask => ({
   mask,
   label: buildRoadVariantLabel(mask),
 }));
+
+type BrushMode = 'paint' | 'line' | 'rect' | 'erase';
+let activeBrush: BrushMode = 'paint';
+let isPainting = false;
+let brushStart: { row: number; col: number } | null = null;
+let lastPaintCell: { row: number; col: number } | null = null;
 
 
 function setStatus(message: string, kind: 'info' | 'success' | 'error' = 'info') {
@@ -526,10 +532,6 @@ function updateInspectorUI() {
       button.disabled = true;
       button.classList.remove('active');
     });
-    diagonalButtons.forEach(btn => {
-      btn.disabled = true;
-      btn.classList.remove('active');
-    });
     if (topologyShell) topologyShell.dataset.role = 'neutral';
     syncTopologyTabByRole(null);
     return;
@@ -556,18 +558,6 @@ function updateInspectorUI() {
     }
     const isActive = maskValue === roadMask;
     button.classList.toggle('active', isActive);
-  });
-
-  diagonalButtons.forEach(btn => {
-    const dir = btn.dataset.dir as DiagonalDirection | undefined;
-    btn.disabled = !isRoad;
-    if (!dir) return;
-    if (!isRoad) {
-      btn.classList.remove('active');
-      return;
-    }
-    const active = Boolean(tile.road?.diagonals[dir]);
-    btn.classList.toggle('active', active);
   });
 
   if (areaCenterInput) {
@@ -773,49 +763,223 @@ function handleRoadVariantSelect(mask: number) {
   updateInspectorUI();
 }
 
-function handleDiagonalToggle(button: HTMLButtonElement) {
-  const tile = getSelectedTile();
-  if (!tile) {
-    setStatus('请先选择一个 tile。', 'error');
-    return;
-  }
-  if (tile.role !== 'road') {
-    setStatus('当前 tile 类型不是道路，无法设置联通。', 'error');
-    return;
-  }
-  const dir = button.dataset.dir as DiagonalDirection | undefined;
-  if (!dir) return;
-  toggleRoadConnection(tile, dir);
-  updateInspectorUI();
+interface BoardCell {
+  row: number;
+  col: number;
 }
 
-function handleBoardPaint(event: MouseEvent) {
-  if (!boardCanvas) return;
-  const tileWidth = parseNumberInput(tileWidthInput, 64);
-  const tileHeight = parseNumberInput(tileHeightInput, 64);
+const BRUSH_MODE_MAP: Record<string, BrushMode> = {
+  grass: 'paint',
+  road: 'line',
+  edge: 'rect',
+  erase: 'erase',
+};
+const BRUSH_LABELS: Record<BrushMode, string> = {
+  paint: '画笔',
+  line: '连线',
+  rect: '矩形',
+  erase: '擦除',
+};
+let currentBrushTileId: string | null = null;
+
+function setActiveBrush(mode: BrushMode) {
+  activeBrush = mode;
+  brushButtons.forEach(button => {
+    const brush = button.dataset.brush ?? '';
+    const mapped = BRUSH_MODE_MAP[brush];
+    const isActive = mapped === mode;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+  setBoardStatus(`${BRUSH_LABELS[mode]} 工具已选择`, 'info');
+}
+
+function getBoardTileSize(): { tileWidth: number; tileHeight: number } {
+  return {
+    tileWidth: parseNumberInput(tileWidthInput, 64),
+    tileHeight: parseNumberInput(tileHeightInput, 64),
+  };
+}
+
+function repaintBoard() {
+  const { tileWidth, tileHeight } = getBoardTileSize();
+  drawBoard(tileWidth, tileHeight);
+}
+
+function getCellFromEvent(event: PointerEvent): BoardCell | null {
+  if (!boardCanvas) return null;
+  const { tileWidth, tileHeight } = getBoardTileSize();
+  if (tileWidth <= 0 || tileHeight <= 0) return null;
   const rect = boardCanvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
   const col = Math.floor(x / tileWidth);
   const row = Math.floor(y / tileHeight);
-  if (row < 0 || row >= state.board.rows || col < 0 || col >= state.board.cols) return;
+  if (row < 0 || row >= state.board.rows || col < 0 || col >= state.board.cols) return null;
+  return { row, col };
+}
 
-  if (event.type === 'contextmenu') {
-    event.preventDefault();
-    setBoardCell(row, col, null);
-    drawBoard(tileWidth, tileHeight);
-    setBoardStatus(`画板 (${col}, ${row}) 已清除`, 'info');
-    return;
+function applyBrushToCells(cells: BoardCell[], tileId: string | null): number {
+  let changes = 0;
+  cells.forEach(cell => {
+    if (!state.board.cells[cell.row]) return;
+    const current = state.board.cells[cell.row][cell.col];
+    if (current === tileId) return;
+    setBoardCell(cell.row, cell.col, tileId);
+    changes += 1;
+  });
+  if (changes > 0) {
+    repaintBoard();
   }
+  return changes;
+}
 
-  const tile = getSelectedTile();
-  if (!tile) {
+function getLinePoints(start: BoardCell, end: BoardCell): BoardCell[] {
+  const points: BoardCell[] = [];
+  let x0 = start.col;
+  let y0 = start.row;
+  const x1 = end.col;
+  const y1 = end.row;
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  while (true) {
+    points.push({ row: y0, col: x0 });
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = err * 2;
+    if (e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+  return points;
+}
+
+function getRectanglePoints(start: BoardCell, end: BoardCell): BoardCell[] {
+  const points: BoardCell[] = [];
+  const rowStart = Math.min(start.row, end.row);
+  const rowEnd = Math.max(start.row, end.row);
+  const colStart = Math.min(start.col, end.col);
+  const colEnd = Math.max(start.col, end.col);
+  for (let row = rowStart; row <= rowEnd; row += 1) {
+    if (row < 0 || row >= state.board.rows) continue;
+    for (let col = colStart; col <= colEnd; col += 1) {
+      if (col < 0 || col >= state.board.cols) continue;
+      points.push({ row, col });
+    }
+  }
+  return points;
+}
+
+function resetBrushSession() {
+  isPainting = false;
+  brushStart = null;
+  lastPaintCell = null;
+  currentBrushTileId = null;
+}
+
+function handleBoardPointerDown(event: PointerEvent) {
+  if (!boardCanvas || event.button !== 0) return;
+  const cell = getCellFromEvent(event);
+  if (!cell) return;
+  const tileId = activeBrush === 'erase' ? null : getSelectedTile()?.id ?? null;
+  if (activeBrush !== 'erase' && !tileId) {
     setBoardStatus('请先选择一个 tile。', 'error');
     return;
   }
-  setBoardCell(row, col, tile.id);
-  drawBoard(tileWidth, tileHeight);
-  setBoardStatus(`画板 (${col}, ${row}) → ${tile.id}`, 'success');
+  event.preventDefault();
+  boardCanvas.setPointerCapture(event.pointerId);
+  isPainting = true;
+  brushStart = cell;
+  lastPaintCell = cell;
+  currentBrushTileId = tileId;
+  if (activeBrush === 'rect') {
+    setBoardStatus(`矩形起点：(${cell.col}, ${cell.row})`, 'info');
+    return;
+  }
+  const label = BRUSH_LABELS[activeBrush];
+  const applied = applyBrushToCells([cell], tileId);
+  if (applied > 0) {
+    setBoardStatus(`${label}：已处理 ${applied} 格 (${cell.col}, ${cell.row})`, 'success');
+  }
+}
+
+function handleBoardPointerMove(event: PointerEvent) {
+  if (!boardCanvas || !isPainting) return;
+  if ((event.buttons & 1) !== 1) return;
+  const cell = getCellFromEvent(event);
+  if (!cell) return;
+  if (activeBrush === 'rect') {
+    if (brushStart) {
+      const width = Math.abs(cell.col - brushStart.col) + 1;
+      const height = Math.abs(cell.row - brushStart.row) + 1;
+      setBoardStatus(`矩形范围：${width} × ${height}`, 'info');
+    }
+    return;
+  }
+  if (activeBrush === 'line') {
+    if (!lastPaintCell) {
+      lastPaintCell = cell;
+      return;
+    }
+    if (lastPaintCell.row === cell.row && lastPaintCell.col === cell.col) return;
+    const tileId = currentBrushTileId;
+    if (tileId == null) return;
+    const points = getLinePoints(lastPaintCell, cell);
+    const applied = applyBrushToCells(points, tileId);
+    if (applied > 0) {
+      setBoardStatus(`${BRUSH_LABELS.line}：已处理 ${applied} 格`, 'success');
+    }
+    lastPaintCell = cell;
+    return;
+  }
+  if (!lastPaintCell || lastPaintCell.row !== cell.row || lastPaintCell.col !== cell.col) {
+    const tileId = activeBrush === 'erase' ? null : currentBrushTileId;
+    if (tileId == null && activeBrush !== 'erase') return;
+    const label = BRUSH_LABELS[activeBrush];
+    const applied = applyBrushToCells([cell], tileId);
+    if (applied > 0) {
+      setBoardStatus(`${label}：已处理 ${applied} 格 (${cell.col}, ${cell.row})`, 'success');
+    }
+    lastPaintCell = cell;
+  }
+}
+
+function handleBoardPointerUp(event: PointerEvent) {
+  if (!boardCanvas || !isPainting) return;
+  if (boardCanvas.hasPointerCapture(event.pointerId)) {
+    boardCanvas.releasePointerCapture(event.pointerId);
+  }
+  const cell = getCellFromEvent(event);
+  if (activeBrush === 'rect' && brushStart && cell) {
+    const tileId = currentBrushTileId;
+    if (tileId == null) {
+      resetBrushSession();
+      return;
+    }
+    const points = getRectanglePoints(brushStart, cell);
+    const applied = applyBrushToCells(points, tileId);
+    if (applied > 0) {
+      const width = Math.abs(cell.col - brushStart.col) + 1;
+      const height = Math.abs(cell.row - brushStart.row) + 1;
+      setBoardStatus(`${BRUSH_LABELS.rect}：填充 ${width} × ${height} (${applied} 格)`, 'success');
+    }
+  }
+  resetBrushSession();
+}
+
+function handleBoardPointerCancel(event: PointerEvent) {
+  if (!boardCanvas) return;
+  if (boardCanvas.hasPointerCapture(event.pointerId)) {
+    boardCanvas.releasePointerCapture(event.pointerId);
+  }
+  resetBrushSession();
 }
 
 function handleResizeBoard() {
@@ -1034,16 +1198,28 @@ function initRoadVariants() {
   });
 }
 
-function initDiagonalButtons() {
-  diagonalButtons.forEach(button => {
-    button.addEventListener('click', () => handleDiagonalToggle(button));
+function initBrushButtons() {
+  if (!brushButtons.length) return;
+  brushButtons.forEach(button => {
+    const mode = BRUSH_MODE_MAP[button.dataset.brush ?? ''];
+    if (!mode) return;
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      setActiveBrush(mode);
+    });
   });
+  setActiveBrush(activeBrush);
 }
 
 function initBoardEvents() {
   if (!boardCanvas) return;
-  boardCanvas.addEventListener('click', handleBoardPaint);
-  boardCanvas.addEventListener('contextmenu', handleBoardPaint);
+  boardCanvas.addEventListener('pointerdown', handleBoardPointerDown);
+  boardCanvas.addEventListener('pointermove', handleBoardPointerMove);
+  boardCanvas.addEventListener('pointerup', handleBoardPointerUp);
+  boardCanvas.addEventListener('pointerleave', handleBoardPointerCancel);
+  boardCanvas.addEventListener('pointercancel', handleBoardPointerCancel);
+  boardCanvas.addEventListener('contextmenu', event => event.preventDefault());
+  boardCanvas.style.touchAction = 'none';
 }
 
 function initInputs() {
@@ -1134,7 +1310,7 @@ export function initApp() {
   initPresetList();
   initInputs();
   initRoadVariants();
-  initDiagonalButtons();
+  initBrushButtons();
   initBoardEvents();
   initCanvasHover();
   initMainTabs();

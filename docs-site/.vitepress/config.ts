@@ -8,6 +8,7 @@ const themeConfig: DefaultTheme.Config = {
     { text: '插件', link: '/guide/plugins' },
     { text: '序列化', link: '/guide/serializers' },
     { text: '体验 Demo', link: '/demos/' },
+    { text: '实用工具', link: '/tools/' },
     { text: 'GitHub', link: 'https://github.com/khgame/tables' }
   ],
   sidebar: {
@@ -31,6 +32,15 @@ const themeConfig: DefaultTheme.Config = {
           { text: 'Click Cookies', link: '/demos/click-cookies' },
           { text: 'A Dark Room', link: '/demos/a-dark-room' },
           { text: 'Arcane Depths', link: '/demos/arcane-depths' }
+        ]
+      }
+    ],
+    '/tools/': [
+      {
+        text: '实用工具',
+        items: [
+          { text: '概览', link: '/tools/' },
+          { text: 'Tileset 切片工具', link: '/tools/tileset-slicer' }
         ]
       }
     ]

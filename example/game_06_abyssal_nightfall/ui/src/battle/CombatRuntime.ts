@@ -360,6 +360,7 @@ export class CombatRuntime {
 
   private update(dt: number): void {
     this.state.time += dt;
+    this.state.invulnTimer = Math.max(0, this.state.invulnTimer - dt);
     if (this.state.stats) {
       if (this.state.stats.hpRegen > 0 && this.state.player && this.state.player.hp < this.state.player.hpMax) {
         this.state.player.hp = clamp(this.state.player.hp + this.state.stats.hpRegen * dt, 0, this.state.player.hpMax);

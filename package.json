@@ -28,7 +28,8 @@
     "test:watch": "jest --watch",
     "smoke": "npm run build && node ./test/smoke.js",
     "coverage": "npm run build && jest --coverage --runInBand",
-    "ex:nightfall": "npm run build && node ./example/game_06_abyssal_nightfall/_rebuild_data.js && node ./example/game_06_abyssal_nightfall/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_06_abyssal_nightfall/out -p 8086 -l"
+    "ex:nightfall": "npm run build && node ./example/game_06_abyssal_nightfall/_rebuild_data.js && node ./example/game_06_abyssal_nightfall/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_06_abyssal_nightfall/out -p 8086 -l",
+    "tool:tileset": "npx http-server example/tool_01_tileset_slicer -p 5210 -o"
   },
   "repository": {
     "type": "git",

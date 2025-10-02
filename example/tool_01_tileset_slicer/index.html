@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tileset 切片工具 · tables</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Tileset 切片工具</h1>
+      <p>上传图像素材，配置 tile 参数，导出 JSON/CSV 配置供 tables 使用。</p>
+    </header>
+
+    <main>
+      <section class="controls">
+        <div class="control-group">
+          <label class="file-input">
+            <span>选择素材图 (PNG/JPG)</span>
+            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          </label>
+          <button id="resetBtn" type="button" class="ghost">清空</button>
+        </div>
+
+        <div class="control-grid">
+          <label>
+            <span>Tile 宽度</span>
+            <input id="tileWidth" type="number" min="1" value="64" />
+          </label>
+          <label>
+            <span>Tile 高度</span>
+            <input id="tileHeight" type="number" min="1" value="64" />
+          </label>
+          <label>
+            <span>边距 Margin</span>
+            <input id="margin" type="number" min="0" value="0" />
+          </label>
+          <label>
+            <span>间距 Spacing</span>
+            <input id="spacing" type="number" min="0" value="0" />
+          </label>
+          <label>
+            <span>ID 前缀</span>
+            <input id="idPrefix" type="text" placeholder="tile" value="tile" />
+          </label>
+          <label>
+            <span>起始索引</span>
+            <input id="startIndex" type="number" value="0" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="exportJson" type="button">导出 JSON</button>
+          <button id="exportCsv" type="button" class="ghost">导出 CSV</button>
+          <button id="copyJson" type="button" class="ghost">复制 JSON</button>
+          <span id="status" aria-live="polite"></span>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="canvas-wrapper">
+          <canvas id="preview" width="640" height="480"></canvas>
+          <div id="overlayInfo" class="overlay" hidden></div>
+        </div>
+        <aside class="summary">
+          <h2>切片概览</h2>
+          <dl>
+            <div>
+              <dt>原始尺寸</dt>
+              <dd><span id="imgSize">—</span></dd>
+            </div>
+            <div>
+              <dt>列 × 行</dt>
+              <dd><span id="gridCount">—</span></dd>
+            </div>
+            <div>
+              <dt>Tile 总数</dt>
+              <dd><span id="tileCount">0</span></dd>
+            </div>
+          </dl>
+          <h3>预览列表</h3>
+          <div id="tileList" class="tile-list"></div>
+        </aside>
+      </section>
+    </main>
+
+    <footer>
+      <small>
+        导出的 JSON 结构：{ "tiles": [{ "id": string, "x": number, "y": number, "width": number, "height": number }],
+        "meta": { width, height, tileWidth, tileHeight, margin, spacing }}。
+      </small>
+    </footer>
+
+    <script src="script.js" type="module"></script>
+  </body>
+</html>

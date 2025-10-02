@@ -195,12 +195,12 @@ function buildObjectives() {
 function buildMapTiles() {
   const rows = [
     ...rowsEmpty,
-    ['@', '@', '@', 'string', 'string', 'string', 'string', 'string', 'string'],
-    ['sector', 'category', 'serial', 'name', 'biome', 'hazards', 'spawnTables', 'exitRules', 'connections'],
-    ['70', '07', '0101', 'Ruined Arcade', 'urban', 'acid-rain|collapsed-floor', 'ganger.light|construct.patrol', '{exits:2,requires:"lockpick-II"}', 'District-Helix|District-Nadir'],
-    ['70', '07', '0102', 'Subway Artery', 'transit', 'electrical-surge|darkness', 'ganger.sniper|aberrant.swarm', '{exits:3,requires:"flare"}', 'District-Helix|Harbor Nexus'],
-    ['70', '07', '0103', 'Harbor Breach', 'docks', 'toxic-fog|tidal-spike', 'aberrant.lurker|construct.turret', '{exits:1,requires:"hazmat"}', 'Harbor Nexus|Rift-13'],
-    ['70', '07', '0104', 'Polar Lab Perimeter', 'icefield', 'whiteout|low-temp', 'construct.turret|aberrant.synth', '{exits:2,requires:"thermal-suit"}', 'Rift-13']
+    ['@', '@', '@', 'string', 'string', 'string', 'string', 'string', 'string', 'string', 'uint', 'uint', 'uint', 'uint'],
+    ['sector', 'category', 'serial', 'name', 'biome', 'hazards', 'spawnTables', 'exitRules', 'connections', 'tileSheet', 'tileWidth', 'tileHeight', 'tileRow', 'tileCol'],
+    ['70', '07', '0101', 'Ruined Arcade', 'urban', 'acid-rain|collapsed-floor', 'ganger.light|construct.patrol', '{exits:2,requires:"lockpick-II"}', 'District-Helix|District-Nadir', 'tileset_city', '32', '32', '0', '0'],
+    ['70', '07', '0102', 'Subway Artery', 'transit', 'electrical-surge|darkness', 'ganger.sniper|aberrant.swarm', '{exits:3,requires:"flare"}', 'District-Helix|Harbor Nexus', 'tileset_city', '32', '32', '0', '1'],
+    ['70', '07', '0103', 'Harbor Breach', 'docks', 'toxic-fog|tidal-spike', 'aberrant.lurker|construct.turret', '{exits:1,requires:"hazmat"}', 'Harbor Nexus|Rift-13', 'tileset_city', '32', '32', '1', '0'],
+    ['70', '07', '0104', 'Polar Lab Perimeter', 'icefield', 'whiteout|low-temp', 'construct.turret|aberrant.synth', '{exits:2,requires:"thermal-suit"}', 'Rift-13', 'tileset_city', '32', '32', '1', '1']
   ];
   writeTable('map_tiles.xlsx', rows);
 }

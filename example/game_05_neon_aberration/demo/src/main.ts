@@ -32,11 +32,26 @@ interface MapTileRecord {
   biome: string;
   hazards: string;
   spawnTables: string;
+  exitRules: string;
+  connections: string;
+  tileSheet?: string;
+  tileWidth?: number;
+  tileHeight?: number;
+  tileRow?: number;
+  tileCol?: number;
 }
 
 const HUD_ROOT = document.getElementById('hud');
 
 const WORLD_BOUNDS = new Phaser.Math.Vector2(1600, 900);
+
+const BIOME_TINTS: Record<string, number> = {
+  urban: 0x1f2937,
+  transit: 0x0f172a,
+  docks: 0x14222a,
+  icefield: 0x1b263b,
+  anomaly: 0x231c3a
+};
 
 function extractFirst<T>(table: TablePayload<T>): T {
   const id = table.tids[0];
@@ -74,6 +89,7 @@ class NeonScene extends Phaser.Scene {
     this.load.json('operators', '../operators.json');
     this.load.json('enemies', '../enemies.json');
     this.load.json('map_tiles', '../map_tiles.json');
+    this.load.image('tileset_city', '../tileset_city.png');
   }
 
   create(): void {
@@ -125,11 +141,15 @@ class NeonScene extends Phaser.Scene {
   private setupWorld(): void {
     this.physics.world.setBounds(0, 0, WORLD_BOUNDS.x, WORLD_BOUNDS.y);
 
-    this.add.rectangle(WORLD_BOUNDS.x / 2, WORLD_BOUNDS.y / 2, WORLD_BOUNDS.x, WORLD_BOUNDS.y, 0x05070e)
-      .setAlpha(0.92);
+    this.renderTileBackground();
+
+    const overlayTint = BIOME_TINTS[this.mapTile.biome] ?? 0x0f172a;
+    this.add.rectangle(WORLD_BOUNDS.x / 2, WORLD_BOUNDS.y / 2, WORLD_BOUNDS.x, WORLD_BOUNDS.y, overlayTint, 0.18)
+      .setDepth(-4);
 
     const grid = this.add.grid(WORLD_BOUNDS.x / 2, WORLD_BOUNDS.y / 2, WORLD_BOUNDS.x, WORLD_BOUNDS.y, 80, 80, 0x111b2f, 0.15, 0x0f172a, 0.28);
     grid.setBlendMode(Phaser.BlendModes.ADD);
+    grid.setDepth(-3);
 
     this.renderHazards();
 
@@ -149,6 +169,55 @@ class NeonScene extends Phaser.Scene {
       fontSize: '18px',
       color: '#63a4ff'
     }).setScrollFactor(0);
+  }
+
+  private renderTileBackground(): void {
+    const sheetKey = this.mapTile.tileSheet;
+    if (!sheetKey || !this.textures.exists(sheetKey)) {
+      return;
+    }
+
+    const tileWidth = this.mapTile.tileWidth ?? 32;
+    const tileHeight = this.mapTile.tileHeight ?? 32;
+    const tileRow = this.mapTile.tileRow ?? 0;
+    const tileCol = this.mapTile.tileCol ?? 0;
+
+    const tileKey = this.ensureTileTexture(sheetKey, tileWidth, tileHeight, tileRow, tileCol);
+    if (!tileKey) {
+      return;
+    }
+
+    const tileSprite = this.add.tileSprite(WORLD_BOUNDS.x / 2, WORLD_BOUNDS.y / 2, WORLD_BOUNDS.x, WORLD_BOUNDS.y, tileKey);
+    tileSprite.setOrigin(0.5);
+    tileSprite.setScrollFactor(1);
+    tileSprite.setDepth(-6);
+    tileSprite.setAlpha(0.96);
+  }
+
+  private ensureTileTexture(sheetKey: string, width: number, height: number, row: number, col: number): string | null {
+    const baseTexture = this.textures.get(sheetKey);
+    if (!baseTexture) {
+      return null;
+    }
+
+    const cacheKey = `tile:${sheetKey}:${row}:${col}:${width}x${height}`;
+    if (this.textures.exists(cacheKey)) {
+      return cacheKey;
+    }
+
+    const sourceImage = baseTexture.getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+    if (!sourceImage) {
+      return null;
+    }
+
+    const sourceX = col * width;
+    const sourceY = row * height;
+    const canvasTexture = this.textures.createCanvas(cacheKey, width, height);
+    canvasTexture.context.clearRect(0, 0, width, height);
+    canvasTexture.context.drawImage(sourceImage, sourceX, sourceY, width, height, 0, 0, width, height);
+    canvasTexture.refresh();
+
+    return cacheKey;
   }
 
   private setupInput(): void {

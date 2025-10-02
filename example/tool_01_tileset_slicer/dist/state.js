@@ -1,4 +1,4 @@
-import { ALL_DIRECTIONS, CARDINAL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
+import { ALL_DIRECTIONS, CARDINAL_DIRECTIONS, DIAGONAL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
 const DEFAULT_TILE_META = {
     passable: true,
     passableFor: [],
@@ -317,21 +317,45 @@ export function buildTilesetExport(meta) {
             row: tile.row,
             col: tile.col,
             role: tile.role,
-            groupId: tile.groupId,
-            meta: cloneTileMeta(tile.meta),
         };
-        if (tile.road && tile.role === 'road') {
-            base.road = cloneRoadTopology(tile.road);
+        if (tile.groupId) {
+            base.groupId = tile.groupId;
         }
-        if (tile.area && tile.role === 'area') {
-            base.area = cloneAreaTopology(tile.area);
+        const metaClone = cloneTileMeta(tile.meta);
+        const metaExport = {};
+        if (!metaClone.passable)
+            metaExport.passable = false;
+        if (metaClone.passableFor.length)
+            metaExport.passableFor = [...metaClone.passableFor];
+        if (metaClone.layer !== DEFAULT_TILE_META.layer)
+            metaExport.layer = metaClone.layer;
+        if (metaClone.tags.length)
+            metaExport.tags = [...metaClone.tags];
+        if (Object.keys(metaExport).length) {
+            base.meta = metaExport;
+        }
+        if (tile.role === 'road' && tile.road) {
+            const connections = CARDINAL_DIRECTIONS.filter(dir => tile.road?.connections[dir]).join('');
+            const diagonals = DIAGONAL_DIRECTIONS.filter(dir => tile.road?.diagonals[dir]).join('');
+            if (connections || diagonals) {
+                base.road = {
+                    connections,
+                    ...(diagonals ? { diagonals } : {}),
+                };
+            }
+        }
+        if (tile.role === 'area' && tile.area) {
+            const area = cloneAreaTopology(tile.area);
+            if (area && (area.center || Object.keys(area.edges).length || Object.keys(area.corners).length)) {
+                base.area = area;
+            }
         }
         return base;
     });
     return {
         meta: {
             ...meta,
-            schemaVersion: 2,
+            schemaVersion: 3,
         },
         tiles: exportedTiles,
         groups: getSortedGroups(),
@@ -406,33 +430,55 @@ export async function applyTilesetImport(data) {
                 tags: Array.isArray(raw.meta.tags) ? raw.meta.tags.map(String) : tile.meta.tags,
             });
         }
-        if (raw.road && tile.role === 'road') {
-            tile.road = {
-                connections: {
-                    n: Boolean(raw.road.connections?.n),
-                    e: Boolean(raw.road.connections?.e),
-                    s: Boolean(raw.road.connections?.s),
-                    w: Boolean(raw.road.connections?.w),
-                },
-                diagonals: {
-                    ne: Boolean(raw.road.diagonals?.ne),
-                    se: Boolean(raw.road.diagonals?.se),
-                    sw: Boolean(raw.road.diagonals?.sw),
-                    nw: Boolean(raw.road.diagonals?.nw),
-                },
-            };
-        }
-        else if (tile.role === 'road') {
-            const legacy = raw.connections;
-            if (legacy) {
+        if (tile.role === 'road') {
+            if (raw.road) {
                 const topology = createEmptyRoadTopology();
-                ALL_DIRECTIONS.forEach(dir => {
-                    if (dir in legacy) {
-                        const value = Boolean(legacy[dir]);
-                        setRoadConnection(tile, dir, value);
+                const connectionValue = raw.road.connections;
+                if (typeof connectionValue === 'string') {
+                    const connections = connectionValue ?? '';
+                    CARDINAL_DIRECTIONS.forEach(dir => {
+                        topology.connections[dir] = connections.includes(dir);
+                    });
+                    const diagonalValue = raw.road.diagonals;
+                    if (typeof diagonalValue === 'string') {
+                        const diagonals = diagonalValue ?? '';
+                        DIAGONAL_DIRECTIONS.forEach(dir => {
+                            topology.diagonals[dir] = diagonals.includes(dir);
+                        });
                     }
-                });
-                tile.road = topology;
+                    tile.road = topology;
+                }
+                else if (connectionValue && typeof connectionValue === 'object') {
+                    CARDINAL_DIRECTIONS.forEach(dir => {
+                        topology.connections[dir] = Boolean(connectionValue[dir]);
+                    });
+                    const diagonalsObj = raw.road.diagonals ?? {};
+                    DIAGONAL_DIRECTIONS.forEach(dir => {
+                        topology.diagonals[dir] = Boolean(diagonalsObj?.[dir]);
+                    });
+                    tile.road = topology;
+                }
+            }
+            if (!tile.road) {
+                const legacy = raw.connections;
+                if (legacy) {
+                    const topology = createEmptyRoadTopology();
+                    ALL_DIRECTIONS.forEach(dir => {
+                        if (dir in legacy) {
+                            const value = Boolean(legacy[dir]);
+                            if (dir === 'ne' || dir === 'se' || dir === 'sw' || dir === 'nw') {
+                                topology.diagonals[dir] = value;
+                            }
+                            else {
+                                topology.connections[dir] = value;
+                            }
+                        }
+                    });
+                    tile.road = topology;
+                }
+                else {
+                    tile.road = createEmptyRoadTopology();
+                }
             }
         }
         if (raw.area && tile.role === 'area') {

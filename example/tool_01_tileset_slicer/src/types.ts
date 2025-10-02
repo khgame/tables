@@ -83,9 +83,15 @@ export interface TilesetMetaExport {
   schemaVersion: number;
 }
 
-export interface TilesetTileExport extends Omit<TileSlice, 'road' | 'area' | 'meta'> {
-  meta: TileMeta;
-  road?: RoadTopology;
+export interface RoadTopologyExport {
+  connections: string;
+  diagonals?: string;
+}
+
+export interface TilesetTileExport extends Omit<TileSlice, 'road' | 'area' | 'meta' | 'groupId'> {
+  groupId?: string;
+  meta?: Partial<TileMeta>;
+  road?: RoadTopologyExport;
   area?: AreaTopology;
 }
 

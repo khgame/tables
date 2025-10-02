@@ -5,6 +5,8 @@ import {
   BoardImportResult,
   BoardState,
   CARDINAL_DIRECTIONS,
+  DIAGONAL_DIRECTIONS,
+  CardinalDirection,
   DiagonalDirection,
   Direction,
   RegenerateOptions,
@@ -376,23 +378,47 @@ export function buildTilesetExport(meta: Omit<TilesetMetaExport, 'schemaVersion'
       row: tile.row,
       col: tile.col,
       role: tile.role,
-      groupId: tile.groupId,
-      meta: cloneTileMeta(tile.meta),
-    } as TilesetTileExport;
+    };
 
-    if (tile.road && tile.role === 'road') {
-      base.road = cloneRoadTopology(tile.road);
+    if (tile.groupId) {
+      base.groupId = tile.groupId;
     }
-    if (tile.area && tile.role === 'area') {
-      base.area = cloneAreaTopology(tile.area);
+
+    const metaClone = cloneTileMeta(tile.meta);
+    const metaExport: Partial<TileMeta> = {};
+    if (!metaClone.passable) metaExport.passable = false;
+    if (metaClone.passableFor.length) metaExport.passableFor = [...metaClone.passableFor];
+    if (metaClone.layer !== DEFAULT_TILE_META.layer) metaExport.layer = metaClone.layer;
+    if (metaClone.tags.length) metaExport.tags = [...metaClone.tags];
+    if (Object.keys(metaExport).length) {
+      base.meta = metaExport;
     }
+
+    if (tile.role === 'road' && tile.road) {
+      const connections = CARDINAL_DIRECTIONS.filter(dir => tile.road?.connections[dir]).join('');
+      const diagonals = DIAGONAL_DIRECTIONS.filter(dir => tile.road?.diagonals[dir]).join('');
+      if (connections || diagonals) {
+        base.road = {
+          connections,
+          ...(diagonals ? { diagonals } : {}),
+        };
+      }
+    }
+
+    if (tile.role === 'area' && tile.area) {
+      const area = cloneAreaTopology(tile.area);
+      if (area && (area.center || Object.keys(area.edges).length || Object.keys(area.corners).length)) {
+        base.area = area;
+      }
+    }
+
     return base;
   });
 
   return {
     meta: {
       ...meta,
-      schemaVersion: 2,
+      schemaVersion: 3,
     },
     tiles: exportedTiles,
     groups: getSortedGroups(),
@@ -473,32 +499,52 @@ export async function applyTilesetImport(data: TilesetImportData) {
         tags: Array.isArray(raw.meta.tags) ? raw.meta.tags.map(String) : tile.meta.tags,
       });
     }
-    if (raw.road && tile.role === 'road') {
-      tile.road = {
-        connections: {
-          n: Boolean(raw.road.connections?.n),
-          e: Boolean(raw.road.connections?.e),
-          s: Boolean(raw.road.connections?.s),
-          w: Boolean(raw.road.connections?.w),
-        },
-        diagonals: {
-          ne: Boolean(raw.road.diagonals?.ne),
-          se: Boolean(raw.road.diagonals?.se),
-          sw: Boolean(raw.road.diagonals?.sw),
-          nw: Boolean(raw.road.diagonals?.nw),
-        },
-      };
-    } else if (tile.role === 'road') {
-      const legacy = (raw as { connections?: Record<string, unknown> }).connections;
-      if (legacy) {
+    if (tile.role === 'road') {
+      if (raw.road) {
         const topology = createEmptyRoadTopology();
-        ALL_DIRECTIONS.forEach(dir => {
-          if (dir in legacy) {
-            const value = Boolean(legacy[dir]);
-            setRoadConnection(tile, dir, value);
+        const connectionValue = (raw.road as { connections?: unknown }).connections;
+        if (typeof connectionValue === 'string') {
+          const connections = connectionValue ?? '';
+          CARDINAL_DIRECTIONS.forEach(dir => {
+            topology.connections[dir] = connections.includes(dir);
+          });
+          const diagonalValue = (raw.road as { diagonals?: unknown }).diagonals;
+          if (typeof diagonalValue === 'string') {
+            const diagonals = diagonalValue ?? '';
+            DIAGONAL_DIRECTIONS.forEach(dir => {
+              topology.diagonals[dir] = diagonals.includes(dir);
+            });
           }
-        });
-        tile.road = topology;
+          tile.road = topology;
+        } else if (connectionValue && typeof connectionValue === 'object') {
+          CARDINAL_DIRECTIONS.forEach(dir => {
+            topology.connections[dir] = Boolean((connectionValue as Record<string, unknown>)[dir]);
+          });
+          const diagonalsObj = (raw.road as { diagonals?: Record<string, unknown> }).diagonals ?? {};
+          DIAGONAL_DIRECTIONS.forEach(dir => {
+            topology.diagonals[dir] = Boolean(diagonalsObj?.[dir]);
+          });
+          tile.road = topology;
+        }
+      }
+      if (!tile.road) {
+        const legacy = (raw as { connections?: Record<string, unknown> }).connections;
+        if (legacy) {
+          const topology = createEmptyRoadTopology();
+          ALL_DIRECTIONS.forEach(dir => {
+            if (dir in legacy) {
+              const value = Boolean((legacy as Record<string, unknown>)[dir]);
+              if (dir === 'ne' || dir === 'se' || dir === 'sw' || dir === 'nw') {
+                topology.diagonals[dir as DiagonalDirection] = value;
+              } else {
+                topology.connections[dir as CardinalDirection] = value;
+              }
+            }
+          });
+          tile.road = topology;
+        } else {
+          tile.road = createEmptyRoadTopology();
+        }
       }
     }
     if (raw.area && tile.role === 'area') {

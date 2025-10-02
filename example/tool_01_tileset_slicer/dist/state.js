@@ -5,6 +5,13 @@ const DEFAULT_TILE_META = {
     layer: 'ground',
     tags: [],
 };
+const EVENT_TYPES = ['spawn', 'trigger', 'loot'];
+const groupsByRole = {
+    neutral: new Set(),
+    road: new Set(),
+    area: new Set(),
+    decor: new Set(),
+};
 function createEmptyRoadTopology() {
     return {
         connections: {
@@ -35,6 +42,7 @@ function createBoard(cols, rows) {
         cols: safeCols,
         rows: safeRows,
         cells: Array.from({ length: safeRows }, () => Array(safeCols).fill(null)),
+        events: [],
     };
 }
 export const state = {
@@ -76,11 +84,16 @@ function cloneAreaTopology(area) {
 }
 function rebuildGroups() {
     state.groups.clear();
+    Object.values(groupsByRole).forEach(set => set.clear());
     state.tiles.forEach(tile => {
         if (tile.groupId) {
             state.groups.add(tile.groupId);
+            groupsByRole[tile.role].add(tile.groupId);
         }
     });
+}
+export function getGroupsForRole(role) {
+    return Array.from(groupsByRole[role]).sort((a, b) => a.localeCompare(b));
 }
 export function getSortedGroups() {
     return Array.from(state.groups).sort((a, b) => a.localeCompare(b));
@@ -198,6 +211,7 @@ export function setTileRole(tile, role) {
         tile.road = undefined;
         tile.area = undefined;
     }
+    rebuildGroups();
 }
 export function setTileGroup(tile, groupId) {
     const trimmed = groupId?.trim() ?? '';
@@ -284,7 +298,21 @@ export function setAreaCorner(tile, dir, value) {
     }
 }
 export function setBoardDimensions(cols, rows) {
-    state.board = createBoard(cols, rows);
+    const prev = state.board;
+    const next = createBoard(cols, rows);
+    const minRows = Math.min(prev.rows, next.rows);
+    const minCols = Math.min(prev.cols, next.cols);
+    for (let row = 0; row < minRows; row += 1) {
+        for (let col = 0; col < minCols; col += 1) {
+            next.cells[row][col] = prev.cells[row][col];
+        }
+    }
+    prev.events.forEach(event => {
+        if (event.row < next.rows && event.col < next.cols) {
+            next.events.push({ ...event });
+        }
+    });
+    state.board = next;
 }
 export function setBoardCell(row, col, tileId) {
     if (!state.board.cells[row])
@@ -295,6 +323,35 @@ export function setBoardCell(row, col, tileId) {
 }
 export function clearBoard() {
     state.board.cells.forEach(row => row.fill(null));
+    state.board.events = [];
+}
+export function getBoardEvents() {
+    return state.board.events.map(event => ({ ...event }));
+}
+export function toggleBoardEvent(row, col, type) {
+    const existingIndex = state.board.events.findIndex(event => event.row === row && event.col === col && event.type === type);
+    if (existingIndex >= 0) {
+        state.board.events.splice(existingIndex, 1);
+        return 'removed';
+    }
+    const replaceIndex = state.board.events.findIndex(event => event.row === row && event.col === col);
+    if (replaceIndex >= 0) {
+        state.board.events.splice(replaceIndex, 1);
+    }
+    state.board.events.push({ row, col, type });
+    return 'added';
+}
+export function removeBoardEvent(row, col, type) {
+    state.board.events = state.board.events.filter(event => {
+        if (event.row !== row || event.col !== col)
+            return true;
+        if (!type)
+            return false;
+        return event.type !== type;
+    });
+}
+export function getBoardEventAt(row, col) {
+    return state.board.events.find(event => event.row === row && event.col === col);
 }
 export function pruneBoardAgainstTiles() {
     const validIds = new Set(state.tiles.map(tile => tile.id));
@@ -362,13 +419,17 @@ export function buildTilesetExport(meta) {
     };
 }
 export function buildBoardExport(tileWidth, tileHeight) {
-    return {
+    const payload = {
         cols: state.board.cols,
         rows: state.board.rows,
         tileWidth,
         tileHeight,
         cells: state.board.cells.map(row => [...row]),
     };
+    if (state.board.events.length) {
+        payload.events = state.board.events.map(event => ({ ...event }));
+    }
+    return payload;
 }
 export function applyBoardImport(data) {
     if (!data) {
@@ -399,6 +460,23 @@ export function applyBoardImport(data) {
                 total += 1;
             }
         }
+    }
+    state.board.events = [];
+    if (Array.isArray(data.events)) {
+        data.events.forEach(rawEvent => {
+            if (!rawEvent)
+                return;
+            const row = Number(rawEvent.row);
+            const col = Number(rawEvent.col);
+            const type = rawEvent.type;
+            if (!Number.isFinite(row) || !Number.isFinite(col))
+                return;
+            if (row < 0 || row >= state.board.rows || col < 0 || col >= state.board.cols)
+                return;
+            if (typeof type !== 'string' || !EVENT_TYPES.includes(type))
+                return;
+            state.board.events.push({ row, col, type: type });
+        });
     }
     return {
         missing,

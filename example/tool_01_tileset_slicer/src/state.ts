@@ -4,6 +4,8 @@ import {
   BoardExportData,
   BoardImportResult,
   BoardState,
+  BoardEvent,
+  BoardEventType,
   CARDINAL_DIRECTIONS,
   DIAGONAL_DIRECTIONS,
   CardinalDirection,
@@ -29,6 +31,14 @@ const DEFAULT_TILE_META: TileMeta = {
   passableFor: [],
   layer: 'ground',
   tags: [],
+};
+
+const EVENT_TYPES: BoardEventType[] = ['spawn', 'trigger', 'loot'];
+const groupsByRole: Record<TileRole, Set<string>> = {
+  neutral: new Set(),
+  road: new Set(),
+  area: new Set(),
+  decor: new Set(),
 };
 
 function createEmptyRoadTopology(): RoadTopology {
@@ -63,6 +73,7 @@ function createBoard(cols: number, rows: number): BoardState {
     cols: safeCols,
     rows: safeRows,
     cells: Array.from({ length: safeRows }, () => Array<string | null>(safeCols).fill(null)),
+    events: [],
   };
 }
 
@@ -106,11 +117,17 @@ function cloneAreaTopology(area?: AreaTopology): AreaTopology | undefined {
 
 function rebuildGroups() {
   state.groups.clear();
+  Object.values(groupsByRole).forEach(set => set.clear());
   state.tiles.forEach(tile => {
     if (tile.groupId) {
       state.groups.add(tile.groupId);
+      groupsByRole[tile.role].add(tile.groupId);
     }
   });
+}
+
+export function getGroupsForRole(role: TileRole): string[] {
+  return Array.from(groupsByRole[role]).sort((a, b) => a.localeCompare(b));
 }
 
 export function getSortedGroups(): string[] {
@@ -246,6 +263,7 @@ export function setTileRole(tile: TileSlice, role: TileRole) {
     tile.road = undefined;
     tile.area = undefined;
   }
+  rebuildGroups();
 }
 
 export function setTileGroup(tile: TileSlice, groupId: string | null) {
@@ -343,7 +361,21 @@ export function setAreaCorner(tile: TileSlice, dir: DiagonalDirection, value: st
 }
 
 export function setBoardDimensions(cols: number, rows: number) {
-  state.board = createBoard(cols, rows);
+  const prev = state.board;
+  const next = createBoard(cols, rows);
+  const minRows = Math.min(prev.rows, next.rows);
+  const minCols = Math.min(prev.cols, next.cols);
+  for (let row = 0; row < minRows; row += 1) {
+    for (let col = 0; col < minCols; col += 1) {
+      next.cells[row][col] = prev.cells[row][col];
+    }
+  }
+  prev.events.forEach(event => {
+    if (event.row < next.rows && event.col < next.cols) {
+      next.events.push({ ...event });
+    }
+  });
+  state.board = next;
 }
 
 export function setBoardCell(row: number, col: number, tileId: string | null) {
@@ -354,6 +386,37 @@ export function setBoardCell(row: number, col: number, tileId: string | null) {
 
 export function clearBoard() {
   state.board.cells.forEach(row => row.fill(null));
+  state.board.events = [];
+}
+
+export function getBoardEvents(): BoardEvent[] {
+  return state.board.events.map(event => ({ ...event }));
+}
+
+export function toggleBoardEvent(row: number, col: number, type: BoardEventType): 'added' | 'removed' {
+  const existingIndex = state.board.events.findIndex(event => event.row === row && event.col === col && event.type === type);
+  if (existingIndex >= 0) {
+    state.board.events.splice(existingIndex, 1);
+    return 'removed';
+  }
+  const replaceIndex = state.board.events.findIndex(event => event.row === row && event.col === col);
+  if (replaceIndex >= 0) {
+    state.board.events.splice(replaceIndex, 1);
+  }
+  state.board.events.push({ row, col, type });
+  return 'added';
+}
+
+export function removeBoardEvent(row: number, col: number, type?: BoardEventType) {
+  state.board.events = state.board.events.filter(event => {
+    if (event.row !== row || event.col !== col) return true;
+    if (!type) return false;
+    return event.type !== type;
+  });
+}
+
+export function getBoardEventAt(row: number, col: number): BoardEvent | undefined {
+  return state.board.events.find(event => event.row === row && event.col === col);
 }
 
 export function pruneBoardAgainstTiles() {
@@ -426,13 +489,17 @@ export function buildTilesetExport(meta: Omit<TilesetMetaExport, 'schemaVersion'
 }
 
 export function buildBoardExport(tileWidth: number, tileHeight: number): BoardExportData {
-  return {
+  const payload: BoardExportData = {
     cols: state.board.cols,
     rows: state.board.rows,
     tileWidth,
     tileHeight,
     cells: state.board.cells.map(row => [...row]),
   };
+  if (state.board.events.length) {
+    payload.events = state.board.events.map(event => ({ ...event }));
+  }
+  return payload;
 }
 
 export function applyBoardImport(data: BoardExportData): BoardImportResult {
@@ -466,6 +533,20 @@ export function applyBoardImport(data: BoardExportData): BoardImportResult {
         total += 1;
       }
     }
+  }
+
+  state.board.events = [];
+  if (Array.isArray(data.events)) {
+    data.events.forEach(rawEvent => {
+      if (!rawEvent) return;
+      const row = Number((rawEvent as { row?: unknown }).row);
+      const col = Number((rawEvent as { col?: unknown }).col);
+      const type = (rawEvent as { type?: unknown }).type;
+      if (!Number.isFinite(row) || !Number.isFinite(col)) return;
+      if (row < 0 || row >= state.board.rows || col < 0 || col >= state.board.cols) return;
+      if (typeof type !== 'string' || !EVENT_TYPES.includes(type as BoardEventType)) return;
+      state.board.events.push({ row, col, type: type as BoardEventType });
+    });
   }
 
   return {

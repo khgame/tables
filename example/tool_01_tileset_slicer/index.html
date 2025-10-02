@@ -127,6 +127,7 @@
                   <span>分组</span>
                   <input id="tileGroup" type="text" list="tileGroupOptions" placeholder="例如 grass_path" />
                   <datalist id="tileGroupOptions"></datalist>
+                  <div id="groupSuggestions" class="group-suggestions" hidden></div>
                 </label>
                 <label>
                   <span>渲染层</span>
@@ -242,6 +243,7 @@
                 <button type="button" class="brush-btn" data-brush="grass">草地铺设</button>
                 <button type="button" class="brush-btn" data-brush="road">道路连线</button>
                 <button type="button" class="brush-btn" data-brush="edge">矩形铺设</button>
+                <button type="button" class="brush-btn" data-brush="square">方块笔刷</button>
                 <button type="button" class="brush-btn" data-brush="fill">区域填充</button>
                 <button type="button" class="brush-btn" data-brush="erase">擦除</button>
               </div>

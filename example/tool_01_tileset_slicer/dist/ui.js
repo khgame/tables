@@ -1,5 +1,5 @@
 import { ALL_DIRECTIONS, CARDINAL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
-import { applyBoardImport, applyTilesetImport, buildBoardExport, buildTilesetExport, clearBoard, getAutoguessSize, getSelectedTile, getSortedGroups, loadImageFromFile, loadImageFromUrl, pruneBoardAgainstTiles, regenerateTiles, resetState, setAreaCenter, setAreaCorner, setAreaEdge, setBoardCell, setBoardDimensions, setHoverIndex, setSelectedIndex, setRoadConnectionsMask, setTileGroup, setTileLayer, setTilePassable, setTilePassableFor, setTileRole, setTileTags, state, } from './state.js';
+import { applyBoardImport, applyTilesetImport, buildBoardExport, buildTilesetExport, clearBoard, getAutoguessSize, getSelectedTile, getSortedGroups, loadImageFromFile, loadImageFromUrl, pruneBoardAgainstTiles, regenerateTiles, resetState, setAreaCenter, setAreaCorner, setAreaEdge, setBoardCell, setBoardDimensions, setHoverIndex, toggleBoardEvent, getBoardEvents, getGroupsForRole, setSelectedIndex, setRoadConnectionsMask, setTileGroup, setTileLayer, setTilePassable, setTilePassableFor, setTileRole, setTileTags, state, } from './state.js';
 const PRESET_TILES = [
     {
         id: 'nightfall_city',
@@ -68,9 +68,11 @@ const areaCornerInputs = {
 };
 const ctx = previewCanvas?.getContext('2d') ?? null;
 const boardCtx = boardCanvas?.getContext('2d') ?? null;
+const groupSuggestions = document.getElementById('groupSuggestions');
 const roadVariantContainer = document.getElementById('roadVariantGrid');
 const roadVariantButtons = [];
 const brushButtons = Array.from(document.querySelectorAll('.brush-btn'));
+const eventButtons = Array.from(document.querySelectorAll('.event-btn'));
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DIRECTION_LABELS = {
     n: '北',
@@ -97,7 +99,19 @@ const ROAD_VARIANTS = ROAD_VARIANT_ORDER.map(mask => ({
     mask,
     label: buildRoadVariantLabel(mask),
 }));
+const SQUARE_BRUSH_RADIUS = 1;
+const EVENT_LABELS = {
+    spawn: '出生点',
+    trigger: '触发器',
+    loot: '掉落点',
+};
+const EVENT_COLORS = {
+    spawn: '#34d399',
+    trigger: '#f97316',
+    loot: '#facc15',
+};
 let activeBrush = 'paint';
+let activeEventType = null;
 let isPainting = false;
 let brushStart = null;
 let lastPaintCell = null;
@@ -118,6 +132,25 @@ function setImportStatus(message, kind = 'info') {
         return;
     importStatus.textContent = message;
     importStatus.dataset.kind = kind;
+}
+function setActiveEventType(type, silent = false) {
+    if (activeEventType === type)
+        return;
+    activeEventType = type;
+    eventButtons.forEach(button => {
+        const eventType = button.dataset.event;
+        const isActive = eventType === type;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+    if (!silent) {
+        if (type) {
+            setBoardStatus(`${EVENT_LABELS[type]}：点击画板以设置/移除`, 'info');
+        }
+        else {
+            setBoardStatus('事件点模式已关闭', 'info');
+        }
+    }
 }
 function parseNumberInput(el, fallback, allowZero = false) {
     if (!el)
@@ -148,6 +181,38 @@ function refreshGroupDatalist() {
         option.value = groupId;
         tileGroupDataList.appendChild(option);
     });
+}
+function renderGroupSuggestions(role, currentGroup) {
+    if (!groupSuggestions)
+        return;
+    if (!role) {
+        groupSuggestions.innerHTML = '';
+        groupSuggestions.hidden = true;
+        return;
+    }
+    const groups = getGroupsForRole(role);
+    if (!groups.length) {
+        groupSuggestions.innerHTML = '';
+        groupSuggestions.hidden = true;
+        return;
+    }
+    groupSuggestions.innerHTML = '';
+    groups.forEach(groupId => {
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'group-pill';
+        pill.textContent = groupId;
+        if (groupId === currentGroup)
+            pill.classList.add('active');
+        pill.addEventListener('click', () => {
+            if (!tileGroupInput)
+                return;
+            tileGroupInput.value = groupId;
+            handleGroupChange();
+        });
+        groupSuggestions.appendChild(pill);
+    });
+    groupSuggestions.hidden = false;
 }
 function buildRoadVariantLabel(mask) {
     const safeMask = mask & 0b1111;
@@ -302,6 +367,32 @@ function drawBoard(tileWidth, tileHeight) {
         boardCtx.lineTo(boardCanvas.width, y);
         boardCtx.stroke();
     }
+    const events = getBoardEvents();
+    if (events.length) {
+        boardCtx.save();
+        boardCtx.textAlign = 'center';
+        boardCtx.textBaseline = 'middle';
+        const fontSize = Math.max(10, Math.min(tileWidth, tileHeight) * 0.36);
+        boardCtx.font = `${fontSize}px Inter, 'Segoe UI', sans-serif`;
+        events.forEach(event => {
+            const color = EVENT_COLORS[event.type] ?? '#38bdf8';
+            const centerX = (event.col + 0.5) * tileWidth;
+            const centerY = (event.row + 0.5) * tileHeight;
+            const radius = Math.max(6, Math.min(tileWidth, tileHeight) * 0.2);
+            boardCtx.beginPath();
+            boardCtx.fillStyle = color;
+            boardCtx.globalAlpha = 0.82;
+            boardCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            boardCtx.fill();
+            boardCtx.globalAlpha = 1;
+            boardCtx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+            boardCtx.lineWidth = 1.5;
+            boardCtx.stroke();
+            boardCtx.fillStyle = '#0f172a';
+            boardCtx.fillText(EVENT_LABELS[event.type].slice(0, 1), centerX, centerY);
+        });
+        boardCtx.restore();
+    }
 }
 function renderTileList() {
     if (!tileListEl)
@@ -455,6 +546,7 @@ function updateInspectorUI() {
             button.disabled = true;
             button.classList.remove('active');
         });
+        renderGroupSuggestions(null, null);
         if (topologyShell)
             topologyShell.dataset.role = 'neutral';
         syncTopologyTabByRole(null);
@@ -474,6 +566,7 @@ function updateInspectorUI() {
         tilePassableForInput.value = tile.meta.passableFor.join(', ');
     if (tileTagsInput)
         tileTagsInput.value = tile.meta.tags.join(', ');
+    renderGroupSuggestions(tile.role, tile.groupId ?? null);
     const isRoad = tile.role === 'road';
     const isArea = tile.role === 'area';
     const roadMask = computeRoadMask(tile.road);
@@ -584,6 +677,8 @@ function handleReset() {
     }
     if (overlayInfo)
         overlayInfo.hidden = true;
+    renderGroupSuggestions(null, null);
+    setActiveEventType(null, true);
     refreshAfterTilesUpdated();
     setStatus('已重置。', 'info');
 }
@@ -689,19 +784,25 @@ const BRUSH_MODE_MAP = {
     grass: 'paint',
     road: 'line',
     edge: 'rect',
+    square: 'square',
     fill: 'fill',
     erase: 'erase',
 };
 const BRUSH_LABELS = {
     paint: '画笔',
     line: '连线',
+    square: '方块',
     rect: '矩形',
     fill: '填充',
     erase: '擦除',
 };
 let currentBrushTileId = null;
 function setActiveBrush(mode) {
+    if (activeBrush === mode)
+        return;
     activeBrush = mode;
+    if (activeEventType)
+        setActiveEventType(null, true);
     brushButtons.forEach(button => {
         const brush = button.dataset.brush ?? '';
         const mapped = BRUSH_MODE_MAP[brush];
@@ -779,6 +880,19 @@ function getLinePoints(start, end) {
     }
     return points;
 }
+function getSquarePoints(center, radius) {
+    const points = [];
+    for (let row = center.row - radius; row <= center.row + radius; row += 1) {
+        if (row < 0 || row >= state.board.rows)
+            continue;
+        for (let col = center.col - radius; col <= center.col + radius; col += 1) {
+            if (col < 0 || col >= state.board.cols)
+                continue;
+            points.push({ row, col });
+        }
+    }
+    return points;
+}
 function getRectanglePoints(start, end) {
     const points = [];
     const rowStart = Math.min(start.row, end.row);
@@ -834,6 +948,14 @@ function handleBoardPointerDown(event) {
     const cell = getCellFromEvent(event);
     if (!cell)
         return;
+    if (activeEventType) {
+        const action = toggleBoardEvent(cell.row, cell.col, activeEventType);
+        repaintBoard();
+        const label = EVENT_LABELS[activeEventType];
+        const statusKind = action === 'added' ? 'success' : 'info';
+        setBoardStatus(`${label}：${action === 'added' ? '已添加' : '已移除'} (${cell.col}, ${cell.row})`, statusKind);
+        return;
+    }
     const tileId = activeBrush === 'erase' ? null : getSelectedTile()?.id ?? null;
     if (activeBrush !== 'erase' && activeBrush !== 'fill' && !tileId) {
         setBoardStatus('请先选择一个 tile。', 'error');
@@ -864,6 +986,19 @@ function handleBoardPointerDown(event) {
     currentBrushTileId = tileId;
     if (activeBrush === 'rect') {
         setBoardStatus(`矩形起点：(${cell.col}, ${cell.row})`, 'info');
+        return;
+    }
+    if (activeBrush === 'square') {
+        if (tileId == null) {
+            setBoardStatus('方块笔刷前请选中 tile。', 'error');
+            resetBrushSession();
+            return;
+        }
+        const points = getSquarePoints(cell, SQUARE_BRUSH_RADIUS);
+        const applied = applyBrushToCells(points, tileId);
+        if (applied > 0) {
+            setBoardStatus(`${BRUSH_LABELS.square}：已处理 ${applied} 格 (${cell.col}, ${cell.row})`, 'success');
+        }
         return;
     }
     const label = BRUSH_LABELS[activeBrush];
@@ -904,6 +1039,20 @@ function handleBoardPointerMove(event) {
             setBoardStatus(`${BRUSH_LABELS.line}：已处理 ${applied} 格`, 'success');
         }
         lastPaintCell = cell;
+        return;
+    }
+    if (activeBrush === 'square') {
+        const tileId = currentBrushTileId;
+        if (tileId == null)
+            return;
+        if (!lastPaintCell || lastPaintCell.row !== cell.row || lastPaintCell.col !== cell.col) {
+            const points = getSquarePoints(cell, SQUARE_BRUSH_RADIUS);
+            const applied = applyBrushToCells(points, tileId);
+            if (applied > 0) {
+                setBoardStatus(`${BRUSH_LABELS.square}：已处理 ${applied} 格`, 'success');
+            }
+            lastPaintCell = cell;
+        }
         return;
     }
     if (!lastPaintCell || lastPaintCell.row !== cell.row || lastPaintCell.col !== cell.col) {
@@ -1060,6 +1209,7 @@ function handleGroupChange() {
         return;
     setTileGroup(tile, tileGroupInput.value);
     refreshGroupDatalist();
+    renderGroupSuggestions(tile.role, tile.groupId);
     renderTileList();
 }
 function handleLayerChange() {
@@ -1183,6 +1333,21 @@ function initBrushButtons() {
     });
     setActiveBrush(activeBrush);
 }
+function initEventButtons() {
+    if (!eventButtons.length)
+        return;
+    eventButtons.forEach(button => {
+        const type = button.dataset.event;
+        if (!type)
+            return;
+        button.type = 'button';
+        button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', () => {
+            const nextType = activeEventType === type ? null : type;
+            setActiveEventType(nextType);
+        });
+    });
+}
 function initBoardEvents() {
     if (!boardCanvas)
         return;
@@ -1293,6 +1458,7 @@ export function initApp() {
     initInputs();
     initRoadVariants();
     initBrushButtons();
+    initEventButtons();
     initBoardEvents();
     initCanvasHover();
     initMainTabs();

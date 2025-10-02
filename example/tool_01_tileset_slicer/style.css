@@ -473,6 +473,35 @@ button.ghost:hover {
   box-shadow: inset 0 0 0 1px rgba(86, 110, 198, 0.2);
 }
 
+.group-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.group-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(42, 56, 120, 0.35);
+  color: rgba(216, 222, 255, 0.85);
+  font-size: 11px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.group-pill:hover {
+  background: rgba(87, 135, 255, 0.42);
+  box-shadow: 0 6px 16px rgba(82, 128, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.group-pill.active {
+  background: linear-gradient(95deg, rgba(87, 135, 255, 0.92), rgba(139, 84, 255, 0.88));
+  box-shadow: 0 6px 18px rgba(82, 128, 255, 0.4);
+}
+
 .topology-pane {
   margin-top: 12px;
   background: rgba(11, 15, 27, 0.85);
@@ -671,7 +700,8 @@ button.ghost:hover {
   transform: translateY(-1px);
 }
 
-.brush-btn.active {
+.brush-btn.active,
+.event-btn.active {
   background: linear-gradient(95deg, rgba(87, 135, 255, 0.88), rgba(139, 84, 255, 0.82));
   box-shadow: 0 10px 24px rgba(82, 128, 255, 0.35);
   transform: translateY(-1px);

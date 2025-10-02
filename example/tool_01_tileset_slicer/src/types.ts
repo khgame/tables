@@ -49,6 +49,15 @@ export interface BoardState {
   cols: number;
   rows: number;
   cells: (string | null)[][];
+  events: BoardEvent[];
+}
+
+export type BoardEventType = 'spawn' | 'trigger' | 'loot';
+
+export interface BoardEvent {
+  row: number;
+  col: number;
+  type: BoardEventType;
 }
 
 export interface TilesetState {
@@ -107,6 +116,7 @@ export interface BoardExportData {
   tileWidth: number;
   tileHeight: number;
   cells: (string | null)[][];
+  events?: BoardEvent[];
 }
 
 export interface TilesetImportData {

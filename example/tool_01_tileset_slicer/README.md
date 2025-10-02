@@ -10,11 +10,13 @@
 4. 切换列表或直接点击预览画布可选中切片；在“元属性”卡片中设置类型、分组、渲染层、通行与标签等信息。
 5. “拓扑标注”卡片提供道路/区域两个子 Tab：道路可标记四/八向连通，区域可填写中心、边缘、角落地形；导入配置入口也位于此处。
 6. “基于当前标注数据绘图”主 Tab 提供画板与 Brush/事件工具，可根据标注数据搭建示例地图：
-   - `草地铺设` 画笔：所选 tile 自由涂抹；
+   - `草地铺设`：所选 tile 自由涂抹；
    - `道路连线`：拖动自动补全直线铺设；
    - `矩形铺设`：拖拽形成矩形区域；
+   - `方块笔刷`：以当前格为中心的 3×3 快速填充；
    - `区域填充`：一键洪水填充同类区域；
-   - `擦除`：快速清空路径。
+   - `擦除`：快速清空路径；
+   - 右侧 `事件点` 按钮可放置/移除出生点、触发器、掉落点，支持导出到画板 JSON。
 7. 顶部按钮可导出/复制 JSON、导出 CSV、保存画板数据，亦可加载已有的标注或画板 JSON。
 
 导出的 JSON 结构示例：
@@ -22,7 +24,7 @@
 ```json
 {
   "meta": {
-    "source": "blob:https://example",
+    "source": "./samples/nightfall_tileset.png",
     "width": 512,
     "height": 512,
     "tileWidth": 64,
@@ -30,31 +32,38 @@
     "margin": 0,
     "spacing": 0,
     "count": 64,
-    "schemaVersion": 2
+    "schemaVersion": 3
   },
   "tiles": [
     {
-      "id": "tile_0",
-      "x": 0,
-      "y": 0,
+      "id": "tile_12",
+      "x": 128,
+      "y": 64,
       "width": 64,
       "height": 64,
-      "row": 0,
-      "col": 0,
+      "row": 1,
+      "col": 2,
       "role": "road",
       "groupId": "stone_path",
-      "meta": {
-        "passable": true,
-        "passableFor": ["player", "vehicle"],
-        "layer": "ground",
-        "tags": ["stone", "dry"]
-      },
-      "road": {
-        "connections": { "n": true, "e": true, "s": false, "w": false },
-        "diagonals": { "ne": false, "se": false, "sw": false, "nw": false }
+      "road": { "connections": "ne" }
+    },
+    {
+      "id": "tile_13",
+      "x": 192,
+      "y": 64,
+      "width": 64,
+      "height": 64,
+      "row": 1,
+      "col": 3,
+      "role": "area",
+      "meta": { "tags": ["grass"] },
+      "area": {
+        "center": "grass_center",
+        "edges": { "n": "grass_edge_n", "s": "grass_edge_s" }
       }
     }
-  ]
+  ],
+  "groups": ["stone_path", "grass"]
 }
 ```
 
@@ -62,14 +71,18 @@
 
 ```json
 {
-  "cols": 8,
+  "cols": 12,
   "rows": 8,
   "tileWidth": 64,
   "tileHeight": 64,
   "cells": [
-    ["tile_0", null, "tile_5"],
-    [null, "tile_3", "tile_3"],
-    ["tile_4", "tile_4", null]
+    ["stone_border_nw", "stone_border_n", "stone_border_ne"],
+    ["stone_path_w", "stone_path_center", "stone_path_e"],
+    [null, "road_intersection", null]
+  ],
+  "events": [
+    { "row": 1, "col": 1, "type": "spawn" },
+    { "row": 2, "col": 2, "type": "loot" }
   ]
 }
 ```

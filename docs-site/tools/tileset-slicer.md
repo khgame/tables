@@ -21,9 +21,12 @@
    - `画笔`：所选 tile 自由涂抹；
    - `连线`：拖动自动补全直线；
    - `矩形`：拖拽形成矩形区域；
+   - `方块`：3×3 方块笔刷快速铺设；
    - `填充`：一键洪水填充同类区域；
    - `擦除`：快速清空路径；
    状态栏会提示作用范围/格数，支持指针事件与触屏操作。
+7. 右侧 `事件点` 按钮可放置/移除出生点、触发器与掉落点，导出画板 JSON 时会带上相应坐标。
+
 7. 顶部按钮可导出 / 复制 JSON、导出 CSV、保存画板 JSON；同一页面也提供导入入口，便于反复迭代。
 
 ## 导出结构
@@ -88,6 +91,10 @@
     ["stone_border_nw", "stone_border_n", "stone_border_ne"],
     ["stone_path_w", "stone_path_center", "stone_path_e"],
     [null, "road_intersection", null]
+  ],
+  "events": [
+    { "row": 1, "col": 1, "type": "spawn" },
+    { "row": 2, "col": 2, "type": "loot" }
   ]
 }
 ```

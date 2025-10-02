@@ -20,7 +20,7 @@ import {
   TilesetTileExport,
   TILE_LAYERS,
   TILE_ROLES,
-} from './types';
+} from './types.js';
 
 const DEFAULT_TILE_META: TileMeta = {
   passable: true,

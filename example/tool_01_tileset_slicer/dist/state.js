@@ -1,4 +1,4 @@
-import { ALL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types';
+import { ALL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
 const DEFAULT_TILE_META = {
     passable: true,
     passableFor: [],

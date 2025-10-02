@@ -8,7 +8,7 @@ import {
   TILE_ROLES,
   TileLayer,
   TileRole,
-} from './types';
+} from './types.js';
 import {
   applyBoardImport,
   applyTilesetImport,
@@ -38,7 +38,7 @@ import {
   setTileTags,
   state,
   toggleRoadConnection,
-} from './state';
+} from './state.js';
 
 interface PresetTileInfo {
   id: string;

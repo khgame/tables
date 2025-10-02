@@ -1,5 +1,5 @@
-import { ALL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types';
-import { applyBoardImport, applyTilesetImport, buildBoardExport, buildTilesetExport, clearBoard, getAutoguessSize, getSelectedTile, getSortedGroups, loadImageFromFile, loadImageFromUrl, pruneBoardAgainstTiles, regenerateTiles, resetState, setAreaCenter, setAreaCorner, setAreaEdge, setBoardCell, setBoardDimensions, setHoverIndex, setSelectedIndex, setTileGroup, setTileLayer, setTilePassable, setTilePassableFor, setTileRole, setTileTags, state, toggleRoadConnection, } from './state';
+import { ALL_DIRECTIONS, TILE_LAYERS, TILE_ROLES, } from './types.js';
+import { applyBoardImport, applyTilesetImport, buildBoardExport, buildTilesetExport, clearBoard, getAutoguessSize, getSelectedTile, getSortedGroups, loadImageFromFile, loadImageFromUrl, pruneBoardAgainstTiles, regenerateTiles, resetState, setAreaCenter, setAreaCorner, setAreaEdge, setBoardCell, setBoardDimensions, setHoverIndex, setSelectedIndex, setTileGroup, setTileLayer, setTilePassable, setTilePassableFor, setTileRole, setTileTags, state, toggleRoadConnection, } from './state.js';
 const PRESET_TILES = [
     {
         id: 'nightfall_city',

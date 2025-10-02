@@ -27,6 +27,9 @@ import {
 import { resolveEnemyTemplate, findByTid, buildEnemyIndex } from '../core/library';
 import type { EnemyRow, RelicRow, WeaponRow } from '../core/types';
 
+const CONTACT_DAMAGE_MIN = 6;
+const BASE_LOOT_RATE = 0.5;
+
 interface ControlsState {
   firing: boolean;
   aimX: number;
@@ -520,11 +523,12 @@ export class CombatRuntime {
       .map(token => token.trim())
       .filter(Boolean);
     if (!tokens.length) return;
-    const luckFactor = 1 + (this.state.stats?.luckBonus || 0) / 100;
     tokens.forEach(token => {
       const def = LOOT_DEFINITIONS[token];
       if (!def) return;
-      const chance = clamp((def.chance ?? 0.5) * luckFactor, 0, 0.98);
+      const luckFactor = 1 + (this.state.stats?.luckBonus || 0) / 100;
+      const baseChance = (def.chance ?? 0.5) * BASE_LOOT_RATE;
+      const chance = clamp(baseChance * luckFactor, 0, 0.95);
       if (Math.random() > chance) return;
       const amount = def.amountRange ? randomRange(def.amountRange[0], def.amountRange[1]) : def.amount ?? 0;
       this.state.drops.push(
@@ -645,7 +649,9 @@ export class CombatRuntime {
       if (!enemy.alive) return false;
       const distPlayer = length(player.x - enemy.x, player.y - enemy.y);
       if (distPlayer <= PLAYER_RADIUS + enemyRadius) {
-        this.applyPlayerDamage(enemy.damage, enemy.template.name, enemy.sanityDamage);
+        const contactDamage = Math.max(enemy.damage ?? 0, CONTACT_DAMAGE_MIN);
+        const contactSanity = enemy.sanityDamage ?? Math.max(1, Math.round(contactDamage * 0.25));
+        this.applyPlayerDamage(contactDamage, enemy.template.name, contactSanity);
       }
       if (enemy.template.attackInterval) {
         enemy.attackTimer = Math.max(0, enemy.attackTimer - dt);

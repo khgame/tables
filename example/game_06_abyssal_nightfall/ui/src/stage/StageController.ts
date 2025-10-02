@@ -7,6 +7,11 @@ import type { GameState } from '../battle/state';
 import { DEFAULT_ENEMY_RADIUS, SCALE } from '../battle/constants';
 import { EnemyUnit } from '../battle/entities';
 
+const EARLY_WAVE_ADJUSTMENTS = [
+  { maxWave: 3, hpScale: 0.65, damageScale: 0.6, attackDelay: 1.2 },
+  { maxWave: 5, hpScale: 0.85, damageScale: 0.8, attackDelay: 0.6 }
+];
+
 export class StageController {
   private missingEnemySpriteLogged = new Set<string>();
 
@@ -158,6 +163,13 @@ export class StageController {
         { radius: enemyRadius, sprite, spritePath, spriteScale: template.spriteScale || 1 }
       );
       enemy.speed = (template.moveSpeed ?? 0) * SCALE;
+      const waveIndex = this.state.nextWaveIndex;
+      const softening = EARLY_WAVE_ADJUSTMENTS.find(config => waveIndex < config.maxWave);
+      if (softening) {
+        enemy.hp = Math.max(1, Math.round(enemy.hp * softening.hpScale));
+        enemy.damage = Math.max(4, Math.round((enemy.damage ?? 6) * softening.damageScale));
+        enemy.attackTimer += softening.attackDelay;
+      }
       this.state.enemies.push(enemy);
     }
 

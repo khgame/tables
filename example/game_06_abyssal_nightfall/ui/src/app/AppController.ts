@@ -191,9 +191,10 @@ export class AppController {
 
   private handleGameEnd(summary: GameSummary): void {
     this.lastPreset = summary.preset;
+    this.dom.layoutEl.classList.add('game-active');
+    this.dom.prepRoot.classList.add('hidden');
+    this.dom.gameRoot.classList.remove('hidden');
     this.dom.postRunPanel.classList.remove('hidden');
-    this.dom.layoutEl.classList.remove('game-active');
-    this.dom.gameRoot.classList.add('hidden');
     this.dom.resultTitleEl.textContent = summary.mode === 'victory' ? '行动成功' : '行动失败';
     this.dom.resultMessageEl.textContent = summary.message;
     this.dom.resultTimeEl.textContent = formatTime(summary.time);
@@ -204,9 +205,12 @@ export class AppController {
       ? `${summary.operator} / ${summary.weapon ?? '—'} / ${summary.relic ?? '—'}`
       : '—';
 
-    this.dom.resultUpgradesEl.innerHTML = summary.unlockedSkills
-      .map(skill => `<div class="info-card"><div class="info-name">${skill.name}</div></div>`)
-      .join('');
+    const skillBadges = summary.unlockedSkills.map(skill => `<div class="info-card"><div class="info-name">技能 · ${skill.name}</div></div>`);
+    const synergyBadges = summary.unlockedSynergies.map(card => `<div class="info-card"><div class="info-name">协同 · ${card.name}</div></div>`);
+    const combined = [...skillBadges, ...synergyBadges];
+    this.dom.resultUpgradesEl.innerHTML = combined.length
+      ? combined.join('')
+      : '<div class="info-card"><div class="info-body">本次行动没有获得额外升级或协同。</div></div>';
   }
 
   private applyPreset(preset: GamePreset, options: { markManual: boolean }): void {

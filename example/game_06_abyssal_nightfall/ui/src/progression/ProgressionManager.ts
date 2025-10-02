@@ -23,6 +23,29 @@ const xpForLevel = (level: number) => Math.round(60 * Math.pow(level, 1.35));
 
 export class ProgressionManager {
   private onStatsChanged: (() => void) | null = null;
+  private readonly fallbackSeeds = [
+    {
+      key: 'damage',
+      name: '应急火力',
+      branch: '应急',
+      effects: 'damage:8',
+      description: '立即提升主要武器伤害 +8。'
+    },
+    {
+      key: 'resilience',
+      name: '战术恢复',
+      branch: '应急',
+      effects: 'hpRegen:12|sanityRegen:8',
+      description: '持续恢复生命与理智，稳定后排节奏。'
+    },
+    {
+      key: 'aegis',
+      name: '防御矩阵',
+      branch: '应急',
+      effects: 'shield:40|invulnTime:0.6',
+      description: '立即获得护盾并延长短暂无敌时间。'
+    }
+  ];
 
   constructor(
     private readonly state: GameState,
@@ -162,7 +185,7 @@ export class ProgressionManager {
       );
     }
 
-    return options;
+    return this.ensureMinimumOptions(options);
   }
 
   private applyFallback(reason: UpgradeReason): void {
@@ -324,6 +347,40 @@ export class ProgressionManager {
     if (this.onStatsChanged) {
       this.onStatsChanged();
     }
+  }
+
+  private ensureMinimumOptions(options: UpgradeOption[]): UpgradeOption[] {
+    let seedIndex = 0;
+    while (options.length < 3) {
+      const seed = this.fallbackSeeds[seedIndex % this.fallbackSeeds.length];
+      options.push(this.createFallbackOption(seed));
+      seedIndex += 1;
+    }
+    return options;
+  }
+
+  private createFallbackOption(seed: {
+    key: string;
+    name: string;
+    branch: string;
+    effects: string;
+    description: string;
+  }): UpgradeOption {
+    const tidSuffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const node: SkillNodeRow = {
+      tid: `fallback:${seed.key}:${tidSuffix}`,
+      name: seed.name,
+      branch: seed.branch,
+      branchName: seed.branch,
+      tier: 0,
+      effects: seed.effects,
+      tooltip: seed.description
+    };
+    return {
+      type: 'skill',
+      data: node,
+      description: seed.description
+    };
   }
 
   private formatEffects(effectsString: string): string {

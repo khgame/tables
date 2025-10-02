@@ -256,7 +256,7 @@ button.ghost:hover {
 .marking-content {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1.6fr) minmax(230px, 0.7fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr);
   align-items: start;
 }
 
@@ -294,7 +294,7 @@ button.ghost:hover {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 6px 6px 4px;
+  padding: 6px 4px 4px;
   background: rgba(12, 16, 28, 0.78);
   border-radius: 14px;
   box-shadow: inset 0 0 0 1px rgba(78, 96, 188, 0.18);

@@ -121,6 +121,7 @@ export class EnemyUnit {
   public alive = true;
   public attackIntervalScale = 1;
   public projectileSpeedScale = 1;
+  public projectileLifetimeScale = 1;
   public disableProjectiles = false;
 
   constructor(

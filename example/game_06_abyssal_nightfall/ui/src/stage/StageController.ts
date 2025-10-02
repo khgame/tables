@@ -7,23 +7,29 @@ import type { GameState } from '../battle/state';
 import { DEFAULT_ENEMY_RADIUS, SCALE } from '../battle/constants';
 import { EnemyUnit } from '../battle/entities';
 
+const WAVE_TIME_SCALE = 0.75;
+const WAVE_MIN_DELTA = 1.25; // seconds, keep waves flowing但整体更密集
+
 const EARLY_WAVE_ADJUSTMENTS = [
   {
-    maxWave: 2,
-    hpScale: 0.5,
+    maxWave: 1,
+    hpScale: 0.55,
     damageScale: 0.5,
-    attackIntervalScale: 1.9,
-    initialAttackDelay: 1.5,
-    projectileSpeedScale: 0.45,
-    disableProjectiles: true
+    attackIntervalScale: 1.8,
+    initialAttackDelay: 1.2,
+    projectileSpeedScale: 0.75,
+    projectileLifetimeScale: 1.2,
+    disableProjectiles: false
   },
   {
-    maxWave: 4,
-    hpScale: 0.75,
+    maxWave: 3,
+    hpScale: 0.82,
     damageScale: 0.7,
-    attackIntervalScale: 1.5,
-    initialAttackDelay: 0.8,
-    projectileSpeedScale: 0.65
+    attackIntervalScale: 1.4,
+    initialAttackDelay: 0.6,
+    projectileSpeedScale: 0.9,
+    projectileLifetimeScale: 1.0,
+    disableProjectiles: false
   }
 ];
 
@@ -40,7 +46,15 @@ export class StageController {
     this.state.enemyTemplates = library.enemies;
     this.state.bossTemplates = library.bosses;
     this.state.enemyLookup = new Map(library.enemies.map(enemy => [enemy.tid, enemy]));
-    this.state.waves = library.waves;
+
+    let lastTimestamp = 0;
+    this.state.waves = (library.waves || []).map((wave, index) => {
+      const scaled = Math.max(0, wave.timestamp * WAVE_TIME_SCALE);
+      const timestamp = index === 0 ? scaled : Math.max(scaled, lastTimestamp + WAVE_MIN_DELTA);
+      lastTimestamp = timestamp;
+      return { ...wave, timestamp };
+    });
+
     this.state.nextWaveIndex = 0;
   }
 
@@ -185,6 +199,7 @@ export class StageController {
         enemy.damage = Math.max(3, Math.round((enemy.damage ?? 6) * softening.damageScale));
         enemy.attackIntervalScale = softening.attackIntervalScale ?? 1;
         enemy.projectileSpeedScale = softening.projectileSpeedScale ?? 1;
+        enemy.projectileLifetimeScale = softening.projectileLifetimeScale ?? (enemy.projectileSpeedScale < 1 ? 1 / enemy.projectileSpeedScale : 1);
         enemy.disableProjectiles = Boolean(softening.disableProjectiles);
         enemy.attackTimer += softening.initialAttackDelay ?? 0;
       }

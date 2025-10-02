@@ -711,14 +711,18 @@ export class CombatRuntime {
     }
 
     const pushProjectile = (vx: number, vy: number, damage: number, sanity: number) => {
-      const projectileSpeed = (template.projectileSpeed ?? 0) * SCALE * (enemy.projectileSpeedScale || 1);
+      const speedScale = enemy.projectileSpeedScale || 1;
+      const projectileSpeed = (template.projectileSpeed ?? 0) * SCALE * speedScale;
+      const baseLifetime = template.projectileLifetime ?? 1.4;
+      const lifetimeScale = enemy.projectileLifetimeScale || (speedScale < 1 ? 1 / speedScale : 1);
+      const lifetime = baseLifetime * lifetimeScale;
       this.state.enemyProjectiles.push(
         new EnemyProjectile(
           enemy.x + vx,
           enemy.y + vy,
           dirX * projectileSpeed,
           dirY * projectileSpeed,
-          template.projectileLifetime ?? 1.4,
+          lifetime,
           damage,
           sanity,
           template.name,

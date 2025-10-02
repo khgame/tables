@@ -15,14 +15,19 @@
     <main>
       <section class="toolbar">
         <div class="toolbar-left">
-          <label class="file-input">
-            <span>选择素材图 (PNG/JPG)</span>
-            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
-          </label>
-          <button id="resetBtn" type="button" class="ghost">清空</button>
+          <div class="source-actions">
+            <label class="file-input">
+              <span>选择素材图 (PNG/JPG)</span>
+              <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            </label>
+            <button id="resetBtn" type="button" class="ghost">清空</button>
+          </div>
           <div class="preset-strip">
             <span class="preset-label">候选 tileset</span>
             <div id="presetList" class="preset-list" role="list"></div>
+          </div>
+          <div class="tile-strip">
+            <div id="tileList" class="tile-list" role="listbox"></div>
           </div>
         </div>
         <div class="toolbar-right">
@@ -57,9 +62,6 @@
             <div class="preview-wrapper">
               <canvas id="preview" width="960" height="540"></canvas>
               <div id="overlayInfo" class="overlay" hidden></div>
-            </div>
-            <div class="tile-strip">
-              <div id="tileList" class="tile-list"></div>
             </div>
           </div>
           <aside class="marking-side">

@@ -7,8 +7,10 @@
 1. （推荐）执行 `npm run tool:tileset`，会在本地开启一个静态服务器并自动打开页面；也可以直接双击 `index.html`。
 2. 上传一张待处理的素材图，或在“候选 tileset”区域选择已内置的示例（来自 `game_06_abyssal_nightfall`）。
 3. 设置 tile 宽高、边距 (margin) 和间隔 (spacing)，自定义 ID 前缀与起始索引。
-4. 工具会自动绘制栅格预览，列出全部切片，并显示坐标。选中某个 tile 后，可在“联通标注”区域勾选八方向可连边信息。
-5. 使用下方画板，以当前选中的 tile 在自定义网格上绘制示例地图，可导出 JSON 作为额外参考数据。
+4. 工具会自动绘制栅格预览，列出全部切片，并显示坐标；可直接点击预览画布或右侧列表切换选中 tile，鼠标悬停亦会同步高亮。选中后，在右侧的“联通标注”面板勾选八方向可连边信息。
+5. 下方的工具面板分为两个 Tab：
+   - **画板**：以当前选中的 tile 在自定义网格上绘制示例地图（左键绘制、右键清除），可导出 JSON 作为额外参考数据。
+   - **导入配置**：加载之前导出的切片 JSON 或画板 JSON，快速恢复联通标注与画板布局。
 6. 通过按钮可以：
    - **导出 JSON**：包含 meta 信息与全部切片坐标。
    - **导出 CSV**：`id,x,y,width,height,row,col` 格式，可方便贴到 Excel。
@@ -20,7 +22,7 @@
 ```json
 {
   "meta": {
-    "source": "blob:https://…",
+    "source": "blob:https://example",
     "width": 512,
     "height": 512,
     "tileWidth": 64,
@@ -30,14 +32,47 @@
     "count": 64
   },
   "tiles": [
-    { "id": "tile_0", "x": 0, "y": 0, "width": 64, "height": 64, "row": 0, "col": 0 },
-    { "id": "tile_1", "x": 64, "y": 0, "width": 64, "height": 64, "row": 0, "col": 1 },
-    …
+    {
+      "id": "tile_0",
+      "x": 0,
+      "y": 0,
+      "width": 64,
+      "height": 64,
+      "row": 0,
+      "col": 0,
+      "connections": ["n", "e"],
+      "connectivity": {
+        "n": true,
+        "ne": false,
+        "e": true,
+        "se": false,
+        "s": false,
+        "sw": false,
+        "w": false,
+        "nw": false
+      }
+    }
   ]
 }
 ```
 
-可以将 JSON/CSV 中的数据拷贝到 tables 的 Excel 表，或者在自定义管线中引用。
+画板导出的 JSON 结构：
+
+```json
+{
+  "cols": 8,
+  "rows": 8,
+  "tileWidth": 64,
+  "tileHeight": 64,
+  "cells": [
+    ["tile_0", null, "tile_5"],
+    [null, "tile_3", "tile_3"],
+    ["tile_4", "tile_4", null]
+  ]
+}
+```
+
+可以将 JSON/CSV/画板数据拷贝到 tables 的 Excel 表，或者在自定义管线中引用；导出的切片 JSON 也可以通过“导入配置”页签重新载入（若 `meta.source` 可访问，会尝试自动加载原始图片）。
 
 ## 注意事项
 
@@ -47,3 +82,6 @@
 - 候选列表读取 `samples/` 目录下的素材，可根据需要新增文件并在 `script.js` 中注册。
 - 联通标注导出时会写入 `connections`（方向数组）与 `connectivity`（布尔对象），可直接同步到 Excel。
 - 画板功能使用当前画布的 tile 尺寸（即 `tileWidth` × `tileHeight`）绘制简易布局，仅用于快速验证切片组合。
+- `autoguessTileSize()` 会尝试匹配常见尺寸（8/16/32/48/64/96/128 等），若无法整除则保留当前输入值。
+- 导入切片 JSON 时会校验素材尺寸是否一致；如未提前载入素材且 `meta.source` 指向有效路径，工具会尝试自动加载原图。
+- 导入画板 JSON 会在当前画板尺寸基础上恢复布局，若某些 tile id 无法匹配，会自动清除并提示数量。

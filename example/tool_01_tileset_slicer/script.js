@@ -27,6 +27,11 @@ const resizeBoardBtn = document.getElementById('resizeBoard');
 const clearBoardBtn = document.getElementById('clearBoard');
 const exportBoardBtn = document.getElementById('exportBoardJson');
 const boardStatus = document.getElementById('boardStatus');
+const panelTabs = Array.from(document.querySelectorAll('.panel-tab'));
+const panelPanes = Array.from(document.querySelectorAll('.panel-pane'));
+const importTilesetInput = document.getElementById('importTilesetInput');
+const importBoardInput = document.getElementById('importBoardInput');
+const importStatus = document.getElementById('importStatus');
 
 const DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
 
@@ -34,7 +39,7 @@ const PRESET_TILES = [
   {
     id: 'nightfall_city',
     label: 'Nightfall Tileset (96×96)',
-    path: './samples/nightfall_tileset.png',
+    path: new URL('./samples/nightfall_tileset.png', window.location.href).href,
     tileWidth: 96,
     tileHeight: 96,
     margin: 0,
@@ -48,6 +53,7 @@ const state = {
   imageUrlIsObject: false,
   tiles: [],
   selectedIndex: null,
+  hoverIndex: null,
   scale: 1,
   connectivity: {},
   board: {
@@ -63,6 +69,12 @@ function setBoardStatus(message, kind = 'info') {
   boardStatus.dataset.kind = kind;
 }
 
+function setImportStatus(message, kind = 'info') {
+  if (!importStatus) return;
+  importStatus.textContent = message;
+  importStatus.dataset.kind = kind;
+}
+
 function createEmptyConnectivity() {
   return DIRECTIONS.reduce((acc, dir) => {
     acc[dir] = false;
@@ -70,11 +82,68 @@ function createEmptyConnectivity() {
   }, {});
 }
 
+function applyImage(image, sourceUrl, isObjectUrl) {
+  if (state.imageUrl && state.imageUrlIsObject) {
+    URL.revokeObjectURL(state.imageUrl);
+  }
+  state.image = image;
+  state.imageUrl = sourceUrl;
+  state.imageUrlIsObject = isObjectUrl;
+  updateTiles();
+}
+
+async function loadImageFromSource(source) {
+  const resolved = new URL(source, window.location.href).href;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      applyImage(img, resolved, false);
+      resolve();
+    };
+    img.onerror = () => {
+      reject(new Error('素材加载失败'));
+    };
+    img.src = resolved;
+  });
+}
+
 function ensureConnectivity(tileId) {
   if (!state.connectivity[tileId]) {
     state.connectivity[tileId] = createEmptyConnectivity();
   }
   return state.connectivity[tileId];
+}
+
+function pruneBoardWithValidTiles() {
+  if (!state.board.cells.length) return;
+  const validIds = new Set(state.tiles.map(tile => tile.id));
+  state.board.cells.forEach((row, rowIndex) => {
+    row.forEach((value, colIndex) => {
+      if (value && !validIds.has(value)) {
+        state.board.cells[rowIndex][colIndex] = null;
+      }
+    });
+  });
+}
+
+function buildConnectivityFromTile(tile) {
+  const result = createEmptyConnectivity();
+  if (!tile || typeof tile !== 'object') return result;
+  if (tile.connectivity && typeof tile.connectivity === 'object') {
+    DIRECTIONS.forEach(dir => {
+      if (dir in tile.connectivity) {
+        result[dir] = Boolean(tile.connectivity[dir]);
+      }
+    });
+  }
+  if (Array.isArray(tile.connections)) {
+    tile.connections.forEach(dir => {
+      if (dir && dir in result) {
+        result[dir] = true;
+      }
+    });
+  }
+  return result;
 }
 
 function refreshConnectivityUI() {
@@ -98,6 +167,17 @@ function refreshConnectivityUI() {
   });
 }
 
+function refreshTileListStates() {
+  const items = Array.from(tileListEl.querySelectorAll('.tile-item'));
+  items.forEach((item, idx) => {
+    const isSelected = idx === state.selectedIndex;
+    const isHover = idx === state.hoverIndex && state.hoverIndex !== state.selectedIndex;
+    item.classList.toggle('active', isSelected);
+    item.classList.toggle('is-hover', isHover);
+    item.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+  });
+}
+
 function toggleDirection(dir) {
   if (state.selectedIndex == null || !state.tiles[state.selectedIndex]) {
     setStatus('请先选择一个 tile。', 'error');
@@ -107,6 +187,42 @@ function toggleDirection(dir) {
   const entry = ensureConnectivity(tile.id);
   entry[dir] = !entry[dir];
   refreshConnectivityUI();
+  renderTileList();
+  drawPreview();
+  setStatus(`${tile.id} · ${dir.toUpperCase()} ${entry[dir] ? '连接开启' : '连接关闭'}`, entry[dir] ? 'success' : 'info');
+}
+
+function setSelectedIndex(index, { silent = false } = {}) {
+  if (index == null || index < 0 || index >= state.tiles.length) {
+    state.selectedIndex = null;
+    state.hoverIndex = null;
+    drawPreview();
+    renderTileList();
+    refreshConnectivityUI();
+    refreshTileListStates();
+    if (!silent) {
+      setStatus('未选中切片。', 'info');
+    }
+    return;
+  }
+
+  state.selectedIndex = index;
+  state.hoverIndex = null;
+  const tile = state.tiles[index];
+  ensureConnectivity(tile.id);
+  drawPreview();
+  renderTileList();
+  refreshConnectivityUI();
+  refreshTileListStates();
+  if (!silent) {
+    const activeItem = tileListEl.querySelector('.tile-item.active');
+    if (activeItem) {
+      activeItem.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+  if (!silent) {
+    setStatus(`当前切片：${tile.id}`, 'success');
+  }
 }
 
 function initBoard(cols = state.board.cols, rows = state.board.rows) {
@@ -207,6 +323,7 @@ function handleBoardPaint(event) {
     event.preventDefault();
     state.board.cells[row][col] = null;
     drawBoard();
+    setBoardStatus(`画板 (${col}, ${row}) 清空`, 'info');
     return;
   }
 
@@ -217,13 +334,18 @@ function handleBoardPaint(event) {
   }
   state.board.cells[row][col] = tile.id;
   drawBoard();
+  setBoardStatus(`画板 (${col}, ${row}) → ${tile.id}`, 'success');
 }
 
 function exportBoard() {
   const { cols, rows, cells } = state.board;
+  const tileWidth = Number.parseInt(tileWidthInput.value, 10) || 64;
+  const tileHeight = Number.parseInt(tileHeightInput.value, 10) || 64;
   const data = {
     cols,
     rows,
+    tileWidth,
+    tileHeight,
     cells
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -236,16 +358,26 @@ function setStatus(message, kind = 'info') {
   statusEl.dataset.kind = kind;
 }
 
+function autoguessTileSize() {
+  if (!state.image) return { tileWidth: Number.parseInt(tileWidthInput.value, 10) || 64, tileHeight: Number.parseInt(tileHeightInput.value, 10) || 64 };
+  const image = state.image;
+  let widthGuess = Number.parseInt(tileWidthInput.value, 10) || 0;
+  let heightGuess = Number.parseInt(tileHeightInput.value, 10) || 0;
+  if (!widthGuess || widthGuess <= 0) {
+    widthGuess = [8, 16, 32, 48, 64, 96, 128].find(size => image.width % size === 0) || image.width;
+  }
+  if (!heightGuess || heightGuess <= 0) {
+    heightGuess = [8, 16, 32, 48, 64, 96, 128].find(size => image.height % size === 0) || image.height;
+  }
+  return { tileWidth: widthGuess, tileHeight: heightGuess };
+}
+
 function loadImageFile(file) {
   if (!file) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    state.image = img;
-    if (state.imageUrl && state.imageUrlIsObject) URL.revokeObjectURL(state.imageUrl);
-    state.imageUrl = url;
-    state.imageUrlIsObject = true;
-    updateTiles();
+    applyImage(img, url, true);
     setStatus(`已加载 ${file.name}`);
   };
   img.onerror = () => {
@@ -280,12 +412,17 @@ function updateTiles() {
     return;
   }
 
-  const tileWidth = parseNumberInput(tileWidthInput, 64);
-  const tileHeight = parseNumberInput(tileHeightInput, 64);
+  const guesses = autoguessTileSize();
+  const tileWidth = parseNumberInput(tileWidthInput, guesses.tileWidth);
+  const tileHeight = parseNumberInput(tileHeightInput, guesses.tileHeight);
   const margin = parseNonNegative(marginInput, 0);
   const spacing = parseNonNegative(spacingInput, 0);
   const idPrefix = idPrefixInput.value.trim() || 'tile';
   const startIndex = Number.parseInt(startIndexInput.value, 10) || 0;
+
+  const previousTileId = state.selectedIndex != null && state.tiles[state.selectedIndex]
+    ? state.tiles[state.selectedIndex].id
+    : null;
 
   const tiles = [];
   for (let y = margin, row = 0; y + tileHeight <= image.height - margin + 0.0001; y += tileHeight + spacing, row += 1) {
@@ -303,7 +440,7 @@ function updateTiles() {
   }
 
   state.tiles = tiles;
-  state.selectedIndex = tiles.length ? 0 : null;
+  state.hoverIndex = null;
   const validIds = new Set(tiles.map(tile => tile.id));
   Object.keys(state.connectivity).forEach(id => {
     if (!validIds.has(id)) {
@@ -311,13 +448,20 @@ function updateTiles() {
     }
   });
   tiles.forEach(tile => ensureConnectivity(tile.id));
-  drawPreview();
-  renderTileList();
+
+  if (tiles.length) {
+    let nextIndex = previousTileId ? tiles.findIndex(tile => tile.id === previousTileId) : -1;
+    if (nextIndex < 0) nextIndex = 0;
+    setSelectedIndex(nextIndex, { silent: true });
+  } else {
+    setSelectedIndex(null, { silent: true });
+  }
+
   updateSummary();
-  refreshConnectivityUI();
+  pruneBoardWithValidTiles();
   drawBoard();
 
-  setStatus(tiles.length ? `已生成 ${tiles.length} 个切片` : '未生成切片，请调整参数。');
+  setStatus(tiles.length ? `已生成 ${tiles.length} 个切片` : '未生成切片，请调整参数。', tiles.length ? 'info' : 'error');
 }
 
 function clearCanvas() {
@@ -329,6 +473,7 @@ function clearCanvas() {
   tileCountEl.textContent = '0';
   state.tiles = [];
   state.selectedIndex = null;
+  state.hoverIndex = null;
   refreshConnectivityUI();
   drawBoard();
 }
@@ -352,19 +497,68 @@ function drawPreview() {
     ctx.beginPath();
     ctx.rect(tile.x + 0.5, tile.y + 0.5, tile.width, tile.height);
     ctx.stroke();
-    if (index === state.selectedIndex) {
-      ctx.fillStyle = 'rgba(14, 116, 144, 0.2)';
+    const isSelected = index === state.selectedIndex;
+    const isHover = index === state.hoverIndex && index !== state.selectedIndex;
+    if (isSelected || isHover) {
+      ctx.fillStyle = isSelected ? 'rgba(59, 130, 246, 0.28)' : 'rgba(148, 163, 184, 0.18)';
       ctx.fillRect(tile.x, tile.y, tile.width, tile.height);
     }
   });
   ctx.restore();
 
-  if (state.selectedIndex != null) {
+  let overlayText = '';
+  if (state.hoverIndex != null && tiles[state.hoverIndex]) {
+    const tile = tiles[state.hoverIndex];
+    overlayText = `指向：${tile.id} · (${tile.row}, ${tile.col})`;
+  } else if (state.selectedIndex != null && tiles[state.selectedIndex]) {
     const tile = tiles[state.selectedIndex];
+    overlayText = `选中：${tile.id} · (${tile.row}, ${tile.col})`;
+  }
+  if (overlayText) {
     overlayInfo.hidden = false;
-    overlayInfo.textContent = `${tile.id} · (${tile.x}, ${tile.y})`; 
+    overlayInfo.textContent = overlayText;
   } else {
     overlayInfo.hidden = true;
+  }
+}
+
+function getCanvasPoint(event, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY
+  };
+}
+
+function getTileIndexFromEvent(event) {
+  if (!state.image || !state.tiles.length) return -1;
+  const { x, y } = getCanvasPoint(event, previewCanvas);
+  return state.tiles.findIndex(tile => x >= tile.x && x < tile.x + tile.width && y >= tile.y && y < tile.y + tile.height);
+}
+
+function handlePreviewClick(event) {
+  const index = getTileIndexFromEvent(event);
+  if (index >= 0) {
+    setSelectedIndex(index);
+  }
+}
+
+function handlePreviewHover(event) {
+  const index = getTileIndexFromEvent(event);
+  if (index !== state.hoverIndex) {
+    state.hoverIndex = index >= 0 ? index : null;
+    drawPreview();
+    refreshTileListStates();
+  }
+}
+
+function handlePreviewLeave() {
+  if (state.hoverIndex != null) {
+    state.hoverIndex = null;
+    drawPreview();
+    refreshTileListStates();
   }
 }
 
@@ -377,6 +571,7 @@ function renderTileList() {
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'tile-item';
+    item.dataset.index = String(index);
     if (index === state.selectedIndex) item.classList.add('active');
 
     const thumbWrapper = document.createElement('div');
@@ -400,15 +595,35 @@ function renderTileList() {
     coords.style.opacity = '0.75';
     item.appendChild(coords);
 
+    const connections = document.createElement('div');
+    connections.className = 'tile-connections';
+    const conn = ensureConnectivity(tile.id);
+    const activeDirs = DIRECTIONS.filter(dir => conn[dir]);
+    connections.textContent = activeDirs.length ? `连接: ${activeDirs.join(' · ')}` : '连接: 无';
+    item.appendChild(connections);
+
     item.addEventListener('click', () => {
-      state.selectedIndex = index;
+      setSelectedIndex(index);
+    });
+
+    item.addEventListener('mouseenter', () => {
+      if (state.hoverIndex === index) return;
+      state.hoverIndex = index;
       drawPreview();
-      renderTileList();
-      refreshConnectivityUI();
+      refreshTileListStates();
+    });
+
+    item.addEventListener('mouseleave', () => {
+      if (state.hoverIndex !== index) return;
+      state.hoverIndex = null;
+      drawPreview();
+      refreshTileListStates();
     });
 
     tileListEl.appendChild(item);
   });
+
+  refreshTileListStates();
 }
 
 function updateSummary() {
@@ -454,6 +669,204 @@ function buildExportData() {
       connectivity: { ...ensureConnectivity(tile.id) }
     }))
   };
+}
+
+async function applyImportedTileset(data) {
+  if (!data || typeof data !== 'object') {
+    throw new Error('切片 JSON 格式无效。');
+  }
+  const tiles = Array.isArray(data.tiles) ? data.tiles : [];
+  if (!tiles.length) {
+    throw new Error('切片 JSON 中没有可用的 tiles。');
+  }
+  const meta = data.meta || {};
+  if (!state.image) {
+    if (meta.source) {
+      try {
+        await loadImageFromSource(meta.source);
+        setStatus('已根据导入配置加载素材。', 'success');
+      } catch (error) {
+        throw new Error('无法加载配置内的素材路径，请先手动载入图片。');
+      }
+    } else {
+      throw new Error('请先载入对应的素材图，再导入切片 JSON。');
+    }
+  }
+  if (state.image && meta.width && meta.height) {
+    if (state.image.width !== meta.width || state.image.height !== meta.height) {
+      throw new Error('导入数据与当前素材尺寸不一致。');
+    }
+  }
+
+  if (Number.isFinite(meta.tileWidth) && meta.tileWidth > 0) {
+    tileWidthInput.value = String(meta.tileWidth);
+  }
+  if (Number.isFinite(meta.tileHeight) && meta.tileHeight > 0) {
+    tileHeightInput.value = String(meta.tileHeight);
+  }
+  if (Number.isFinite(meta.margin) && meta.margin >= 0) {
+    marginInput.value = String(meta.margin);
+  }
+  if (Number.isFinite(meta.spacing) && meta.spacing >= 0) {
+    spacingInput.value = String(meta.spacing);
+  }
+
+  const normalizedTiles = [];
+  const connectivity = {};
+
+  tiles.forEach(tile => {
+    if (!tile || tile.id == null) return;
+    const id = String(tile.id);
+    const normalized = {
+      id,
+      x: Math.round(Number(tile.x) || 0),
+      y: Math.round(Number(tile.y) || 0),
+      width: Math.round(Number(tile.width) || Number(meta.tileWidth) || Number(tileWidthInput.value) || 0),
+      height: Math.round(Number(tile.height) || Number(meta.tileHeight) || Number(tileHeightInput.value) || 0),
+      row: Number.isFinite(tile.row) ? Number(tile.row) : 0,
+      col: Number.isFinite(tile.col) ? Number(tile.col) : 0
+    };
+    normalizedTiles.push(normalized);
+    connectivity[id] = buildConnectivityFromTile(tile);
+  });
+
+  if (!normalizedTiles.length) {
+    throw new Error('导入数据未包含有效的 tile 坐标。');
+  }
+
+  state.tiles = normalizedTiles;
+  state.connectivity = connectivity;
+  pruneBoardWithValidTiles();
+  setSelectedIndex(state.tiles.length ? 0 : null, { silent: true });
+  updateSummary();
+  drawBoard();
+
+  if (data.board && typeof data.board === 'object') {
+    try {
+      applyBoardConfig(data.board, { fromTileset: true });
+    } catch (error) {
+      console.warn('[tileset] board restore failed', error);
+    }
+  }
+}
+
+function applyBoardConfig(boardData, { fromTileset = false } = {}) {
+  if (!boardData || typeof boardData !== 'object') {
+    throw new Error('画板 JSON 格式无效。');
+  }
+  const cols = Number.parseInt(boardData.cols, 10);
+  const rows = Number.parseInt(boardData.rows, 10);
+  const tileWidth = Number.parseInt(boardData.tileWidth, 10);
+  const tileHeight = Number.parseInt(boardData.tileHeight, 10);
+
+  if (Number.isFinite(tileWidth) && tileWidth > 0) {
+    tileWidthInput.value = String(tileWidth);
+  }
+  if (Number.isFinite(tileHeight) && tileHeight > 0) {
+    tileHeightInput.value = String(tileHeight);
+  }
+
+  initBoard(cols || state.board.cols, rows || state.board.rows);
+
+  const validIds = new Set(state.tiles.map(tile => tile.id));
+  let missing = 0;
+  let total = 0;
+
+  if (Array.isArray(boardData.cells)) {
+    for (let row = 0; row < state.board.rows; row += 1) {
+      const sourceRow = Array.isArray(boardData.cells[row]) ? boardData.cells[row] : [];
+      for (let col = 0; col < state.board.cols; col += 1) {
+        const value = sourceRow[col];
+        if (value == null || value === '') {
+          state.board.cells[row][col] = null;
+          continue;
+        }
+        const id = String(value);
+        if (validIds.size && !validIds.has(id)) {
+          missing += 1;
+          state.board.cells[row][col] = null;
+          continue;
+        }
+        state.board.cells[row][col] = id;
+        total += 1;
+      }
+    }
+  }
+
+  drawBoard();
+
+  if (!fromTileset) {
+    if (missing) {
+      setBoardStatus(`画板导入完成，但忽略 ${missing} 个未知 tile。`, 'info');
+    } else if (!total) {
+      setBoardStatus('画板配置导入成功（空画板）。', 'info');
+    } else if (!validIds.size) {
+      setBoardStatus('画板导入完成，请先导入切片以查看效果。', 'info');
+    } else {
+      setBoardStatus('画板配置导入成功。', 'success');
+    }
+  }
+
+  return { missing, total, hasTiles: Boolean(validIds.size) };
+}
+
+function setActiveTab(name) {
+  if (!panelTabs.length || !panelPanes.length) return;
+  const target = name || 'board';
+  panelTabs.forEach(tab => {
+    const isActive = tab.dataset.tabTarget === target;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  panelPanes.forEach(pane => {
+    const isActive = pane.dataset.pane === target;
+    pane.classList.toggle('active', isActive);
+    pane.hidden = !isActive;
+  });
+}
+
+async function handleTilesetImport(event) {
+  const [file] = event.target.files || [];
+  if (!file) return;
+  try {
+    setImportStatus(`正在导入 ${file.name}…`, 'info');
+    const text = await file.text();
+    const data = JSON.parse(text);
+    await applyImportedTileset(data);
+    setImportStatus(`切片配置导入成功：${file.name}`, 'success');
+    setStatus('切片配置导入成功。', 'success');
+  } catch (error) {
+    console.error('[tileset] import failed', error);
+    setImportStatus(error.message || '切片 JSON 导入失败。', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function handleBoardImport(event) {
+  const [file] = event.target.files || [];
+  if (!file) return;
+  try {
+    setImportStatus(`正在导入画板 ${file.name}…`, 'info');
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const result = applyBoardConfig(data);
+    setActiveTab('board');
+    if (!result.total) {
+      setImportStatus(`画板配置导入成功：${file.name}`, 'success');
+    } else if (result.missing && result.hasTiles) {
+      setImportStatus(`画板导入完成，但忽略 ${result.missing} 个未知 tile。`, 'info');
+    } else if (!result.hasTiles) {
+      setImportStatus('画板导入完成，请先导入切片以查看效果。', 'info');
+    } else {
+      setImportStatus(`画板配置导入成功：${file.name}`, 'success');
+    }
+  } catch (error) {
+    console.error('[tileset] board import failed', error);
+    setImportStatus(error.message || '画板 JSON 导入失败。', 'error');
+  } finally {
+    event.target.value = '';
+  }
 }
 
 function downloadBlob(filename, blob) {
@@ -520,12 +933,15 @@ function reset() {
   state.image = null;
   state.tiles = [];
   state.selectedIndex = null;
+  state.hoverIndex = null;
   state.connectivity = {};
   if (state.imageUrl && state.imageUrlIsObject) {
     URL.revokeObjectURL(state.imageUrl);
   }
   state.imageUrl = '';
   state.imageUrlIsObject = false;
+  refreshConnectivityUI();
+  drawBoard();
   setStatus('已重置。');
 }
 
@@ -535,17 +951,11 @@ async function loadPreset(preset) {
     await new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        state.image = img;
-        if (state.imageUrl && state.imageUrlIsObject) {
-          URL.revokeObjectURL(state.imageUrl);
-        }
-        state.imageUrl = preset.path;
-        state.imageUrlIsObject = false;
         tileWidthInput.value = String(preset.tileWidth ?? tileWidthInput.value);
         tileHeightInput.value = String(preset.tileHeight ?? tileHeightInput.value);
         marginInput.value = String(preset.margin ?? marginInput.value);
         spacingInput.value = String(preset.spacing ?? spacingInput.value);
-        updateTiles();
+        applyImage(img, preset.path, false);
         resolve();
       };
       img.onerror = reject;
@@ -585,6 +995,29 @@ fileInput.addEventListener('change', event => {
   loadImageFile(file);
 });
 
+if (panelTabs.length) {
+  setActiveTab('board');
+}
+
+panelTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tabTarget;
+    setActiveTab(target);
+  });
+});
+
+if (importTilesetInput) {
+  importTilesetInput.addEventListener('change', handleTilesetImport);
+}
+
+if (importBoardInput) {
+  importBoardInput.addEventListener('change', handleBoardImport);
+}
+
+if (importStatus) {
+  setImportStatus('等待导入 JSON…', 'info');
+}
+
 [tileWidthInput, tileHeightInput, marginInput, spacingInput, idPrefixInput, startIndexInput].forEach(input => {
   input.addEventListener('input', () => {
     if (!state.image) return;
@@ -609,6 +1042,13 @@ dirButtons.forEach(btn => {
     toggleDirection(dir);
   });
 });
+
+if (previewCanvas) {
+  previewCanvas.addEventListener('click', handlePreviewClick);
+  previewCanvas.addEventListener('mousemove', handlePreviewHover);
+  previewCanvas.addEventListener('mouseleave', handlePreviewLeave);
+  previewCanvas.addEventListener('contextmenu', event => event.preventDefault());
+}
 
 if (boardCanvas) {
   boardCanvas.addEventListener('click', handleBoardPaint);

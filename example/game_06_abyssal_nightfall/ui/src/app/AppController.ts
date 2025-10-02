@@ -634,8 +634,12 @@ export class AppController {
     if (!path) return '';
     const sanitized = path.replace(/'/g, '%27');
     if (/^https?:/i.test(path)) return sanitized;
-    if (path.startsWith('./') || path.startsWith('/')) return sanitized;
-    return `./${sanitized}`;
+    if (sanitized.startsWith('./') || sanitized.startsWith('/')) return sanitized;
+    if (sanitized.startsWith('ui/')) return `./${sanitized}`;
+    if (sanitized.startsWith('icons/') || sanitized.startsWith('fx/') || sanitized.startsWith('assets/')) {
+      return `./${sanitized}`;
+    }
+    return `./ui/assets/${sanitized}`;
   }
 
   private formatEffectsText(effects = ''): string {

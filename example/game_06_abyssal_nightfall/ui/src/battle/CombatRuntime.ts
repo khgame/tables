@@ -846,8 +846,20 @@ export class CombatRuntime {
     const { ctx } = this.dom;
     ctx.save();
     ctx.translate(player.x, player.y);
+    if (player.shield > 0) {
+      const ratio = Math.min(1, player.shield / (player.shieldMax || player.shield));
+      ctx.strokeStyle = 'rgba(147,197,253,0.85)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(0, 0, PLAYER_RADIUS + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ratio);
+      ctx.stroke();
+    }
+
     if (player.sprite) {
       const scale = player.spriteScale || DEFAULT_PLAYER_SPRITE_SCALE;
+      const angle = Math.atan2(this.controls.aimY, this.controls.aimX);
+      ctx.save();
+      ctx.rotate(angle);
       ctx.drawImage(
         player.sprite,
         (-player.sprite.width * scale) / 2,
@@ -855,11 +867,20 @@ export class CombatRuntime {
         player.sprite.width * scale,
         player.sprite.height * scale
       );
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(191,219,254,0.45)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2);
+      ctx.stroke();
     } else {
-      ctx.fillStyle = '#00b7ff';
+      ctx.fillStyle = '#60a5fa';
       ctx.beginPath();
       ctx.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#bfdbfe';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
     ctx.restore();
   }
@@ -892,9 +913,12 @@ export class CombatRuntime {
     const { ctx } = this.dom;
     ctx.save();
     this.state.bullets.forEach(bullet => {
+      ctx.save();
       ctx.translate(bullet.x, bullet.y);
+      const angle = bullet.angle !== undefined ? bullet.angle : Math.atan2(bullet.vy, bullet.vx);
       if (bullet.sprite) {
         const scale = bullet.scale || DEFAULT_PROJECTILE_SCALE;
+        ctx.rotate(angle);
         ctx.drawImage(
           bullet.sprite,
           (-bullet.sprite.width * scale) / 2,
@@ -908,7 +932,7 @@ export class CombatRuntime {
         ctx.arc(0, 0, BULLET_RADIUS, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.restore();
     });
     ctx.restore();
   }
@@ -917,9 +941,12 @@ export class CombatRuntime {
     const { ctx } = this.dom;
     ctx.save();
     this.state.enemyProjectiles.forEach(projectile => {
+      ctx.save();
       ctx.translate(projectile.x, projectile.y);
+      const angle = Math.atan2(projectile.vy, projectile.vx);
       if (projectile.sprite) {
         const scale = projectile.scale || 1;
+        ctx.rotate(angle);
         ctx.drawImage(
           projectile.sprite,
           (-projectile.sprite.width * scale) / 2,
@@ -933,7 +960,7 @@ export class CombatRuntime {
         ctx.arc(0, 0, ENEMY_BULLET_RADIUS, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.restore();
     });
     ctx.restore();
   }

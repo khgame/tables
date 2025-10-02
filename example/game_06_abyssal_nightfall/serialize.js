@@ -90,7 +90,20 @@ function writeWebDemo(targetDir) {
   }
   const assetsSrc = Path.resolve(baseDir, 'ui/assets');
   if (fs.existsSync(assetsSrc)) {
-    fs.copySync(assetsSrc, Path.resolve(targetDir, 'ui/assets'), { overwrite: true });
+    const uiAssetsTarget = Path.resolve(targetDir, 'ui/assets');
+    fs.copySync(assetsSrc, uiAssetsTarget, { overwrite: true });
+
+    const rootAssetsTarget = Path.resolve(targetDir, 'assets');
+    fs.copySync(assetsSrc, rootAssetsTarget, { overwrite: true });
+
+    const fxDir = Path.resolve(assetsSrc, 'fx');
+    if (fs.existsSync(fxDir)) {
+      fs.copySync(fxDir, Path.resolve(targetDir, 'fx'), { overwrite: true });
+    }
+    const iconsDir = Path.resolve(assetsSrc, 'icons');
+    if (fs.existsSync(iconsDir)) {
+      fs.copySync(iconsDir, Path.resolve(targetDir, 'icons'), { overwrite: true });
+    }
   }
 }
 

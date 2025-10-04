@@ -4,12 +4,12 @@
 
 ## 目录说明
 
-- `heroes.xlsx`：通过 `@ / @ / @` 组合生成英雄 ID，保留数值面板、跨表 `tid` 与人物肖像 URL。
-- `skills.xlsx`：`@ / @ / @` 对应“类别 + 技能编号 + 等级”，并记录目标类型、能量消耗等字段。
-- `items.xlsx`：子类 + 序号组合成 ID，附带成本、属性加成与来源关卡。
-- `enemies.xlsx`：敌人类别 / 子类 / 序号组合成 ID，并记录生命、攻击、防御、弱点、经验奖励与肖像。
-- `stages.xlsx`：关卡类别 / 线路 / 序号组成 ID，字段涵盖环境、奖励、首通技能、`bossEnemy`（指向敌人表）、关卡背景图与前置关卡。
-- `global_config.xlsx`：组合 ID + `any` 值列，集中维护版本号、开关、默认关卡等全局参数。
+- `heroes.csv`：通过 `@ / @ / @` 组合生成英雄 ID，保留数值面板、跨表 `tid` 与人物肖像 URL。
+- `skills.csv`：`@ / @ / @` 对应“类别 + 技能编号 + 等级”，并记录目标类型、能量消耗等字段。
+- `items.csv`：子类 + 序号组合成 ID，附带成本、属性加成与来源关卡。
+- `enemies.csv`：敌人类别 / 子类 / 序号组合成 ID，并记录生命、攻击、防御、弱点、经验奖励与肖像。
+- `stages.csv`：关卡类别 / 线路 / 序号组成 ID，字段涵盖环境、奖励、首通技能、`bossEnemy`（指向敌人表）、关卡背景图与前置关卡。
+- `global_config.csv`：组合 ID + `any` 值列，集中维护版本号、开关、默认关卡等全局参数。
 - `context.meta.json` / `context.enums.json`：定义并导出枚举，供 TS 输出引用。
 
 ## 快速体验
@@ -30,7 +30,7 @@ node example/game_01_minirpg/serialize.js
 你也可以直接使用 CLI：
 
 ```bash
- # 将目录下全部 xlsx 导出为 JSON
+ # 将目录下全部 csv 导出为 JSON
 npx tables -i ./example/game_01_minirpg -o ./example/game_01_minirpg/out -f json
 ```
 

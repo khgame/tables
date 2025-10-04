@@ -1,0 +1,7 @@
+Category Code,Subtype Code,Sequence Code,Sequence,Enemy Name,Element,Role,Max HP,Attack,Defense,Signature Skill,Weakness,Reward Exp,Portrait
+@,@,@,uint,string,HeroElement,string,uint,uint,uint,string,string,uint,string
+categoryCode,subtypeCode,sequenceCode,sequence,name,element,role,hp,attack,defense,skill,weakness,rewardExp,portrait
+50,00,0001,1,Frostfang Raider,Frost,Bruiser,950,80,60,冰霜冲撞,火焰,120,https://images.unsplash.com/photo-1549887534-1541e9326642?auto=format&fit=crop&w=600&q=80
+50,00,0002,2,Obsidian Sentinel,Arcane,Guardian,1200,70,90,熔核护盾,毒素,160,https://images.unsplash.com/photo-1558980664-10ea1989d896?auto=format&fit=crop&w=600&q=80
+50,00,0003,3,Marsh Wraith,Shadow,Caster,850,95,45,瘴雾缠绕,圣光,150,https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=600&q=80
+50,01,0001,4,Lunar Shade,Lunar,Assassin,1000,105,70,月蚀狂袭,雷电,200,https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80

@@ -1,0 +1,9 @@
+Category Code,Subtype Code,Sequence Code,Sequence,Item Name,Slot,Rarity,Cost Currency,Cost Amount,Attack,Defense,Bonus HP,Effect,Source Stage,Flavor Text
+@,@,@,uint,string,ItemSlot,uint,RewardCurrency,uint,uint,uint,uint,string,tid,string
+categoryCode,subtypeCode,sequenceCode,sequence,name,slot,rarity,currency,amount,attack,defense,bonusHp,effect,sourceStage,flavor
+30,01,0001,1,Iron Sword,Weapon,1,gold,400,35,0,0,基础长剑，增加物理伤害。,40000002,大量量产的骑士制式武器。
+30,02,0001,2,Apprentice Robe,Armor,1,gold,350,0,20,120,提升法术抗性并加快回蓝。,40000003,学院学徒的制服，附带细微的魔力纹路。
+30,03,0001,3,Mana Potion,Consumable,1,gold,50,0,0,0,立即恢复 60 点能量。,40000001,香甜的蓝莓味，深受学徒欢迎。
+30,04,0001,4,Knight Emblem,Trinket,2,guild,15,0,40,200,强化护盾技能效果。,40000001,象征坚守的徽章，镶嵌寒霜之石。
+30,05,0001,5,Ember Ring,Accessory,3,gold,800,25,10,80,释放技能时追加灼烧伤害。,40000002,炙热的火焰石戒指，不断散发余温。
+30,05,0002,6,Moonlight Charm,Accessory,3,honor,120,18,25,60,夜间战斗时提升闪避与暴击。,40000004,由月神祭司编织的护符，散发柔和光芒。

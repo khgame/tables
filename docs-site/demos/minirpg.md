@@ -26,9 +26,9 @@ npm run ex:minirpg
 
 ## 表格示例
 
-- `heroes.xlsx`：基础属性、成长系数、解锁条件
-- `skills.xlsx`：技能冷却、类型、伤害计算参数
-- `stages.xlsx`：关卡敌人组、奖励掉落、战斗脚本
+- `heroes.csv`：基础属性、成长系数、解锁条件
+- `skills.csv`：技能冷却、类型、伤害计算参数
+- `stages.csv`：关卡敌人组、奖励掉落、战斗脚本
 
 ## 交互体验
 

@@ -1,9 +1,12 @@
 // Switched to typed 'xlsx' engine.
 import * as XLSX from 'xlsx'
+import * as Path from 'path'
 import type { Table } from '../types'
 
 export function readWorkBook(path: string): any {
-  return XLSX.readFile(path)
+  const ext = Path.extname(path || '').toLowerCase()
+  const options = ext === '.csv' ? { codepage: 65001 } : undefined
+  return options ? XLSX.readFile(path, options) : XLSX.readFile(path)
 }
 
 export function translateWorkBook(workbook: any, sheetName?: string): Table {

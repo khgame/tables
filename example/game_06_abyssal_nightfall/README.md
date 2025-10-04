@@ -42,7 +42,7 @@ npm run ex:nightfall:dev                                   # 自动重建并通�
 
 ## 与其他示例的关系
 
-此目录继承 `docs/vampire-survivors-like/design.md` 的世界观与玩法设定，重点验证：
+此目录继承 [`docs-site/demos/abyssal-nightfall.md`](../../docs-site/demos/abyssal-nightfall.md) 的世界观与玩法设定，重点验证：
 
 1. 手动射击 + 自动遗物共存时的弹道/冷却/理智数值如何在 Excel 中完整描述。
 2. 敌人投射物（速度、寿命、特效）与波次脚本的组合是否足够表达高压节奏。

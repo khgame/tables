@@ -1,0 +1,7 @@
+Category Code,Subtype Code,Sequence Code,Sequence,Hero Name,Class,Element,Rarity,Max Level,Base HP,Base ATK,Base DEF,Signature Item,Primary Skill,Support Skill,Ultimate Skill,Unlock Stage,Battle Role,Origin Region,Story Blurb,Portrait
+@,@,@,uint,string,HeroClass,HeroElement,uint,uint,uint,uint,uint,tid,tid,tid,tid,tid,HeroRole,string,string,string
+categoryCode,subtypeCode,sequenceCode,sequence,name,class,element,rarity,maxLevel,baseHp,baseAtk,baseDef,signatureItem,primarySkill,supportSkill,ultimateSkill,unlockStage,role,region,story,portrait
+10,00,0001,1,Aerin Frostshield,Knight,Frost,2,30,1200,85,150,30000004,20001001,20002001,20006001,40000001,Vanguard,Elder Peaks,守护北境的年轻骑士，擅长用盾形构筑防线。,https://images.unsplash.com/photo-1526272560260-5b1c131dea52?auto=format&fit=crop&w=600&q=80
+10,00,0002,2,Mira Silverquill,Mage,Arcane,3,40,900,110,95,30000005,20003001,20001002,20009001,40000002,Burst,Lumina Academy,天赋异禀的法师，对古代秘术痴迷，善于远程压制。,https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=600&q=80
+10,00,0003,3,Roth Dusktrail,Rogue,Shadow,2,32,1000,95,105,30000001,20004001,20005001,20005001,40000003,Assassin,Freeports,雇佣兵出身的游侠，行动迅捷，擅长毒刃。,https://images.unsplash.com/photo-1529245019870-59a6d1ef7c86?auto=format&fit=crop&w=600&q=80
+10,01,0001,4,Nyx Moonweaver,Assassin,Lunar,4,45,1050,120,115,30000006,20007001,20002001,20008001,40000004,Skirmisher,Nightfall Enclave,掌握月影之术的刺客，能在暗夜中穿梭并施展幻舞。,https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80

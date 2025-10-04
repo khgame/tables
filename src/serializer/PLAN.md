@@ -15,4 +15,4 @@
 
 4. **CLI Format Registration**
    - Introduce registry-based format configuration so new targets plug in without touching `exec.ts`.
-   - Document extension workflow alongside examples in `docs/`.
+   - Document extension workflow alongside examples in `docs-site/`.

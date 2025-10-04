@@ -33,7 +33,7 @@ export function exportTablesToTs(dirIn: string, dirOut: string) {
       }, context)
     },
     false,
-    (file: string) => !/\..*\.swp/.test(file) && /.*\.xlsx/.test(file) && !file.startsWith('~')
+    (file: string) => !/\..*\.swp/.test(file) && /.*\.(xls|xlsx|csv)$/i.test(file) && !file.startsWith('~')
   )
 
   let importInterfaceStr = ''

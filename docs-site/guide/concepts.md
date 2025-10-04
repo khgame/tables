@@ -56,18 +56,54 @@ ID     value        ...                    describe ...
 ## 描述行与数据行
 
 - 描述行（标记行下一行）为每列提供字段名和注释。
-- 数据行从标记行下**两行**开始，`tableEnsureRows` 会剔除全空行，`tableConvert` 依据 `markCols` 和 `getValue` 还原每行数据。
-- 字符串类型列若单元格为空，会在转换阶段标准化为 `''`，避免 `string required` 报错；其他类型需保证符合声明。
+- 数据行从标记行下**两行**开始，`tableEnsureRows` 会剔除全空行，`tableConvert` 按 `markCols` + `getValue` 还原每行数据。
+- 字符串列若留空会被归一化为 `''`，避免触发 `string required`；其他类型需显式写成 `T?` 或置于 `$ghost` 结构内才能缺省。
 
-示例（节选）：
-```
-A: @     B: uint      C: string      D: $strict [ { tid:uint; num:float } ]  E: Array<Pair<uint>>  ...
-A: id    B: level     C: name        D: product                            E: rewards             ...
-001      1            farm           [{tid:1000001,num:1}]                 [ [1,2] ]             ...
-001      2            farm           [{tid:1000001,num:2}]                 [ [1,3] ]             ...
-```
+> Parser 逻辑来自 `@khgame/schema` 的 `SDMConvertor/TemplateConvertor`（参见 `node_modules/@khgame/schema/lib/convertor/richConvertor.js`），每个 Token 必须占据独立单元格。
 
-`...` 表示该工作表还可以追加更多列，例如资源成本 `Map<uint>`、嵌套数组 `[` `[` `int` ...，所有列都会参与 Schema 解析与数据生成。
+## 结构化表头示例
+
+> `@khgame/schema` 在 `SDMConvertor/TemplateConvertor`（见 `node_modules/@khgame/schema/lib/convertor/richConvertor.js`）中按照 Token 顺序构建 AST，因此 Excel 表头必须逐格拆分装饰器、括号与泛型符号。
+
+以下 Markdown 表以“行 \ 列”形式模拟 Excel。每个示例都包含标记行、描述行以及至少两行数据，方便直观对照。
+
+### 嵌套对象与可选段
+
+| 行 \ 列 | A | B | C | D | E | F | G | H |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 标记行 | `@` | `string` | `$ghost {` | `tid` | `[` | `tid` | `]` | `}` |
+| 描述行 | `tid` | `name` | `upgrade` | `to` | `dependency` | *(空)* | *(空)* | *(空)* |
+| 示例 1 | `2000000` | `Farm Lv.1` | `''` | `2000001` | `''` | `''` | `''` | `''` |
+| 示例 2 | `2000001` | `Farm Lv.2` | `''` | `2000002` | `''` | `2000000|2000002` | `''` | `''` |
+
+- `$ghost { ... }` 允许在示例 1 中完全留空而不导出 `upgrade` 字段。
+- `dependency` 列使用独立的 `[`、`tid`、`]` 三列构成数组，数据行按 `TemplateConvertor.validate` 的规则通过 `|` 拆分多个值。
+
+### 严格掉落数组
+
+| 行 \ 列 | A | B | C | D | E | F | G | H | I | J | K | L |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `weight:uint` | `}` | `{` | `tid` | `weight:uint` | `}` | `]` |
+| 描述行 | `tid` | `stageName` | `dropEntries` | *(空)* | `tid` | `weight` | *(空)* | *(空)* | `tid` | `weight` | *(空)* | *(空)* |
+| 示例 1 | `3001` | `Stage 1-1` | `''` | `''` | `2001` | `50` | `''` | `''` | `2002` | `50` | `''` | `''` |
+| 示例 2 | `3002` | `Stage 1-2` | `''` | `''` | `2003` | `70` | `''` | `''` | `2004` | `30` | `''` | `''` |
+
+- `$strict [` 要求数据行为定长数组；若缺乏任一元素，`SchemaConvertor` 会在构建时给出 “conversion failed”。
+- 继续追加第三个掉落条目时，在 `L` 之后补 `{`、`tid`、`weight:uint`、`}`，并保持“一列一个 Token”，最后再写 `]` 收束。
+
+### Pair / Map 快写
+
+| 行 \ 列 | A | B | C | D | E | F |
+| --- | --- | --- | --- | --- | --- | --- |
+| 标记行 | `@` | `string` | `Pair<uint>` | `$ghost {` | `Array<Pair<uint>>` | `}` |
+| 描述行 | `tid` | `label` | `cost` | `reward` | `rewards` | *(空)* |
+| 示例 1 | `5001` | `Daily Reward` | `gold:100` | `''` | `gem:1|key:2` | `''` |
+| 示例 2 | `5002` | `Weekly Reward` | `gem:5` | `''` | `''` | `''` |
+
+- `Pair<uint>` 使用 `key:value` 字符串输入，这是 `TemplateConvertor` 在 `richConvertor.js` 中的默认解析逻辑。若写入非字符串或缺少冒号，会触发 “pair value must contain ':'”。
+- `Array<Pair<uint>>` 允许以 `|` 分隔多个条目；配合 `$ghost { ... }` 可以在无奖励时自动省略字段。
+
+> 更多示例可参考仓库 `README.md` 的“类型标记速览”章节；所有结构均与上述代码路径保持一致。
 
 ## Schema 与序列化
 

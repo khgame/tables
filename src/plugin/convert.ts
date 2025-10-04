@@ -28,8 +28,8 @@ export function tableConvert(table: Table, context?: any): Table {
     return markToken.includes('string')
   })
 
-  const convertedRows = erows
-    .filter((row: number) => row >= startRow)
+  const dataRows = erows.filter((row: number) => row >= startRow)
+  const convertedRows = dataRows
     .map((row: number) => markCols.map((colName: string, colIndex: number) => {
       const cellValue = getValue(table, row, colName)
       if (!stringLikeColumns[colIndex]) return cellValue
@@ -49,7 +49,28 @@ export function tableConvert(table: Table, context?: any): Table {
       idSeg.push(markInd)
     }
   })
-  const tids = convertedRows.map((values: any[]) => idSeg.reduce((prev: string, cur: number) => prev + (values as any)[cur], ''))
+  const tableName: string = (context && context.__table && context.__table.fileName) || (table as any).fileName || 'unknown'
+  if (idSeg.length === 0) {
+    throw new Error(`[tables] 表 ${tableName} 缺少 '@' 标记列，无法生成 TID`)
+  }
+
+  const tids = convertedRows.map((values: any[], idx: number) => {
+    const tid = idSeg.reduce((prev: string, cur: number) => {
+      const segment = (values as any)[cur]
+      const segmentStr = segment === undefined || segment === null ? '' : String(segment).trim()
+      if (!segmentStr) {
+        const markCol = markCols[cur]
+        const sheetRow = dataRows[idx]
+        throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行的 '${markCol}' 段缺少 TID 数据`)
+      }
+      return prev + segmentStr
+    }, '')
+    if (!tid) {
+      const sheetRow = dataRows[idx]
+      throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行缺少 TID`)
+    }
+    return tid
+  })
 
   const result: Record<string, any> = {}
   const policy = (((context || {}).policy || {}).tidConflict) || 'error' // error|overwrite|ignore|merge

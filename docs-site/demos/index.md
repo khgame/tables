@@ -26,6 +26,12 @@
     source: 'https://github.com/khgame/tables/tree/master/example/game_04_arcane_depths'
   },
   {
+    title: 'Neon Aberration',
+    description: '赛博朋克 + 克苏鲁风格生存 ARPG：多表驱动基地管理、战术战斗、经济循环与剧情事件。',
+    play: '/examples/neon-aberration/index.html',
+    source: 'https://github.com/khgame/tables/tree/master/example/game_05_neon_aberration'
+  },
+  {
     title: 'Abyssal Nightfall',
     description: '类 Vampire Survivors 靶场：战前构筑界面 + Canvas 实时战斗，用 Excel 验证弹道、波次与技能树。',
     play: '/examples/abyssal-nightfall/index.html',

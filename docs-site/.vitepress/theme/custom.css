@@ -156,7 +156,9 @@ body {
 }
 
 .VPHomeHero .actions .action.secondary a,
-.VPHomeHero .actions .action.secondary button {
+.VPHomeHero .actions .action.secondary button,
+.VPHomeHero .actions .action.alt a,
+.VPHomeHero .actions .action.alt button {
   background: rgba(15, 23, 42, 0.5) !important;
   color: var(--vp-c-text-1) !important;
   border: 1px solid rgba(94, 234, 212, 0.35);

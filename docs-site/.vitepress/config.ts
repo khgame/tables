@@ -31,7 +31,8 @@ const themeConfig: DefaultTheme.Config = {
           { text: 'Mini RPG', link: '/demos/minirpg' },
           { text: 'Click Cookies', link: '/demos/click-cookies' },
           { text: 'A Dark Room', link: '/demos/a-dark-room' },
-          { text: 'Arcane Depths', link: '/demos/arcane-depths' }
+          { text: 'Arcane Depths', link: '/demos/arcane-depths' },
+          { text: 'Neon Aberration', link: '/demos/neon-aberration' }
         ]
       }
     ],

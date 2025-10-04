@@ -1,6 +1,6 @@
 {
   "name": "@khgame/tables",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "excel => json/js/ts/ts-interface",
   "main": "./lib/index.js",
   "bin": {

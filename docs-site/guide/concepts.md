@@ -91,4 +91,4 @@ A: id    B: level     C: name        D: product                            E: re
 
 - 所有序列化器会在输出前对 `result` 的键排序，保证重复构建的产物差异最小化。
 
-更多：见 [插件与扩展点](plugins.md) · [序列化器与上下文](serializers.md)。
+更多：见 [插件与扩展点](/guide/plugins) · [序列化输出](/guide/serializers)。

@@ -3,6 +3,7 @@ import * as Path from 'path'
 import * as fs from 'fs-extra'
 import { FileWalker } from 'kht'
 import type { Context, Serializer } from '../../types'
+import { makeCamelName, makeInterfaceName } from '../../utils/names'
 
 /**
  * serialize files with selected serializers
@@ -10,11 +11,26 @@ import type { Context, Serializer } from '../../types'
 export function serialize(pathIn: string, dirOut: string, serializers: Record<string, Serializer>, context?: Context) {
   const plugins = Object.values(serializers).reduce((prev: any[], cur) => (cur.plugins ? prev.concat(cur.plugins) : prev), [])
 
-  const ret = readAndTranslate(pathIn, { plugins }, context)
+  const fileName = Path.parse(pathIn).name
+  const scopedContext: any = context || {}
+  const previousTableMeta = scopedContext.__table
+  scopedContext.__table = {
+    fileName,
+    camelName: makeCamelName(fileName),
+    interfaceName: makeInterfaceName(fileName)
+  }
+
+  const ret = readAndTranslate(pathIn, { plugins }, scopedContext)
 
   for (const outName in serializers) {
-    const fileContent = serializers[outName].file(ret as any, Path.parse(pathIn).name, 'import * as TableContext from "./context";', context)
+    const fileContent = serializers[outName].file(ret as any, fileName, 'import * as TableContext from "./context";', scopedContext)
     fs.outputFileSync(Path.resolve(dirOut, outName), fileContent)
+  }
+
+  if (previousTableMeta === undefined) {
+    delete scopedContext.__table
+  } else {
+    scopedContext.__table = previousTableMeta
   }
 }
 

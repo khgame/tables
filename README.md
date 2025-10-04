@@ -10,9 +10,11 @@
 
 ## 功能
 
-- 支持 Excel 文件到各种数据类型间的转换, 目前支持 json/js
-- 携带插件系统, 具有高可扩展性
-- 丰富的官方插件, 开箱即用的为 table 数据结构建立各种功能支持, 如各类索引, 数据结构转换, 数据验证, ID 规划功能等
+- 支持将 Excel 转换为 json/js/ts/ts-interface 等多种序列化格式，可按需扩展新的目标
+- 提供 `jsonx`（实验性）协议导出：在 JSON 外包裹协议头与来源信息，便于客户端校验版本
+- 原生支持结构化数据、枚举、`$ghost`/`$strict` 等装饰器，类型由表头标记驱动并在导出时强校验
+- 携带插件系统，具有高可扩展性，可组合出不同的导表流水线
+- 丰富的官方插件覆盖 ID 规划、表结构描述、索引、数据验证等多类场景
 
 ## 基础用法
 
@@ -79,6 +81,138 @@ tables -i ./example -o ./example/out -f json --silent
 - 完整的游戏机制（资源生产消耗、冷却系统、解锁条件、场景切换等）
 - 浏览器存档系统（localStorage 自动保存）
 
+## 类型标记速览
+
+`tables` 通过标记行（mark row）解析字段类型、装饰器与 ID 片段。标记行在 Excel 中与描述行（下一行）搭配使用：标记行写语法 token，描述行写字段名；空白单元格代表该位置在 Excel 中留空。
+
+- `@`：拼接主键，多个 `@` 列会合并成最终 TID
+- `type?`：在类型末尾加 `?` 表示可选；留空但未加 `?` 会在转换时抛错
+- `enum(Name)`：引用上下文中的枚举，供 Schema 与序列化使用
+- `[` / `{` 等括号：必须拆分到独立单元格，和 `$ghost`、`$strict` 等装饰器组合使用
+
+`tableConvert` 内部会调用 `@khgame/schema` 的 `exportJson`：若标记列未写 `?` 且数据为空，将立即抛出缺失值错误；整段 `$ghost { ... }` 则允许全部字段为空时整体缺省。结合 `tableEnsureRows` 可以过滤全空行。
+
+以下示例直接取自 `example/example.xlsx`：第 5 行为标记行，第 6 行为描述行，第 7/8 行对应 `convert.result` 的前两条数据（TID `2000000`、`2000001`）。横向排列表格便于照抄列布局：
+
+| 行 \ 列 | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S | T | U | V | W | X | Y | Z | AA | AB | AC | AD | AE | AF | AG | AH | AI | AJ | AK | AL | AM | AN | AO | AP | AQ | AR | AS | AT | AU | AV | AW | AX | AY | AZ | BA | BB | BC | BD | BE | BF | BG |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 第 5 行（标记） | `@` | `@` | `@` | `string` | `{` | `tid` | `[` | `tid` | `]` | `}` | `[` | `{` | `tid` | `number` | `}` | `]` | `[` | `Pair<uint>` | `Pair<uint>` | `Pair<uint>` | `]` | `Array<float>` | `Pair<uint>` | `Array<Pair>` | `[` | `[` | `int` | `int` | `int` | `]` | `[` | `[` | `bool` | `]` | `]` | `]` | `$oneof [` | `tid` | `bool` | `Pair<uint>` | `]` | `$strict [` | `{` | `uint` | `}` | `$ghost {` | `uint` | `}` | `[` | `ufloat` | `$ghost{` | `string` | `}` | `]` | `]` | `uint|string` |
+| 第 6 行（描述） | `ctype` | `building` | `level` | `name` | `upgrage` | `to` | `dependency` |  |  |  | `product` |  | `tid` | `num` |  |  | `cost` |  |  |  |  | `arr` | `pair` | `map` | `nest` |  |  |  |  |  |  |  |  |  |  |  | `stars` |  |  |  |  | `nestedArray` |  | `data` |  |  | `data` |  |  |  |  | `1` |  |  |  |  | `ax` |
+| 第 7 行（示例） | `20` | `000` | `00` | `farm` | `''` | `2000001` | `''` | `''` | `''` | `''` | `''` | `''` | `1000001` | `1` | `''` | `''` | `''` | `oil:388` | `ore1:1551` | `''` | `''` | `1|2|3` | `tag:0` | `tag:0` | `''` | `''` | `1` | `2` | `3` | `''` | `''` | `''` | `Y` | `''` | `''` | `''` | `''` | `111` | `''` | `''` | `''` | `''` | `''` | `111` | `''` | `''` | `''` | `''` | `''` | `''` | `1` | `''` | `''` | `''` | `''` | `''` | `1` |
+| 第 8 行（示例） | `20` | `000` | `01` | `farm` | `''` | `2000002` | `''` | `2000001` | `''` | `''` | `''` | `''` | `1000001` | `2` | `''` | `''` | `''` | `oil:416` | `ore1:1663` | `ore1:1663` | `''` | `1|2|4` | `tag:1` | `tag:s1` | `''` | `''` | `1` | `2` | `''` | `''` | `''` | `''` | `''` | `''` | `''` | `''` | `''` | `222` | `''` | `''` | `''` | `''` | `''` | `111` | `''` | `''` | `222` | `''` | `''` | `''` | `2` | `''` | `2` | `''` | `''` | `''` | `2` |
+
+- 标记行需要逐列拆分所有 token，括号、装饰器、类型都占独立单元格。
+- 描述行（第 6 行）仅在需要生成字段名时填写，空白代表该位置不生成字段。
+- `Y` 会被布尔型解析为 `true`；`oil:388` 等 `资源:数值` 输入会根据 `Pair<uint>` 解析为 `{ key: 'oil', val: 388 }`。
+- 未显式加 `?` 的列若在数据行留空（且不在 `$ghost` 块内）会触发 `exportJson` 缺失值报错；若需要整体可选请使用 `$ghost { ... }` 或 `uint?` 等标记。
+- 表格中的 `''` 仅表示 Excel 中该单元格留空。
+
+### 常用模式示例
+
+下列模板可单独复制到 Excel，快速组合出常见配置：
+
+**主键 + 枚举 + 可选子结构**
+
+| 行 \ 列 | A | B | C | D | E | F |
+| --- | --- | --- | --- | --- | --- | --- |
+| 标记行 | `@` | `string` | `enum(Rarity)` | `$ghost {` | `uint?` | `}` |
+| 描述行 | `tid` | `name` | `rarity` | `shop` | `sell` | *(空)* |
+| 示例 1 | `10001` | `Short Sword` | `RARE` | `''` | `100` | `''` |
+| 示例 2 | `10002` | `HP Potion` | `COMMON` | `''` | `''` | `''` |
+
+> 枚举值来自 `context.enums.json`：
+> ```json
+> { "Rarity": { "COMMON": 1, "RARE": 2, "EPIC": 3, "LEGENDARY": 4 } }
+> ```
+
+**严格掉落数组**
+
+| 行 \ 列 | A | B | C | D | E | F | G | H |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `weight:uint` | `}` | `]` |
+| 描述行 | `tid` | `name` | `entries` | *(空)* | `tid` | `weight` | *(空)* | *(空)* |
+| 示例 1 | `3001` | `Stage 1-1` | `''` | `''` | `2001` | `50` | `''` | `''` |
+| 示例 2 | `3002` | `Stage 1-2` | `''` | `''` | `2003` | `70` | `''` | `''` |
+
+> 若数组需要多个元素，可在 `}` 之后依次追加新的 `{` → `tid` → `weight:uint` → `}` 列片段。
+
+**可选数值 + 默认字符串**
+
+| 行 \ 列 | A | B | C |
+| --- | --- | --- | --- |
+| 标记行 | `@` | `string` | `uint?` |
+| 描述行 | `tid` | `title` | `limit` |
+| 示例 1 | `5001` | `Daily Reward` | `3` |
+| 示例 2 | `5002` | `Limited Offer` | `''` |
+
+以上小例与上方综合表相互参考：实际录入时请确保括号 / 装饰器占用独立单元格，字符串可留空，数值若需缺省需写成 `uint?` 或置于 `$ghost { ... }` 结构内。
+
+示例数据（`example/example.xlsx` 中 `convert.result` 的前两项，已按常用字段裁剪）：
+
+```json
+{
+  "2000000": {
+    "ctype": 20,
+    "building": 0,
+    "level": 0,
+    "name": "farm",
+    "upgrage": { "to": 2000001, "dependency": [] },
+    "product": [{ "tid": 1000001, "num": 1 }],
+    "cost": [{ "key": "oil", "val": 388 }, { "key": "ore1", "val": 1551 }],
+    "arr": [1, 2, 3],
+    "pair": { "key": "tag", "val": 0 },
+    "map": [{ "key": "tag", "val": "0" }],
+    "nest": [[1, 2, 3], [[true]]],
+    "stars": [111],
+    "nestedArray": [{ "data": 111 }, null, [1]],
+    "ax": 1
+  },
+  "2000001": {
+    "ctype": 20,
+    "building": 0,
+    "level": 1,
+    "name": "farm",
+    "upgrage": { "to": 2000002, "dependency": [2000001] },
+    "product": [{ "tid": 1000001, "num": 2 }],
+    "cost": [
+      { "key": "oil", "val": 416 },
+      { "key": "ore1", "val": 1663 },
+      { "key": "ore1", "val": 1663 }
+    ],
+    "arr": [1, 2, 4],
+    "pair": { "key": "tag", "val": 1 },
+    "map": [{ "key": "tag", "val": "s1" }],
+    "nest": [[1, 2], [[]]],
+    "stars": [222],
+    "nestedArray": [{ "data": 111 }, { "data": 222 }, [2, { "1": "2" }]],
+    "ax": 2
+  }
+}
+```
+
+上述结构同时演示了：多段 TID 拼接、`enum`/`tid` 类型、`$strict` 和 `$ghost` 的组合、嵌套数组 / 对象等复杂场景。
+
+### 自定义索引（Label -> TID 等）
+
+若需要在导出结果中增加额外的查找表（例如 `Label -> tid` 或 `skillId -> tid[]`），可以在上下文目录的 `context.meta.json`（或根级 `context.indexes`）中声明索引配置，`tableConvert` 会自动根据 `convert.result` 构建索引并写入 `convert.indexes`：
+
+```json
+{
+  "meta": {
+    "indexes": {
+      "Example": [
+        "Label",
+        { "name": "skill", "path": "rule.skillId", "mode": "multi" }
+      ]
+    }
+  }
+}
+```
+
+- `Example` 可以是 Excel 文件名、其驼峰名或生成的接口名；也可使用 `"*"` 作为通配配置
+- 字符串表示简单列路径（点号访问嵌套字段），对象则可指定 `mode: "multi"`、`caseInsensitive`、`allowEmpty` 等行为
+- 生成的结构会出现在 `table.convert.indexes` 中，同时在 `table.convert.meta.indexes` 留下构建信息与冲突列表，方便排查重复 key
+
 ### Data Structure
 
 默认的 table 结构
@@ -135,12 +269,14 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - Int: `int`, `int8`, `int16`, `int32`, `int64`, `long`
 - UInt: `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `ulong`, `tid`, `@`
 - Boolean: `bool`, `onoff`
+- Enum: `enum(Name)`（从上下文目录加载枚举定义）
 - Nested Array: 以 `[` 开始, 以 `]` 结束
 - Nested Object: 以 `{` 开始, 以 `}` 结束
 - Any: `dynamic`, `object`, `obj`, `any`
 - Array: `Array<T>`
 - Pair: `Pair<T>`
 
+> 枚举值由上下文目录加载：将 `context.enums*.json` 放在输入目录旁，并在 `context.meta.json` 的 `meta.exports.enum` 中声明导出的枚举包
 > string 不允许空串
 > 定义类型的情况下, 类型转换失败将抛出异常, 形如:  
     `
@@ -402,7 +538,25 @@ table = {
 
 同时, 可以使用预制的Serializer来生成文件
 
-额外提供带协议头（实验性）的 JSON：`jsonx`（参见 docs/protocol.md）。
+#### jsonxSerializer（协议头导出）
+
+- 在标准 JSON 外层增加 `protocol` 与 `source` 字段（详见 [`docs/protocol.md`](./docs/protocol.md)）
+- CLI：`tables -i ./example -o ./out -f jsonx`
+- 适合需要远端校验版本 / 追踪来源的场景；`convert.collisions` 等元数据也会保留
+
+产物示例：
+
+```json
+{
+  "protocol": { "name": "khgame.tables", "version": 1 },
+  "source": { "fileName": "Example", "sheetName": "__data" },
+  "convert": {
+    "tids": ["2000000"],
+    "result": { "2000000": { "name": "farm", "level": 0, "...": "..." } },
+    "collisions": []
+  }
+}
+```
 
 #### jsonSerializer
 example:

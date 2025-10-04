@@ -2,6 +2,7 @@ import { tableSchema } from './schema'
 import { exportJson } from '@khgame/schema'
 import * as _ from 'lodash'
 import type { Table } from '../types'
+import { buildIndexes } from './indexes'
 
 export function tableConvert(table: Table, context?: any): Table {
   if (!table.schema) {
@@ -84,14 +85,26 @@ export function tableConvert(table: Table, context?: any): Table {
     }
   })
 
-  ;(table as any).convert = {
+  const indexBuild = buildIndexes(exportResult as any[], tids, context, descList)
+  const meta: Record<string, any> = {
+    idSegments: idSeg,
+    markCols
+  }
+  if (indexBuild && indexBuild.meta && Object.keys(indexBuild.meta).length > 0) {
+    meta.indexes = indexBuild.meta
+  }
+
+  const convertPayload: Record<string, any> = {
     tids,
     result,
     collisions,
-    meta: {
-      idSegments: idSeg,
-      markCols
-    }
+    meta
   }
+
+  if (indexBuild && indexBuild.maps && Object.keys(indexBuild.maps).length > 0) {
+    convertPayload.indexes = indexBuild.maps
+  }
+
+  ;(table as any).convert = convertPayload
   return table
 }

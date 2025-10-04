@@ -13,9 +13,16 @@ export type ConvertResult = {
   tids: string[];
   result: Record<string, any>;
   collisions?: Array<{ id: string; first: any; incoming: any }>;
+  indexes?: Record<string, Record<string, string | string[]>>;
   meta?: {
     idSegments: number[];
     markCols: string[];
+    indexes?: Record<string, {
+      path: string[];
+      mode: 'unique' | 'multi';
+      collisions?: Array<{ key: string; tids: string[] }>;
+      skipped?: string;
+    }>;
   };
 }
 

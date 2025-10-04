@@ -3,10 +3,28 @@ import type { DefaultTheme } from 'vitepress'
 const themeConfig: DefaultTheme.Config = {
   logo: '/favicon.svg',
   nav: [
-    { text: '指南', link: '/guide/overview' },
-    { text: '概念', link: '/guide/concepts' },
-    { text: '插件', link: '/guide/plugins' },
-    { text: '序列化', link: '/guide/serializers' },
+    {
+      text: '指南',
+      items: [
+        { text: '快速开始', link: '/guide/overview' },
+        { text: '概念与约定', link: '/guide/concepts' },
+        { text: '插件体系', link: '/guide/plugins' },
+        { text: '序列化输出', link: '/guide/serializers' },
+        { text: '最佳实践', link: '/guide/best-practices' },
+        { text: '架构解读', link: '/guide/architecture' },
+        { text: '发布与部署', link: '/guide/how-to-publish' }
+      ]
+    },
+    {
+      text: '参考',
+      items: [
+        { text: '概览', link: '/reference/' },
+        { text: 'API', link: '/reference/api' },
+        { text: 'CLI', link: '/reference/cli' },
+        { text: '协议', link: '/reference/protocol' },
+        { text: '序列化器注册', link: '/reference/serializer-registry' }
+      ]
+    },
     { text: '体验 Demo', link: '/demos/' },
     { text: '实用工具', link: '/tools/' },
     { text: 'GitHub', link: 'https://github.com/khgame/tables' }
@@ -19,7 +37,22 @@ const themeConfig: DefaultTheme.Config = {
           { text: '快速开始', link: '/guide/overview' },
           { text: '概念与约定', link: '/guide/concepts' },
           { text: '插件体系', link: '/guide/plugins' },
-          { text: '序列化输出', link: '/guide/serializers' }
+          { text: '序列化输出', link: '/guide/serializers' },
+          { text: '最佳实践', link: '/guide/best-practices' },
+          { text: '架构解读', link: '/guide/architecture' },
+          { text: '发布与部署', link: '/guide/how-to-publish' }
+        ]
+      }
+    ],
+    '/reference/': [
+      {
+        text: '参考',
+        items: [
+          { text: '概览', link: '/reference/' },
+          { text: 'API', link: '/reference/api' },
+          { text: 'CLI', link: '/reference/cli' },
+          { text: '协议', link: '/reference/protocol' },
+          { text: '序列化器注册', link: '/reference/serializer-registry' }
         ]
       }
     ],

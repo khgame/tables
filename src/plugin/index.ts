@@ -7,4 +7,4 @@ export * from './expand'
 export * from './plain'
 export * from './convert'
 export * from './schema'
-
+export * from './indexes'

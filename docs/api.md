@@ -38,6 +38,23 @@ const ctx = loadContext('example')
 serializeContext('out', [tsSerializer], ctx) // 生成 out/context.ts
 ```
 
+## 索引（Indexes）
+
+- `context.indexes` / `context.meta.indexes` 可声明额外索引，按表名、驼峰名、接口名或 `*` 匹配
+- 支持字符串路径、路径数组或对象配置，默认生成唯一键映射到 TID
+- 结果写入 `table.convert.indexes`，并在 `table.convert.meta.indexes` 提供模式与冲突信息
+
+```json
+{
+  "indexes": {
+    "Example": [
+      "Label",
+      { "name": "skill", "path": "rule.skillId", "mode": "multi" }
+    ]
+  }
+}
+```
+
 ## 一键批量导出（Out-of-Box）
 
 - `exportTablesToTs(dirIn, dirOut)`：扫描目录所有 xlsx，生成聚合 `index.ts`、各自的 TS、`context.ts`

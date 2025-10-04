@@ -42,7 +42,8 @@ if (!formatObj) {
 }
 
 function pathAvailable(path: string): boolean {
-  return !path.match(/\..*\.swp/) && !path.startsWith('~') && /.(xls|xlsx)$/i.test(path)
+  return !path.match(/\..*\.swp/) && !path.startsWith('~') &&
+    /\.(xls|xlsx|csv)$/i.test(path)
 }
 
 const context: any = { policy: {} }

@@ -90,7 +90,7 @@
 - 奖励字段指向资源、遗物或永久被动。
 
 ## 12. 文本与本地化
-- 所有可见文本使用 `textId` 引用外部文案表（未来可复用 `docs/examples/localization.md` 中的模式）。
+- 所有可见文本使用 `textId` 引用外部文案表（未来可复用 [`docs-site/demos/minirpg.md`](../../docs-site/demos/minirpg.md) 中的本地化模式）。
 - 表内保存行为参数与结构，文案单独维护以便多语言。
 
 ## 13. 数据表汇总

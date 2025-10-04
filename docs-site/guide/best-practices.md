@@ -1,5 +1,20 @@
 # 最佳实践
 
+## 导表流水线示意
+
+```mermaid
+flowchart LR
+  Excel[Excel / CSV] --> Read[readWorkBook / translateWorkBook]
+  Read --> Plugins[插件管线\n(tableRows → tableSchema → tableConvert ...)]
+  Plugins --> Schema[Schema AST\n@khgame/schema]
+  Plugins --> Convert[Convert 结果\n{ tids, result, collisions }]
+  Schema --> Serializers[序列化器\njson / ts / ts-interface / jsonx / go / csharp]
+  Convert --> Serializers
+  Serializers --> Artifacts[稳定产物\nJSON / TS / 协议等]
+```
+
+> 自上而下的责任划分：Excel 只承载数据，插件阶段完成清洗/校验，序列化器专注于格式产出；任何问题都能快速定位到所属阶段。
+
 ## 跨表引用（外键关联）
 
 ### tid 类型说明
@@ -206,6 +221,14 @@ console.log('✓ All wave references are valid');
 - 将 `_rebuild_data.js` 脚本纳入版本控制
 - Excel 文件也建议纳入版本控制（便于追溯数据变更）
 - `out/` 目录根据需要决定是否提交（建议至少提交一份作为基准）
+
+## 文档编写指引
+
+- 结构化示例请使用标准 Markdown 表格模拟 Excel：列在横向（A、B、C…），行从上到下（标记行 → 描述行 → 示例数据）。
+- 每个示例至少包含标记行、描述行以及 1~2 条数据，确保读者能够直接对照单元格写法与转换结果。
+- 括号、泛型、装饰器等 Token 必须在表格中拆分到独立的列，以便与 `@khgame/schema` 的 Token 化规则保持一致。
+- 若展示 Pair / Map / Array 输入，用 `key:value`、竖线 `|` 等真实数据示例描述具体写法，并说明其在 `TemplateConvertor` / `SchemaConvertor` 中的解析方式。
+- 在文档中引用代码行为时标注路径（例如 `node_modules/@khgame/schema/lib/convertor/richConvertor.js`），方便读者交叉验证。
 
 ## 更多参考
 

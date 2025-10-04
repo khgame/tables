@@ -1,16 +1,16 @@
 # tables
 
-轻量级跨平台Excel导表工具 ( `Excel` ==> `json`/`js`/`ts`/`ts-interface` )
+轻量级跨平台 Excel/CSV 导表工具 ( `Excel/CSV` ==> `json`/`js`/`ts`/`ts-interface` )
 
 ## 在线体验
 
 - GitHub Pages: https://khgame.github.io/tables/
 - 站点包含各示例（Mini RPG / Click Cookies / A Dark Room）的静态 Demo，可直接打开 `examples/<name>/index.html` 体验导表结果。
-- 文档（`docs/`）及 `README` 会同步发布，方便快速查阅概念约定与插件说明。
+- 文档站点（`docs-site/`）及 `README` 会同步发布，方便快速查阅概念约定与插件说明。
 
 ## 功能
 
-- 支持将 Excel 转换为 json/js/ts/ts-interface 等多种序列化格式，可按需扩展新的目标
+- 支持将 Excel/CSV 转换为 json/js/ts/ts-interface 等多种序列化格式，可按需扩展新的目标
 - 提供 `jsonx`（实验性）协议导出：在 JSON 外包裹协议头与来源信息，便于客户端校验版本
 - 原生支持结构化数据、枚举、`$ghost`/`$strict` 等装饰器，类型由表头标记驱动并在导出时强校验
 - 携带插件系统，具有高可扩展性，可组合出不同的导表流水线
@@ -44,6 +44,8 @@ Options:
   --version     Show version number                                    [boolean]
 ```
 
+默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。
+
 ### API
 
 - Out-of-box API : `readAndTranslate(filepath [,option])`
@@ -68,7 +70,7 @@ let table = readAndTranslate(`${__dirname}/excel/your_awesome_excel.xlsx`)
 tables -i ./example -o ./example/out -f json --silent
 ```
 
-如果需要扩展导出格式，可参考 [`docs/serializer-registry.md`](./docs/serializer-registry.md) 了解注册自定义格式的方法。
+如果需要扩展导出格式，可参考 [`docs-site/reference/serializer-registry.md`](./docs-site/reference/serializer-registry.md) 了解注册自定义格式的方法。
 
 如果需要参考一个较完整的项目结构，可直接使用 `example/game_01_minirpg/` 下的多表样例（英雄 / 技能 / 物品 / 敌人 / 关卡 / 全局配置），可通过 `npm run ex:minirpg`（或 `node example/game_01_minirpg/serialize.js`）生成 JSON、TS 产物以及一个基于 React + Tailwind 的静态网页（`out/index.html`）；该示例演示了 8 位 ID 分类、跨表引用以及前端即时消费（含简化回合制战斗）。
 
@@ -540,7 +542,7 @@ table = {
 
 #### jsonxSerializer（协议头导出）
 
-- 在标准 JSON 外层增加 `protocol` 与 `source` 字段（详见 [`docs/protocol.md`](./docs/protocol.md)）
+- 在标准 JSON 外层增加 `protocol` 与 `source` 字段（详见 [`docs-site/reference/protocol.md`](./docs-site/reference/protocol.md)）
 - CLI：`tables -i ./example -o ./out -f jsonx`
 - 适合需要远端校验版本 / 追踪来源的场景；`convert.collisions` 等元数据也会保留
 

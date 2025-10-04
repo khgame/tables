@@ -55,7 +55,7 @@ jobs:
 
 ## 同步导表产物
 
-如需在文档站点同时展示最新的导表结果（例如 `docs/generated`），可在构建前运行导表脚本：
+如需在文档站点同时展示最新的导表结果（例如 `docs-site/public/generated`），可在构建前运行导表脚本：
 
 ```bash
 npm run build

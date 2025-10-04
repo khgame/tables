@@ -3,7 +3,7 @@
 本项目采用“读取 -> 解析 -> 转换 -> 序列化”的分层架构：
 
 - 读取（Reader）
-  - 文件到内部 `Table`：`src/utils/read.ts`（基于 `xlsx`）。
+  - 文件到内部 `Table`：`src/utils/read.ts`（基于 `xlsx`，默认支持 `.xls`/`.xlsx`/`.csv`）。
   - 产物仅包含原始单元格布局：`cols/data/getValue`。
 
 - 解析（Parse Layer）
@@ -34,7 +34,7 @@ export type TablesArtifact = {
 
 ## 扩展点
 
-- 自定义 Reader：替换/拓展 `readWorkBook/translateWorkBook`（CSV/Sheets 等来源）。
+- 自定义 Reader：替换/拓展 `readWorkBook/translateWorkBook`（Google Sheets / 自定义 API 等来源）。
 - 自定义 Parse/Convert 插件：与 `Table` 结构解耦，按需插拔。
 - 自定义 Serializer：声明所需插件，产出任意目标语言/格式。
 

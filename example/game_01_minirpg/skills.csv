@@ -1,0 +1,13 @@
+Category Code,Skill Code,Level Code,Level,Skill Name,Target,Cooldown,Power,Scaling,Energy Cost,Unlock Stage,Description
+@,@,@,uint,string,SkillTarget,uint,uint,float,uint,tid,string
+categoryCode,skillCode,levelCode,level,name,target,cooldown,power,scaling,energyCost,unlockStage,desc
+20,001,001,1,Shield Bash,Enemy,8,120,1,20,40000001,挥动盾牌造成伤害，并短暂眩晕敌人。
+20,001,002,2,Shield Bash,Enemy,7,150,1.15,20,40000002,强化版盾击，提升伤害并延长控制。
+20,002,001,1,Guardian Aura,AllyTeam,12,0,0,25,40000001,为全队提供护盾并缓慢回复生命。
+20,003,001,1,Arcane Nova,EnemyAll,10,180,1.25,30,40000002,释放大范围法术，造成高额爆发伤害。
+20,004,001,1,Shadowstep,Self,6,90,1.1,10,40000002,迅速闪至目标背后并提升下次攻击。
+20,005,001,1,Poisoned Blade,Enemy,9,110,1.05,18,40000003,附加毒素的攻击，会在后续造成持续伤害。
+20,006,001,1,Celestial Lance,Boss,14,240,1.4,40,40000004,召唤星辉长枪贯穿敌人，造成巨额伤害。
+20,007,001,1,Umbral Veil,Self,11,0,0,22,40000003,化作影子躲避伤害，并在现身时造成穿刺。
+20,008,001,1,Moonfall Waltz,EnemyAll,15,260,1.5,45,40000004,月光化作刀舞横扫全场，附带易伤效果。
+20,009,001,1,Crystal Bloom,Enemy,13,210,1.35,35,40000003,凝聚水晶爆炸，造成范围伤害并减速。

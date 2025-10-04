@@ -1,0 +1,9 @@
+Category Code,Section Code,Sequence Code,Sequence,Key,Value Type,Value,Description
+@,@,@,uint,string,GlobalValueType,any,string
+categoryCode,sectionCode,sequenceCode,sequence,key,valueType,value,description
+90,00,0001,1,gameVersion,String,1.0.0,当前游戏版本号
+90,00,0002,2,enableTutorial,Bool,TRUE,是否开启新手引导
+90,00,0003,3,rookieDiamonds,UInt,1500,新手礼包钻石数量
+90,00,0004,4,initialCurrency,Currency,gold,初始主要货币类型
+90,01,0001,5,defaultStage,StageId,40000001,默认剧情起始关卡
+90,01,0002,6,unlockHeroReward,StageId,40000002,完成后解锁第二位英雄的关卡

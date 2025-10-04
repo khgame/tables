@@ -12,15 +12,16 @@ const {
 const baseDir = __dirname
 const outDir = Path.resolve(baseDir, 'out')
 
-const tables = [
-  { file: 'heroes.xlsx', stem: 'heroes' },
-  { file: 'skills.xlsx', stem: 'skills' },
-  { file: 'items.xlsx', stem: 'items' },
-  { file: 'enemies.xlsx', stem: 'enemies' },
-  { file: 'stages.xlsx', stem: 'stages' },
-  { file: 'relics.xlsx', stem: 'relics' },
-  { file: 'global_config.xlsx', stem: 'global_config' }
-]
+const tableStems = ['heroes', 'skills', 'items', 'enemies', 'stages', 'relics', 'global_config']
+
+function resolveSourceFile(stem) {
+  const candidates = [`${stem}.csv`, `${stem}.xlsx`]
+  for (const candidate of candidates) {
+    const fullPath = Path.resolve(baseDir, candidate)
+    if (fs.existsSync(fullPath)) return candidate
+  }
+  throw new Error(`[minirpg] missing source table for ${stem}, expected one of ${candidates.join(', ')}`)
+}
 
 const serializerConfigs = [
   {
@@ -43,7 +44,8 @@ function main() {
   const serializerList = serializerConfigs.map(({ serializer }) => serializer)
   serializeContext(outDir, serializerList, context)
 
-  for (const { file, stem } of tables) {
+  for (const stem of tableStems) {
+    const file = resolveSourceFile(stem)
     const src = Path.resolve(baseDir, file)
     const serializerMap = serializerConfigs.reduce((acc, cfg) => {
       acc[cfg.getFileName(stem)] = cfg.serializer

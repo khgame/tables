@@ -1,5 +1,5 @@
 Category Code,Section Code,Sequence Code,Sequence,Key,Value Type,Value,Description
-@,@,@,uint,string,GlobalValueType,any,string
+@,@,@,uint,string,enum<GlobalValueType>,any,string
 categoryCode,sectionCode,sequenceCode,sequence,key,valueType,value,description
 90,00,0001,1,gameVersion,String,1.0.0,当前游戏版本号
 90,00,0002,2,enableTutorial,Bool,TRUE,是否开启新手引导

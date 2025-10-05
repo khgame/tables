@@ -8,6 +8,7 @@
 - `skills.csv`：`@ / @ / @` 对应“类别 + 技能编号 + 等级”，并记录目标类型、能量消耗等字段。
 - `items.csv`：子类 + 序号组合成 ID，附带成本、属性加成与来源关卡。
 - `enemies.csv`：敌人类别 / 子类 / 序号组合成 ID，并记录生命、攻击、防御、弱点、经验奖励与肖像。
+- `relics.csv`：新增 `alias` 列（`Relic Key`），为遗物生成可读别名及 `RelicsProtocol` 常量，方便在代码中通过别名访问对应配置。
 - `stages.csv`：关卡类别 / 线路 / 序号组成 ID，字段涵盖环境、奖励、首通技能、`bossEnemy`（指向敌人表）、关卡背景图与前置关卡。
 - `global_config.csv`：组合 ID + `any` 值列，集中维护版本号、开关、默认关卡等全局参数。
 - `context.meta.json` / `context.enums.json`：定义并导出枚举，供 TS 输出引用。
@@ -33,6 +34,25 @@ node example/game_01_minirpg/serialize.js
  # 将目录下全部 csv 导出为 JSON
 npx tables -i ./example/game_01_minirpg -o ./example/game_01_minirpg/out -f json
 ```
+
+## 别名访问示例
+
+alias 列会自动生成以下几个产物：
+
+- `out/relics.ts`/`out/relicsInterface.ts` 中的 `RelicsProtocol` 常量数组与类型别名。
+- `getRelicsByProtocol(alias)`：通过别名直接获取配置对象。
+- `convert.aliases.key` 与索引 `convert.indexes.key`，用于按需查表。
+
+在 TS 中可以这样使用：
+
+```ts
+import { RelicsProtocol, getRelicsByProtocol } from './out/relics'
+
+const relic = getRelicsByProtocol('everburningEmber' as RelicsProtocol)
+console.log(relic.desc)
+```
+
+运行 `node example/game_01_minirpg/serialize.js` 后即可查看上述导出的常量与函数。
 
 随后直接打开 `example/game_01_minirpg/out/index.html`，即可看到由 React + Tailwind 搭建的紧凑文字界面：同屏查看剧情日志、切换英雄、推进关卡并触发简化的回合制战斗，所有内容均来自 tables 输出的 JSON 产物。
 

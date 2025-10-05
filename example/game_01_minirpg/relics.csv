@@ -1,9 +1,9 @@
-Category Code,Subtype Code,Sequence Code,Sequence,Relic Name,Effect Type,Effect Value,Unlock Stage,Description,Icon
-@,@,@,uint,string,RelicEffectType,float,tid?,string,string
-categoryCode,subtypeCode,sequenceCode,sequence,name,effectType,effectValue,unlockStage,desc,icon
-70,00,0001,1,Everburning Ember,attackMultiplier,1.2,,灼热火种让全体英雄攻击提高 20%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png
-70,00,0002,2,Aegis Mirror,defenseMultiplier,1.15,40000001,远古护盾折射伤害，使防御提升 15%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e1.png
-70,00,0003,3,Crystal Prism,enemyDefenseReduction,0.18,40000002,棱光削弱敌人护甲，战斗开始时破甲 18%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png
-70,00,0004,4,Scholar Chronicle,expBonus,0.25,40000002,编年史记录战术心得，额外获得 25% 经验。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d6.png
-70,00,0005,5,Frostbrand Sigil,environmentBonus:Tundra,1.25,40000001,寒霜纹章在冰原作战时提升 25% 伤害。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2744.png
-70,00,0006,6,Moonlit Compass,elementBonus:Lunar,1.3,40000004,月辉罗盘唤醒月属性英雄力量，伤害提升 30%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f319.png
+Category Code,Subtype Code,Sequence Code,Sequence,Relic Key,Relic Name,Effect Type,Effect Value,Unlock Stage,Description,Icon
+@,@,@,uint,alias,string,RelicEffectType,float,tid?,string,string
+categoryCode,subtypeCode,sequenceCode,sequence,key,name,effectType,effectValue,unlockStage,desc,icon
+70,00,0001,1,everburningEmber,Everburning Ember,attackMultiplier,1.2,,灼热火种让全体英雄攻击提高 20%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png
+70,00,0002,2,aegisMirror,Aegis Mirror,defenseMultiplier,1.15,40000001,远古护盾折射伤害，使防御提升 15%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e1.png
+70,00,0003,3,crystalPrism,Crystal Prism,enemyDefenseReduction,0.18,40000002,棱光削弱敌人护甲，战斗开始时破甲 18%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png
+70,00,0004,4,scholarChronicle,Scholar Chronicle,expBonus,0.25,40000002,编年史记录战术心得，额外获得 25% 经验。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d6.png
+70,00,0005,5,frostbrandSigil,Frostbrand Sigil,environmentBonus:Tundra,1.25,40000001,寒霜纹章在冰原作战时提升 25% 伤害。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2744.png
+70,00,0006,6,moonlitCompass,Moonlit Compass,elementBonus:Lunar,1.3,40000004,月辉罗盘唤醒月属性英雄力量，伤害提升 30%。,https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f319.png

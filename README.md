@@ -252,6 +252,24 @@ const specific = enemies[fromString];
    `loadContext(dir)` 会自动读取 `dir` 下符合 `context.*.json` 的文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
 4. **表头写成 `enum<Rarity>`**：当标记行使用 `enum<Rarity>`（或 `enum<Rarity|Fallback>`）时，`tableSchema`/`tableConvert` 会校验单元格值是否存在于上下文枚举中；TS/Go/C# 序列化器则会在产物中生成 `TableContext.Rarity` 引用。
 
+## TS 输出结构
+
+使用 `-f ts` 或直接调用 `tsSerializer` 时，会生成两份互补的文件：
+
+- `<Table>.ts`：纯类型与仓库定义。包含 `I<Table>`、`<Table>TID`/`to<Table>TID`、`${Table}Protocol`、`${Table}Repo` 以及 `RepoRaw` 类型，不携带具体数据。
+- `<Table>Solution.ts`：运行期数据载体。导入上述类型模块，内嵌 `raw` JSON 与索引映射，并导出 `records`、`<table>Repo = ${Table}Repo.fromRaw(raw)` 等默认实例。
+
+在 TypeScript 项目中即可：
+
+```ts
+import { RelicsRepo, RelicsProtocol } from './out/relics'
+import { relicsRepo } from './out/relicsSolution'
+
+const relic = relicsRepo.getByKey('everburningEmber' as RelicsProtocol)
+```
+
+若只想复用类型，可 `import { RelicsRepo } from './out/relics'` 并自行加载 JSON 调用 `RelicsRepo.fromRaw(...)`。使用 `-f ts-interface` 则仅生成 `<Table>.ts`，适合仅需要类型/仓库定义的场景。
+
 ### alias 列（别名映射）
 
 > alias 机制的设计思想:

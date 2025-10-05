@@ -46,6 +46,8 @@ Options:
 
 默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。
 
+> 提示：选择 `-f ts` 时会生成两份文件：`<Table>Solution.ts`（含数据 + 仓库实例）以及 `<Table>.ts`（纯类型与仓库定义）。`-f ts-interface` 仅输出类型文件。
+
 ### API
 
 - Out-of-box API : `readAndTranslate(filepath [,option])`
@@ -273,7 +275,7 @@ const specific = enemies[fromString];
 - 导出结果会附带：
   - `convert.aliases.<field>`：别名到 TID 的 map，例如 `{ school: '500001', hospital: '500002' }`
   - `convert.indexes.alias.<field>`：用于快速查找的映射，同步进 `meta.alias` 的枚举列表
-  - TS/TS-Interface 序列化器会额外生成 `AliasProtocol` 常量 / 类型及 `getAliasByProtocol` 辅助函数，便于按别名读取结构化数据。
+  - TS/TS-Interface 序列化器会额外生成 `AliasProtocol` 常量/类型与 `${tableName}Repo` 仓库，`relicsSolution.ts` 等文件会预封装 `Repo.fromRaw` 结果，便于按别名读取结构化数据。
 - `alias?` 与 `alias` 行为一致，只是显式提醒该列允许空白。
 
 更多细节与示例可参考 `docs-site/guide/concepts.md` 的“alias 列”章节。

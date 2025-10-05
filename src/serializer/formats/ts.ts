@@ -23,8 +23,8 @@ export const tsSerializer: Serializer = {
     const tidAware = Array.isArray(meta?.idSegments) && (meta!.idSegments as number[]).length > 0
 
     const tidDefs = tidAware
-      ? `type ${tidTypeName} = string & { readonly __${baseName}TID: unique symbol };
-const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${tidTypeName};
+      ? `export type ${tidTypeName} = string & { readonly __${baseName}TID: unique symbol };
+export const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${tidTypeName};
 
 `
       : ''

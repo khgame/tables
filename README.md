@@ -87,12 +87,38 @@ tables -i ./example -o ./example/out -f json --silent
 
 `tables` 通过标记行（mark row）解析字段类型、装饰器与 ID 片段。标记行在 Excel 中与描述行（下一行）搭配使用：标记行写语法 token，描述行写字段名；空白单元格代表该位置在 Excel 中留空。
 
-- `@`：拼接主键，多个 `@` 列会合并成最终 TID
+- `@`：拼接主键，多个 `@` 列会合并成最终 TID；导出时会直接读取单元格的显示值（保留前导零、数字格式），确保 ID 宽度与 Excel 中一致；如果整张表没有 `@` 列，或某一行的 `@` 段为空，`tables` 会在转换阶段抛出包含表名与行号的错误。
 - `type?`：在类型末尾加 `?` 表示可选；留空但未加 `?` 会在转换时抛错
 - `enum(Name)`：引用上下文中的枚举，供 Schema 与序列化使用
 - `[` / `{` 等括号：必须拆分到独立单元格，和 `$ghost`、`$strict` 等装饰器组合使用
 
 `tableConvert` 内部会调用 `@khgame/schema` 的 `exportJson`：若标记列未写 `?` 且数据为空，将立即抛出缺失值错误；整段 `$ghost { ... }` 则允许全部字段为空时整体缺省。结合 `tableEnsureRows` 可以过滤全空行。
+
+### TID 使用示例
+
+导出的 TS 产物会同时生成 `xxx.ts` 与 `xxxInterface.ts`：前者注入数据，后者仅包含类型定义。每个表都会带有品牌化的 TID 类型：
+
+```ts
+// protocol/enemies.ts
+export type EnemiesTID = string & { readonly __EnemiesTID: unique symbol };
+export const enemiesTids: EnemiesTID[];
+export const enemies: Record<EnemiesTID, IEnemies>;
+```
+
+在业务代码中可以这样使用：
+
+```ts
+import { enemies, enemiesTids, toEnemiesTID } from './protocol/enemies';
+import type { IEnemies, EnemiesTID } from './protocol/enemiesInterface';
+
+const firstEnemyId: EnemiesTID = enemiesTids[0];
+const firstEnemy: IEnemies = enemies[firstEnemyId];
+
+// 当手头只有字符串时，可通过 helper 强转成品牌化 ID
+const fromString = toEnemiesTID('50010001');
+```
+
+> 提示：枚举类型需在标记行写成 `enum(HeroClass)`，这样导出的类型才会指向 `TableContext.HeroClass`；直写 `HeroClass` 会被视为字符串字面量。
 
 以下示例直接取自 `example/example.xlsx`：第 5 行为标记行，第 6 行为描述行，第 7/8 行对应 `convert.result` 的前两条数据（TID `2000000`、`2000001`）。横向排列表格便于照抄列布局：
 

@@ -54,14 +54,17 @@ export function tableConvert(table: Table, context?: any): Table {
     throw new Error(`[tables] 表 ${tableName} 缺少 '@' 标记列，无法生成 TID`)
   }
 
+  const tableData = (table as any).data || {}
   const tids = convertedRows.map((values: any[], idx: number) => {
     const tid = idSeg.reduce((prev: string, cur: number) => {
-      const segment = (values as any)[cur]
+      const colName = markCols[cur]
+      const sheetRow = dataRows[idx]
+      const cell = (tableData[sheetRow] || {})[colName]
+      const rawSegment = (cell && typeof cell.w === 'string' && cell.w.trim() !== '') ? cell.w : (cell ? cell.v : undefined)
+      const segment = rawSegment !== undefined ? rawSegment : (values as any)[cur]
       const segmentStr = segment === undefined || segment === null ? '' : String(segment).trim()
       if (!segmentStr) {
-        const markCol = markCols[cur]
-        const sheetRow = dataRows[idx]
-        throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行的 '${markCol}' 段缺少 TID 数据`)
+        throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行的 '${colName}' 段缺少 TID 数据`)
       }
       return prev + segmentStr
     }, '')

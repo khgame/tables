@@ -38,8 +38,8 @@ Convert Plugins (`tableConvert`)
 Serializers (json/js/ts/ts-interface/...)
 ```
 
-- Schema 构建：`buildSchemaModel` (`src/serializer/core/schemaModel.ts`) 将 SDM/TDM 节点翻译成统一的 `TypeNode`。`convertTNode` 会把 `int`/`uint` 等数值类型折叠成 `PrimitiveType { kind: 'primitive', name: 'number' }`，此处可根据 `node.rawName` 写入 `hint` 等附加信息，用于后续数值策略扩展。
-- 数值归一化：`normalizePrimitive` (`src/plugin/convert.ts`) 读取 `node.hint`。约定 `hint: 'int'` 时执行安全整数检验，不安全就抛错；`hint: 'bigint'` 时统一输出字符串以保留精度。默认流程未主动写入 hint，但外部插件或自定义 schema 可以在 `TypeNode` 上设置，以启用这些保护分支。
+- Schema 构建：`buildSchemaModel` (`src/serializer/core/schemaModel.ts`) 将 SDM/TDM 节点翻译成统一的 `TypeNode`。`convertTNode` 会把 `int`/`uint` 等数值类型折叠成 `PrimitiveType { kind: 'primitive', name: 'number' }`，并依据 `node.rawName` 组装 `hintMeta`（strategyHint/sourceAlias/flavor），为后续的溢出防护、大整数精度处理乃至自定义语义扩展提供锚点。*当前进度*：`hintMeta` 正在逐步上线，现阶段 `createPrimitive` 仍返回旧结构，可通过查阅 `src/serializer/hintmeta/plan-hintmeta.md` 以及检查 `src/plugin/convert.ts::normalizePrimitive` 是否收到 `hintMeta` 字段来核对实现状态。
+- 数值归一化：`normalizePrimitive` (`src/plugin/convert.ts`) 读取 `node.hintMeta.strategyHint`。约定 `'int'` 时执行安全整数检验，不安全就抛错；`'bigint'` 时统一输出字符串以保留精度。它仍是所有数值校验的最终关卡，若未启用 hintmeta 则回退到默认逻辑。
 - 类型别名：所有 Excel 类型标记先通过 `@khgame/schema` 的别名表归一（`node_modules/@khgame/schema/lib/constant.js`）。例如 `int8/int16/int32/int64/long` 都映射到主类型 `int`，`uint64/ulong` 映射到 `uint`。
 
 ## 协议（Protocol）

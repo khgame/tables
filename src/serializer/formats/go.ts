@@ -135,7 +135,8 @@ function renderArray(node: ArrayType, depth: number): string {
   if (isEmptyArray(node)) {
     return '[]interface{}'
   }
-  const element = node.element ?? ({ kind: 'primitive', name: 'any' } as PrimitiveType)
+  const arrayNode = node as any
+  const element = arrayNode.element ?? ({ kind: 'primitive', name: 'any' } as PrimitiveType)
   const rendered = renderTypeNode(element, depth + 1)
   return `[]${rendered}`
 }

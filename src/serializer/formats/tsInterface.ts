@@ -94,15 +94,16 @@ function renderArray(node: ArrayType, depth: number): string {
   if (isEmptyArray(node)) {
     return '[]'
   }
-  const element = node.element ?? ({ kind: 'primitive', name: 'any' } as PrimitiveType)
+  const arrayNode = node as any
+  const element = arrayNode.element ?? ({ kind: 'primitive', name: 'any' } as PrimitiveType)
   const renderedElement = renderTypeNode(element, depth + 1)
-  if (node.origin === 'tnode') {
-    if (node.representation === 'generic') {
+  if (arrayNode.origin === 'tnode') {
+    if (arrayNode.representation === 'generic') {
       return `Array<${renderedElement}>`
     }
     return `${renderedElement}[]`
   }
-  const childCount = node.childCount ?? (isUnion(element) ? element.variants.length : 1)
+  const childCount = arrayNode.childCount ?? (isUnion(element) ? element.variants.length : 1)
   return shouldUseGenericArrayNotation(element, renderedElement, childCount)
     ? `Array<${renderedElement}>`
     : `${renderedElement}[]`

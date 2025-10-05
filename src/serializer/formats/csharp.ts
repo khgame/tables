@@ -4,6 +4,7 @@ import type { Serializer } from '../../types'
 import {
   buildSchemaModel,
   isEmptyArray,
+  type ArrayType,
   type LiteralType,
   type ObjectField,
   type ObjectType,
@@ -237,7 +238,8 @@ function renderArrayType(
   if (isEmptyArray(node)) {
     return { typeName: 'List<object>', isValueType: false, isReferenceType: true }
   }
-  const element = node.element ?? { kind: 'primitive', name: 'any' } as TypeNode
+  const arrayNode = node as any
+  const element: TypeNode = arrayNode.element ?? { kind: 'primitive', name: 'any' } as TypeNode
   const info = renderTypeInfo(element, path.concat(['Item']), declarations, classNames, uses)
   return { typeName: `List<${info.typeName}>`, isValueType: false, isReferenceType: true }
 }

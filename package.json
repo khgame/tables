@@ -1,7 +1,7 @@
 {
   "name": "@khgame/tables",
-  "version": "0.2.3",
-  "description": "excel => json/js/ts/ts-interface",
+  "version": "0.2.4",
+  "description": "轻量级跨平台 Excel/CSV 导表工具 ( `Excel/CSV` ==> `json`/`js`/`ts`/`ts-interface` )",
   "main": "./lib/index.js",
   "bin": {
     "tables": "./lib/exec.js"

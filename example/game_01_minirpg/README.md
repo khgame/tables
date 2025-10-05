@@ -40,15 +40,16 @@ npx tables -i ./example/game_01_minirpg -o ./example/game_01_minirpg/out -f json
 alias 列会自动生成以下几个产物：
 
 - `out/relics.ts`/`out/relicsInterface.ts` 中的 `RelicsProtocol` 常量数组与类型别名。
-- `getRelicsByProtocol(alias)`：通过别名直接获取配置对象。
+- `RelicsRepo`：提供 `get`/`values` 以及 `getByKey` 等索引方法。
 - `convert.aliases.key` 与索引 `convert.indexes.key`，用于按需查表。
 
 在 TS 中可以这样使用：
 
 ```ts
-import { RelicsProtocol, getRelicsByProtocol } from './out/relics'
+import { RelicsProtocol, RelicsRepo } from './out/relics'
 
-const relic = getRelicsByProtocol('everburningEmber' as RelicsProtocol)
+const repo = RelicsRepo.fromRaw()
+const relic = repo.getByKey('everburningEmber' as RelicsProtocol)
 console.log(relic.desc)
 ```
 

@@ -100,7 +100,7 @@ ID     value        ...                    describe ...
 ### alias 别名单列
 
 - 当某列标记为 `alias` / `alias?` 时，tables 会为每行生成“别名 -> TID”的唯一映射；空字符串会被忽略，重复别名会在转换阶段直接抛错。
-- 序列化结果会附带 `${tableName}Protocol` 常量数组、`get${tableName}ByProtocol` 辅助函数（TS 输出）以及一个名为字段同名的索引映射，便于通过别名定位记录。
+- 序列化结果会附带 `${tableName}Protocol` 常量数组、`${tableName}Repo` 仓库以及索引映射，便于通过别名或其他键值进行强类型查表。
 - `alias?` 与 `alias` 行为一致，只是提示这列允许空值；实际导出时两者都会跳过空白单元格。
 
 ### Pair / Map 快写

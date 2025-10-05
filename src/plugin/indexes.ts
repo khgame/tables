@@ -67,12 +67,17 @@ export function buildIndexes(exportResult: any[], tids: string[], context: any, 
 
       if (config.mode === 'unique') {
         const existing = indexMap[key]
-        if (existing && existing !== tid) {
+        if (existing !== undefined) {
+          const existingTid = Array.isArray(existing) ? existing[0] : existing
+          if (existingTid === tid) {
+            return
+          }
+
           const collision = collisions.find(c => c.key === key)
           if (collision) {
             if (!collision.tids.includes(tid)) collision.tids.push(tid)
           } else {
-            collisions.push({ key, tids: [existing, tid] })
+            collisions.push({ key, tids: [existingTid, tid] })
           }
           return
         }

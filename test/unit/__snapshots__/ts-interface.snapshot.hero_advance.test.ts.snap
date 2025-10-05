@@ -4,9 +4,10 @@ exports[`ts-interface snapshot (hero_advance.xlsx) matches snapshot 1`] = `
 "/** this file is auto generated */
 //imports
         
-export type HeroAdvanceTID = string & { readonly __HeroAdvanceTID: unique symbol };
+export type HeroAdvanceTID = TableContext.KHTableID;
 
 export interface IHeroAdvance {
+  _tid: HeroAdvanceTID;
   system: number;
   id: number;
   star: number;

@@ -110,7 +110,7 @@ function convertSDM(sdm: any, descs: any[], context: any, depth: number): NamedT
         .map(child => removeUndefined(child.type))
         .filter((entry): entry is { type: TypeNode; removed: boolean } => !!entry.type)
       const elementType = combineUnion(normalized.map(item => item.type))
-      let arrayType: ArrayType
+      let arrayType: TypeNode
       if (!elementType) {
         arrayType = { kind: 'array', empty: true, origin: 'sdm', childCount: 0 }
       } else {
@@ -130,7 +130,7 @@ function convertSDM(sdm: any, descs: any[], context: any, depth: number): NamedT
       const fields = children
         .filter(child => child.name)
         .map(child => ({ name: String(child.name), type: child.type }))
-      let objectType: ObjectType = { kind: 'object', fields, style: 'block' }
+      let objectType: TypeNode = { kind: 'object', fields, style: 'block' }
       if (ghost) {
         objectType = addUndefined(objectType)
       }

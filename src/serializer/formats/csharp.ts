@@ -4,6 +4,7 @@ import type { Serializer } from '../../types'
 import {
   buildSchemaModel,
   isEmptyArray,
+  type ArrayType,
   type LiteralType,
   type ObjectField,
   type ObjectType,
@@ -33,7 +34,15 @@ export const csharpSerializer: Serializer = {
     const seenPaths = new Set<string>()
     const uses = new Set<string>(['System'])
 
-    const rootClass = renderClass(model, [rootName], declarations, classNames, seenPaths, uses)
+    const rootClass = renderClass(
+      model,
+      [rootName],
+      declarations,
+      classNames,
+      seenPaths,
+      uses,
+      tidAware ? `${rootName}TID` : undefined
+    )
 
     const nested = Array.from(declarations.values())
 
@@ -86,7 +95,8 @@ function renderClass(
   declarations: Map<string, string>,
   classNames: Map<string, string>,
   seenPaths: Set<string>,
-  uses: Set<string>
+  uses: Set<string>,
+  rootTid?: string
 ): string {
   const className = makeClassName(path, 'Record')
   const key = path.join('>')
@@ -97,6 +107,11 @@ function renderClass(
   const fields = extractObjectFields(model)
   const properties: string[] = []
   const childDeclarations: string[] = []
+
+  if (rootTid && path.length === 1) {
+    const tidProperty = `[JsonPropertyName("_tid")]\n${indentLines(`public ${rootTid} TID { get; set; }`, 1)}`
+    properties.push(tidProperty)
+  }
 
   for (const field of fields) {
     const propertyName = makePropertyName(field.name)
@@ -223,7 +238,8 @@ function renderArrayType(
   if (isEmptyArray(node)) {
     return { typeName: 'List<object>', isValueType: false, isReferenceType: true }
   }
-  const element = node.element ?? { kind: 'primitive', name: 'any' } as TypeNode
+  const arrayNode = node as any
+  const element: TypeNode = arrayNode.element ?? { kind: 'primitive', name: 'any' } as TypeNode
   const info = renderTypeInfo(element, path.concat(['Item']), declarations, classNames, uses)
   return { typeName: `List<${info.typeName}>`, isValueType: false, isReferenceType: true }
 }

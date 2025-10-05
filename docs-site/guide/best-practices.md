@@ -178,6 +178,29 @@ sector category  serial
 100   01   0001 → 100010001
 ```
 
+### TID 生成规则
+
+- `tables` 读取 `@` 列时会优先使用 Excel 单元格的显示值（`cell.w`），因此只要在表格里设好格式，就能保留前导零、填充宽度等格式化效果。
+- 如果整张表缺少 `@` 列，或某一行的任意 `@` 段为空值，转换阶段会直接抛出错误，错误信息会包含表名和 Excel 行号，便于快速定位。
+- 多段 `@` 拼接出的 TID 是字符串；在 TypeScript 产物里会额外提供 `XXXTTID` 的品牌类型和 `camelTids` 数组，可用来约束业务代码。
+
+```ts
+import { heroes, heroesTids, toHeroesTID } from './protocol/heroes';
+import type { HeroesTID, IHeroes } from './protocol/heroesInterface';
+
+const heroId: HeroesTID = heroesTids[0];
+const hero: IHeroes = heroes[heroId];
+
+// 访问接口时，可直接读取 `_tid`
+console.log(hero._tid);
+
+function loadByString(id: string): IHeroes | undefined {
+  return heroes[toHeroesTID(id)];
+}
+```
+
+> `TableContext` 会提供基础的 `KHTableID` 类型，导出的 `XXXTTID` 都是它的别名；若想在 TS 中拿到具体的枚举类型，记得在 Excel 标记行写成 `enum(HeroClass)`，这样生成的接口才会是 `TableContext.HeroClass`，避免退化成普通字符串。
+
 ### 0 值语义
 
 约定 `0` 作为特殊值：

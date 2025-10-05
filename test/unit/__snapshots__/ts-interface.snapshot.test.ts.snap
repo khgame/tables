@@ -4,9 +4,10 @@ exports[`ts-interface serializer snapshot (example.xlsx) matches interface shape
 "/** this file is auto generated */
 //imports
         
-export type ExampleTID = string & { readonly __ExampleTID: unique symbol };
+export type ExampleTID = TableContext.KHTableID;
 
 export interface IExample {
+  _tid: ExampleTID;
   ctype: number;
   building: number;
   level: number;

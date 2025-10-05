@@ -49,7 +49,7 @@ describe('tsSerializer formatting', () => {
       }
     }
     const out = tsSerializer.file(data, 'example', '//imports')
-    expect(out).toContain('type ExampleTID = string')
+    expect(out).toContain('type ExampleTID = TableContext.KHTableID')
     expect(out).toContain('const toExampleTID =')
     expect(out).toContain('export const example: Record<ExampleTID, IExample>')
   })

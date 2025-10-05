@@ -93,7 +93,7 @@ import {
 | `string` / `int` / `float` / `bool` / `tid` | 基础类型 |
 | `Array<T>` 或 `[...]` | 动态数组 |
 | `{ ... }` | 对象字面量，字段名取自描述行 |
-| `enum(Name)` | 引用上下文枚举 `context.enums.Name` |
+| `enum<EnumName>` | 引用上下文枚举 `context.enums.EnumName`，可指定 `enum<EnumName|fallback>` |
 | `$ghost { ... }` | 当字段整体为空时跳过导出，并在类型上附加 `| undefined` |
 | `$strict [ ... ]` | 数组长度必须与声明一致 |
 

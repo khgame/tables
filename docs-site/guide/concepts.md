@@ -65,7 +65,13 @@ ID     value        ...                    describe ...
 
 > `@khgame/schema` 在 `SDMConvertor/TemplateConvertor`（见 `node_modules/@khgame/schema/lib/convertor/richConvertor.js`）中按照 Token 顺序构建 AST，因此 Excel 表头必须逐格拆分装饰器、括号与泛型符号。
 
-以下 Markdown 表以“行 \ 列”形式模拟 Excel。每个示例都包含标记行、描述行以及至少两行数据，方便直观对照。
+以下 Markdown 表以“行 \ 列”形式模拟 Excel。每个示例都包含标记行、字段名行以及至少两行数据，方便直观对照：
+
+- **标记行（Mark Row）**：只写类型与装饰器（`@`、`uint`、`enum<Rarity>`、`$ghost`、`{`、`[` ...）。
+- **字段名行（Desc Row）**：写业务字段名（`tid`、`name`、`weight` 等），上一行的类型会自动套用到对应列。
+- **数据行**：自标记行下方两行开始，用于填写真实数据；数组/对象结构需逐列完整展开。
+
+> 注意：`weight:uint` 之类“字段名:类型” token 不会被解析成类型；冒号会被当成普通字符。字段名仍写在字段名行，类型只写在标记行。
 
 ### 嵌套对象与可选段
 
@@ -83,13 +89,13 @@ ID     value        ...                    describe ...
 
 | 行 \ 列 | A | B | C | D | E | F | G | H | I | J | K | L |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `weight:uint` | `}` | `{` | `tid` | `weight:uint` | `}` | `]` |
+| 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `uint` | `}` | `{` | `tid` | `uint` | `}` | `]` |
 | 描述行 | `tid` | `stageName` | `dropEntries` | *(空)* | `tid` | `weight` | *(空)* | *(空)* | `tid` | `weight` | *(空)* | *(空)* |
 | 示例 1 | `3001` | `Stage 1-1` | `''` | `''` | `2001` | `50` | `''` | `''` | `2002` | `50` | `''` | `''` |
 | 示例 2 | `3002` | `Stage 1-2` | `''` | `''` | `2003` | `70` | `''` | `''` | `2004` | `30` | `''` | `''` |
 
 - `$strict [` 要求数据行为定长数组；若缺乏任一元素，`SchemaConvertor` 会在构建时给出 “conversion failed”。
-- 继续追加第三个掉落条目时，在 `L` 之后补 `{`、`tid`、`weight:uint`、`}`，并保持“一列一个 Token”，最后再写 `]` 收束。
+- 继续追加第三个掉落条目时，在 `L` 之后补 `{`、`tid`、`uint`、`}`，并保持“一列一个 Token”，最后再写 `]` 收束。
 
 ### Pair / Map 快写
 

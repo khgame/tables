@@ -159,6 +159,7 @@ sector category  serial
 - 第二段标识子类（01=战士，02=法师...）
 - 第三段为流水号
 - ID 本身包含结构信息，便于人工识别和调试
+- 导出的 JSON/TS/Go/C# 产物都会在记录上附带 `_tid` 字段，可直接读取。
 
 ### ID 段位规划建议
 
@@ -199,7 +200,7 @@ function loadByString(id: string): IHeroes | undefined {
 }
 ```
 
-> `TableContext` 会提供基础的 `KHTableID` 类型，导出的 `XXXTTID` 都是它的别名；若想在 TS 中拿到具体的枚举类型，记得在 Excel 标记行写成 `enum(HeroClass)`，这样生成的接口才会是 `TableContext.HeroClass`，避免退化成普通字符串。
+> `TableContext` 会提供基础的 `KHTableID` 类型，导出的 `XXXTTID` 都是它的别名；若想在 TS 中拿到具体的枚举类型，记得在 Excel 标记行写成 `enum<HeroClass>`，这样生成的接口才会是 `TableContext.HeroClass`，避免退化成普通字符串。
 
 ### 0 值语义
 

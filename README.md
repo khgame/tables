@@ -53,8 +53,8 @@ Options:
     > - 如果在 option 中填写了 sheetName 字段, 则读出该指定的 sheet  
     > - 如果没有指定, 读出名字为 `__data` 的 sheet
     > - 如果没有该 sheet, 则读出表内第一张 sheet
-- 读出 `raw js-xlsx` 结构: `workbook = readWorkBook(filePath)`
-    > 包含所有的 sheet, 具体数据结构请参照 [js-xlsx 文档](https://www.npmjs.com/package/js-xlsx)
+- 读出 SheetJS (`xlsx`) 原始结构: `workbook = readWorkBook(filePath)`
+    > 包含所有的 sheet, 具体数据结构请参照 [SheetJS 文档](https://docs.sheetjs.com/)
 - 将已经读出的 `workbook` 解析成 table: `translateWorkBook(workbook, sheetName)`
     > sheet 选择规则同 readAndTranslate
 
@@ -89,49 +89,81 @@ tables -i ./example -o ./example/out -f json --silent
 
 - `@`：拼接主键，多个 `@` 列会合并成最终 TID；导出时会直接读取单元格的显示值（保留前导零、数字格式），确保 ID 宽度与 Excel 中一致；如果整张表没有 `@` 列，或某一行的 `@` 段为空，`tables` 会在转换阶段抛出包含表名与行号的错误。
 - `type?`：在类型末尾加 `?` 表示可选；留空但未加 `?` 会在转换时抛错
-- `enum(Name)`：引用上下文中的枚举，供 Schema 与序列化使用
+- `enum<EnumName>`：引用上下文中的枚举（如 `enum<Rarity>`）；可用 `enum<Rarity|temp>` 为缺省值保留一个字面量分支
 - `[` / `{` 等括号：必须拆分到独立单元格，和 `$ghost`、`$strict` 等装饰器组合使用
 
 `tableConvert` 内部会调用 `@khgame/schema` 的 `exportJson`：若标记列未写 `?` 且数据为空，将立即抛出缺失值错误；整段 `$ghost { ... }` 则允许全部字段为空时整体缺省。结合 `tableEnsureRows` 可以过滤全空行。
 
-### TID 使用示例
+#### 行定位与约定
 
-导出的 TS 产物会同时生成 `xxx.ts` 与 `xxxInterface.ts`：前者注入数据，后者仅包含类型定义。每个表都会带有品牌化的 TID 类型：
+- **标记行（Mark Row）**：写类型 token、装饰器、结构符号（`@`/`uint`/`enum<Rarity>`/`$strict` 等）。这里不会写字段名，也不会自动派生别名。
+- **字段名行（Desc Row）**：写实际字段名（`tid`/`name`/`weight`……）。上一行的类型将套用到这一列的字段名上。
+- **数据行（Data Rows）**：自标记行下方两行开始是正式数据。数组或对象的结构必须逐列完整展开。
+- **上下文（Context）**：`context.enums.*`、`context.meta.*` 等在读取前通过 `loadContext` 注入，可配合 `enum<EnumName>`、`$ghost` 等标记使用。
+
+> 注意：`weight:uint` 这一类“字段名:类型” token 不会被解析成类型；冒号只会原样保留。字段名写在字段名行，类型写在标记行即可。
+
+### TID 组合与导出
+
+以 `enemies.xlsx` 为例，表头前三列均标记为 `@`：
+
+```
+@      @         @      name      ...
+sector category  serial
+50     00        0001   Frostfang ...
+```
+
+导出时三个片段会按顺序拼成 `50000001`，并写入结果对象的 `_tid` 字段：
+
+```json
+{
+  "tids": ["50000001", "50000002"],
+  "result": {
+    "50000001": {
+      "_tid": "50000001",
+      "name": "Frostfang Raider",
+      "hp": 950
+      // ...其他字段
+    }
+  }
+}
+```
+
+对应的 TypeScript 产物会提供统一的品牌化类型：
 
 ```ts
 // protocol/enemies.ts
 export type EnemiesTID = TableContext.KHTableID;
-export const enemiesTids: EnemiesTID[];
-export const enemies: Record<EnemiesTID, IEnemies>;
+export const toEnemiesTID = (value: string): EnemiesTID => value as EnemiesTID;
+export const enemiesTids: EnemiesTID[] = raw.tids.map(toEnemiesTID);
+export const enemies: Record<EnemiesTID, IEnemies> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])
+);
 
 // protocol/enemiesInterface.ts
 export interface IEnemies {
   _tid: EnemiesTID;
-  // ...其它字段
+  name: string;
+  hp: number;
+  // ...其他字段
 }
-```
 
-在业务代码中可以这样使用：
-
-```ts
+// 业务代码中使用品牌化 ID：
 import { enemies, enemiesTids, toEnemiesTID } from './protocol/enemies';
-import type { IEnemies, EnemiesTID } from './protocol/enemiesInterface';
 
-const firstEnemyId: EnemiesTID = enemiesTids[0];
-const firstEnemy: IEnemies = enemies[firstEnemyId];
-
-// 当手头只有字符串时，可通过 helper 强转成品牌化 ID
+const first: IEnemies = enemies[enemiesTids[0]];
 const fromString = toEnemiesTID('50010001');
+const specific = enemies[fromString];
 ```
 
-> 提示：`TableContext` 现在额外导出 `KHTableID` 作为基类；枚举类型仍需在标记行写成 `enum(HeroClass)`，这样导出的类型才会指向 `TableContext.HeroClass` 而非字符串字面量。
+> 提示：`TableContext` 会额外导出基础的 `KHTableID` 类型；枚举类型需在标记行写成 `enum<HeroClass>`，才能生成 `TableContext.HeroClass` 引用。
 
 以下示例直接取自 `example/example.xlsx`：第 5 行为标记行，第 6 行为描述行，第 7/8 行对应 `convert.result` 的前两条数据（TID `2000000`、`2000001`）。横向排列表格便于照抄列布局：
 
 | 行 \ 列 | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S | T | U | V | W | X | Y | Z | AA | AB | AC | AD | AE | AF | AG | AH | AI | AJ | AK | AL | AM | AN | AO | AP | AQ | AR | AS | AT | AU | AV | AW | AX | AY | AZ | BA | BB | BC | BD | BE | BF | BG |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 第 5 行（标记） | `@` | `@` | `@` | `string` | `{` | `tid` | `[` | `tid` | `]` | `}` | `[` | `{` | `tid` | `number` | `}` | `]` | `[` | `Pair<uint>` | `Pair<uint>` | `Pair<uint>` | `]` | `Array<float>` | `Pair<uint>` | `Array<Pair>` | `[` | `[` | `int` | `int` | `int` | `]` | `[` | `[` | `bool` | `]` | `]` | `]` | `$oneof [` | `tid` | `bool` | `Pair<uint>` | `]` | `$strict [` | `{` | `uint` | `}` | `$ghost {` | `uint` | `}` | `[` | `ufloat` | `$ghost{` | `string` | `}` | `]` | `]` | `uint|string` |
-| 第 6 行（描述） | `ctype` | `building` | `level` | `name` | `upgrage` | `to` | `dependency` |  |  |  | `product` |  | `tid` | `num` |  |  | `cost` |  |  |  |  | `arr` | `pair` | `map` | `nest` |  |  |  |  |  |  |  |  |  |  |  | `stars` |  |  |  |  | `nestedArray` |  | `data` |  |  | `data` |  |  |  |  | `1` |  |  |  |  | `ax` |
+| 第 5 行（类型标记） | `@` | `@` | `@` | `string` | `{` | `tid` | `[` | `tid` | `]` | `}` | `[` | `{` | `tid` | `number` | `}` | `]` | `[` | `Pair<uint>` | `Pair<uint>` | `Pair<uint>` | `]` | `Array<float>` | `Pair<uint>` | `Array<Pair>` | `[` | `[` | `int` | `int` | `int` | `]` | `[` | `[` | `bool` | `]` | `]` | `]` | `$oneof [` | `tid` | `bool` | `Pair<uint>` | `]` | `$strict [` | `{` | `uint` | `}` | `$ghost {` | `uint` | `}` | `[` | `ufloat` | `$ghost{` | `string` | `}` | `]` | `]` | `uint|string` |
+| 第 6 行（字段名） | `ctype` | `building` | `level` | `name` | `upgrage` | `to` | `dependency` |  |  |  | `product` |  | `tid` | `num` |  |  | `cost` |  |  |  |  | `arr` | `pair` | `map` | `nest` |  |  |  |  |  |  |  |  |  |  |  | `stars` |  |  |  |  | `nestedArray` |  | `data` |  |  | `data` |  |  |  |  | `1` |  |  |  |  | `ax` |
 | 第 7 行（示例） | `20` | `000` | `00` | `farm` | `''` | `2000001` | `''` | `''` | `''` | `''` | `''` | `''` | `1000001` | `1` | `''` | `''` | `''` | `oil:388` | `ore1:1551` | `''` | `''` | `1|2|3` | `tag:0` | `tag:0` | `''` | `''` | `1` | `2` | `3` | `''` | `''` | `''` | `Y` | `''` | `''` | `''` | `''` | `111` | `''` | `''` | `''` | `''` | `''` | `111` | `''` | `''` | `''` | `''` | `''` | `''` | `1` | `''` | `''` | `''` | `''` | `''` | `1` |
 | 第 8 行（示例） | `20` | `000` | `01` | `farm` | `''` | `2000002` | `''` | `2000001` | `''` | `''` | `''` | `''` | `1000001` | `2` | `''` | `''` | `''` | `oil:416` | `ore1:1663` | `ore1:1663` | `''` | `1|2|4` | `tag:1` | `tag:s1` | `''` | `''` | `1` | `2` | `''` | `''` | `''` | `''` | `''` | `''` | `''` | `''` | `''` | `222` | `''` | `''` | `''` | `''` | `''` | `111` | `''` | `''` | `222` | `''` | `''` | `''` | `2` | `''` | `2` | `''` | `''` | `''` | `2` |
 
@@ -149,7 +181,7 @@ const fromString = toEnemiesTID('50010001');
 
 | 行 \ 列 | A | B | C | D | E | F |
 | --- | --- | --- | --- | --- | --- | --- |
-| 标记行 | `@` | `string` | `enum(Rarity)` | `$ghost {` | `uint?` | `}` |
+| 标记行 | `@` | `string` | `enum<Rarity>` | `$ghost {` | `uint?` | `}` |
 | 描述行 | `tid` | `name` | `rarity` | `shop` | `sell` | *(空)* |
 | 示例 1 | `10001` | `Short Sword` | `RARE` | `''` | `100` | `''` |
 | 示例 2 | `10002` | `HP Potion` | `COMMON` | `''` | `''` | `''` |
@@ -163,12 +195,12 @@ const fromString = toEnemiesTID('50010001');
 
 | 行 \ 列 | A | B | C | D | E | F | G | H |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `weight:uint` | `}` | `]` |
-| 描述行 | `tid` | `name` | `entries` | *(空)* | `tid` | `weight` | *(空)* | *(空)* |
+| 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `uint` | `}` | `]` |
+| 字段名行 | `tid` | `name` | `entries` | *(空)* | `dropTid` | `weight` | *(空)* | *(空)* |
 | 示例 1 | `3001` | `Stage 1-1` | `''` | `''` | `2001` | `50` | `''` | `''` |
 | 示例 2 | `3002` | `Stage 1-2` | `''` | `''` | `2003` | `70` | `''` | `''` |
 
-> 若数组需要多个元素，可在 `}` 之后依次追加新的 `{` → `tid` → `weight:uint` → `}` 列片段。
+> 若数组需要多个元素，可在 `}` 之后依次追加新的 `{` → `tid` → `uint` → `}` 片段，最后用 `]` 收束结构。
 
 **可选数值 + 默认字符串**
 
@@ -179,13 +211,14 @@ const fromString = toEnemiesTID('50010001');
 | 示例 1 | `5001` | `Daily Reward` | `3` |
 | 示例 2 | `5002` | `Limited Offer` | `''` |
 
-以上小例与上方综合表相互参考：实际录入时请确保括号 / 装饰器占用独立单元格，字符串可留空，数值若需缺省需写成 `uint?` 或置于 `$ghost { ... }` 结构内。
+以上小例与上方综合表相互参考：常见的 `enum<Rarity>`、`tid`、`uint` 等可以直接写在同一格中；数组 / 对象控制符（`$strict`、`{`、`}`、`[`、`]` 等）仍需“一列一个 Token”。字符串可留空，数值若需缺省需写成 `uint?` 或置于 `$ghost { ... }` 结构内。
 
 示例数据（`example/example.xlsx` 中 `convert.result` 的前两项，已按常用字段裁剪）：
 
 ```json
 {
   "2000000": {
+    "_tid": "2000000",
     "ctype": 20,
     "building": 0,
     "level": 0,
@@ -202,6 +235,7 @@ const fromString = toEnemiesTID('50010001');
     "ax": 1
   },
   "2000001": {
+    "_tid": "2000001",
     "ctype": 20,
     "building": 0,
     "level": 1,
@@ -281,7 +315,7 @@ table = {
 ```
 
 - cols: 数据中出现过的所有列的列名, 以 EXCEL 的列名规则排序
-- data: 以 row 为键, row 对应的数据以 col 为键, 值为 js-xlsx 的 value 数据结构
+- data: 以 row 为键, row 对应的数据以 col 为键, 值为 SheetJS (`xlsx`) 的 value 数据结构
 - getValue: 获取 table 内指定行列的数据的方法, 使用方法如下 (以上数据为例)
 
 ```js
@@ -303,7 +337,7 @@ let v3 = getValue(table, 4, "E") // v3 === "@khgame/table"
 - Int: `int`, `int8`, `int16`, `int32`, `int64`, `long`
 - UInt: `uint`, `uint8`, `uint16`, `uint32`, `uint64`, `ulong`, `tid`, `@`
 - Boolean: `bool`, `onoff`
-- Enum: `enum(Name)`（从上下文目录加载枚举定义）
+- Enum: `enum<EnumName>`（从上下文目录加载枚举定义，支持 `enum<EnumName|fallback>`）
 - Nested Array: 以 `[` 开始, 以 `]` 结束
 - Nested Object: 以 `{` 开始, 以 `}` 结束
 - Any: `dynamic`, `object`, `obj`, `any`

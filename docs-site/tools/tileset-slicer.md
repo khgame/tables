@@ -1,4 +1,12 @@
+<script setup>
+import { withBase } from 'vitepress'
+
+const demoUrl = withBase('/tools/tileset-slicer/index.html')
+</script>
+
 # Tileset 切片工具
+
+<a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">在线体验</a>
 
 > 位置：`example/tool_01_tileset_slicer`
 

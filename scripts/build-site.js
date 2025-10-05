@@ -41,6 +41,13 @@ const demos = [
   }
 ]
 
+const tools = [
+  {
+    id: 'tool_01_tileset_slicer',
+    slug: 'tileset-slicer'
+  }
+]
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: rootDir,
@@ -90,6 +97,21 @@ function copyExamplesIntoDist(published) {
   })
 }
 
+function copyToolsIntoDist() {
+  const targetBase = Path.join(distDir, 'tools')
+  fs.ensureDirSync(targetBase)
+  tools.forEach(({ id, slug }) => {
+    const sourceDir = Path.resolve(rootDir, 'example', id)
+    if (!fs.existsSync(sourceDir)) {
+      console.warn(`[site] skip tool ${id}: directory not found`)
+      return
+    }
+    const targetDir = Path.join(targetBase, slug)
+    fs.removeSync(targetDir)
+    fs.copySync(sourceDir, targetDir, { overwrite: true })
+  })
+}
+
 function main() {
   const published = buildExamples()
 
@@ -98,6 +120,7 @@ function main() {
   run('npm', ['run', 'docs:build'])
 
   copyExamplesIntoDist(published)
+  copyToolsIntoDist()
 
   fs.writeFileSync(Path.join(distDir, '.nojekyll'), '')
 

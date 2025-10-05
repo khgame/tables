@@ -3,6 +3,7 @@ import { exportJson } from '@khgame/schema'
 import * as _ from 'lodash'
 import type { Table } from '../types'
 import { buildIndexes } from './indexes'
+import { buildSchemaModel, type PrimitiveType, type TypeNode } from '../serializer/core/schemaModel'
 
 export function tableConvert(table: Table, context?: any): Table {
   if (!table.schema) {
@@ -43,6 +44,13 @@ export function tableConvert(table: Table, context?: any): Table {
     col: markCols
   }
   const exportResult = exportJson(schema, descList, convertedRows, markDescriptor)
+  const tableName: string = (context && context.__table && context.__table.fileName) || (table as any).fileName || 'unknown'
+  const schemaModel = buildSchemaModel(schema, descList, markCols, context)
+  const normalizedRows = (exportResult as any[]).map((row: any, idx: number) => {
+    const sheetRow = dataRows[idx]
+    const basePath = `${tableName}[row ${sheetRow}]`
+    return normalizeValue(row, schemaModel, basePath)
+  })
 
   const idSeg: number[] = []
   markCols.forEach((col: string, markInd: number) => {
@@ -50,7 +58,6 @@ export function tableConvert(table: Table, context?: any): Table {
       idSeg.push(markInd)
     }
   })
-  const tableName: string = (context && context.__table && context.__table.fileName) || (table as any).fileName || 'unknown'
   if (idSeg.length === 0) {
     throw new Error(`[tables] 表 ${tableName} 缺少 '@' 标记列，无法生成 TID`)
   }
@@ -89,7 +96,7 @@ export function tableConvert(table: Table, context?: any): Table {
   const policy = (((context || {}).policy || {}).tidConflict) || 'error' // error|overwrite|ignore|merge
   const collisions: Array<{ id: string; first: any; incoming: any }> = []
   tids.forEach((id: string, i: number) => {
-    const incoming = (exportResult as any)[i]
+    const incoming = normalizedRows[i]
     const withTid = attachTid(incoming, id)
     if (result[id] === undefined) {
       result[id] = withTid
@@ -120,7 +127,7 @@ export function tableConvert(table: Table, context?: any): Table {
     }
   })
 
-  const indexBuild = buildIndexes(exportResult as any[], tids, context, descList)
+  const indexBuild = buildIndexes(normalizedRows as any[], tids, context, descList)
   const meta: Record<string, any> = {
     idSegments: idSeg,
     markCols
@@ -181,6 +188,78 @@ type AliasComputationResult = {
     values: string[]
   }
 } | null
+
+const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER
+
+function normalizeValue(value: any, node: TypeNode, path: string): any {
+  if (value === undefined || value === null) return value
+  switch (node.kind) {
+    case 'primitive':
+      return normalizePrimitive(value, node, path)
+    case 'literal':
+    case 'enum':
+      return value
+    case 'object': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return value
+      const result: Record<string, any> = { ...value }
+      for (const field of node.fields || []) {
+        if (Object.prototype.hasOwnProperty.call(value, field.name)) {
+          const childPath = path ? `${path}.${field.name}` : field.name
+          result[field.name] = normalizeValue(value[field.name], field.type, childPath)
+        }
+      }
+      return result
+    }
+    case 'array': {
+      if (!Array.isArray(value)) return value
+      const element = node.element
+      if (!element) return value.slice()
+      return value.map((item, idx) => normalizeValue(item, element, `${path}[${idx}]`))
+    }
+    case 'tuple': {
+      if (!Array.isArray(value)) return value
+      return value.map((item, idx) => {
+        const elementType = node.elements[idx] ?? node.elements[node.elements.length - 1]
+        return normalizeValue(item, elementType, `${path}[${idx}]`)
+      })
+    }
+    case 'union': {
+      for (const variant of node.variants) {
+        try {
+          return normalizeValue(value, variant, path)
+        } catch (error) {
+          if (error instanceof Error && error.message && error.message.includes('[tables] numeric value')) {
+            throw error
+          }
+        }
+      }
+      return value
+    }
+    default:
+      return value
+  }
+}
+
+function normalizePrimitive(value: any, node: PrimitiveType, path: string): any {
+  if (node.hint === 'bigint') {
+    if (typeof value === 'string') return value
+    if (typeof value === 'number' || typeof value === 'bigint') return String(value)
+    return value == null ? value : String(value)
+  }
+  if (node.hint === 'int') {
+    if (typeof value === 'number' && !Number.isSafeInteger(value)) {
+      throw new Error(`[tables] numeric value ${value} at ${path || 'value'} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`)
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value)
+      if (!Number.isFinite(parsed) || !Number.isSafeInteger(parsed)) {
+        throw new Error(`[tables] numeric value ${value} at ${path || 'value'} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`)
+      }
+      return parsed
+    }
+  }
+  return value
+}
 
 function computeAliasInfo(input: AliasComputationInput): AliasComputationResult {
   const { aliasColumns, descList, markCols, convertedRows, tids, tableName } = input

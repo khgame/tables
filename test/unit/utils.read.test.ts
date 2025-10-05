@@ -1,5 +1,8 @@
 jest.mock('xlsx', () => ({
-  readFile: jest.fn()
+  readFile: jest.fn(),
+  utils: {
+    sheet_to_json: jest.fn()
+  }
 }))
 
 import * as Read from '../../src/utils/read'
@@ -33,8 +36,9 @@ describe('translateWorkBook', () => {
 describe('readAndTranslate', () => {
   afterEach(() => {
     jest.restoreAllMocks()
-    const { readFile } = require('xlsx') as { readFile: jest.Mock }
+    const { readFile, utils } = require('xlsx') as { readFile: jest.Mock; utils: { sheet_to_json: jest.Mock } }
     readFile.mockReset()
+    utils.sheet_to_json.mockReset()
   })
 
   it('applies plugins sequentially with context', () => {
@@ -77,5 +81,36 @@ describe('readAndTranslate', () => {
 
     const result = Read.readAndTranslate('path.xlsx')
     expect(result.getValue(result, '2', 'B')).toBe(1)
+  })
+
+  it('preserves csv text formatting through preprocessing wrapper', () => {
+    const { readFile, utils } = require('xlsx') as { readFile: jest.Mock; utils: { sheet_to_json: jest.Mock } }
+    const workbookStub = {
+      SheetNames: ['foo'],
+      Sheets: {
+        foo: {
+          A1: { t: 's', v: 'id', w: 'id' },
+          B1: { t: 's', v: 'name', w: 'name' },
+          A2: { t: 'n', v: 1, w: '1' },
+          B2: { t: 's', v: 'Alpha', w: 'Alpha' },
+          '!ref': {}
+        }
+      }
+    }
+    readFile.mockReturnValue(workbookStub)
+    utils.sheet_to_json.mockReturnValue([
+      ['id', 'name'],
+      ['001', 'Alpha']
+    ])
+
+    const table = Read.readAndTranslate('foo.csv')
+
+    expect(utils.sheet_to_json).toHaveBeenCalledWith(workbookStub.Sheets.foo, {
+      defval: '',
+      header: 1,
+      raw: false
+    })
+    expect(table.data['2']['A'].w).toBe('001')
+    expect(table.getValue(table, '2', 'A')).toBe(1)
   })
 })

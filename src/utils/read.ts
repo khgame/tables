@@ -3,22 +3,40 @@ import * as XLSX from 'xlsx'
 import * as Path from 'path'
 import type { Table } from '../types'
 
+type CsvSheetRows = Record<string, string[][]>
+
+const csvSheetRowsCache = new WeakMap<any, CsvSheetRows>()
+
+function preprocessCsvSheetsForWorkBook(workbook: any): void {
+  const csvRows: CsvSheetRows = {}
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName]
+    const rows = XLSX.utils.sheet_to_json<string[]>(sheet, {
+      header: 1,
+      raw: false,
+      defval: ''
+    })
+    csvRows[sheetName] = rows
+  }
+  csvSheetRowsCache.set(workbook, csvRows)
+}
+
+function getCsvCellText(workbook: any, sheetName: string, rowIndex: number, colIndex: number): string | undefined {
+  const csvRowsBySheet = csvSheetRowsCache.get(workbook)
+  if (!csvRowsBySheet) return undefined
+  const rows = csvRowsBySheet[sheetName]
+  if (!rows || rowIndex < 0 || colIndex < 0) return undefined
+  const row = rows[rowIndex]
+  if (!row || colIndex >= row.length) return undefined
+  return row[colIndex]
+}
+
 export function readWorkBook(path: string): any {
   const ext = Path.extname(path || '').toLowerCase()
   const options = ext === '.csv' ? { codepage: 65001 } : undefined
   const workbook = options ? XLSX.readFile(path, options) : XLSX.readFile(path)
   if (ext === '.csv') {
-    const csvRows: Record<string, string[][]> = {}
-    for (const sheetName of workbook.SheetNames) {
-      const sheet = workbook.Sheets[sheetName]
-      const rows = XLSX.utils.sheet_to_json<string[]>(sheet, {
-        header: 1,
-        raw: false,
-        defval: ''
-      })
-      csvRows[sheetName] = rows
-    }
-    ;(workbook as any).__csvRows = csvRows
+    preprocessCsvSheetsForWorkBook(workbook)
   }
   return workbook
 }
@@ -40,7 +58,6 @@ export function translateWorkBook(workbook: any, sheetName?: string): Table {
   const targetSheetInd = workbook.SheetNames.findIndex((n: string) => n === (sheetName || '__data'))
   const targetSheetName = workbook.SheetNames[targetSheetInd > 0 ? targetSheetInd : 0]
   const sheet = workbook.Sheets[targetSheetName]
-  const csvRows: string[][] | undefined = (workbook.__csvRows && workbook.__csvRows[targetSheetName]) || undefined
 
   const data: Record<string, Record<string, any>> = {}
   const colKeys: Record<string, 1> = {}
@@ -59,17 +76,11 @@ export function translateWorkBook(workbook: any, sheetName?: string): Table {
     if (!data[row]) data[row] = {}
     const { t, v, w } = sheet[key]
     let adjustedW = w
-    if (csvRows) {
-      const rowIndex = parseInt(row) - 1
-      if (!Number.isNaN(rowIndex) && rowIndex >= 0 && rowIndex < csvRows.length) {
-        const colIndex = columnLetterToIndex(col)
-        if (colIndex >= 0) {
-          const csvRow = csvRows[rowIndex]
-          if (csvRow && colIndex < csvRow.length) {
-            adjustedW = csvRow[colIndex]
-          }
-        }
-      }
+    const rowIndex = parseInt(row, 10) - 1
+    const colIndex = columnLetterToIndex(col)
+    const csvCellText = Number.isNaN(rowIndex) ? undefined : getCsvCellText(workbook, targetSheetName, rowIndex, colIndex)
+    if (csvCellText !== undefined) {
+      adjustedW = csvCellText
     }
     data[row][col] = { t, v, w: adjustedW }
     colKeys[col] = 1

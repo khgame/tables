@@ -29,6 +29,7 @@ npm run ex:minirpg
 - `heroes.csv`：基础属性、成长系数、解锁条件
 - `skills.csv`：技能冷却、类型、伤害计算参数
 - `stages.csv`：关卡敌人组、奖励掉落、战斗脚本
+- `relics.csv`：提供 `alias` 列（Relic Key），可直接用别名常量 `RelicsProtocol` / `getRelicsByProtocol` 访问配置。
 
 ## 交互体验
 

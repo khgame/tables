@@ -91,6 +91,7 @@ tables -i ./example -o ./example/out -f json --silent
 - `type?`：在类型末尾追加 `?` 表示可选，例如 `uint?`、`tid?`、`enum<Rarity>?`。未写 `?` 的列一旦留空会被视为缺失值并立即报错；字符串类型（`string`）是例外，空单元格会被标准化为 `""`。
 - `enum<EnumName>`：引用上下文中的枚举（如 `enum<Rarity>`）。解析阶段会严格校验枚举项是否存在于 `context.enums.*` 中，缺失会报错；可用 `enum<Rarity|TEMP>` 追加一个字面量兜底值来兼容占位。
 - `[` / `{` 等括号：必须“一列一个 token”，并与 `$ghost`、`$strict` 等装饰器组合使用。括号列在数据行通常保持空白，仅字段列（例如 `tid`、`uint`）实际写入值。
+- `alias` / `alias?`：声明别名列，用于构建“别名 -> TID”映射。必须提供字段名（描述行），同一张表最多一个 alias 列；`alias?` 仅表示允许空白。
 
 `tableConvert` 内部会调用 `@khgame/schema` 的 `exportJson`：若标记列未写 `?` 且数据为空，将立即抛出缺失值错误；整段 `$ghost { ... }` 则允许全部字段为空时整体缺省。结合 `tableEnsureRows` 可以过滤全空行。
 
@@ -248,6 +249,28 @@ const specific = enemies[fromString];
    ```
    `loadContext(dir)` 会自动读取 `dir` 下符合 `context.*.json` 的文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
 4. **表头写成 `enum<Rarity>`**：当标记行使用 `enum<Rarity>`（或 `enum<Rarity|Fallback>`）时，`tableSchema`/`tableConvert` 会校验单元格值是否存在于上下文枚举中；TS/Go/C# 序列化器则会在产物中生成 `TableContext.Rarity` 引用。
+
+### alias 列（别名映射）
+
+`tables` 支持在任意表中声明“别名 -> TID”的唯一映射，只需在标记行写上 `alias` 或 `alias?`（唯一列，不可多列）：
+
+| 行 \ 列 | A | B | C |
+| --- | --- | --- | --- |
+| 标记行 | `@` | `@` | `alias` |
+| 描述行 | `type` | `serial` | `nameAlias` |
+| 示例 1 | `500` | `001` | `school` |
+| 示例 2 | `500` | `002` | `hospital` |
+| 示例 3 | `500` | `003` | *(空)* |
+
+- 标记为 `alias` 的列必须在描述行提供字段名（如 `nameAlias`），且整张表只能出现一次。
+- 数据行中的空值会被忽略；重复别名会触发错误并列出所有冲突项。
+- 导出结果会附带：
+  - `convert.aliases.<field>`：别名到 TID 的 map，例如 `{ school: '500001', hospital: '500002' }`
+  - `convert.indexes.alias.<field>`：用于快速查找的映射，同步进 `meta.alias` 的枚举列表
+  - TS/TS-Interface 序列化器会额外生成 `AliasProtocol` 常量 / 类型及 `getAliasByProtocol` 辅助函数，便于按别名读取结构化数据。
+- `alias?` 与 `alias` 行为一致，只是显式提醒该列允许空白。
+
+更多细节与示例可参考 `docs-site/guide/concepts.md` 的“alias 列”章节。
 
 示例数据（`example/example.xlsx` 中 `convert.result` 的前两项，已按常用字段裁剪）：
 

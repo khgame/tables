@@ -100,9 +100,15 @@ tables -i ./example -o ./example/out -f json --silent
 
 ```ts
 // protocol/enemies.ts
-export type EnemiesTID = string & { readonly __EnemiesTID: unique symbol };
+export type EnemiesTID = TableContext.KHTableID;
 export const enemiesTids: EnemiesTID[];
 export const enemies: Record<EnemiesTID, IEnemies>;
+
+// protocol/enemiesInterface.ts
+export interface IEnemies {
+  _tid: EnemiesTID;
+  // ...其它字段
+}
 ```
 
 在业务代码中可以这样使用：
@@ -118,7 +124,7 @@ const firstEnemy: IEnemies = enemies[firstEnemyId];
 const fromString = toEnemiesTID('50010001');
 ```
 
-> 提示：枚举类型需在标记行写成 `enum(HeroClass)`，这样导出的类型才会指向 `TableContext.HeroClass`；直写 `HeroClass` 会被视为字符串字面量。
+> 提示：`TableContext` 现在额外导出 `KHTableID` 作为基类；枚举类型仍需在标记行写成 `enum(HeroClass)`，这样导出的类型才会指向 `TableContext.HeroClass` 而非字符串字面量。
 
 以下示例直接取自 `example/example.xlsx`：第 5 行为标记行，第 6 行为描述行，第 7/8 行对应 `convert.result` 的前两条数据（TID `2000000`、`2000001`）。横向排列表格便于照抄列布局：
 

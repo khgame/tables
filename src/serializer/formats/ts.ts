@@ -23,7 +23,7 @@ export const tsSerializer: Serializer = {
     const tidAware = Array.isArray(meta?.idSegments) && (meta!.idSegments as number[]).length > 0
 
     const tidDefs = tidAware
-      ? `export type ${tidTypeName} = string & { readonly __${baseName}TID: unique symbol };
+      ? `export type ${tidTypeName} = TableContext.KHTableID;
 export const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${tidTypeName};
 
 `
@@ -39,10 +39,15 @@ export const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${ti
 );`
       : `export const ${camel}: { [tid: string] : ${interfaceName} } = raw.result as any;`
 
+    let schema = dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)
+    if (tidAware) {
+      schema = injectTidField(schema, `${tidTypeName}`)
+    }
+
     return `/** this file is auto generated */
 ${imports}
         
-export interface ${interfaceName} ${dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)}
+export interface ${interfaceName} ${schema}
 
 ${tidDefs}const raw = ${JSON.stringify(stable, null, 2)}
 
@@ -51,4 +56,19 @@ ${recordExport}
 `
   },
   contextDealer: dealContext
+}
+
+function injectTidField(schema: string, tidType: string): string {
+  const lines = schema.split('\n')
+  const tidLine = `  _tid: ${tidType};`
+  if (lines.length === 1) {
+    return `{
+${tidLine}
+}`
+  }
+  if (lines[0].trim() !== '{') {
+    return schema
+  }
+  lines.splice(1, 0, tidLine)
+  return lines.join('\n')
 }

@@ -80,17 +80,18 @@ export function tableConvert(table: Table, context?: any): Table {
   const collisions: Array<{ id: string; first: any; incoming: any }> = []
   tids.forEach((id: string, i: number) => {
     const incoming = (exportResult as any)[i]
+    const withTid = attachTid(incoming, id)
     if (result[id] === undefined) {
-      result[id] = incoming
+      result[id] = withTid
       return
     }
-    collisions.push({ id, first: result[id], incoming })
+    collisions.push({ id, first: result[id], incoming: withTid })
     switch (policy) {
       case 'overwrite':
         if (process.env.TABLES_VERBOSE === '1') {
           console.warn(`[tables] TID collision (overwrite): ${id}`)
         }
-        result[id] = incoming
+        result[id] = withTid
         break
       case 'ignore':
         if (process.env.TABLES_VERBOSE === '1') {
@@ -101,7 +102,7 @@ export function tableConvert(table: Table, context?: any): Table {
         if (process.env.TABLES_VERBOSE === '1') {
           console.warn(`[tables] TID collision (merge): ${id}`)
         }
-        result[id] = _.merge({}, result[id], incoming)
+        result[id] = _.merge({}, result[id], withTid)
         break
       case 'error':
       default:
@@ -131,4 +132,12 @@ export function tableConvert(table: Table, context?: any): Table {
 
   ;(table as any).convert = convertPayload
   return table
+}
+
+function attachTid(payload: any, tid: string): Record<string, any> {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    if (payload._tid === tid) return payload
+    return { _tid: tid, ...payload }
+  }
+  return { _tid: tid, value: payload }
 }

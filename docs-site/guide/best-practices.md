@@ -191,12 +191,15 @@ import type { HeroesTID, IHeroes } from './protocol/heroesInterface';
 const heroId: HeroesTID = heroesTids[0];
 const hero: IHeroes = heroes[heroId];
 
+// 访问接口时，可直接读取 `_tid`
+console.log(hero._tid);
+
 function loadByString(id: string): IHeroes | undefined {
   return heroes[toHeroesTID(id)];
 }
 ```
 
-> 若想在 TS 中拿到具体的枚举类型，记得在 Excel 标记行写成 `enum(HeroClass)`，这样生成的接口才会是 `TableContext.HeroClass`，避免退化成普通字符串。
+> `TableContext` 会提供基础的 `KHTableID` 类型，导出的 `XXXTTID` 都是它的别名；若想在 TS 中拿到具体的枚举类型，记得在 Excel 标记行写成 `enum(HeroClass)`，这样生成的接口才会是 `TableContext.HeroClass`，避免退化成普通字符串。
 
 ### 0 值语义
 

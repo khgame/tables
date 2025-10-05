@@ -69,7 +69,8 @@ export function serializeContext(dirOut: string, serializers: Serializer[], cont
     [] as any[]
   )
 
-  let strs = 'export const TABLE_CONTEXT_VERSION = 0; \n'
+  let strs = 'export type KHTableID = string & { readonly __KHTableID: unique symbol }; \n'
+  strs += 'export const TABLE_CONTEXT_VERSION = 0; \n'
   for (const i in contextDealers) {
     const contextDealer = (contextDealers as any)[i]
     strs += contextDealer(context) + '\n'

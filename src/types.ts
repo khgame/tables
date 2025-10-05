@@ -14,6 +14,10 @@ export type ConvertResult = {
   result: Record<string, any>;
   collisions?: Array<{ id: string; first: any; incoming: any }>;
   indexes?: Record<string, Record<string, string | string[]>>;
+  aliases?: Record<string, {
+    field: string;
+    map: Record<string, string>;
+  }>;
   meta?: {
     idSegments: number[];
     markCols: string[];
@@ -23,6 +27,11 @@ export type ConvertResult = {
       collisions?: Array<{ key: string; tids: string[] }>;
       skipped?: string;
     }>;
+    alias?: {
+      field: string;
+      column: string;
+      values: string[];
+    };
   };
 }
 

@@ -17,7 +17,8 @@ export function tableConvert(table: Table, context?: any): Table {
     descLine,
     getValue,
     erows = [],
-    markList = []
+    markList = [],
+    aliasColumns = []
   } = table as any
 
   const startRow: number = (marks as any).row + 2
@@ -75,6 +76,15 @@ export function tableConvert(table: Table, context?: any): Table {
     return tid
   })
 
+  const aliasInfo = computeAliasInfo({
+    aliasColumns: Array.isArray(aliasColumns) ? aliasColumns : [],
+    descList,
+    markCols,
+    convertedRows,
+    tids,
+    tableName
+  })
+
   const result: Record<string, any> = {}
   const policy = (((context || {}).policy || {}).tidConflict) || 'error' // error|overwrite|ignore|merge
   const collisions: Array<{ id: string; first: any; incoming: any }> = []
@@ -118,6 +128,9 @@ export function tableConvert(table: Table, context?: any): Table {
   if (indexBuild && indexBuild.meta && Object.keys(indexBuild.meta).length > 0) {
     meta.indexes = indexBuild.meta
   }
+  if (aliasInfo && aliasInfo.meta) {
+    meta.alias = aliasInfo.meta
+  }
 
   const convertPayload: Record<string, any> = {
     tids,
@@ -128,6 +141,14 @@ export function tableConvert(table: Table, context?: any): Table {
 
   if (indexBuild && indexBuild.maps && Object.keys(indexBuild.maps).length > 0) {
     convertPayload.indexes = indexBuild.maps
+  }
+  if (aliasInfo) {
+    if (aliasInfo.aliases && Object.keys(aliasInfo.aliases).length > 0) {
+      convertPayload.aliases = aliasInfo.aliases
+    }
+    if (aliasInfo.indexes && Object.keys(aliasInfo.indexes).length > 0) {
+      convertPayload.indexes = Object.assign(convertPayload.indexes || {}, aliasInfo.indexes)
+    }
   }
 
   ;(table as any).convert = convertPayload
@@ -140,4 +161,77 @@ function attachTid(payload: any, tid: string): Record<string, any> {
     return { _tid: tid, ...payload }
   }
   return { _tid: tid, value: payload }
+}
+
+type AliasComputationInput = {
+  aliasColumns: number[]
+  descList: string[]
+  markCols: string[]
+  convertedRows: any[][]
+  tids: string[]
+  tableName: string
+}
+
+type AliasComputationResult = {
+  aliases: Record<string, { field: string; map: Record<string, string> }>
+  indexes: Record<string, Record<string, string>>
+  meta: {
+    field: string
+    column: string
+    values: string[]
+  }
+} | null
+
+function computeAliasInfo(input: AliasComputationInput): AliasComputationResult {
+  const { aliasColumns, descList, markCols, convertedRows, tids, tableName } = input
+  if (!Array.isArray(aliasColumns) || aliasColumns.length === 0) return null
+  if (aliasColumns.length > 1) {
+    throw new Error(`[tables] 表 ${tableName} 暂不支持多个 alias 列`)
+  }
+
+  const aliasIndex = aliasColumns[0]
+  const fieldName = descList[aliasIndex]
+  const columnName = markCols[aliasIndex]
+  if (!fieldName) {
+    throw new Error(`[tables] alias 列对应的描述行为空，请为列 ${columnName} 设置字段名`)
+  }
+
+  const aliasMap: Record<string, string> = {}
+  const duplicates: string[] = []
+  convertedRows.forEach((row, idx) => {
+    const tid = tids[idx]
+    if (!row) return
+    const rawValue = row[aliasIndex]
+    if (rawValue === undefined || rawValue === null) return
+    const alias = String(rawValue).trim()
+    if (!alias) return
+    const existing = aliasMap[alias]
+    if (existing && existing !== tid) {
+      duplicates.push(alias)
+      return
+    }
+    aliasMap[alias] = tid
+  })
+
+  if (duplicates.length > 0) {
+    const deduped = Array.from(new Set(duplicates))
+    throw new Error(`[tables] 表 ${tableName} 的 alias 列 '${fieldName}' 存在重复别名：${deduped.join(', ')}`)
+  }
+
+  return {
+    aliases: {
+      [fieldName]: {
+        field: fieldName,
+        map: aliasMap
+      }
+    },
+    indexes: {
+      [fieldName]: aliasMap
+    },
+    meta: {
+      field: fieldName,
+      column: columnName,
+      values: Object.keys(aliasMap).sort()
+    }
+  }
 }

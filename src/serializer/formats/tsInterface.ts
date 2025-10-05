@@ -140,6 +140,20 @@ function indentOf(depth: number): string {
   return '  '.repeat(depth)
 }
 
+function buildAliasTypeBlock(baseName: string, aliasMeta: any): string {
+  if (!aliasMeta) return ''
+  const values = Array.isArray(aliasMeta.values) ? aliasMeta.values.filter((v: any) => typeof v === 'string' && v.trim() !== '') as string[] : []
+  const aliasConstName = `${baseName}Protocol`
+  if (values.length === 0) {
+    return `export type ${aliasConstName} = never;\n`
+  }
+  const union = values
+    .map(value => JSON.stringify(value))
+    .sort()
+    .join(' | ')
+  return `export type ${aliasConstName} = ${union};\n`
+}
+
 export function dealContext(context: any): string {
   let enumExportsNames: string[] = []
   if (context.meta && context.meta.exports && context.meta.exports.enum) {
@@ -179,11 +193,13 @@ export const tsInterfaceSerializer: Serializer = {
     const tidAware = Array.isArray(tidMeta?.idSegments) && tidMeta.idSegments.length > 0
     const tidTypeName = `${baseName}TID`
     const tidAlias = tidAware ? `export type ${tidTypeName} = TableContext.KHTableID;\n\n` : ''
+    const aliasMeta = (data as any).convert?.meta?.alias
+    const aliasTypeBlock = buildAliasTypeBlock(baseName, aliasMeta)
     let schema = dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)
     if (tidAware) {
       schema = injectTidField(schema, `${tidTypeName}`)
     }
-    return `/** this file is auto generated */\n${imports}\n        \n${tidAlias}export interface ${interfaceName} ${schema}\n`
+    return `/** this file is auto generated */\n${imports}\n        \n${tidAlias}export interface ${interfaceName} ${schema}\n${aliasTypeBlock}`
   },
   contextDealer: dealContext
 }

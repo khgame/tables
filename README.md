@@ -87,10 +87,10 @@ tables -i ./example -o ./example/out -f json --silent
 
 `tables` 通过标记行（mark row）解析字段类型、装饰器与 ID 片段。标记行在 Excel 中与描述行（下一行）搭配使用：标记行写语法 token，描述行写字段名；空白单元格代表该位置在 Excel 中留空。
 
-- `@`：拼接主键，多个 `@` 列会合并成最终 TID；导出时会直接读取单元格的显示值（保留前导零、数字格式），确保 ID 宽度与 Excel 中一致；如果整张表没有 `@` 列，或某一行的 `@` 段为空，`tables` 会在转换阶段抛出包含表名与行号的错误。
-- `type?`：在类型末尾加 `?` 表示可选；留空但未加 `?` 会在转换时抛错
-- `enum<EnumName>`：引用上下文中的枚举（如 `enum<Rarity>`）；可用 `enum<Rarity|temp>` 为缺省值保留一个字面量分支
-- `[` / `{` 等括号：必须拆分到独立单元格，和 `$ghost`、`$strict` 等装饰器组合使用
+- `@`：拼接主键，多个 `@` 列会按照列顺序合并成最终 TID。导出时会使用 Excel 显示值（保留前导零、填充宽度等）；若整行的任意 `@` 片段为空，`tableConvert` 会抛出包含表名 / 行号的错误。
+- `type?`：在类型末尾追加 `?` 表示可选，例如 `uint?`、`tid?`、`enum<Rarity>?`。未写 `?` 的列一旦留空会被视为缺失值并立即报错；字符串类型（`string`）是例外，空单元格会被标准化为 `""`。
+- `enum<EnumName>`：引用上下文中的枚举（如 `enum<Rarity>`）。解析阶段会严格校验枚举项是否存在于 `context.enums.*` 中，缺失会报错；可用 `enum<Rarity|TEMP>` 追加一个字面量兜底值来兼容占位。
+- `[` / `{` 等括号：必须“一列一个 token”，并与 `$ghost`、`$strict` 等装饰器组合使用。括号列在数据行通常保持空白，仅字段列（例如 `tid`、`uint`）实际写入值。
 
 `tableConvert` 内部会调用 `@khgame/schema` 的 `exportJson`：若标记列未写 `?` 且数据为空，将立即抛出缺失值错误；整段 `$ghost { ... }` 则允许全部字段为空时整体缺省。结合 `tableEnsureRows` 可以过滤全空行。
 
@@ -183,8 +183,8 @@ const specific = enemies[fromString];
 | --- | --- | --- | --- | --- | --- | --- |
 | 标记行 | `@` | `string` | `enum<Rarity>` | `$ghost {` | `uint?` | `}` |
 | 描述行 | `tid` | `name` | `rarity` | `shop` | `sell` | *(空)* |
-| 示例 1 | `10001` | `Short Sword` | `RARE` | `''` | `100` | `''` |
-| 示例 2 | `10002` | `HP Potion` | `COMMON` | `''` | `''` | `''` |
+| 示例 1 | `10001` | `Short Sword` | `RARE` | *(空)* | `100` | *(空)* |
+| 示例 2 | `10002` | `HP Potion` | `COMMON` | *(空)* | *(空)* | *(空)* |
 
 > 枚举值来自 `context.enums.json`：
 > ```json
@@ -197,8 +197,8 @@ const specific = enemies[fromString];
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 标记行 | `@` | `string` | `$strict [` | `{` | `tid` | `uint` | `}` | `]` |
 | 字段名行 | `tid` | `name` | `entries` | *(空)* | `dropTid` | `weight` | *(空)* | *(空)* |
-| 示例 1 | `3001` | `Stage 1-1` | `''` | `''` | `2001` | `50` | `''` | `''` |
-| 示例 2 | `3002` | `Stage 1-2` | `''` | `''` | `2003` | `70` | `''` | `''` |
+| 示例 1 | `3001` | `Stage 1-1` | *(空)* | *(空)* | `2001` | `50` | *(空)* | *(空)* |
+| 示例 2 | `3002` | `Stage 1-2` | *(空)* | *(空)* | `2003` | `70` | *(空)* | *(空)* |
 
 > 若数组需要多个元素，可在 `}` 之后依次追加新的 `{` → `tid` → `uint` → `}` 片段，最后用 `]` 收束结构。
 
@@ -209,9 +209,45 @@ const specific = enemies[fromString];
 | 标记行 | `@` | `string` | `uint?` |
 | 描述行 | `tid` | `title` | `limit` |
 | 示例 1 | `5001` | `Daily Reward` | `3` |
-| 示例 2 | `5002` | `Limited Offer` | `''` |
+| 示例 2 | `5002` | `Limited Offer` | *(空)* |
 
-以上小例与上方综合表相互参考：常见的 `enum<Rarity>`、`tid`、`uint` 等可以直接写在同一格中；数组 / 对象控制符（`$strict`、`{`、`}`、`[`、`]` 等）仍需“一列一个 Token”。字符串可留空，数值若需缺省需写成 `uint?` 或置于 `$ghost { ... }` 结构内。
+以上小例与上方综合表相互参考：常见的 `enum<Rarity>`、`tid`、`uint` 等可以直接写在同一格中；数组 / 对象控制符（`$strict`、`{`、`}`、`[`、`]` 等）仍需“一列一个 Token”。字符串可留空，数值若需缺省需写成 `uint?` 或置于 `$ghost { ... }` 结构内。表格中的 `*(空)*` 表示该单元格在 Excel 中保持空白。
+
+### 枚举与上下文配置快速指南
+
+1. **准备 `context.enums*.json`**：在输入目录（或自定义上下文目录）放置 `context.enums.json`，内容示例：
+   ```json
+   {
+     "Rarity": {
+       "COMMON": 1,
+       "RARE": 2,
+       "EPIC": 3,
+       "LEGENDARY": 4
+     }
+   }
+   ```
+   也可以拆分为 `context.enums.rarity.json`、`context.enums.element.json` 等多个文件，`loadContext` 会自动合并。
+2. **声明导出元信息**：在同一路径下创建 `context.meta.json`，指定哪些枚举需要被序列化器输出：
+   ```json
+   {
+     "meta": {
+       "exports": {
+         "enum": ["enums"]
+       }
+     }
+   }
+   ```
+   其中 `"enums"` 对应上一步 JSON 的键名；可写成数组导出多个命名空间。
+3. **在脚本中加载上下文**：CLI 默认不会读取上下文，推荐在自定义脚本中调用 `loadContext`：
+   ```ts
+   const { loadContext, serialize, tsInterfaceSerializer } = require('@khgame/tables');
+   const ctx = loadContext('./example');
+   serialize('./example/items.xlsx', './out', {
+     'Items.ts': tsInterfaceSerializer
+   }, ctx);
+   ```
+   `loadContext(dir)` 会自动读取 `dir` 下符合 `context.*.json` 的文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
+4. **表头写成 `enum<Rarity>`**：当标记行使用 `enum<Rarity>`（或 `enum<Rarity|Fallback>`）时，`tableSchema`/`tableConvert` 会校验单元格值是否存在于上下文枚举中；TS/Go/C# 序列化器则会在产物中生成 `TableContext.Rarity` 引用。
 
 示例数据（`example/example.xlsx` 中 `convert.result` 的前两项，已按常用字段裁剪）：
 

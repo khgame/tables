@@ -41,13 +41,13 @@ describe('convert TID collision policy', () => {
   it('overwrite policy keeps last', () => {
     const table = makeCollisionTable()
     const ret = tableConvert(table, { policy: { tidConflict: 'overwrite' } })
-    expect(ret.convert!.result['id001']).toEqual({ v: 1 })
+    expect(ret.convert!.result['id001']).toEqual({ _tid: 'id001', v: 1 })
   })
 
   it('merge policy merges objects', () => {
     const table = makeCollisionTable()
     const ret = tableConvert(table, { policy: { tidConflict: 'merge' } })
-    expect(ret.convert!.result['id001']).toEqual({ v: 1 }) // merge({}, {v:0}, {v:1}) -> {v:1}
+    expect(ret.convert!.result['id001']).toEqual({ _tid: 'id001', v: 1 }) // merge({}, {v:0}, {v:1}) -> {v:1}
   })
 
   it('emits collision warnings when verbose mode enabled', () => {

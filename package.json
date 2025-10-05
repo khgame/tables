@@ -74,7 +74,7 @@
     "@types/node": "^24.5.2",
     "@types/yargs": "^17.0.33",
     "babel-jest": "^30.1.2",
-    "eslint": "^5.13.0",
+    "eslint": "^9.37.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-node": "^8.0.1",

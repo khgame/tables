@@ -24,8 +24,8 @@ node example/game_01_minirpg/serialize.js
 生成内容包括：
 
 - `*.json`：稳定排序后的 JSON 数据。
-- `*.ts`：同时包含接口定义与数据对象。
-- `*Interface.ts`：仅导出接口声明，方便在项目中复用。
+- `*.ts`：类型与 `RelicsRepo` 等仓库声明。
+- `*Solution.ts`：结合类型模块导出的 `raw` 数据、记录映射与默认仓库实例。
 - `context.ts`：由 `context.*.json` 自动生成的枚举汇总。
 
 你也可以直接使用 CLI：
@@ -39,16 +39,17 @@ npx tables -i ./example/game_01_minirpg -o ./example/game_01_minirpg/out -f json
 
 alias 列会自动生成以下几个产物：
 
-- `out/relics.ts`/`out/relicsInterface.ts` 中的 `RelicsProtocol` 常量数组与类型别名。
-- `getRelicsByProtocol(alias)`：通过别名直接获取配置对象。
+- `out/relics.ts`/`out/relicsSolution.ts` 中的 `RelicsProtocol` 常量、类型别名与默认仓库。
+- `RelicsRepo`：提供 `get`/`values` 以及 `getByKey` 等索引方法；`relicsSolution.ts` 会预封装数据和默认实例。
 - `convert.aliases.key` 与索引 `convert.indexes.key`，用于按需查表。
 
 在 TS 中可以这样使用：
 
 ```ts
-import { RelicsProtocol, getRelicsByProtocol } from './out/relics'
+import { RelicsProtocol } from './out/relics'
+import { relicsRepo } from './out/relicsSolution'
 
-const relic = getRelicsByProtocol('everburningEmber' as RelicsProtocol)
+const relic = relicsRepo.getByKey('everburningEmber' as RelicsProtocol)
 console.log(relic.desc)
 ```
 

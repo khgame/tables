@@ -28,8 +28,8 @@ const tables = [
 const serializerEntries = [
   { getFileName: stem => `${stem}.json`, serializer: jsonSerializer },
   { getFileName: stem => `${stem}.jsonx`, serializer: jsonxSerializer },
-  { getFileName: stem => `${stem}.ts`, serializer: tsSerializer },
-  { getFileName: stem => `${stem}Interface.ts`, serializer: tsInterfaceSerializer }
+  { getFileName: stem => `${stem}Solution.ts`, serializer: tsSerializer },
+  { getFileName: stem => `${stem}.ts`, serializer: tsInterfaceSerializer }
 ];
 
 function main() {

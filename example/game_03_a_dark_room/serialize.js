@@ -30,11 +30,11 @@ function main() {
 
   for (const { file, stem } of tables) {
     const src = Path.resolve(baseDir, file)
-    const serializerMap = {
-      [`${stem}.json`]: jsonSerializer,
-      [`${stem}.ts`]: tsSerializer,
-      [`${stem}Interface.ts`]: tsInterfaceSerializer
-    }
+  const serializerMap = {
+    [`${stem}.json`]: jsonSerializer,
+    [`${stem}Solution.ts`]: tsSerializer,
+    [`${stem}.ts`]: tsInterfaceSerializer
+  }
     serialize(src, outDir, serializerMap, context)
     console.log(`[a-dark-room] serialized ${file}`)
   }

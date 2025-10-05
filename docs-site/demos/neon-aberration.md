@@ -10,7 +10,7 @@ const demoUrl = withBase('/examples/neon-aberration/index.html')
 
 - **涵盖表格**：`operators`、`weapons`、`weapon_mods`、`survival_stats`、`map_tiles`、`missions`、`events`、`craft_recipes` 等 30+ 张表
 - **展示要点**：基地排程、城市探索、战术战斗、剧情事件与经济循环的一体化验证
-- **序列化产物**：JSON / JSONX / TS / TS Interface + web demo (`out/index.html`)
+- **序列化产物**：`*.json`、`*.jsonx`、`*.ts`（类型 + Repo 定义）、`*Solution.ts`（数据 + 默认实例）以及 web demo (`out/index.html`)
 
 <a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
   立即体验 Demo
@@ -40,4 +40,3 @@ node example/game_05_neon_aberration/serialize.js
 - `_rebuild_data.js` 支持一键重置示例数据，方便验证流程
 - `serialize.js` 产出 `context.ts`、JSONX 与静态 Demo 资源，快速联通前端消费
 - Demo 页面覆盖“基地排程 → 城市行动 → 战术战斗 → 剧情互动”闭环，直接观察导表效果
-

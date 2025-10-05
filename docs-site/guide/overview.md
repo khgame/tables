@@ -61,6 +61,15 @@ tables -i ./example/game_01_minirpg -o ./artifacts -f ts-interface
 - 测试脚本放在 `test/`，配合 Jest 回归。
 - 自定义上下文（枚举、常量、策略）集中在 `context.*.json`，并通过 `serializeContext` 产出。
 
+## TS 输出结构
+
+使用 `-f ts` 或 `tsSerializer` 时，每张表会生成：
+
+- `<Table>.ts`：类型定义、TID helper、`${Table}Protocol` 常量以及 `${Table}Repo` 仓库，但不含数据。
+- `<Table>Solution.ts`：导入上面的类型模块，携带 `raw` JSON、记录映射以及默认的 `${table}Repo = ${Table}Repo.fromRaw(raw)`。
+
+这样既能按需只引用类型（自行注入数据），也能直接引用 Solution 文件拿到现成的仓库实例。`-f ts-interface` 则只输出类型文件。
+
 ## API 入口
 
 ```ts

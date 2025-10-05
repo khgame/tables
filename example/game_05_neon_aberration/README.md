@@ -13,9 +13,9 @@ node example/game_05_neon_aberration/serialize.js        # 导出 JSON / TS / In
 生成产物位于 `example/game_05_neon_aberration/out/`，包括：
 
 - 稳定排序的 JSON (`*.json`)
-- TypeScript 版本（含接口与数据）(`*.ts`)
-- 仅接口声明 (`*Interface.ts`)
-- 携带协议头的 JSONX (`*.jsonx`)
+- TypeScript 类型与仓库定义 (`*.ts`)
+- 携带默认数据与仓库实例的解决方案文件 (`*Solution.ts`)
+- 带协议头的 JSONX (`*.jsonx`)
 - `context.ts`（由 `context.*.json` 自动汇总的枚举）
 - `index.html`（静态 Demo：养成房间 / 城市行动 / 战术战斗 / 剧情交易）
 

@@ -6,7 +6,9 @@ import * as fs from 'fs-extra'
 import {
   serialize,
   getSerializerFormat,
-  listSerializerFormats
+  listSerializerFormats,
+  tsSerializer,
+  tsInterfaceSerializer
 } from './serializer'
 import { makeCamelName } from './utils/names'
 
@@ -46,6 +48,18 @@ function pathAvailable(path: string): boolean {
     /\.(xls|xlsx|csv)$/i.test(path)
 }
 
+function buildOutputMap(baseName: string): Record<string, any> {
+  if (format === 'ts') {
+    return {
+      [`${baseName}Solution.ts`]: tsSerializer,
+      [`${baseName}.ts`]: tsInterfaceSerializer
+    }
+  }
+  return {
+    [`${baseName}.${formatObj.suffix}`]: formatObj.serializer
+  }
+}
+
 const context: any = { policy: {} }
 if ((argv as any).strict) {
   context.policy.tidConflict = 'error'
@@ -56,14 +70,16 @@ if (stat.isDirectory()) {
     iPath,
     (fileObj: any) => {
       if (!process.env.TABLES_SILENT) console.log('generate : ', fileObj.path)
-      serialize(fileObj.path, oPath, { [`${makeCamelName(fileObj.parsed.name)}.${formatObj.suffix}`]: formatObj.serializer }, context)
+      const baseName = makeCamelName(fileObj.parsed.name)
+      serialize(fileObj.path, oPath, buildOutputMap(baseName), context)
     },
     false,
     (file: string) => pathAvailable(file)
   )
 } else if (pathAvailable(iPath)) {
   if (!process.env.TABLES_SILENT) console.log('generate : ', iPath)
-  serialize(iPath, oPath, { [`${makeCamelName(Path.parse(iPath).name)}.${formatObj.suffix}`]: formatObj.serializer }, context)
+  const baseName = makeCamelName(Path.parse(iPath).name)
+  serialize(iPath, oPath, buildOutputMap(baseName), context)
 } else {
   if (!process.env.TABLES_SILENT) console.log('file format error:', iPath)
 }

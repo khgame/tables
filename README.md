@@ -46,6 +46,8 @@ Options:
 
 默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。
 
+> 提示：选择 `-f ts` 时会生成两份文件：`<Table>Solution.ts`（含数据 + 仓库实例）以及 `<Table>.ts`（纯类型与仓库定义）。`-f ts-interface` 仅输出类型文件。
+
 ### API
 
 - Out-of-box API : `readAndTranslate(filepath [,option])`
@@ -136,25 +138,44 @@ sector category  serial
 // protocol/enemies.ts
 export type EnemiesTID = TableContext.KHTableID;
 export const toEnemiesTID = (value: string): EnemiesTID => value as EnemiesTID;
-export const enemiesTids: EnemiesTID[] = raw.tids.map(toEnemiesTID);
-export const enemies: Record<EnemiesTID, IEnemies> = Object.fromEntries(
-  Object.entries(raw.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])
-);
 
-// protocol/enemiesInterface.ts
 export interface IEnemies {
   _tid: EnemiesTID;
   name: string;
   hp: number;
-  // ...其他字段
 }
 
-// 业务代码中使用品牌化 ID：
-import { enemies, enemiesTids, toEnemiesTID } from './protocol/enemies';
+export type EnemiesRaw = {
+  tids: string[]
+  result: Record<string, IEnemies>
+  indexes?: Record<string, Record<string, string | string[]>>
+}
 
-const first: IEnemies = enemies[enemiesTids[0]];
-const fromString = toEnemiesTID('50010001');
-const specific = enemies[fromString];
+export class EnemiesRepo {
+  static fromRaw(data: EnemiesRaw): EnemiesRepo {
+    const records = Object.fromEntries(Object.entries(data.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])) as Record<EnemiesTID, IEnemies>
+    return new EnemiesRepo(records)
+  }
+  constructor(private readonly records: Record<EnemiesTID, IEnemies>) {}
+  get(tid: EnemiesTID): IEnemies { return this.records[tid] }
+}
+
+// protocol/enemiesSolution.ts
+import { IEnemies, EnemiesTID, toEnemiesTID, EnemiesRepo } from './enemies';
+
+const raw = { /* ... */ }
+export const enemiesRaw = raw;
+export const enemiesRecords: Record<EnemiesTID, IEnemies> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])
+);
+export const enemiesRepo = EnemiesRepo.fromRaw(raw);
+
+// 业务代码
+import { enemiesRepo, enemiesRaw } from './protocol/enemiesSolution';
+import { toEnemiesTID } from './protocol/enemies';
+
+const first = enemiesRepo.values()[0];
+const specific = enemiesRepo.get(toEnemiesTID('50010001'));
 ```
 
 > 提示：`TableContext` 会额外导出基础的 `KHTableID` 类型；枚举类型需在标记行写成 `enum<HeroClass>`，才能生成 `TableContext.HeroClass` 引用。
@@ -250,7 +271,31 @@ const specific = enemies[fromString];
    `loadContext(dir)` 会自动读取 `dir` 下符合 `context.*.json` 的文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
 4. **表头写成 `enum<Rarity>`**：当标记行使用 `enum<Rarity>`（或 `enum<Rarity|Fallback>`）时，`tableSchema`/`tableConvert` 会校验单元格值是否存在于上下文枚举中；TS/Go/C# 序列化器则会在产物中生成 `TableContext.Rarity` 引用。
 
+## TS 输出结构
+
+使用 `-f ts` 或直接调用 `tsSerializer` 时，会生成两份互补的文件：
+
+- `<Table>.ts`：纯类型与仓库定义。包含 `I<Table>`、`<Table>TID`/`to<Table>TID`、`${Table}Protocol`、`${Table}Repo` 以及 `RepoRaw` 类型，不携带具体数据。
+- `<Table>Solution.ts`：运行期数据载体。导入上述类型模块，内嵌 `raw` JSON 与索引映射，并导出 `records`、`<table>Repo = ${Table}Repo.fromRaw(raw)` 等默认实例。
+
+在 TypeScript 项目中即可：
+
+```ts
+import { RelicsRepo, RelicsProtocol } from './out/relics'
+import { relicsRepo } from './out/relicsSolution'
+
+const relic = relicsRepo.getByKey('everburningEmber' as RelicsProtocol)
+```
+
+若只想复用类型，可 `import { RelicsRepo } from './out/relics'` 并自行加载 JSON 调用 `RelicsRepo.fromRaw(...)`。使用 `-f ts-interface` 则仅生成 `<Table>.ts`，适合仅需要类型/仓库定义的场景。
+
 ### alias 列（别名映射）
+
+> alias 机制的设计思想:
+> - 在很多项目里头, 有实际用 TID 很麻烦的情况, 比如某个武器有特殊效果. 武器的数据要填充在表格里, 但实际是很难泛化, 代码中不可避免的要感知具体的行
+> - 直接的问题是很难做到 SSOT，通常来说，做的好一些的会用胶水层，比如自己封装一个其他的 id, 或者定义枚举、方法，加校验器。避免对字面量的依赖
+> - 用 tables 的 enum 机制模拟是个做法，而 tables 的 index 则可以支持任意字段的 O(1) 查询
+> - 用 alias 机制应该能避免劣化, 因为在编译时就会失败, 有不需要额外定义一份 enum 表
 
 `tables` 支持在任意表中声明“别名 -> TID”的唯一映射，只需在标记行写上 `alias` 或 `alias?`（唯一列，不可多列）：
 
@@ -267,7 +312,7 @@ const specific = enemies[fromString];
 - 导出结果会附带：
   - `convert.aliases.<field>`：别名到 TID 的 map，例如 `{ school: '500001', hospital: '500002' }`
   - `convert.indexes.alias.<field>`：用于快速查找的映射，同步进 `meta.alias` 的枚举列表
-  - TS/TS-Interface 序列化器会额外生成 `AliasProtocol` 常量 / 类型及 `getAliasByProtocol` 辅助函数，便于按别名读取结构化数据。
+  - TS/TS-Interface 序列化器会额外生成 `AliasProtocol` 常量/类型与 `${tableName}Repo` 仓库，`relicsSolution.ts` 等文件会预封装 `Repo.fromRaw` 结果，便于按别名读取结构化数据。
 - `alias?` 与 `alias` 行为一致，只是显式提醒该列允许空白。
 
 更多细节与示例可参考 `docs-site/guide/concepts.md` 的“alias 列”章节。

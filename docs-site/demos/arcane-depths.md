@@ -10,7 +10,7 @@ const demoUrl = withBase('/examples/arcane-depths/ui/index.html')
 
 - **涵盖表格**：章节、地图模板、职业、英雄、技能/连携、敌人/AI、房间、事件、遗物、装备、设施、研究、经济、任务、成就等十余张表
 - **展示要点**：多层地牢探索、基地经营面板、jsonx 协议输出、可视化战斗预览、MCP 调试脚本
-- **序列化产物**：`*.json`、`*.jsonx`、`*.ts`、`*Interface.ts` 以及富交互 UI (`out/ui/index.html`)
+- **序列化产物**：`*.json`、`*.jsonx`、`*.ts`（类型 + Repo 定义）、`*Solution.ts`（数据 + 默认实例）以及富交互 UI (`out/ui/index.html`)
 
 <a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
   立即体验 Demo

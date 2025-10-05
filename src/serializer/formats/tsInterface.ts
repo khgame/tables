@@ -140,18 +140,132 @@ function indentOf(depth: number): string {
   return '  '.repeat(depth)
 }
 
-function buildAliasTypeBlock(baseName: string, aliasMeta: any): string {
-  if (!aliasMeta) return ''
-  const values = Array.isArray(aliasMeta.values) ? aliasMeta.values.filter((v: any) => typeof v === 'string' && v.trim() !== '') as string[] : []
+type AliasTypeBlock = {
+  declaration: string;
+  hasValues: boolean;
+  values: string[];
+}
+
+function buildAliasTypeBlock(baseName: string, aliasMeta: any): AliasTypeBlock {
+  if (!aliasMeta) {
+    return { declaration: '', hasValues: false, values: [] }
+  }
+  const values = Array.isArray(aliasMeta.values)
+    ? (aliasMeta.values.filter((v: any) => typeof v === 'string' && v.trim() !== '') as string[])
+    : []
   const aliasConstName = `${baseName}Protocol`
   if (values.length === 0) {
-    return `export type ${aliasConstName} = never;\n`
+    return {
+      declaration: `export const ${aliasConstName}: never[] = [];\nexport type ${aliasConstName} = never;\n`,
+      hasValues: false,
+      values
+    }
   }
-  const union = values
-    .map(value => JSON.stringify(value))
-    .sort()
-    .join(' | ')
-  return `export type ${aliasConstName} = ${union};\n`
+  const literalList = `[${values.map(value => JSON.stringify(value)).sort().join(', ')}] as const`
+  const declaration = `export const ${aliasConstName} = ${literalList};\nexport type ${aliasConstName} = typeof ${aliasConstName}[number];\n`
+  return {
+    declaration,
+    hasValues: true,
+    values
+  }
+}
+
+type RepoBlockInput = {
+  baseName: string;
+  interfaceName: string;
+  tidAware: boolean;
+  tidTypeName: string;
+  tidHelperName: string;
+  indexesMeta: Record<string, { mode: 'unique' | 'multi' } | any>;
+  aliasMeta?: { field: string } | null;
+}
+
+function buildRepoDeclaration(input: RepoBlockInput): string {
+  const { baseName, interfaceName, tidAware, tidTypeName, tidHelperName, indexesMeta, aliasMeta } = input
+  if (!tidAware) return ''
+
+  const repoName = `${baseName}Repo`
+  const rawName = `${baseName}Raw`
+  const entriesObject = { ...(indexesMeta || {}) }
+  if (aliasMeta && aliasMeta.field && !entriesObject[aliasMeta.field]) {
+    entriesObject[aliasMeta.field] = { mode: 'unique' }
+  }
+  const indexMethods: string[] = []
+  for (const [indexName, meta] of Object.entries(entriesObject)) {
+    if (!meta) continue
+    const mode = typeof meta.mode === 'string' ? meta.mode : 'unique'
+    const methodSuffix = toPascalCase(indexName)
+    const isAlias = aliasMeta && aliasMeta.field === indexName
+    const keyType = isAlias ? `${baseName}Protocol` : 'string'
+    if (mode === 'multi') {
+      indexMethods.push(`  getAllBy${methodSuffix}(key: ${keyType}): ${interfaceName}[] {
+    const index = this.indexes[${JSON.stringify(indexName)}] || {}
+    const bucket = index[key as keyof typeof index]
+    if (!bucket) return []
+    const tids = Array.isArray(bucket) ? bucket : [bucket as string]
+    return tids.map(tid => this.get(${tidHelperName}(tid as string)))
+  }`)
+    } else {
+      indexMethods.push(`  getBy${methodSuffix}(key: ${keyType}): ${interfaceName} {
+    const index = this.indexes[${JSON.stringify(indexName)}] || {}
+    const bucket = index[key as keyof typeof index]
+    if (!bucket) {
+      throw new Error(
+        \`[${repoName}] no entry for ${indexName} '\${String(key)}'\`
+      )
+    }
+    const tid = Array.isArray(bucket) ? bucket[0] : bucket
+    return this.get(${tidHelperName}(tid as string))
+  }`)
+    }
+  }
+
+  const methodsBlock = indexMethods.length > 0 ? `\n${indexMethods.join('\n\n')}\n` : '\n'
+
+  return `export type ${rawName} = {
+  tids: string[]
+  result: Record<string, ${interfaceName}>
+  indexes?: Record<string, Record<string, string | string[]>>
+}
+
+export class ${repoName} {
+  static fromRaw(data: ${rawName}): ${repoName} {
+    const entries = Object.entries(data.result || {})
+    const records = Object.fromEntries(entries.map(([tid, value]) => [${tidHelperName}(tid), value as ${interfaceName}])) as Record<${tidTypeName}, ${interfaceName}>
+    return new ${repoName}(records, data.indexes ?? {})
+  }
+
+  constructor(
+    private readonly records: Record<${tidTypeName}, ${interfaceName}>,
+    private readonly indexes: Record<string, Record<string, string | string[]>> = {}
+  ) {}
+
+  get(tid: ${tidTypeName}): ${interfaceName} {
+    const hit = this.records[tid]
+    if (!hit) {
+      throw new Error(\`[${repoName}] tid \${tid} not found\`)
+    }
+    return hit
+  }
+
+  values(): ${interfaceName}[] {
+    return Object.values(this.records) as ${interfaceName}[]
+  }
+
+  entries(): Array<[${tidTypeName}, ${interfaceName}]> {
+    return Object.entries(this.records).map(([tid, value]) => [${tidHelperName}(tid as string), value as ${interfaceName}])
+  }${methodsBlock}}
+
+`
+}
+
+function toPascalCase(source: string): string {
+  return source
+    .replace(/[_\s]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join('')
 }
 
 export function dealContext(context: any): string {
@@ -192,14 +306,25 @@ export const tsInterfaceSerializer: Serializer = {
     const tidMeta = (data as any).convert?.meta
     const tidAware = Array.isArray(tidMeta?.idSegments) && tidMeta.idSegments.length > 0
     const tidTypeName = `${baseName}TID`
-    const tidAlias = tidAware ? `export type ${tidTypeName} = TableContext.KHTableID;\n\n` : ''
+    const tidAlias = tidAware
+      ? `export type ${tidTypeName} = TableContext.KHTableID;\nexport const ${`to${baseName}TID`} = (value: string): ${tidTypeName} => value as ${tidTypeName};\n\n`
+      : ''
     const aliasMeta = (data as any).convert?.meta?.alias
     const aliasTypeBlock = buildAliasTypeBlock(baseName, aliasMeta)
+    const repoBlock = buildRepoDeclaration({
+      baseName,
+      interfaceName,
+      tidAware,
+      tidTypeName,
+      tidHelperName: `to${baseName}TID`,
+      indexesMeta: tidMeta?.indexes || {},
+      aliasMeta
+    })
     let schema = dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)
     if (tidAware) {
       schema = injectTidField(schema, `${tidTypeName}`)
     }
-    return `/** this file is auto generated */\n${imports}\n        \n${tidAlias}export interface ${interfaceName} ${schema}\n${aliasTypeBlock}`
+    return `/** this file is auto generated */\n${imports}\n        \n${tidAlias}export interface ${interfaceName} ${schema}\n\n${aliasTypeBlock.declaration}${repoBlock}`
   },
   contextDealer: dealContext
 }

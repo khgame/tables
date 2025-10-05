@@ -9,68 +9,38 @@ function sortByKeys<T extends Record<string, any>>(obj: T): T {
   return ret
 }
 
-type AliasBlocksInput = {
-  aliases: Record<string, { field: string; map: Record<string, string> }>;
+type AliasReexportInput = {
   baseName: string;
-  camel: string;
-  interfaceName: string;
-  tidAware: boolean;
-  tidTypeName: string;
-  tidHelperName: string;
+  modulePath: string;
+  aliasMeta?: { field: string } | null;
 }
 
-function buildAliasBlocks(input: AliasBlocksInput): string {
-  const { aliases, baseName, camel, interfaceName, tidAware, tidTypeName, tidHelperName } = input
-  if (!tidAware) return ''
-  const entries = Object.entries(aliases || {})
-  if (entries.length === 0) return ''
-
-  const blocks: string[] = []
-
-  entries.forEach(([indexKey, aliasData]) => {
-    const map = aliasData?.map || {}
-    const values = Object.keys(map).sort()
-    const aliasConstName = `${baseName}Protocol`
-    const aliasListLiteral = `[${values.map(v => JSON.stringify(v)).join(', ')}] as const`
-    const aliasConstLine = `export const ${aliasConstName} = ${aliasListLiteral};`
-    const aliasTypeLine = `export type ${aliasConstName} = typeof ${aliasConstName}[number];`
-    const recordConstName = `${camel}ByProtocol`
-    const getterName = `get${baseName}ByProtocol`
-    const indexAccessor = `raw.indexes?.[${JSON.stringify(indexKey)}] ?? {}`
-    const recordConstLine = `const ${recordConstName} = Object.fromEntries(
-  Object.entries(${indexAccessor}).map(([alias, tid]) => [alias as ${aliasConstName}, ${camel}[${tidHelperName}(tid as string)]])
-) as Record<${aliasConstName}, ${interfaceName}>;`
-    const getterLine = `export const ${getterName} = (alias: ${aliasConstName}): ${interfaceName} => {
-  return ${recordConstName}[alias];
-};`
-    blocks.push(`${aliasConstLine}\n${aliasTypeLine}\n${recordConstLine}\n${getterLine}`)
-  })
-
-  return `${blocks.join('\n\n')}\n`
+function buildAliasReexport(input: AliasReexportInput): string {
+  const { baseName, modulePath, aliasMeta } = input
+  if (!aliasMeta) return ''
+  const aliasConstName = `${baseName}Protocol`
+  return `export { ${aliasConstName} } from "./${modulePath}";\n`
 }
+
 
 export const tsSerializer: Serializer = {
   plugins: [tableSchema, tableConvert],
   file: (data, fileName, imports, context) => {
     const interfaceName = makeInterfaceName(fileName)
     const convert = (data as any).convert || {}
-    const { meta, aliases = {}, ...rest } = convert
+    const { meta, aliases = {}, indexes = {}, ...rest } = convert
     const stable = { ...rest, result: sortByKeys((rest as any).result || {}) }
     if (aliases && Object.keys(aliases).length > 0) {
       (stable as any).aliases = aliases
+    }
+    if (indexes && Object.keys(indexes).length > 0) {
+      (stable as any).indexes = indexes
     }
     const baseName = interfaceName.startsWith('I') && interfaceName.length > 1 ? interfaceName.slice(1) : interfaceName
     const camel = interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2)
     const tidTypeName = `${baseName}TID`
     const tidHelperName = `to${baseName}TID`
     const tidAware = Array.isArray(meta?.idSegments) && (meta!.idSegments as number[]).length > 0
-
-    const tidDefs = tidAware
-      ? `export type ${tidTypeName} = TableContext.KHTableID;
-export const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${tidTypeName};
-
-`
-      : ''
 
     const tidsExport = tidAware
       ? `export const ${camel}Tids: ${tidTypeName}[] = raw.tids.map(${tidHelperName});`
@@ -82,31 +52,40 @@ export const ${tidHelperName} = (value: string): ${tidTypeName} => value as ${ti
 );`
       : `export const ${camel}: { [tid: string] : ${interfaceName} } = raw.result as any;`
 
-    const aliasBlocks = buildAliasBlocks({
-      aliases,
+    const typeModule = `./${fileName}`
+    const aliasReexport = buildAliasReexport({
       baseName,
-      camel,
-      interfaceName,
-      tidAware,
-      tidTypeName,
-      tidHelperName
+      modulePath: fileName,
+      aliasMeta: meta?.alias
     })
 
-    let schema = dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)
+    const typeImports: string[] = [interfaceName]
     if (tidAware) {
-      schema = injectTidField(schema, `${tidTypeName}`)
+      typeImports.push(tidTypeName, tidHelperName)
     }
+    if (meta?.alias) {
+      typeImports.push(`${baseName}Protocol`)
+    }
+    typeImports.push(`${baseName}Repo`)
+    const importLine = `import { ${typeImports.join(', ')} } from "${typeModule}";`
+    const importsIncludingTypes = imports ? `${imports}\n${importLine}` : importLine
+
+    const rawLiteral = JSON.stringify(stable, null, 2)
+
+    const recordsName = `${camel}Records`
+    const repoInstanceName = `${camel}Repo`
+    const rawExportName = `${camel}Raw`
 
     return `/** this file is auto generated */
-${imports}
+${importsIncludingTypes}
         
-export interface ${interfaceName} ${schema}
+const raw = ${rawLiteral}
 
-${tidDefs}const raw = ${JSON.stringify(stable, null, 2)}
-
+export const ${rawExportName} = raw;
 ${tidsExport}
-${recordExport}
-${aliasBlocks}
+${recordExport.replace(`export const ${camel}`, `export const ${recordsName}`)}
+export const ${camel} = ${recordsName};
+${aliasReexport}export const ${repoInstanceName} = ${baseName}Repo.fromRaw(raw);
 `
   },
   contextDealer: dealContext

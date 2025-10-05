@@ -27,14 +27,14 @@ describe('basic serializers', () => {
 })
 
 describe('tsSerializer formatting', () => {
-  it('embeds interface name and data JSON', () => {
+  it('references type module and emits data JSON', () => {
     // Stub data with minimal schema/lines (dealSchema is tested separately)
     const data: any = { schema: {}, descLine: {}, markCols: [], convert: { result: { id1: { a: 1 } } } }
     const out = tsSerializer.file(data, 'example', '//imports')
-    expect(out).toContain('export interface IExample')
+    expect(out).toContain('import { IExample, ExampleRepo } from "./example";')
     expect(out).toContain('const raw = ') // includes JSON content
-    expect(out).toContain('export const exampleTids = raw.tids;')
-    expect(out).toContain('export const example: { [tid: string] : IExample }')
+    expect(out).toContain('export const exampleRecords:')
+    expect(out).toContain('export const exampleRepo = ExampleRepo.fromRaw(raw);')
   })
 
   it('brands tids when metadata is available', () => {
@@ -49,9 +49,8 @@ describe('tsSerializer formatting', () => {
       }
     }
     const out = tsSerializer.file(data, 'example', '//imports')
-    expect(out).toContain('type ExampleTID = TableContext.KHTableID')
-    expect(out).toContain('const toExampleTID =')
-    expect(out).toContain('export const example: Record<ExampleTID, IExample>')
+    expect(out).toContain('export const exampleTids: ExampleTID[] = raw.tids.map(toExampleTID);')
+    expect(out).toContain('export const exampleRecords: Record<ExampleTID, IExample> = Object.fromEntries(')
   })
 })
 

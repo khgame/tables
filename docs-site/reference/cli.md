@@ -20,6 +20,7 @@ Options:
 ```bash
 tables -i ./example -o ./out-ts -f ts
 ```
+> `-f ts` 会生成 `<Table>.ts`（类型 + Repo 定义）与 `<Table>Solution.ts`（携带数据与默认实例）。
 - 单文件导出为 JSON（静默）：
 ```bash
 tables -i ./example/example.xlsx -o ./out -f json --silent

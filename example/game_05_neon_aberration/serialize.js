@@ -46,8 +46,8 @@ const tables = [
 const serializerEntries = [
   { suffix: '.json', serializer: jsonSerializer },
   { suffix: '.jsonx', serializer: jsonxSerializer },
-  { suffix: '.ts', serializer: tsSerializer },
-  { suffix: 'Interface.ts', serializer: tsInterfaceSerializer }
+  { suffix: 'Solution.ts', serializer: tsSerializer },
+  { suffix: '.ts', serializer: tsInterfaceSerializer }
 ];
 
 function main() {

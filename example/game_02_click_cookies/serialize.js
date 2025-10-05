@@ -26,11 +26,11 @@ const serializerConfigs = [
     serializer: jsonSerializer
   },
   {
-    getFileName: stem => `${stem}.ts`,
+    getFileName: stem => `${stem}Solution.ts`,
     serializer: tsSerializer
   },
   {
-    getFileName: stem => `${stem}Interface.ts`,
+    getFileName: stem => `${stem}.ts`,
     serializer: tsInterfaceSerializer
   }
 ]

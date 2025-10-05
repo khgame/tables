@@ -10,7 +10,7 @@ const demoUrl = withBase('/examples/abyssal-nightfall/index.html')
 
 - **涵盖表格**：操作者、主武器、遗物、敌人、Boss、波次、技能树、协同卡
 - **展示要点**：战前构筑界面、波次时间线、协同抽卡、Canvas 实时战斗循环
-- **序列化产物**：JSON / JSONX / TS / TS Interface + 一体化 Web Demo (`out/index.html`)
+- **序列化产物**：`*.json`、`*.jsonx`、`*.ts`（类型 + Repo 定义）、`*Solution.ts`（数据 + 默认实例）+ 一体化 Web Demo (`out/index.html`)
 
 <a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
   立即体验 Demo

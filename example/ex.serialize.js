@@ -12,8 +12,8 @@ const {
 // serialize(`${__dirname}/example.xlsx`, __dirname,
 //   {
 //     'example.json': jsonSerializer,
-//     'example.ts': tsSerializer,
-//     'exampleInterface.ts': tsInterfaceSerializer
+//     'exampleSolution.ts': tsSerializer,
+//     'example.ts': tsInterfaceSerializer
 //   }
 // )
 const context = loadContext(__dirname);
@@ -21,8 +21,8 @@ const outDir = Path.resolve(__dirname, 'out')
 fs.ensureDirSync(outDir)
 const serializers = {
   'example.json': jsonSerializer,
-  'example.ts': tsSerializer,
-  'exampleInterface.ts': tsInterfaceSerializer
+  'exampleSolution.ts': tsSerializer,
+  'example.ts': tsInterfaceSerializer
 };
 // generate context.ts and artifacts under example/out
 serializeContext(outDir, Object.values(serializers), context);

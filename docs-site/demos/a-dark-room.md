@@ -10,7 +10,7 @@ const demoUrl = withBase('/examples/a-dark-room/index.html')
 
 - **涵盖表格**：`resources`、`jobs`、`buildings`、`actions`、`events`、`global_config`
 - **展示要点**：多资源消耗、职业分配、事件脚本、序列化上下文与 React UI 模块化
-- **序列化产物**：`*.json`、`*.ts`、`*Interface.ts`、web demo (`out/index.html`)
+- **序列化产物**：`*.json`、`*.ts`（类型 + Repo 定义）、`*Solution.ts`（数据 + 默认实例）、web demo (`out/index.html`)
 
 <a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
   立即体验 Demo

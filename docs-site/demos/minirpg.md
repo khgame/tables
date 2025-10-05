@@ -10,7 +10,7 @@ const demoUrl = withBase('/examples/minirpg/index.html')
 
 - **涵盖表格**：`heroes`、`skills`、`items`、`enemies`、`stages`、`global_config`
 - **展示要点**：跨表引用、角色成长、战斗模拟、枚举上下文注入
-- **序列化产物**：`*.json`、`*.ts`、`*Interface.ts`、web demo (`out/index.html`)
+- **序列化产物**：`*.json`、`*.ts`（类型 + Repo 定义）、`*Solution.ts`（数据 + 默认实例）、web demo (`out/index.html`)
 
 <a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
   立即体验 Demo

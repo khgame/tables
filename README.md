@@ -138,25 +138,44 @@ sector category  serial
 // protocol/enemies.ts
 export type EnemiesTID = TableContext.KHTableID;
 export const toEnemiesTID = (value: string): EnemiesTID => value as EnemiesTID;
-export const enemiesTids: EnemiesTID[] = raw.tids.map(toEnemiesTID);
-export const enemies: Record<EnemiesTID, IEnemies> = Object.fromEntries(
-  Object.entries(raw.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])
-);
 
-// protocol/enemiesInterface.ts
 export interface IEnemies {
   _tid: EnemiesTID;
   name: string;
   hp: number;
-  // ...其他字段
 }
 
-// 业务代码中使用品牌化 ID：
-import { enemies, enemiesTids, toEnemiesTID } from './protocol/enemies';
+export type EnemiesRaw = {
+  tids: string[]
+  result: Record<string, IEnemies>
+  indexes?: Record<string, Record<string, string | string[]>>
+}
 
-const first: IEnemies = enemies[enemiesTids[0]];
-const fromString = toEnemiesTID('50010001');
-const specific = enemies[fromString];
+export class EnemiesRepo {
+  static fromRaw(data: EnemiesRaw): EnemiesRepo {
+    const records = Object.fromEntries(Object.entries(data.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])) as Record<EnemiesTID, IEnemies>
+    return new EnemiesRepo(records)
+  }
+  constructor(private readonly records: Record<EnemiesTID, IEnemies>) {}
+  get(tid: EnemiesTID): IEnemies { return this.records[tid] }
+}
+
+// protocol/enemiesSolution.ts
+import { IEnemies, EnemiesTID, toEnemiesTID, EnemiesRepo } from './enemies';
+
+const raw = { /* ... */ }
+export const enemiesRaw = raw;
+export const enemiesRecords: Record<EnemiesTID, IEnemies> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toEnemiesTID(tid), value as IEnemies])
+);
+export const enemiesRepo = EnemiesRepo.fromRaw(raw);
+
+// 业务代码
+import { enemiesRepo, enemiesRaw } from './protocol/enemiesSolution';
+import { toEnemiesTID } from './protocol/enemies';
+
+const first = enemiesRepo.values()[0];
+const specific = enemiesRepo.get(toEnemiesTID('50010001'));
 ```
 
 > 提示：`TableContext` 会额外导出基础的 `KHTableID` 类型；枚举类型需在标记行写成 `enum<HeroClass>`，才能生成 `TableContext.HeroClass` 引用。

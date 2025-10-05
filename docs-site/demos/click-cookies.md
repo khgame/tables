@@ -10,7 +10,7 @@ const demoUrl = withBase('/examples/click-cookies/index.html')
 
 - **涵盖表格**：`producers`、`upgrades`、`achievements`、`artifacts`、`global_config`
 - **展示要点**：增量产能计算、自动化队列、成就解锁与多层货币系统
-- **序列化产物**：`*.json`、`*.ts`、`*Interface.ts`、web demo (`out/index.html`)
+- **序列化产物**：`*.json`、`*.ts`（类型 + Repo 定义）、`*Solution.ts`（数据 + 默认实例）、web demo (`out/index.html`)
 
 <a class="vp-doc-button primary" :href="demoUrl" target="_blank" rel="noopener">
   立即体验 Demo

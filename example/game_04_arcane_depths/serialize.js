@@ -52,8 +52,8 @@ function main() {
     const serializerMap = {
       [`${stem}.json`]: jsonSerializer,
       [`${stem}.jsonx`]: jsonxSerializer,
-      [`${stem}.ts`]: tsSerializer,
-      [`${stem}Interface.ts`]: tsInterfaceSerializer
+      [`${stem}Solution.ts`]: tsSerializer,
+      [`${stem}.ts`]: tsInterfaceSerializer
     }
     serialize(src, outDir, serializerMap, context)
     console.log(`[arcane-depths] serialized ${file}`)

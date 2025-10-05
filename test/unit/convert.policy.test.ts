@@ -1,11 +1,15 @@
 import { tableConvert } from '../../src/plugin/convert'
 
-jest.mock('@khgame/schema', () => ({
-  exportJson: (_schema: any, _desc: any, convertedRows: any[]) => {
-    // Return one object per row for simplicity
-    return convertedRows.map((_, i) => ({ v: i }))
+jest.mock('@khgame/schema', () => {
+  const actual = jest.requireActual('@khgame/schema')
+  return {
+    ...actual,
+    exportJson: (_schema: any, _desc: any, convertedRows: any[]) => {
+      // Return one object per row for simplicity
+      return convertedRows.map((_, i) => ({ v: i }))
+    }
   }
-}))
+})
 
 function makeCollisionTable(): any {
   const values: Record<number, Record<string, any>> = {

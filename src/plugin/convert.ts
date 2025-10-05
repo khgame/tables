@@ -241,23 +241,41 @@ function normalizeValue(value: any, node: TypeNode, path: string): any {
 }
 
 function normalizePrimitive(value: any, node: PrimitiveType, path: string): any {
-  if (node.hint === 'bigint') {
+  const hintMeta = node.hintMeta
+  const strategy = hintMeta?.strategyHint ?? (node as any).hint
+  const location = path || 'value'
+  const aliasSuffix = hintMeta?.sourceAlias ? ` (alias: ${hintMeta.sourceAlias})` : ''
+
+  if (strategy === 'bigint') {
+    if (value === undefined || value === null) return value
     if (typeof value === 'string') return value
     if (typeof value === 'number' || typeof value === 'bigint') return String(value)
-    return value == null ? value : String(value)
+    return String(value)
   }
-  if (node.hint === 'int') {
-    if (typeof value === 'number' && !Number.isSafeInteger(value)) {
-      throw new Error(`[tables] numeric value ${value} at ${path || 'value'} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`)
+
+  if (strategy === 'int') {
+    if (typeof value === 'number') {
+      if (!Number.isSafeInteger(value)) {
+        throw new Error(
+          `[tables] numeric value ${value} at ${location}${aliasSuffix} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`
+        )
+      }
+      return value
     }
-    if (typeof value === 'string' && value.trim() !== '') {
-      const parsed = Number(value)
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (trimmed === '') return value
+      const parsed = Number(trimmed)
       if (!Number.isFinite(parsed) || !Number.isSafeInteger(parsed)) {
-        throw new Error(`[tables] numeric value ${value} at ${path || 'value'} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`)
+        throw new Error(
+          `[tables] numeric value ${value} at ${location}${aliasSuffix} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`
+        )
       }
       return parsed
     }
   }
+
   return value
 }
 

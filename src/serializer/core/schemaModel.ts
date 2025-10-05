@@ -1,5 +1,7 @@
 import deepEqual from 'deep-equal'
 import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
+import type { HintMetadata } from '../hintmeta/hintMetadata'
+import { resolveHintMetadata } from '../hintmeta/hintMetadata'
 
 export type PrimitiveName = 'string' | 'number' | 'boolean' | 'any' | 'undefined'
 
@@ -15,6 +17,7 @@ export type TypeNode =
 export interface PrimitiveType {
   kind: 'primitive';
   name: PrimitiveName;
+  hintMeta?: HintMetadata;
 }
 
 export interface LiteralType {
@@ -159,8 +162,10 @@ function convertTNode(node: any, context: any): TypeNode {
     case SupportedTypes.Float:
     case SupportedTypes.UFloat:
     case SupportedTypes.Int:
-    case SupportedTypes.UInt:
-      return createPrimitive('number')
+    case SupportedTypes.UInt: {
+      const hintMeta = resolveHintMetadata(node.rawName, node.tName)
+      return createPrimitive('number', hintMeta)
+    }
     case SupportedTypes.Boolean:
       return createPrimitive('boolean')
     case SupportedTypes.Undefined:
@@ -225,8 +230,11 @@ function convertEnumVariant(node: any, context: any): TypeNode {
   return createPrimitive('any')
 }
 
-function createPrimitive(name: PrimitiveName): PrimitiveType {
-  return { kind: 'primitive', name }
+function createPrimitive(name: PrimitiveName, hintMeta?: HintMetadata): PrimitiveType {
+  if (hintMeta && Object.keys(hintMeta).length === 0) {
+    return { kind: 'primitive', name }
+  }
+  return hintMeta ? { kind: 'primitive', name, hintMeta } : { kind: 'primitive', name }
 }
 
 function combineUnion(types: TypeNode[]): TypeNode | null {

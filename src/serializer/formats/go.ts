@@ -69,6 +69,10 @@ function renderTypeNode(node: TypeNode, depth: number): string {
 }
 
 function renderPrimitive(node: PrimitiveType): string {
+  const strategy = node.hintMeta?.strategyHint ?? (node as any).hint
+  if (strategy === 'bigint') {
+    return 'string'
+  }
   switch (node.name) {
     case 'string':
       return 'string'

@@ -185,6 +185,29 @@ describe('schemaModel buildSchemaModel', () => {
     }
   })
 
+  it('annotates primitive nodes with hint metadata for numeric aliases', () => {
+    const int64Tdm = makeTdm(SupportedTypes.Int, { rawName: 'int64' })
+    const uint32Tdm = makeTdm(SupportedTypes.UInt, { rawName: 'uint32' })
+    const schema = {
+      sdmType: SDMType.Obj,
+      marks: [int64Tdm, uint32Tdm],
+      mds: [],
+      markInd: 1
+    }
+    const model = buildSchemaModel(schema as any, { A: 'damage', B: 'count' }, ['A', 'B'], {})
+    expect(model.kind).toBe('object')
+    if (model.kind === 'object') {
+      const bigIntField = model.fields[0].type
+      const safeIntField = model.fields[1].type
+      expect(bigIntField.kind).toBe('primitive')
+      expect((bigIntField as any).hintMeta?.strategyHint).toBe('bigint')
+      expect((bigIntField as any).hintMeta?.sourceAlias).toBe('int64')
+      expect(safeIntField.kind).toBe('primitive')
+      expect((safeIntField as any).hintMeta?.strategyHint).toBe('int')
+      expect((safeIntField as any).hintMeta?.sourceAlias).toBe('uint32')
+    }
+  })
+
   it('converts pair nodes into inline objects', () => {
     const pairTdm = {
       markType: MarkType.TDM,

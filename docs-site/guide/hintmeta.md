@@ -21,7 +21,7 @@
 - HintMeta 负责把 Excel 别名的语义从解析阶段携带到转换阶段，本身不做硬性校验。
 - 强制约束仍由 `src/plugin/convert.ts::normalizePrimitive` 执行：它读取 `PrimitiveType.hintMeta.strategyHint` 决定是否触发安全整数检查或字符串化。
 - 若某列未生成 HintMeta，`normalizePrimitive` 会退回到默认行为，因此 HintMeta 的引入是增量增强，对现有表格保持兼容。
-- 验证接线是否成功的手段：检查 `schemaModel` 生成的 `PrimitiveType` 是否含有 `hintMeta` 字段，并通过 `npm run smoke` / 示例表格运行观察 `int64`、`uint64` 的输出与溢出报错路径。
+- 验证接线是否成功的手段：检查 `schemaModel` 生成的 `PrimitiveType` 是否含有 `hintMeta` 字段，可运行 `npm run test -- schemaModel` 与 `npm run test -- convert.hintmeta` 观察断言，也可以执行 `npm run smoke` 验证示例表格的字符串化输出。
 
 ## 评价指标
 
@@ -59,10 +59,9 @@ normalizePrimitive → 字符串化输出 / 安全整数校验
 
 ## 项目现状
 
-- `src/serializer/hintmeta/hintMetadata.ts` 已定义别名到 `strategyHint`/`flavor` 的映射，并提供单元测试校验。
-- `schemaModel.convertTNode` 在生成 `PrimitiveType` 时注入 `hintMeta.strategyHint` 与 `sourceAlias`。
-- `normalizePrimitive` 的错误信息会携带 `sourceAlias` 与数据路径，便于排查。
-- 示例表格新增 `int64`、`uint64`、普通 `int` 用例，验证字符串化与溢出报错逻辑。
+- `src/serializer/hintmeta/hintMetadata.ts` 维护别名 → `strategyHint`/`flavor` 映射，对应测试位于 `test/unit/hintMetadata.test.ts`。
+- `schemaModel.convertTNode` 在生成 `PrimitiveType` 时注入 `hintMeta.strategyHint` 与 `sourceAlias`，覆盖见 `test/unit/schemaModel.test.ts`。
+- `normalizePrimitive` 的错误信息会携带 `sourceAlias` 与数据路径；`test/unit/convert.hintmeta.test.ts` 验证字符串化与溢出报错逻辑。
 
 ## 重构计划回顾
 

@@ -1,8 +1,12 @@
 import { tableSchema } from '../../src/plugin/schema'
 
-jest.mock('@khgame/schema', () => ({
-  parseSchema: jest.fn(() => ({ parsed: true }))
-}))
+jest.mock('@khgame/schema', () => {
+  const actual = jest.requireActual('@khgame/schema')
+  return {
+    ...actual,
+    parseSchema: jest.fn(() => ({ parsed: true }))
+  }
+})
 
 jest.mock('../../src/plugin/erows', () => ({
   tableEnsureRows: jest.fn((table: any) => ({

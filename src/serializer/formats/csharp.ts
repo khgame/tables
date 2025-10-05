@@ -177,6 +177,10 @@ function renderTypeInfo(
 }
 
 function renderPrimitiveType(node: PrimitiveType): TypeInfo {
+  const strategy = node.hintMeta?.strategyHint ?? (node as any).hint
+  if (strategy === 'bigint') {
+    return { typeName: 'string', isValueType: false, isReferenceType: true }
+  }
   switch (node.name) {
     case 'string':
       return { typeName: 'string', isValueType: false, isReferenceType: true }

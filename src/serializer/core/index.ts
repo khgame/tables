@@ -4,6 +4,7 @@ import * as fs from 'fs-extra'
 import { FileWalker } from 'kht'
 import type { Context, Serializer } from '../../types'
 import { makeCamelName, makeInterfaceName } from '../../utils/names'
+import { resolveContextEnums } from '../../context/enumResolver'
 
 /**
  * serialize files with selected serializers
@@ -57,6 +58,7 @@ export function loadContext(dirIn: string) {
       context[blobName] = fs.readJsonSync(fileObj.path)
     }
   }, false, (file: string) => /^context\..*\.json/i.test(file) && !file.startsWith('~'))
+  resolveContextEnums(context, dirIn)
   if (process.env.TABLES_VERBOSE === '1') {
     console.log('context loaded:', dirIn, Object.keys(context))
   }

@@ -64,6 +64,10 @@
      - `int64` 转字符串。
      - 超范围 `int` 报错。
      - 正常范围数据不受影响。
+6. **枚举 alias 联动（Context Enum 扩展）**
+   - 在 context meta 中允许枚举条目同时接受字符串常量与对象描述。
+   - 对象形态支持 `{ ref: { table: string; field: string; filter?: ... } }` 等结构，解析阶段展开为 alias 值集合并保留来源信息。
+   - 与 HintMeta 协同，供校验器生成引用一致性检查，同时保持原有纯字符串写法的向后兼容。
 
 ## 阶段划分
 
@@ -73,6 +77,7 @@
 | 2 | 更新 `schemaModel.convertTNode` 组装 HintMeta | `PrimitiveType` 具备 `hintMeta`（strategyHint/sourceAlias/flavor） |
 | 3 | 强化 `normalizePrimitive` | 精准报错/字符串化逻辑上线 |
 | 4 | （可选）Serializer 调整与样例测试 | 新增覆盖用例 |
+| 5 | 扩展 context enum 支持 alias 引用并同步文档 | Context 元数据/解析逻辑更新 + 校验器扩展方案 |
 
 ## 风险与缓解
 
@@ -86,6 +91,7 @@
 - ✅ TS/Go/C# 序列化产物统一导出了 `BigIntStr` 类型别名，并随附 `BigIntStrHelper`（TS）、`BigIntStr` 方法（Go）、`BigIntStrConverter`（C#）等转换工具，调用方可以显式区分大整数语义并安全落地到目标语言原生类型。
 - ✅ `tableConvert` 针对 `bigint` 策略新增了非原始值输入的防御性错误，避免隐式 `[object Object]` 字符串化。
 - ✅ 单元测试覆盖 `convert.fullCoverage`、`serializer.formats.fullCoverage`、`serializer.test` 等场景，`jest.config.js` 维持 100% 行/支/函/语句指标（当前聚焦 convert 与 hintmeta 模块）。
+- ✅ Context enum alias 扩展：支持在同一枚举中混合字面量与 `{ ref: { table, field } }` 对象（或通过 `__refs`/`$refs` 追加），加载阶段读取 alias 列并展开，支持 filter/name/value/description/transform/prefix 等配置，文档同步更新。
 
 ## HintMeta 评价指标
 

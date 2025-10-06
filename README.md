@@ -248,6 +248,18 @@ const specific = enemiesRepo.get(toEnemiesTID('50010001'));
      }
    }
    ```
+   也可以切换为数组/混合写法，将字面量与 alias 引用合并：
+   ```jsonc
+   {
+     "SkillTag": [
+       "None",
+       { "name": "Basic", "value": "basic" },
+       { "ref": { "table": "configs/skill_labels.csv", "field": "aliasSkillTag" } },
+       { "ref": { "table": "configs/skill_labels.csv", "field": "aliasSkillTag", "filter": { "category": "active" }, "prefix": "Active", "transform": "pascal" } }
+     ]
+   }
+   ```
+   引用项会在 `loadContext` 阶段读取目标表（需为 alias 列），并保留 `filter`、`nameField`、`valueField`、`descriptionField`、`transform/prefix/suffix` 配置；旧式对象映射也可通过 `__refs`/`$refs` 字段追加引用。
    也可以拆分为 `context.enums.rarity.json`、`context.enums.element.json` 等多个文件，`loadContext` 会自动合并。
 2. **声明导出元信息**：在同一路径下创建 `context.meta.json`，指定哪些枚举需要被序列化器输出：
    ```json

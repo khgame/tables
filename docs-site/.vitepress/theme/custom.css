@@ -1,19 +1,75 @@
-:root {
+:root,
+:root.dark,
+.dark {
+  color-scheme: dark;
   --vp-c-brand-1: #38bdf8;
   --vp-c-brand-2: #22d3ee;
   --vp-c-brand-3: #0ea5e9;
-  --vp-c-text-code: #f4f4f5;
+
+  --vp-c-gray-1: rgba(148, 163, 184, 0.45);
+  --vp-c-gray-2: rgba(148, 163, 184, 0.32);
+  --vp-c-gray-3: rgba(148, 163, 184, 0.22);
+  --vp-c-gray-soft: rgba(148, 163, 184, 0.18);
+
   --vp-c-bg: #050714;
   --vp-c-bg-alt: #0a1022;
+  --vp-c-bg-elv: rgba(9, 16, 30, 0.92);
   --vp-c-bg-soft: rgba(12, 18, 33, 0.75);
   --vp-c-bg-mute: rgba(12, 18, 33, 0.55);
-  --vp-c-divider: rgba(107, 114, 128, 0.18);
-  --vp-c-divider-light: rgba(107, 114, 128, 0.08);
-  --vp-c-text-1: #e2e8f0;
-  --vp-c-text-2: rgba(226, 232, 240, 0.75);
-  --vp-c-text-3: rgba(148, 163, 184, 0.6);
+
+  --vp-c-border: rgba(59, 130, 246, 0.18);
+  --vp-c-divider: rgba(107, 114, 128, 0.22);
+  --vp-c-divider-light: rgba(107, 114, 128, 0.12);
+
+  --vp-c-text-1: #f1f5f9;
+  --vp-c-text-2: rgba(226, 232, 240, 0.78);
+  --vp-c-text-3: rgba(148, 163, 184, 0.62);
+  --vp-c-neutral: #f8fafc;
+  --vp-c-neutral-inverse: #020617;
+
+  --vp-c-default-1: rgba(148, 163, 184, 0.35);
+  --vp-c-default-2: rgba(148, 163, 184, 0.28);
+  --vp-c-default-3: rgba(148, 163, 184, 0.22);
+  --vp-c-default-soft: rgba(56, 189, 248, 0.16);
+
+  --vp-button-brand-text: #031021;
+  --vp-button-brand-bg: #38bdf8;
+  --vp-button-brand-border: rgba(14, 165, 233, 0.5);
+  --vp-button-brand-hover-text: #010a16;
+  --vp-button-brand-hover-bg: #22d3ee;
+  --vp-button-brand-hover-border: rgba(56, 189, 248, 0.6);
+  --vp-button-brand-active-text: #010a16;
+  --vp-button-brand-active-bg: #0ea5e9;
+  --vp-button-brand-active-border: rgba(56, 189, 248, 0.65);
+
+  --vp-button-alt-text: #e6f1ff;
+  --vp-button-alt-bg: rgba(15, 23, 42, 0.9);
+  --vp-button-alt-border: rgba(94, 234, 212, 0.42);
+  --vp-button-alt-hover-text: #f8fffb;
+  --vp-button-alt-hover-bg: rgba(14, 38, 55, 0.92);
+  --vp-button-alt-hover-border: rgba(94, 234, 212, 0.65);
+  --vp-button-alt-active-text: #f8fffb;
+  --vp-button-alt-active-bg: rgba(10, 30, 44, 0.94);
+  --vp-button-alt-active-border: rgba(94, 234, 212, 0.7);
+
+  --vp-nav-bg-color: rgba(8, 13, 26, 0.95);
+  --vp-nav-screen-bg-color: rgba(5, 9, 20, 0.96);
+  --vp-sidebar-bg-color: rgba(9, 13, 24, 0.86);
+
+  --vp-home-hero-name-color: #f8fafc;
+  --vp-home-hero-name-background: linear-gradient(120deg, #22d3ee, #7c3aed);
+
+  --vp-c-text-code: #f4f4f5;
+  --vp-code-bg: rgba(12, 21, 36, 0.72);
   --vp-code-block-bg: rgba(8, 17, 31, 0.92);
   --vp-code-block-shadow: 0 22px 45px rgba(7, 16, 32, 0.38);
+
+  --vp-shadow-1: 0 12px 28px rgba(3, 7, 18, 0.35);
+  --vp-shadow-2: 0 18px 40px rgba(3, 10, 24, 0.42);
+  --vp-shadow-3: 0 28px 58px rgba(2, 6, 23, 0.55);
+
+  --docs-hero-icon-primary: url('../public/icons/hero-quickstart.svg');
+  --docs-hero-icon-secondary: url('../public/icons/hero-demo.svg');
 }
 
 body {
@@ -118,7 +174,7 @@ body {
 }
 
 .VPNavBarMenuLink {
-  color: var(--vp-c-text-2);
+  color: var(--vp-c-text-1);
 }
 
 .VPNavBarMenuLink:hover {
@@ -176,20 +232,21 @@ body {
 .VPHomeHero .actions .action.primary a,
 .VPHomeHero .actions .action.primary button {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.96), rgba(14, 165, 233, 0.96)) !important;
-  color: #031021 !important;
-  border: 1px solid rgba(14, 165, 233, 0.5);
+  color: var(--vp-button-brand-text) !important;
+  border: 1px solid var(--vp-button-brand-border);
   box-shadow: 0 18px 34px rgba(14, 165, 233, 0.4);
 }
 
 .VPHomeHero .actions .action.primary a::before,
 .VPHomeHero .actions .action.primary button::before {
-  background-image: url('/icons/hero-quickstart.svg');
+  background-image: var(--docs-hero-icon-primary);
 }
 
 .VPHomeHero .actions .action.primary a:hover,
 .VPHomeHero .actions .action.primary button:hover {
   transform: translateY(-3px);
   box-shadow: 0 24px 40px rgba(14, 165, 233, 0.45);
+  border-color: var(--vp-button-brand-hover-border);
 }
 
 .VPHomeHero .actions .action.secondary a,
@@ -197,8 +254,8 @@ body {
 .VPHomeHero .actions .action.alt a,
 .VPHomeHero .actions .action.alt button {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(12, 63, 83, 0.88)) !important;
-  color: #e6f1ff !important;
-  border: 1px solid rgba(94, 234, 212, 0.42);
+  color: var(--vp-button-alt-text) !important;
+  border: 1px solid var(--vp-button-alt-border);
   box-shadow: 0 18px 34px rgba(13, 148, 136, 0.32);
 }
 
@@ -206,7 +263,7 @@ body {
 .VPHomeHero .actions .action.secondary button::before,
 .VPHomeHero .actions .action.alt a::before,
 .VPHomeHero .actions .action.alt button::before {
-  background-image: url('/icons/hero-demo.svg');
+  background-image: var(--docs-hero-icon-secondary);
 }
 
 .VPHomeHero .actions .action.secondary a:hover,
@@ -215,7 +272,7 @@ body {
 .VPHomeHero .actions .action.alt button:hover {
   transform: translateY(-3px);
   box-shadow: 0 24px 40px rgba(94, 234, 212, 0.35);
-  border-color: rgba(94, 234, 212, 0.65);
+  border-color: var(--vp-button-alt-hover-border);
 }
 
 .demo-grid {

@@ -1,4 +1,4 @@
-@,enum<RoleType>,string,string,string?,string?,string?,string?
-tid,roleType,name,entryEffect,exitEffect,enablesCards,notes,defeatCondition
-3001,Character,张兴朝,登场后允许我方发动所有合体技。,被 See You Again 迫使离场时移出棋盘。,1004|1007,,See You Again 发动时离场
-3002,Location,什刹海,记录所有被移除的棋子，可供相关技能选择。,棋盘被重置时清空。,,用于表示“墓地”概念。,
+@,enum<RoleType>,string,string,string?,string?,string?,string?,string?,string
+tid,roleType,name,entryEffect,exitEffect,enablesCards,notes,defeatCondition,quote,artwork
+3001,Character,张兴朝,登场后允许我方发动所有合体技。,被 See You Again 迫使离场时移出棋盘。,1004|1007,,See You Again 发动时离场,技能五！,https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=600&q=80
+3002,Location,什刹海,记录所有被移除的棋子，可供相关技能选择。,棋盘被重置时清空。,,用于表示"墓地"概念。,,什刹海在此。,https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=600&q=80

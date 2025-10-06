@@ -52,7 +52,40 @@ function writeArtifacts() {
     console.log(`[game07] serialized ${Path.basename(src)}`)
   }
 
+  writeWebDemo(outDir)
   console.log(`[game07] artifacts written to ${outDir}`)
+}
+
+function writeWebDemo(targetDir) {
+  const templatePath = Path.resolve(baseDir, 'ui/index.html')
+  if (!fs.existsSync(templatePath)) {
+    console.warn('[game07] ui/index.html not found, skip web demo generation')
+    return
+  }
+
+  const replacements = new Map([
+    ['__CARDS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'cards.json'))],
+    ['__CHARACTERS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'characters.json'))]
+  ])
+
+  let html = fs.readFileSync(templatePath, 'utf8')
+  for (const [token, value] of replacements.entries()) {
+    if (!value) continue
+    html = html.replace(new RegExp(token, 'g'), value)
+  }
+
+  const destPath = Path.resolve(targetDir, 'index.html')
+  fs.writeFileSync(destPath, html)
+  console.log(`[game07] wrote web demo to ${destPath}`)
+}
+
+function loadJsonForScript(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`[game07] ${filePath} missing, placeholder left empty`)
+    return 'null'
+  }
+  const json = fs.readJsonSync(filePath)
+  return JSON.stringify(json, null, 2).replace(/</g, '\\u003c')
 }
 
 if (require.main === module) {

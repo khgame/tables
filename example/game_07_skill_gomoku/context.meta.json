@@ -1,8 +1,13 @@
 {
+  "exports": {
+    "enum": ["enums"]
+  },
   "indexes": {
     "cards": {
       "byNameEn": "nameEn",
       "byType": "type",
+      "byRarity": "rarity",
+      "byTiming": "timing",
       "byRequires": {
         "path": "requires",
         "allowEmpty": true
@@ -24,7 +29,8 @@
       }
     },
     "characters": {
-      "byRole": "roleType"
+      "byRole": "roleType",
+      "byName": "name"
     }
   }
 }

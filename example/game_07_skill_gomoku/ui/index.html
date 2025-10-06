@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>技能五子棋 - Skill Gomoku</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Ma Shan Zheng"', 'cursive'],
+              body: ['"Noto Sans SC"', 'sans-serif']
+            },
+            colors: {
+              board: '#d4a574',
+              stone: {
+                black: '#1a1a1a',
+                white: '#f5f5f5'
+              },
+              card: {
+                attack: '#ff6b35',
+                control: '#9b59b6',
+                counter: '#3498db',
+                support: '#f1c40f'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 font-body">
+    <div id="app"></div>
+
+    <script>
+      window.TABLES_DATA = {
+        cards: __CARDS_JSON__,
+        characters: __CHARACTERS_JSON__
+      };
+    </script>
+
+    <script type="text/babel">
+      const { useState, useMemo, useCallback, useEffect } = React;
+      const data = window.TABLES_DATA;
+
+      // ==================== AI Logic ====================
+
+      function evaluatePosition(board, player) {
+        // Simple evaluation: count potential fours/threes
+        let score = 0;
+        const opponent = 1 - player;
+
+        for (let row = 0; row < board.size; row++) {
+          for (let col = 0; col < board.size; col++) {
+            if (board.get(row, col) !== player) continue;
+
+            // Check all directions
+            const directions = [[0,1], [1,0], [1,1], [1,-1]];
+            for (const [dr, dc] of directions) {
+              let count = 1;
+              let empty = 0;
+
+              // Forward
+              for (let i = 1; i < 5; i++) {
+                const r = row + dr * i;
+                const c = col + dc * i;
+                const cell = board.get(r, c);
+                if (cell === player) count++;
+                else if (cell === null) empty++;
+                else break;
+              }
+
+              // Backward
+              for (let i = 1; i < 5; i++) {
+                const r = row - dr * i;
+                const c = col - dc * i;
+                const cell = board.get(r, c);
+                if (cell === player) count++;
+                else if (cell === null) empty++;
+                else break;
+              }
+
+              if (count >= 4) score += 1000;
+              else if (count === 3 && empty >= 2) score += 100;
+              else if (count === 2 && empty >= 3) score += 10;
+            }
+          }
+        }
+
+        // Penalize opponent's strong positions
+        for (let row = 0; row < board.size; row++) {
+          for (let col = 0; col < board.size; col++) {
+            if (board.get(row, col) !== opponent) continue;
+            const directions = [[0,1], [1,0], [1,1], [1,-1]];
+            for (const [dr, dc] of directions) {
+              let count = 1;
+              for (let i = 1; i < 5; i++) {
+                const r = row + dr * i;
+                const c = col + dc * i;
+                if (board.get(r, c) !== opponent) break;
+                count++;
+              }
+              if (count >= 4) score -= 800;
+              else if (count === 3) score -= 80;
+            }
+          }
+        }
+
+        return score;
+      }
+
+      function findBestMove(board, player) {
+        let bestScore = -Infinity;
+        let bestMove = null;
+
+        // Try all empty positions
+        for (let row = 0; row < board.size; row++) {
+          for (let col = 0; col < board.size; col++) {
+            if (board.get(row, col) !== null) continue;
+
+            // Skip if too far from existing stones (optimization)
+            let hasNearby = false;
+            for (let dr = -2; dr <= 2; dr++) {
+              for (let dc = -2; dc <= 2; dc++) {
+                const r = row + dr;
+                const c = col + dc;
+                if (board.get(r, c) !== null) {
+                  hasNearby = true;
+                  break;
+                }
+              }
+              if (hasNearby) break;
+            }
+
+            if (!hasNearby && board.history.length > 0) continue;
+
+            const testBoard = board.clone();
+            testBoard.place(row, col, player);
+
+            // Check immediate win
+            if (testBoard.checkWin(player)) {
+              return { row, col };
+            }
+
+            const score = evaluatePosition(testBoard, player);
+            if (score > bestScore) {
+              bestScore = score;
+              bestMove = { row, col };
+            }
+          }
+        }
+
+        // Fallback: place near center
+        if (!bestMove) {
+          const center = Math.floor(board.size / 2);
+          for (let offset = 0; offset < 3; offset++) {
+            for (const [dr, dc] of [[0,0], [1,0], [0,1], [-1,0], [0,-1]]) {
+              const r = center + dr * offset;
+              const c = center + dc * offset;
+              if (board.get(r, c) === null) {
+                bestMove = { row: r, col: c };
+                break;
+              }
+            }
+            if (bestMove) break;
+          }
+        }
+
+        return bestMove || { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+      }
+
+      function aiShouldPlayCard(gameState) {
+        const { hands, currentPlayer, turnCount, board, characters } = gameState;
+        if (turnCount < SKILL_START_TURN) return null;
+
+        const hand = hands[currentPlayer];
+        const opponent = 1 - currentPlayer;
+
+        // Check if we have "张兴朝" card and should summon
+        const summonCard = hand.find(c => (c.tags || '').includes('Summon'));
+        if (summonCard && !characters[currentPlayer]) {
+          if (Math.random() < 0.7) return hand.indexOf(summonCard);
+        }
+
+        // Use DirectWin if available
+        const winCard = hand.find(c => (c.tags || '').includes('DirectWin'));
+        if (winCard && Math.random() < 0.3) return hand.indexOf(winCard);
+
+        // Use Removal/Freeze if opponent is strong
+        const opponentStones = board.grid.flat().filter(c => c === opponent).length;
+        if (opponentStones >= 8) {
+          const removalCard = hand.find(c => (c.tags || '').includes('Removal') || (c.tags || '').includes('Freeze'));
+          if (removalCard && Math.random() < 0.4) return hand.indexOf(removalCard);
+        }
+
+        return null;
+      }
+
+      function aiSelectCounterCard(gameState, pendingCard) {
+        const { hands, currentPlayer } = gameState;
+        const hand = hands[currentPlayer];
+        const { card } = pendingCard;
+
+        // Find matching counter card
+        const counters = (card.counteredBy || '').split('|').filter(Boolean);
+        for (const counterName of counters) {
+          const counterCard = hand.find(c => c.nameZh === counterName || c.nameEn === counterName);
+          if (counterCard) {
+            // AI uses counter 60% of the time
+            if (Math.random() < 0.6) {
+              return counterCard;
+            }
+          }
+        }
+
+        return null;
+      }
+
+      // ==================== Game State Hook ====================
+
+      const BOARD_SIZE = 15;
+      const INITIAL_HAND_SIZE = 2;
+      const DRAW_INTERVAL = 3;
+      const SKILL_START_TURN = 5;
+
+      const Player = { BLACK: 0, WHITE: 1 };
+
+      const GamePhase = {
+        SETUP: 'setup',
+        PLAYING: 'playing',
+        CARD_SELECTING: 'card_selecting',
+        COUNTER_WINDOW: 'counter_window',
+        GAME_OVER: 'game_over'
+      };
+
+      class GomokuBoard {
+        constructor(size = BOARD_SIZE) {
+          this.size = size;
+          this.grid = Array(size).fill(null).map(() => Array(size).fill(null));
+          this.history = [];
+        }
+
+        get(row, col) {
+          if (row < 0 || row >= this.size || col < 0 || col >= this.size) return null;
+          return this.grid[row][col];
+        }
+
+        place(row, col, player) {
+          if (this.get(row, col) !== null) return false;
+          this.grid[row][col] = player;
+          this.history.push({ row, col, player });
+          return true;
+        }
+
+        remove(row, col) {
+          const prev = this.grid[row][col];
+          this.grid[row][col] = null;
+          return prev;
+        }
+
+        checkWin(player) {
+          const directions = [
+            [0, 1],  // horizontal
+            [1, 0],  // vertical
+            [1, 1],  // diagonal \
+            [1, -1]  // diagonal /
+          ];
+
+          for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col < this.size; col++) {
+              if (this.grid[row][col] !== player) continue;
+
+              for (const [dr, dc] of directions) {
+                let count = 1;
+                for (let i = 1; i < 5; i++) {
+                  const r = row + dr * i;
+                  const c = col + dc * i;
+                  if (this.get(r, c) !== player) break;
+                  count++;
+                }
+                if (count >= 5) return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        clone() {
+          const copy = new GomokuBoard(this.size);
+          copy.grid = this.grid.map(row => [...row]);
+          copy.history = [...this.history];
+          return copy;
+        }
+      }
+
+      class CardDeck {
+        constructor(allCards) {
+          this.allCards = allCards;
+          this.reset();
+        }
+
+        reset() {
+          this.deck = [...this.allCards].sort(() => Math.random() - 0.5);
+          this.discardPile = [];
+        }
+
+        draw(count = 1) {
+          const drawn = [];
+          for (let i = 0; i < count; i++) {
+            if (this.deck.length === 0) {
+              if (this.discardPile.length === 0) break;
+              this.deck = [...this.discardPile].sort(() => Math.random() - 0.5);
+              this.discardPile = [];
+            }
+            if (this.deck.length > 0) {
+              drawn.push(this.deck.pop());
+            }
+          }
+          return drawn;
+        }
+
+        discard(card) {
+          this.discardPile.push(card);
+        }
+      }
+
+      function useGameState() {
+        const [gameState, setGameState] = useState({
+          phase: GamePhase.SETUP,
+          board: new GomokuBoard(),
+          currentPlayer: Player.BLACK,
+          turnCount: 0,
+          moveCount: [0, 0], // moves per player
+          hands: [[], []],
+          decks: [null, null],
+          graveyard: [],
+          characters: { [Player.BLACK]: null, [Player.WHITE]: null },
+          frozenUntil: [0, 0],
+          pendingCard: null,
+          counterWindow: 3000, // 3秒反击窗口
+          counterTimeout: null,
+          winner: null,
+          logs: [],
+          aiEnabled: false
+        });
+
+        const addLog = useCallback((message, type = 'info') => {
+          setGameState(prev => ({
+            ...prev,
+            logs: [...prev.logs, { message, type, time: Date.now() }]
+          }));
+        }, []);
+
+        const startGame = useCallback((enableAI = false) => {
+          const allCards = Object.values(data.cards.result);
+          const deck0 = new CardDeck(allCards);
+          const deck1 = new CardDeck(allCards);
+
+          setGameState(prev => ({
+            ...prev,
+            phase: GamePhase.PLAYING,
+            decks: [deck0, deck1],
+            hands: [deck0.draw(INITIAL_HAND_SIZE), deck1.draw(INITIAL_HAND_SIZE)],
+            aiEnabled: enableAI,
+            logs: [{
+              message: `游戏开始！黑方先手。${enableAI ? ' (AI对战模式)' : ''}`,
+              type: 'start',
+              time: Date.now()
+            }]
+          }));
+        }, []);
+
+        const placeStone = useCallback((row, col) => {
+          setGameState(prev => {
+            if (prev.phase !== GamePhase.PLAYING) return prev;
+            if (prev.frozenUntil[prev.currentPlayer] > prev.turnCount) {
+              return { ...prev, logs: [...prev.logs, { message: '你被冻结了！', type: 'error', time: Date.now() }] };
+            }
+
+            const newBoard = prev.board.clone();
+            if (!newBoard.place(row, col, prev.currentPlayer)) return prev;
+
+            const newMoveCount = [...prev.moveCount];
+            newMoveCount[prev.currentPlayer]++;
+
+            const newLogs = [...prev.logs, {
+              message: `${prev.currentPlayer === Player.BLACK ? '黑方' : '白方'}落子 (${row}, ${col})`,
+              type: 'move',
+              time: Date.now()
+            }];
+
+            if (newBoard.checkWin(prev.currentPlayer)) {
+              return {
+                ...prev,
+                board: newBoard,
+                phase: GamePhase.GAME_OVER,
+                winner: prev.currentPlayer,
+                logs: [...newLogs, {
+                  message: `${prev.currentPlayer === Player.BLACK ? '黑方' : '白方'}获胜！`,
+                  type: 'win',
+                  time: Date.now()
+                }]
+              };
+            }
+
+            const nextPlayer = 1 - prev.currentPlayer;
+            const totalMoves = newMoveCount[0] + newMoveCount[1];
+            let newHands = [...prev.hands];
+
+            // Draw card every 3 moves
+            if (totalMoves % DRAW_INTERVAL === 0) {
+              const drawn = prev.decks[nextPlayer].draw(1);
+              if (drawn.length > 0) {
+                newHands[nextPlayer] = [...newHands[nextPlayer], ...drawn];
+                newLogs.push({
+                  message: `${nextPlayer === Player.BLACK ? '黑方' : '白方'}抽取了1张卡牌`,
+                  type: 'draw',
+                  time: Date.now()
+                });
+              }
+            }
+
+            return {
+              ...prev,
+              board: newBoard,
+              currentPlayer: nextPlayer,
+              turnCount: prev.turnCount + 1,
+              moveCount: newMoveCount,
+              hands: newHands,
+              logs: newLogs
+            };
+          });
+        }, []);
+
+        const playCard = useCallback((cardIndex) => {
+          setGameState(prev => {
+            if (prev.turnCount < SKILL_START_TURN) {
+              return { ...prev, logs: [...prev.logs, { message: '第5步后才能使用技能！', type: 'error', time: Date.now() }] };
+            }
+
+            const card = prev.hands[prev.currentPlayer][cardIndex];
+            if (!card) return prev;
+
+            // Check requirements
+            if (card.requires) {
+              const charName = card.requires;
+              if (!prev.characters[prev.currentPlayer] || prev.characters[prev.currentPlayer].name !== charName) {
+                return { ...prev, logs: [...prev.logs, { message: `需要${charName}在场！`, type: 'error', time: Date.now() }] };
+              }
+            }
+
+            const newHands = [...prev.hands];
+            newHands[prev.currentPlayer] = newHands[prev.currentPlayer].filter((_, i) => i !== cardIndex);
+
+            return {
+              ...prev,
+              phase: GamePhase.COUNTER_WINDOW,
+              pendingCard: { card, player: prev.currentPlayer },
+              hands: newHands,
+              logs: [...prev.logs, {
+                message: `${prev.currentPlayer === Player.BLACK ? '黑方' : '白方'}使用 ${card.nameZh}`,
+                type: 'card',
+                time: Date.now()
+              }]
+            };
+          });
+        }, []);
+
+        const resolveCard = useCallback((countered = false, counterCard = null) => {
+          setGameState(prev => {
+            if (!prev.pendingCard) return prev;
+
+            const { card, player } = prev.pendingCard;
+            let newState = { ...prev, pendingCard: null, phase: GamePhase.PLAYING, counterTimeout: null };
+
+            if (countered && counterCard) {
+              newState.logs = [...newState.logs, {
+                message: `${card.nameZh} 被 ${counterCard.nameZh} 反制！`,
+                type: 'counter',
+                time: Date.now()
+              }];
+              // Remove counter card from opponent's hand
+              const opponent = 1 - player;
+              const counterIdx = newState.hands[opponent].findIndex(c => c._tid === counterCard._tid);
+              if (counterIdx !== -1) {
+                newState.hands[opponent] = newState.hands[opponent].filter((_, i) => i !== counterIdx);
+                prev.decks[opponent].discard(counterCard);
+              }
+              prev.decks[player].discard(card);
+              return newState;
+            }
+
+            // Apply card effect
+            newState = applyCardEffect(newState, card, player);
+            prev.decks[player].discard(card);
+            return newState;
+          });
+        }, []);
+
+        const summonCharacter = useCallback((charId) => {
+          setGameState(prev => {
+            const char = Object.values(data.characters.result).find(c => c._tid === String(charId));
+            if (!char) return prev;
+
+            return {
+              ...prev,
+              characters: { ...prev.characters, [prev.currentPlayer]: char },
+              logs: [...prev.logs, {
+                message: `${prev.currentPlayer === Player.BLACK ? '黑方' : '白方'}召唤了 ${char.name}`,
+                type: 'summon',
+                time: Date.now()
+              }]
+            };
+          });
+        }, []);
+
+        return {
+          gameState,
+          startGame,
+          placeStone,
+          playCard,
+          resolveCard,
+          summonCharacter,
+          addLog
+        };
+      }
+
+      // ==================== AI Execution Hook ====================
+
+      function useAIPlayer(gameState, placeStone, playCard, resolveCard) {
+        useEffect(() => {
+          if (!gameState.aiEnabled) return;
+          if (gameState.phase !== GamePhase.PLAYING) return;
+          if (gameState.currentPlayer !== Player.WHITE) return; // AI is white
+          if (gameState.frozenUntil[Player.WHITE] > gameState.turnCount) return;
+
+          // AI delay for more natural feeling
+          const timer = setTimeout(() => {
+            // Check if should play card first
+            const cardIdx = aiShouldPlayCard(gameState);
+            if (cardIdx !== null && cardIdx >= 0) {
+              playCard(cardIdx);
+              return;
+            }
+
+            // Find and make best move
+            const move = findBestMove(gameState.board, Player.WHITE);
+            if (move) {
+              placeStone(move.row, move.col);
+            }
+          }, 800);
+
+          return () => clearTimeout(timer);
+        }, [gameState.currentPlayer, gameState.phase, gameState.turnCount, gameState.aiEnabled]);
+
+        // AI counter window
+        useEffect(() => {
+          if (!gameState.aiEnabled) return;
+          if (gameState.phase !== GamePhase.COUNTER_WINDOW) return;
+          if (!gameState.pendingCard) return;
+
+          const { player } = gameState.pendingCard;
+          if (player === Player.WHITE) return; // Don't counter own cards
+
+          const timer = setTimeout(() => {
+            const counterCard = aiSelectCounterCard(gameState, gameState.pendingCard);
+            if (counterCard) {
+              resolveCard(true, counterCard);
+            } else {
+              resolveCard(false);
+            }
+          }, 1500);
+
+          return () => clearTimeout(timer);
+        }, [gameState.phase, gameState.pendingCard, gameState.aiEnabled]);
+      }
+
+      // ==================== UI Components ====================
+
+      function applyCardEffect(state, card, player) {
+        const newState = { ...state };
+        const tags = (card.tags || '').split('|').filter(Boolean);
+
+        // DirectWin
+        if (tags.includes('DirectWin')) {
+          newState.phase = GamePhase.GAME_OVER;
+          newState.winner = player;
+          newState.logs = [...newState.logs, { message: `${card.nameZh}！${player === Player.BLACK ? '黑方' : '白方'}获胜！`, type: 'win', time: Date.now() }];
+          return newState;
+        }
+
+        // Freeze
+        if (tags.includes('Freeze')) {
+          const opponent = 1 - player;
+          newState.frozenUntil[opponent] = state.turnCount + 2;
+          newState.logs = [...newState.logs, { message: `${1 - player === Player.BLACK ? '黑方' : '白方'}被冻结2回合`, type: 'effect', time: Date.now() }];
+        }
+
+        // Removal (飞沙走石 / 保洁)
+        if (tags.includes('Removal')) {
+          const opponent = 1 - player;
+          const opponentStones = [];
+          for (let r = 0; r < state.board.size; r++) {
+            for (let c = 0; c < state.board.size; c++) {
+              if (state.board.get(r, c) === opponent) {
+                opponentStones.push([r, c]);
+              }
+            }
+          }
+          if (opponentStones.length > 0) {
+            const [row, col] = opponentStones[Math.floor(Math.random() * opponentStones.length)];
+            newState.board = state.board.clone();
+            newState.board.remove(row, col);
+            newState.graveyard = [...state.graveyard, { row, col, player: opponent }];
+            newState.logs = [...newState.logs, { message: `对方棋子 (${row}, ${col}) 被移除`, type: 'effect', time: Date.now() }];
+          }
+        }
+
+        // Summon
+        if (tags.includes('Summon')) {
+          const char = Object.values(data.characters.result).find(c => c.name === '张兴朝');
+          if (char) {
+            newState.characters = { ...newState.characters, [player]: char };
+            newState.logs = [...newState.logs, { message: `召唤了 ${char.name}`, type: 'summon', time: Date.now() }];
+          }
+        }
+
+        // SkipTurn
+        if (tags.includes('SkipTurn')) {
+          newState.frozenUntil[1 - player] = state.turnCount + 1;
+          newState.logs = [...newState.logs, { message: `对方跳过1回合`, type: 'effect', time: Date.now() }];
+        }
+
+        return newState;
+      }
+
+      // ==================== UI Components ====================
+
+      function BoardCell({ row, col, value, onClick, isLastMove }) {
+        const isEmpty = value === null;
+        const canPlace = isEmpty && onClick;
+
+        return (
+          <button
+            onClick={canPlace ? () => onClick(row, col) : undefined}
+            disabled={!canPlace}
+            className={`
+              relative w-full aspect-square border border-amber-800/30
+              ${isEmpty ? 'hover:bg-amber-200/50 cursor-pointer' : 'cursor-default'}
+              ${isLastMove ? 'ring-2 ring-red-500' : ''}
+              transition-all
+            `}
+          >
+            {value === Player.BLACK && (
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-gray-900 to-black shadow-lg" />
+            )}
+            {value === Player.WHITE && (
+              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-gray-100 to-white shadow-lg" />
+            )}
+          </button>
+        );
+      }
+
+      function Board({ board, onCellClick, disabled }) {
+        const lastMove = board.history[board.history.length - 1];
+
+        return (
+          <div className="bg-board p-4 rounded-lg shadow-2xl" style={{
+            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(139, 69, 19, 0.1) 35px, rgba(139, 69, 19, 0.1) 36px),
+                             repeating-linear-gradient(90deg, transparent, transparent 35px, rgba(139, 69, 19, 0.1) 35px, rgba(139, 69, 19, 0.1) 36px)`
+          }}>
+            <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${board.size}, 1fr)` }}>
+              {Array(board.size).fill(null).map((_, row) =>
+                Array(board.size).fill(null).map((_, col) => (
+                  <BoardCell
+                    key={`${row}-${col}`}
+                    row={row}
+                    col={col}
+                    value={board.get(row, col)}
+                    onClick={disabled ? null : onCellClick}
+                    isLastMove={lastMove && lastMove.row === row && lastMove.col === col}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function Card({ card, onClick, disabled }) {
+        const typeColors = {
+          Attack: 'from-card-attack to-orange-600',
+          Control: 'from-card-control to-purple-700',
+          Counter: 'from-card-counter to-blue-600',
+          Support: 'from-card-support to-yellow-600'
+        };
+
+        const rarityBorder = {
+          Common: 'border-gray-400',
+          Rare: 'border-blue-500',
+          Legendary: 'border-yellow-500'
+        };
+
+        return (
+          <button
+            onClick={disabled ? undefined : onClick}
+            disabled={disabled}
+            className={`
+              relative p-3 rounded-xl border-2 ${rarityBorder[card.rarity] || 'border-gray-400'}
+              bg-gradient-to-br ${typeColors[card.type] || 'from-gray-500 to-gray-700'}
+              text-white shadow-lg transform transition-all
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-xl cursor-pointer'}
+              min-w-[140px]
+            `}
+          >
+            <div className="text-xs opacity-80 mb-1">{card.type}</div>
+            <div className="font-bold text-sm mb-2">{card.nameZh}</div>
+            <div className="text-xs opacity-90 mb-2 line-clamp-3">{card.effect}</div>
+            {card.quote && (
+              <div className="text-xs italic opacity-75 border-t border-white/20 pt-2 mt-2">
+                "{card.quote}"
+              </div>
+            )}
+          </button>
+        );
+      }
+
+      function Hand({ cards, onCardClick, disabled, player }) {
+        return (
+          <div className="bg-white/80 backdrop-blur p-4 rounded-lg shadow">
+            <h3 className="font-bold mb-3">{player === Player.BLACK ? '黑方手牌' : '白方手牌'}</h3>
+            <div className="flex gap-2 flex-wrap">
+              {cards.length === 0 && <div className="text-gray-500 text-sm">无手牌</div>}
+              {cards.map((card, idx) => (
+                <Card
+                  key={idx}
+                  card={card}
+                  onClick={() => onCardClick(idx)}
+                  disabled={disabled}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      function GameLog({ logs }) {
+        const containerRef = React.useRef(null);
+
+        useEffect(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          }
+        }, [logs]);
+
+        const typeColors = {
+          start: 'text-green-700 font-bold',
+          move: 'text-blue-700',
+          card: 'text-purple-700 font-semibold',
+          effect: 'text-orange-700',
+          counter: 'text-red-700',
+          draw: 'text-teal-700',
+          summon: 'text-pink-700 font-semibold',
+          win: 'text-green-800 font-bold text-lg',
+          error: 'text-red-600'
+        };
+
+        return (
+          <div className="bg-white/80 backdrop-blur p-4 rounded-lg shadow h-64 overflow-y-auto" ref={containerRef}>
+            <h3 className="font-bold mb-3 sticky top-0 bg-white/90">游戏日志</h3>
+            <div className="space-y-1 text-sm">
+              {logs.map((log, idx) => (
+                <div key={idx} className={typeColors[log.type] || 'text-gray-700'}>
+                  {log.message}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      function GameUI() {
+        const { gameState, startGame, placeStone, playCard, resolveCard } = useGameState();
+        const { phase, board, currentPlayer, hands, characters, winner, logs, turnCount, pendingCard, aiEnabled } = gameState;
+
+        // Enable AI
+        useAIPlayer(gameState, placeStone, playCard, resolveCard);
+
+        const [selectedCounterCard, setSelectedCounterCard] = useState(null);
+
+        const currentPlayerText = currentPlayer === Player.BLACK ? '黑方' : '白方';
+        const canPlay = phase === GamePhase.PLAYING && turnCount >= SKILL_START_TURN;
+
+        // Get available counter cards
+        const availableCounters = useMemo(() => {
+          if (!pendingCard || currentPlayer === pendingCard.player) return [];
+          const counters = (pendingCard.card.counteredBy || '').split('|').filter(Boolean);
+          return hands[currentPlayer].filter(card =>
+            counters.includes(card.nameZh) || counters.includes(card.nameEn)
+          );
+        }, [pendingCard, hands, currentPlayer]);
+
+        return (
+          <div className="min-h-screen p-6">
+            <header className="mb-8 text-center">
+              <h1 className="font-display text-6xl text-amber-900 mb-2">技能五子棋</h1>
+              <p className="text-gray-700 text-lg">@khgame/tables 演示 - 小品梗元素卡牌化</p>
+            </header>
+
+            {phase === GamePhase.SETUP && (
+              <div className="max-w-2xl mx-auto text-center bg-white/90 p-8 rounded-2xl shadow-2xl">
+                <h2 className="text-3xl font-bold mb-4">游戏规则</h2>
+                <div className="text-left space-y-3 mb-6 text-gray-700">
+                  <p>• 15×15 五子棋棋盘，连成五子获胜</p>
+                  <p>• 开局各抽2张卡牌，每落子3步抽1张</p>
+                  <p>• 第5步起可使用技能卡牌</p>
+                  <p>• 进攻卡在落子前使用，反击卡在对方使用技能时响应</p>
+                  <p>• 合体技需要"张兴朝"在场</p>
+                </div>
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={() => startGame(false)}
+                    className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-8 py-4 rounded-full text-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                  >
+                    双人对战
+                  </button>
+                  <button
+                    onClick={() => startGame(true)}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full text-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                  >
+                    AI对战
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {phase !== GamePhase.SETUP && (
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-white/90 backdrop-blur p-4 rounded-lg shadow">
+                    <div className="text-2xl font-bold mb-2">
+                      当前回合: {currentPlayerText}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      回合数: {turnCount} {turnCount < SKILL_START_TURN && `(第${SKILL_START_TURN}步可用技能)`}
+                    </div>
+                    {characters[Player.BLACK] && (
+                      <div className="mt-2 text-sm">黑方: {characters[Player.BLACK].name} 在场</div>
+                    )}
+                    {characters[Player.WHITE] && (
+                      <div className="mt-2 text-sm">白方: {characters[Player.WHITE].name} 在场</div>
+                    )}
+                  </div>
+
+                  <GameLog logs={logs} />
+
+                  {phase === GamePhase.GAME_OVER && (
+                    <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-lg shadow-2xl text-center">
+                      <h2 className="text-3xl font-bold text-white mb-4">
+                        {winner === Player.BLACK ? '黑方' : '白方'} 获胜！
+                      </h2>
+                      <button
+                        onClick={startGame}
+                        className="bg-white text-orange-600 px-6 py-3 rounded-full font-bold hover:shadow-lg transition-all"
+                      >
+                        再来一局
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                  <div className="lg:col-span-3">
+                    <Board
+                      board={board}
+                      onCellClick={placeStone}
+                      disabled={phase !== GamePhase.PLAYING || pendingCard !== null}
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2 space-y-4">
+                    <Hand
+                      cards={hands[currentPlayer]}
+                      onCardClick={playCard}
+                      disabled={!canPlay || pendingCard !== null}
+                      player={currentPlayer}
+                    />
+
+                    {pendingCard && (
+                      <div className="bg-yellow-100 border-2 border-yellow-500 p-4 rounded-lg">
+                        <div className="font-bold mb-2">
+                          {pendingCard.player === Player.BLACK ? '黑方' : '白方'} 使用: {pendingCard.card.nameZh}
+                        </div>
+                        <div className="text-sm mb-3">{pendingCard.card.effect}</div>
+
+                        {currentPlayer !== pendingCard.player && availableCounters.length > 0 && !aiEnabled && (
+                          <div className="mb-3">
+                            <div className="text-sm font-semibold mb-2">可用反击卡:</div>
+                            <div className="flex gap-2 flex-wrap mb-2">
+                              {availableCounters.map((card, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setSelectedCounterCard(card)}
+                                  className={`px-3 py-2 rounded-lg text-sm ${
+                                    selectedCounterCard?._tid === card._tid
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                  }`}
+                                >
+                                  {card.nameZh}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  if (selectedCounterCard) {
+                                    resolveCard(true, selectedCounterCard);
+                                    setSelectedCounterCard(null);
+                                  }
+                                }}
+                                disabled={!selectedCounterCard}
+                                className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700"
+                              >
+                                使用反击卡
+                              </button>
+                              <button
+                                onClick={() => {
+                                  resolveCard(false);
+                                  setSelectedCounterCard(null);
+                                }}
+                                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                              >
+                                放弃反击
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {(currentPlayer === pendingCard.player || aiEnabled || availableCounters.length === 0) && (
+                          <button
+                            onClick={() => resolveCard(false)}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                          >
+                            确认生效
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="bg-white/80 backdrop-blur p-4 rounded-lg shadow">
+                      <h3 className="font-bold mb-2">对手手牌数</h3>
+                      <div className="text-2xl">{hands[1 - currentPlayer].length} 张</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.render(<GameUI />, document.getElementById('app'));
+    </script>
+  </body>
+</html>

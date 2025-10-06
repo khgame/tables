@@ -36,6 +36,12 @@
     description: '类 Vampire Survivors 靶场：战前构筑界面 + Canvas 实时战斗，用 Excel 验证弹道、波次与技能树。',
     play: '/examples/abyssal-nightfall/index.html',
     source: 'https://github.com/khgame/tables/tree/master/example/game_06_abyssal_nightfall'
+  },
+  {
+    title: 'Skill Gomoku',
+    description: '五子棋 + 技能卡牌：16 张技能卡、克制关系、合体技与状态系统，展示卡牌游戏配置表设计。',
+    play: '/examples/skill-gomoku/index.html',
+    source: 'https://github.com/khgame/tables/tree/master/example/game_07_skill_gomoku'
   }
 ]" />
 

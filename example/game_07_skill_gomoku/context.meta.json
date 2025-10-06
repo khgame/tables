@@ -1,0 +1,33 @@
+{
+  "indexes": {
+    "cards": {
+      "byNameEn": "nameEn",
+      "byType": "type",
+      "byRequires": {
+        "path": "requires",
+        "allowEmpty": true
+      },
+      "byRequiresCards": {
+        "path": "requiresCards",
+        "mode": "multi",
+        "allowEmpty": true
+      },
+      "byCounter": {
+        "path": "counteredBy",
+        "mode": "multi",
+        "allowEmpty": true
+      },
+      "byTags": {
+        "path": "tags",
+        "mode": "multi",
+        "allowEmpty": true
+      }
+    },
+    "characters": {
+      "byRole": "roleType"
+    },
+    "states": {
+      "byCategory": "category"
+    }
+  }
+}

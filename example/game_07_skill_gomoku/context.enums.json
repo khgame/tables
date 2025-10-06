@@ -1,0 +1,47 @@
+{
+  "CardType": {
+    "Attack": "attack",
+    "Control": "control",
+    "Counter": "counter",
+    "Support": "support"
+  },
+  "CardTiming": {
+    "PreMove": "pre-move",
+    "Reaction": "reaction",
+    "Anytime": "anytime"
+  },
+  "CardRarity": {
+    "Common": "common",
+    "Rare": "rare",
+    "Legendary": "legendary"
+  },
+  "ComboType": {
+    "Fusion": "fusion"
+  },
+  "RoleType": {
+    "Character": "character",
+    "Location": "location"
+  },
+  "StateCategory": {
+    "Board": "board",
+    "Piece": "piece"
+  },
+  "CardSpeed": {
+    "Normal": "normal",
+    "Instant": "instant"
+  },
+  "Tag": {
+    "Removal": "removal",
+    "Freeze": "freeze",
+    "DirectWin": "direct-win",
+    "Fusion": "fusion",
+    "SkipTurn": "skip-turn",
+    "Reset": "reset",
+    "Recovery": "recovery",
+    "Prevention": "prevention",
+    "AntiFusion": "anti-fusion",
+    "Punish": "punish",
+    "Summon": "summon",
+    "Reflect": "reflect"
+  }
+}

@@ -165,8 +165,7 @@ function resolveArrayDefinition(enumName: string, definition: EnumArrayDefinitio
       return
     }
     if (Array.isArray(item)) {
-      if (item.length === 0) return
-      const [value, description] = item
+      const [value, description] = item as [EnumValue, string?]
       const name = deriveLiteralName(value, index)
       entries.push({ name, value: normalizeEnumValue(value), description: normalizeDescription(description) })
       return
@@ -207,7 +206,8 @@ function resolveReferenceObject(enumName: string, input: EnumReferenceObject, op
 
   rows.forEach(row => {
     if (!matchesFilter(row, config.filter)) return
-    const rawValue = row[config.valueField] ?? row[config.field]
+    const valueField = config.valueField ?? config.field
+    const rawValue = row?.[valueField]
     if (rawValue === undefined || rawValue === null) return
     const normalizedValue = normalizeEnumValue(rawValue)
     if (typeof normalizedValue === 'string' && normalizedValue.trim() === '') return

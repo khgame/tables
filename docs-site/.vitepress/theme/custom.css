@@ -68,8 +68,8 @@
   --vp-shadow-2: 0 18px 40px rgba(3, 10, 24, 0.42);
   --vp-shadow-3: 0 28px 58px rgba(2, 6, 23, 0.55);
 
-  --docs-hero-icon-primary: url('../public/icons/hero-quickstart.svg');
-  --docs-hero-icon-secondary: url('../public/icons/hero-demo.svg');
+  --docs-hero-icon-primary: url('/icons/hero-quickstart.svg');
+  --docs-hero-icon-secondary: url('/icons/hero-demo.svg');
 }
 
 body {

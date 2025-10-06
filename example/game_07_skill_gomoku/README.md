@@ -1,6 +1,10 @@
 # Game 07 — Skill Gomoku Card Mode
 
 > Skill Gomoku = 五子棋棋盘 + 技能卡牌。玩家围绕“张兴朝”与合体技展开攻防，将喜剧小品《技能五子棋》中的梗元素卡牌化。
+> 体验上类似于游戏王或炉石传说, 机房和对方可以抽卡, 战斗卡是橙色, 反制卡是紫色, 特殊卡是蓝色. 卡片要画力, 上边还要有. 中央则是五子棋棋盘. 整个游戏氛围是剑与魔法.
+> 大致玩法说明: 核心还是五子棋, 加上技能: 一开始会获得两张技能卡, 然后对方每下三步会获得一张卡, 从第五步开始可以使用技能. 进攻卡使用技
+  能的时机,是我方落子前, 而克制卡的时机是对应的克制条件出现时, 也就是对方使用技能时. 特殊卡则
+  在任意时候发动
 
 ## 核心玩法概述
 
@@ -68,7 +72,6 @@
   - 字段：`@tid`（卡牌 ID）、`type`、`subtype`、`nameZH`、`nameEN`、`rarity`、`cost`、`speed`、`timing`、`effect`、`triggerCondition`、`counteredBy`、`requires`、`requiresCards`、`failCondition`、`tags`、`notes`。
 - `characters.xlsx`
   - 关键角色/召唤物：`@tid`、`roleType`、`name`、`entryEffect`、`exitEffect`、`enablesCards[]`、`defeatCondition`。
-- `states.xlsx`
   - 局面或持续效果：`@tid`、`name`、`appliedBy[]`、`duration`、`effect`、`removalCard`、`stackable`。
 
 所有表遵循 tables 标准：首行标记、第二行字段名；必要字段使用 `enum<...>` 引用上下文枚举，插入 `$ghost`/`$strict` 控制可选项；通过 `context.meta.indexes` 配置常用索引。
@@ -76,7 +79,7 @@
 ## 上下文约定
 
 - `context.enums.json`
-  - `CardType`、`CardTiming`、`CardSpeed`、`CardRarity`、`RoleType`、`StateCategory`、`Tag` 等。
+  - `CardType`、`CardTiming`、`CardSpeed`、`CardRarity`、`RoleType`、`Tag` 等。
   - 可在 `context.enums.cards` 下列出特殊标签，如 `Unseizeable`、`Fusion`、`AntiFusion`。
 - `context.meta.json`
   - `indexes.cards`：按 `nameEN`、`type`、`requires`、`requiresCards`、`counteredBy`、`tags` 生成索引。
@@ -94,7 +97,6 @@
 - **资源系统**：为卡牌增加费用或冷却，避免连续爆发；通过 `cost` 字段 + `Token` 表实现。
 - **牌组构筑模式**：允许玩家自选若干卡牌进入牌库，/或设定稀有度权重。
 - **AI 逻辑**：可仿照现有示例编写 `ai.js`，对攻守平衡做自动化测试。
-- **事件重放**：`states` 表可用于重现时光倒流设定。
 
 ---
 

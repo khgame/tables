@@ -12,7 +12,7 @@ const {
 const baseDir = __dirname
 const outDir = Path.resolve(baseDir, 'out')
 
-const tableStems = ['cards', 'characters', 'states']
+const tableStems = ['cards', 'characters']
 
 const serializerConfigs = [
   {

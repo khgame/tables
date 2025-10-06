@@ -25,9 +25,6 @@
     },
     "characters": {
       "byRole": "roleType"
-    },
-    "states": {
-      "byCategory": "category"
     }
   }
 }

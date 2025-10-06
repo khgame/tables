@@ -22,10 +22,6 @@
     "Character": "character",
     "Location": "location"
   },
-  "StateCategory": {
-    "Board": "board",
-    "Piece": "piece"
-  },
   "CardSpeed": {
     "Normal": "normal",
     "Instant": "instant"

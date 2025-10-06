@@ -6,7 +6,7 @@ tid,type,subtype,nameZh,nameEn,rarity,cost,speed,timing,effect,triggerCondition,
 1004,Attack,,我是保洁,Cleaner Service,Rare,1,Normal,PreMove,随机扫走对手一枚棋子。,,滚！,张兴朝在场,1015,张兴朝离场或技能被滚！打断,Fusion|Removal,合体技
 1005,Attack,,棒球，呀咧呀咧,Baseball Strike,Rare,1,Normal,PreMove,效果等同于飞沙走石，但无法被擒拿防御。,,拾金不昧,,,,Removal,
 1006,Control,,时光倒流,Time Rewind,Legendary,3,Normal,PreMove,将棋盘状态重置至任意之前的回合。,,滚！,,,,Reset,
-1007,Control,,调呈离山东,Distract,Rare,2,Normal,PreMove,跳过对手一个回合，使其该回合无法落子或发动技能。,,滚！,张兴朝在场,1015,张兴朝离场或技能被滚！打断,Fusion|SkipTurn,合体技
+1007,Control,,调呈离山·东,Distract,Rare,2,Normal,PreMove,跳过对手一个回合，使其该回合无法落子或发动技能。,,滚！,张兴朝在场,1015,张兴朝离场或技能被滚！打断,Fusion|SkipTurn,合体技
 1008,Counter,,拾金不昧,Item Retrieval,Common,1,Instant,Reaction,抵消飞沙走石效果，将被丢弃棋子恢复至其他指定位置。,敌方使用飞沙走石或棒球时,,,,,Recovery,
 1009,Counter,,擒拿,Seize,Common,1,Instant,Reaction,阻止飞沙走石发动，使目标棋子保留原位（对棒球无效）。,敌方使用飞沙走石时,,,,,Prevention,
 1010,Counter,,水滴石穿,Break Free,Common,1,Instant,Reaction,解除静如止水的冻结效果，恢复自身行动权。,己方处于静如止水影响时,,,,,Recovery,

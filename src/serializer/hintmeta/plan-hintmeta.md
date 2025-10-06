@@ -55,8 +55,9 @@
      - `'bigint'` → 输出 `String(value)`。
    - 保留现有默认行为作为兜底。
 
-4. **Serializer 可选扩展**
+4. **Serializer 扩展**
    - 允许 TS Interface 渲染函数读取 `hintMeta.strategyHint`，对 `bigint` 输出 `string`（可作为后续迭代）。
+   - 在 TS/Go/C# 生成物中引入 `BigIntStr` 类型别名（`type BigIntStr = string` / `using BigIntStr = string`），并预留扩展点提供 `toBigInt()`、`.Int64()` 等转换辅助，降低业务接入成本。
 
 5. **测试 / 样例**
    - 添加含 `int64`、`uint64`、普通 `int` 的样例表，验证：

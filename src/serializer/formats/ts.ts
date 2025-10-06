@@ -90,18 +90,3 @@ ${aliasReexport}export const ${repoInstanceName} = ${baseName}Repo.fromRaw(raw);
   },
   contextDealer: dealContext
 }
-
-function injectTidField(schema: string, tidType: string): string {
-  const lines = schema.split('\n')
-  const tidLine = `  _tid: ${tidType};`
-  if (lines.length === 1) {
-    return `{
-${tidLine}
-}`
-  }
-  if (lines[0].trim() !== '{') {
-    return schema
-  }
-  lines.splice(1, 0, tidLine)
-  return lines.join('\n')
-}

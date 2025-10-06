@@ -1,5 +1,5 @@
 import { SupportedTypes } from '@khgame/schema'
-import { resolveHintMetadata } from '../../src/serializer/hintmeta/hintMetadata'
+import { resolveHintMetadata, shouldAnnotateAsBigInt } from '../../src/serializer/hintmeta/hintMetadata'
 
 describe('hint metadata resolver', () => {
   it('annotates signed 64-bit integers as bigint strategy', () => {
@@ -29,5 +29,14 @@ describe('hint metadata resolver', () => {
     expect(meta).toBeDefined()
     expect(meta!.strategyHint).toBeUndefined()
     expect(meta!.sourceAlias).toBe('@')
+  })
+
+  it('recognizes float aliases and helper predicate for bigint', () => {
+    const floatMeta = resolveHintMetadata('float', SupportedTypes.Float)
+    expect(floatMeta?.strategyHint).toBe('float')
+    expect(shouldAnnotateAsBigInt('int64', SupportedTypes.Int)).toBe(true)
+    expect(shouldAnnotateAsBigInt('uint32', SupportedTypes.UInt)).toBe(false)
+    expect(resolveHintMetadata('custom', SupportedTypes.String)?.sourceAlias).toBe('custom')
+    expect(shouldAnnotateAsBigInt('name', SupportedTypes.String)).toBe(false)
   })
 })

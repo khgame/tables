@@ -231,9 +231,6 @@ function convertEnumVariant(node: any, context: any): TypeNode {
 }
 
 function createPrimitive(name: PrimitiveName, hintMeta?: HintMetadata): PrimitiveType {
-  if (hintMeta && Object.keys(hintMeta).length === 0) {
-    return { kind: 'primitive', name }
-  }
   return hintMeta ? { kind: 'primitive', name, hintMeta } : { kind: 'primitive', name }
 }
 

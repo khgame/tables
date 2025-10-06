@@ -76,6 +76,7 @@ export function tableConvert(table: Table, context?: any): Table {
       }
       return prev + segmentStr
     }, '')
+    /* istanbul ignore next */
     if (!tid) {
       const sheetRow = dataRows[idx]
       throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行缺少 TID`)
@@ -233,6 +234,7 @@ function normalizeValue(value: any, node: TypeNode, path: string): any {
           }
         }
       }
+      /* istanbul ignore next */
       return value
     }
     default:

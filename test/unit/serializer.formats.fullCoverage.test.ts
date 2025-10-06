@@ -145,7 +145,7 @@ describe('serializer format rendering coverage', () => {
 
   it('renders ts interface serializer with repo helpers and alias meta', () => {
     process.env.TABLES_VERBOSE = '1'
-    const dealSchemaSpy = jest.spyOn(tsInterfaceModule, 'dealSchema')
+    const dealSchemaWithMetaSpy = jest.spyOn(tsInterfaceModule, 'dealSchemaWithMetadata')
     buildSchemaModelSpy.mockReturnValue(makeComplexModel())
     const data = {
       schema: {},
@@ -170,6 +170,8 @@ describe('serializer format rendering coverage', () => {
     expect(output).toContain('export class HerotableRepo')
     expect(output).toContain('getAllByTag')
     expect(output).toContain('HerotableProtocol')
+    expect(output).toContain('export type BigIntStr = string')
+    expect(output).toContain('BigIntStrHelper')
 
     const contextDoc = dealContext({
       meta: { exports: { enum: ['enums'] } },
@@ -183,13 +185,13 @@ describe('serializer format rendering coverage', () => {
     expect(contextDoc).toContain('enum RoleEnum')
 
     buildSchemaModelSpy.mockReturnValueOnce({ kind: 'primitive', name: 'string' } as schemaModel.PrimitiveType)
-    dealSchemaSpy.mockImplementationOnce(() => 'string')
+    dealSchemaWithMetaSpy.mockImplementationOnce(() => ({ schema: 'string', usesBigIntStr: false }))
     tsInterfaceSerializer.file(data as any, 'HeroTable', 'import {}', {})
 
     buildSchemaModelSpy.mockReturnValueOnce({ kind: 'primitive', name: 'string' } as schemaModel.PrimitiveType)
-    dealSchemaSpy.mockImplementationOnce(() => 'type Alias = string\nexport {}')
+    dealSchemaWithMetaSpy.mockImplementationOnce(() => ({ schema: 'type Alias = string\nexport {}', usesBigIntStr: false }))
     tsInterfaceSerializer.file(data as any, 'HeroTable', 'import {}', {})
-    dealSchemaSpy.mockRestore()
+    dealSchemaWithMetaSpy.mockRestore()
   })
 
   it('renders go serializer with tid helpers', () => {
@@ -207,6 +209,8 @@ describe('serializer format rendering coverage', () => {
     const goOutput = goSerializer.file(data as any, 'hero_table', '', {})
     expect(goOutput).toContain('type HeroTable struct')
     expect(goOutput).toContain('func NewHeroTableTID')
+    expect(goOutput).toContain('type BigIntStr string')
+    expect(goOutput).toContain('func (b BigIntStr) BigInt()')
   })
 
   it('renders csharp serializer covering numeric strategies', () => {
@@ -223,6 +227,8 @@ describe('serializer format rendering coverage', () => {
     }
     const csOutput = csharpSerializer.file(data as any, 'HeroTable', '', {})
     expect(csOutput).toContain('public class HeroTable')
-    expect(csOutput).toContain('public string BigintField')
+    expect(csOutput).toContain('public BigIntStr BigintField')
+    expect(csOutput).toContain('record struct BigIntStr')
+    expect(csOutput).toContain('BigIntStrConverter')
   })
 })

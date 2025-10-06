@@ -39,4 +39,14 @@ describe('hint metadata resolver', () => {
     expect(resolveHintMetadata('custom', SupportedTypes.String)?.sourceAlias).toBe('custom')
     expect(shouldAnnotateAsBigInt('name', SupportedTypes.String)).toBe(false)
   })
+
+  it('handles edge aliases and unsigned float flavors', () => {
+    expect(resolveHintMetadata(undefined, SupportedTypes.Int)).toBeUndefined()
+    expect(resolveHintMetadata('   ', SupportedTypes.Int)).toBeUndefined()
+    const uintMeta = resolveHintMetadata('uint16', SupportedTypes.UInt)
+    expect(uintMeta?.flavor).toBe('uint')
+    const ufloatMeta = resolveHintMetadata('ufloat', SupportedTypes.UFloat)
+    expect(ufloatMeta?.flavor).toBe('ufloat')
+    expect(shouldAnnotateAsBigInt('uint64', SupportedTypes.UInt)).toBe(true)
+  })
 })

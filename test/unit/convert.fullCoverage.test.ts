@@ -236,6 +236,42 @@ describe('tableConvert edge cases', () => {
     expect(() => tableConvert(table, {})).toThrow(/重复别名/)
   })
 
+  it('rejects non-primitive inputs for bigint hint strategy', () => {
+    const model: schemaModel.SchemaModel = {
+      kind: 'object',
+      fields: [
+        { name: 'tid', type: { kind: 'primitive', name: 'string' } },
+        { name: 'power', type: { kind: 'primitive', name: 'number', hintMeta: { strategyHint: 'bigint', sourceAlias: 'int64' } } }
+      ]
+    }
+
+    buildSchemaModelSpy.mockReturnValue(model)
+    exportJsonMock.mockImplementationOnce((_schema: any, _desc: string[], _rows: any[][]) => {
+      return [
+        { tid: 'hero', power: { amount: '9999999999999999999' } }
+      ]
+    })
+
+    const table = makeTable({
+      markCols: ['A', 'B'],
+      markLine: { A: '@', B: 'int64' },
+      descLine: { A: 'tid', B: 'power' },
+      markList: ['@', 'int64'],
+      aliasColumns: [],
+      erows: [3],
+      getValue: (_: any, row: number, col: string) => {
+        if (row === 3 && col === 'A') return 'hero'
+        if (row === 3 && col === 'B') return '9999999999999999999'
+        return undefined
+      },
+      data: {
+        3: { A: { v: 'hero' }, B: { v: '9999999999999999999' } }
+      }
+    })
+
+    expect(() => tableConvert(table, {})).toThrow(/BigInt preservation/)
+  })
+
   it('rethrows overflow errors encountered inside union normalization', () => {
     const overflowModel: schemaModel.SchemaModel = {
       kind: 'union',
@@ -284,5 +320,95 @@ describe('tableConvert edge cases', () => {
     })
 
     expect(() => tableConvert(table, {})).toThrow(/exceeds Number.MAX_SAFE_INTEGER/)
+  })
+
+  it('normalizes literal, enum, and unknown node kinds without mutation', () => {
+    const schemaModelLiteral: schemaModel.SchemaModel = {
+      kind: 'object',
+      fields: [
+        { name: 'id', type: { kind: 'primitive', name: 'string' } },
+        { name: 'literalField', type: { kind: 'literal', value: 'persist' } },
+        {
+          name: 'enumField',
+          type: { kind: 'enum', name: 'Role', ref: 'TableContext.Role', values: [] }
+        },
+        { name: 'mystery', type: { kind: 'mystery' } as any }
+      ]
+    }
+
+    buildSchemaModelSpy.mockReturnValue(schemaModelLiteral)
+    exportJsonMock.mockImplementationOnce((_schema: any, _desc: string[], _rows: any[][]) => [
+      { id: 'hero', literalField: 'persist', enumField: 'Warrior', mystery: { raw: 7 } }
+    ])
+
+    const table = makeTable({
+      markCols: ['A', 'B', 'C', 'D'],
+      markLine: { A: '@', B: '', C: '', D: '' },
+      descLine: { A: 'id', B: 'literalField', C: 'enumField', D: 'mystery' },
+      markList: ['@', '', '', ''],
+      aliasColumns: [],
+      erows: [3],
+      getValue: (_: any, row: number, col: string) => {
+        if (row === 3 && col === 'A') return 'hero'
+        if (row === 3 && col === 'B') return 'persist'
+        if (row === 3 && col === 'C') return 'Warrior'
+        if (row === 3 && col === 'D') return 'ignored'
+        return undefined
+      },
+      data: { 3: { A: { v: 'hero' } } }
+    })
+
+    const converted = tableConvert(table, {})
+    expect(converted.convert?.result.hero.literalField).toBe('persist')
+    expect(converted.convert?.result.hero.enumField).toBe('Warrior')
+    expect(converted.convert?.result.hero.mystery).toEqual({ raw: 7 })
+  })
+
+  it('throws when raw number exceeds safe integer limits', () => {
+    const schemaModelInt: schemaModel.SchemaModel = {
+      kind: 'object',
+      fields: [
+        { name: 'id', type: { kind: 'primitive', name: 'string' } },
+        { name: 'power', type: { kind: 'primitive', name: 'number', hintMeta: { strategyHint: 'int', sourceAlias: 'int' } } }
+      ]
+    }
+    buildSchemaModelSpy.mockReturnValue(schemaModelInt)
+    exportJsonMock.mockImplementationOnce((_schema: any, _desc: string[], _rows: any[][]) => [
+      { id: 'hero', power: Number.MAX_SAFE_INTEGER + 1 }
+    ])
+
+    const table = makeTable({
+      markCols: ['A', 'B'],
+      markLine: { A: '@', B: 'int' },
+      descLine: { A: 'id', B: 'power' },
+      markList: ['@', 'int'],
+      aliasColumns: [],
+      erows: [3],
+      getValue: (_: any, row: number, col: string) => {
+        if (row === 3 && col === 'A') return 'hero'
+        if (row === 3 && col === 'B') return Number.MAX_SAFE_INTEGER + 1
+        return undefined
+      },
+      data: { 3: { A: { v: 'hero' } } }
+    })
+
+    expect(() => tableConvert(table, {})).toThrow(/exceeds Number.MAX_SAFE_INTEGER/)
+  })
+
+  it('rejects multiple alias columns in a single table', () => {
+    buildSchemaModelSpy.mockReturnValue(makeBaseModel())
+    const table = makeTable({
+      aliasColumns: [1, 2],
+      descLine: { A: 'id', B: 'alias', C: 'secondary', D: 'title', E: 'scores' }
+    })
+    expect(() => tableConvert(table, {})).toThrow(/暂不支持多个 alias 列/)
+  })
+
+  it('requires alias columns to reference a descriptor', () => {
+    buildSchemaModelSpy.mockReturnValue(makeBaseModel())
+    const table = makeTable({
+      descLine: { A: 'id', B: '', C: 'title', D: 'scores', E: 'unionField' }
+    })
+    expect(() => tableConvert(table, {})).toThrow(/alias 列对应的描述行为空/)
   })
 })

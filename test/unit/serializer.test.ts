@@ -2,6 +2,7 @@ import { jsonSerializer, jsSerializer, tsSerializer } from '../../src/serializer
 // Mock dealSchema/dealContext before importing tsSerializer to avoid deep schema dependency
 jest.mock('../../src/serializer/formats/tsInterface', () => ({
   dealSchema: () => '{ foo: string }',
+  dealSchemaWithMetadata: () => ({ schema: '{ foo: string }', usesBigIntStr: false }),
   dealContext: () => ''
 }))
 // Import real helpers for focused tests (use requireActual)
@@ -9,6 +10,7 @@ jest.mock('../../src/serializer/formats/tsInterface', () => ({
 const real = (jest as any).requireActual('../../src/serializer/formats/tsInterface')
 const dealSchema = real.dealSchema as typeof import('../../src/serializer/formats/tsInterface').dealSchema
 const dealContext = real.dealContext as typeof import('../../src/serializer/formats/tsInterface').dealContext
+const dealSchemaWithMetadata = real.dealSchemaWithMetadata as typeof import('../../src/serializer/formats/tsInterface').dealSchemaWithMetadata
 import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
 
 describe('basic serializers', () => {
@@ -73,6 +75,27 @@ describe('tsInterfaceSerializer helpers', () => {
     const descLine = { A: 'name' }
     const res = dealSchema(schema as any, descLine, markCols, {})
     expect(res.replace(/\s/g, '')).toBe('{name:string}'.replace(/\s/g, ''))
+  })
+
+  it('dealSchemaWithMetadata flags bigint usage', () => {
+    const schema = {
+      sdmType: SDMType.Arr,
+      marks: [
+        {
+          markType: MarkType.TDM,
+          markInd: 0,
+          innerCount: 1,
+          inner: (_i: number) => ({ tName: SupportedTypes.Int, rawName: 'int64' })
+        }
+      ],
+      mds: [],
+      markInd: 1
+    }
+    const markCols = ['A']
+    const descLine = { A: 'value' }
+    const result = dealSchemaWithMetadata(schema as any, descLine, markCols, {})
+    expect(result.usesBigIntStr).toBe(true)
+    expect(typeof result.schema).toBe('string')
   })
 
   it('dealSchema emits verbose log when TABLES_VERBOSE=1', () => {

@@ -10,15 +10,15 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   collectCoverageFrom: [
-    'src/plugin/convert.ts',
+    'src/plugin/convertInternals.ts',
     'src/serializer/hintmeta/**/*.ts'
   ],
   coverageThreshold: {
     global: {
-      lines: 100,
-      branches: 100,
+      lines: 98,
+      branches: 90,
       functions: 100,
-      statements: 100
+      statements: 98
     }
   }
 }

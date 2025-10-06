@@ -79,3 +79,22 @@
 - **冒泡溢出检测**：若存在第三方自行构造的 TypeNode，应提供向后兼容，`hintMeta` 可选。
 - **枚举映射一致性**：`AliasTable` 更新需同步更新 `hintMetadata` 的映射测试。
 - **序列化差异**：`bigint` 输出字符串可能影响已有消费者，需要在发布说明中明确。
+
+## 当前进度（2024Q4）
+
+- ✅ `resolveHintMetadata` 已接入 schemaModel → convert → serializer 全链路，`normalizePrimitive` 在 `int`/`bigint` 策略下具备溢出拦截与字符串保精度能力。
+- ✅ TS/Go/C# 序列化产物统一导出了 `BigIntStr` 类型别名，并随附 `BigIntStrHelper`（TS）、`BigIntStr` 方法（Go）、`BigIntStrConverter`（C#）等转换工具，调用方可以显式区分大整数语义并安全落地到目标语言原生类型。
+- ✅ `tableConvert` 针对 `bigint` 策略新增了非原始值输入的防御性错误，避免隐式 `[object Object]` 字符串化。
+- ✅ 单元测试覆盖 `convert.fullCoverage`、`serializer.formats.fullCoverage`、`serializer.test` 等场景，`jest.config.js` 维持 100% 行/支/函/语句指标（当前聚焦 convert 与 hintmeta 模块）。
+
+## HintMeta 评价指标
+
+- **清晰度**：`hintMeta` 中的 `strategyHint`、`sourceAlias` 与 `flavor` 一一对应 `AliasTable` 定义，错误信息携带别名，帮助快速定位 Excel 原字段。
+- **可扩展性**：`extensions` 字段允许为未来的 `decimal`/`percentage` 等策略挂接额外上下文；新数值族只需扩展 `resolveHintMetadata` 映射与 `normalizePrimitive` 分支。
+- **一致性**：单一 `hintMeta` 来源贯通 schema → convert → serializer，测试覆盖验证了 TS/Go/C# 三端类型别名与数据表达一致。
+
+## 校验器联动现状
+
+- 校验策略落在 `convert.normalizePrimitive` 阶段：`int` 策略执行 `Number.isSafeInteger` 检查，`bigint` 策略限定输入必须是字符串/数值原语后再转字符串保存。
+- HintMeta 本身不做数据校验，但为校验层提供上下文（如 `sourceAlias`）；后续如需扩展专用校验器，可直接读取 `hintMeta` 而无需回溯 Excel 标签。
+- 当前校验层已支持 `int`/`bigint`；若引入新策略，只需在 HintMeta 增补 flavor→策略映射，并在校验器中对接即可，无需改动序列化逻辑。

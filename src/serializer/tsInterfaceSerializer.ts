@@ -1,1 +1,1 @@
-export { tsInterfaceSerializer, dealSchema, dealContext } from './formats/tsInterface'
+export { tsInterfaceSerializer, dealSchema, dealSchemaWithMetadata, dealContext } from './formats/tsInterface'

@@ -1,5 +1,5 @@
 import { tableConvert, tableSchema } from '../../plugin'
-import { dealSchema, dealContext } from './tsInterface'
+import { dealContext } from './tsInterface'
 import { makeInterfaceName } from '../../utils/names'
 import type { Serializer } from '../../types'
 

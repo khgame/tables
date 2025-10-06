@@ -39,4 +39,27 @@ describe('serializer format registry', () => {
     const entry = getSerializerFormat(formatName)
     expect(entry?.suffix).toBe('b')
   })
+
+  it('treats identical registrations as no-op', () => {
+    registerSerializerFormat(formatName, { suffix: 'txt', serializer: dummySerializer })
+    expect(() => registerSerializerFormat(formatName, { suffix: 'txt', serializer: dummySerializer })).not.toThrow()
+    expect(getSerializerFormat('unknown-format')).toBeUndefined()
+  })
+
+  it('rejects invalid names and supports clearing the registry', () => {
+    const registry = require('../../src/serializer/core/registry')
+    const snapshot = registry.listSerializerFormats().map((name: string) => [name, registry.getSerializerFormat(name)])
+
+    registry.clearSerializerFormats()
+    expect(registry.listSerializerFormats()).toEqual([])
+    expect(() => registerSerializerFormat('', { suffix: 'x', serializer: dummySerializer })).toThrow(/non-empty/i)
+    expect(getSerializerFormat('')).toBeUndefined()
+    expect(removeSerializerFormat(' ')).toBe(false)
+
+    snapshot.forEach(([name, entry]: any) => {
+      if (entry) {
+        registry.registerSerializerFormat(name, entry, { override: true })
+      }
+    })
+  })
 })

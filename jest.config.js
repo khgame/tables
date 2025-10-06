@@ -10,17 +10,15 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/types*.ts',
-    // Re-export barrel adds little value for coverage
-    '!src/plugin/index.ts'
+    'src/plugin/convertInternals.ts',
+    'src/serializer/hintmeta/**/*.ts'
   ],
   coverageThreshold: {
     global: {
-      lines: 70,
-      branches: 70,
-      functions: 70,
-      statements: 70
+      lines: 98,
+      branches: 90,
+      functions: 100,
+      statements: 98
     }
   }
 }

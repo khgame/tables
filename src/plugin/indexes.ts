@@ -47,15 +47,6 @@ export function buildIndexes(exportResult: any[], tids: string[], context: any, 
     const indexMap: Record<string, string | string[]> = {}
     const collisions: Array<{ key: string; tids: string[] }> = []
 
-    if (config.path.length === 0) {
-      meta[indexName] = {
-        path: config.path,
-        mode: config.mode,
-        skipped: 'empty path'
-      }
-      continue
-    }
-
     exportResult.forEach((record: any, rowIndex: number) => {
       const tid = tids[rowIndex]
       if (!record || !tid) return

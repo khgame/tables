@@ -142,26 +142,80 @@ body {
   color: var(--vp-c-text-1);
 }
 
+.VPHomeHero .actions {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.VPHomeHero .actions .action a,
+.VPHomeHero .actions .action button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.VPHomeHero .actions .action a::before,
+.VPHomeHero .actions .action button::before {
+  content: '';
+  display: inline-block;
+  width: 1.65rem;
+  height: 1.65rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 .VPHomeHero .actions .action.primary a,
 .VPHomeHero .actions .action.primary button {
-  background: linear-gradient(120deg, #38bdf8, #22d3ee) !important;
-  color: #061528 !important;
-  box-shadow: 0 16px 32px rgba(56, 189, 248, 0.4);
-  border: none;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.96), rgba(14, 165, 233, 0.96)) !important;
+  color: #031021 !important;
+  border: 1px solid rgba(14, 165, 233, 0.5);
+  box-shadow: 0 18px 34px rgba(14, 165, 233, 0.4);
+}
+
+.VPHomeHero .actions .action.primary a::before,
+.VPHomeHero .actions .action.primary button::before {
+  background-image: url('/icons/hero-quickstart.svg');
 }
 
 .VPHomeHero .actions .action.primary a:hover,
 .VPHomeHero .actions .action.primary button:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 24px 40px rgba(14, 165, 233, 0.45);
 }
 
 .VPHomeHero .actions .action.secondary a,
 .VPHomeHero .actions .action.secondary button,
 .VPHomeHero .actions .action.alt a,
 .VPHomeHero .actions .action.alt button {
-  background: rgba(15, 23, 42, 0.5) !important;
-  color: var(--vp-c-text-1) !important;
-  border: 1px solid rgba(94, 234, 212, 0.35);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(12, 63, 83, 0.88)) !important;
+  color: #e6f1ff !important;
+  border: 1px solid rgba(94, 234, 212, 0.42);
+  box-shadow: 0 18px 34px rgba(13, 148, 136, 0.32);
+}
+
+.VPHomeHero .actions .action.secondary a::before,
+.VPHomeHero .actions .action.secondary button::before,
+.VPHomeHero .actions .action.alt a::before,
+.VPHomeHero .actions .action.alt button::before {
+  background-image: url('/icons/hero-demo.svg');
+}
+
+.VPHomeHero .actions .action.secondary a:hover,
+.VPHomeHero .actions .action.secondary button:hover,
+.VPHomeHero .actions .action.alt a:hover,
+.VPHomeHero .actions .action.alt button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 40px rgba(94, 234, 212, 0.35);
+  border-color: rgba(94, 234, 212, 0.65);
 }
 
 .demo-grid {

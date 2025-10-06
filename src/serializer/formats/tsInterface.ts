@@ -19,13 +19,23 @@ import {
   type EnumReferenceType
 } from '../core/schemaModel'
 
-export function dealSchema(schema: any, descLine: any, markCols: any[], context: any): string {
+export interface DealSchemaResult {
+  schema: string
+  usesBigIntStr: boolean
+}
+
+export function dealSchemaWithMetadata(schema: any, descLine: any, markCols: any[], context: any): DealSchemaResult {
   const model: SchemaModel = buildSchemaModel(schema, descLine, markCols, context)
   const rendered = renderTypeNode(model, 0)
+  const usesBigIntStr = detectBigIntStrategy(model)
   if (process.env.TABLES_VERBOSE === '1') {
     console.log(chalk.cyan('tsInterface serializer dealSchema success'), JSON.stringify(rendered, null, 2))
   }
-  return rendered
+  return { schema: rendered, usesBigIntStr }
+}
+
+export function dealSchema(schema: any, descLine: any, markCols: any[], context: any): string {
+  return dealSchemaWithMetadata(schema, descLine, markCols, context).schema
 }
 
 function renderTypeNode(node: TypeNode, depth: number): string {
@@ -50,6 +60,10 @@ function renderTypeNode(node: TypeNode, depth: number): string {
 }
 
 function renderPrimitive(node: PrimitiveType): string {
+  const strategy = node.hintMeta?.strategyHint ?? (node as any).hint
+  if (strategy === 'bigint') {
+    return 'BigIntStr'
+  }
   return node.name
 }
 
@@ -140,6 +154,23 @@ function indentOf(depth: number): string {
   return '  '.repeat(depth)
 }
 
+function detectBigIntStrategy(node: TypeNode): boolean {
+  switch (node.kind) {
+    case 'primitive':
+      return (node.hintMeta?.strategyHint ?? (node as any).hint) === 'bigint'
+    case 'array':
+      return node.element ? detectBigIntStrategy(node.element) : false
+    case 'tuple':
+      return (node.elements || []).some(element => detectBigIntStrategy(element))
+    case 'union':
+      return (node.variants || []).some(variant => detectBigIntStrategy(variant))
+    case 'object':
+      return (node.fields || []).some(field => detectBigIntStrategy(field.type))
+    default:
+      return false
+  }
+}
+
 type AliasTypeBlock = {
   declaration: string;
   hasValues: boolean;
@@ -168,6 +199,10 @@ function buildAliasTypeBlock(baseName: string, aliasMeta: any): AliasTypeBlock {
     hasValues: true,
     values
   }
+}
+
+function buildBigIntHelpersBlock(): string {
+  return `export type BigIntStr = string;\n\nconst MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);\nconst MIN_SAFE_BIGINT = BigInt(Number.MIN_SAFE_INTEGER);\n\nfunction ensureBigIntStr(value: BigIntStr): string {\n  if (typeof value !== 'string') {\n    throw new TypeError('[tables] BigIntStr expects a string input');\n  }\n  const trimmed = value.trim();\n  if (trimmed.length === 0) {\n    throw new RangeError('[tables] BigIntStr expects a non-empty numeric string');\n  }\n  return trimmed;\n}\n\nexport const BigIntStrHelper = {\n  toBigInt(value: BigIntStr): bigint {\n    const normalized = ensureBigIntStr(value);\n    return BigInt(normalized);\n  },\n  toSafeNumber(value: BigIntStr): number {\n    const normalized = ensureBigIntStr(value);\n    const asBigInt = BigInt(normalized);\n    if (asBigInt > MAX_SAFE_BIGINT || asBigInt < MIN_SAFE_BIGINT) {\n      throw new RangeError('[tables] BigIntStr exceeds Number safe integer range');\n    }\n    return Number(asBigInt);\n  }\n} as const;\n\n`
 }
 
 type RepoBlockInput = {
@@ -311,7 +346,7 @@ export const tsInterfaceSerializer: Serializer = {
       : ''
     const aliasMeta = (data as any).convert?.meta?.alias
     const aliasTypeBlock = buildAliasTypeBlock(baseName, aliasMeta)
-    const repoBlock = buildRepoDeclaration({
+  const repoBlock = buildRepoDeclaration({
       baseName,
       interfaceName,
       tidAware,
@@ -320,11 +355,14 @@ export const tsInterfaceSerializer: Serializer = {
       indexesMeta: tidMeta?.indexes || {},
       aliasMeta
     })
-    let schema = dealSchema((data as any).schema, (data as any).descLine, (data as any).markCols, context)
+    const schemaResult = dealSchemaWithMetadata((data as any).schema, (data as any).descLine, (data as any).markCols, context)
+    const bigIntBlock = schemaResult.usesBigIntStr ? buildBigIntHelpersBlock() : ''
+    let schema = schemaResult.schema
     if (tidAware) {
       schema = injectTidField(schema, `${tidTypeName}`)
     }
-    return `/** this file is auto generated */\n${imports}\n        \n${tidAlias}export interface ${interfaceName} ${schema}\n\n${aliasTypeBlock.declaration}${repoBlock}`
+    const spacing = bigIntBlock ? `${bigIntBlock}${tidAlias}` : tidAlias
+    return `/** this file is auto generated */\n${imports}\n\n${spacing}export interface ${interfaceName} ${schema}\n\n${aliasTypeBlock.declaration}${repoBlock}`
   },
   contextDealer: dealContext
 }

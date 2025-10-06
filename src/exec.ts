@@ -42,6 +42,7 @@ const formatObj = getSerializerFormat(format)
 if (!formatObj) {
   throw new Error(`Unsupported format '${format}'. Available formats: ${listSerializerFormats().join(', ')}`)
 }
+const resolvedFormat = formatObj
 
 function pathAvailable(path: string): boolean {
   return !path.match(/\..*\.swp/) && !path.startsWith('~') &&
@@ -56,7 +57,7 @@ function buildOutputMap(baseName: string): Record<string, any> {
     }
   }
   return {
-    [`${baseName}.${formatObj.suffix}`]: formatObj.serializer
+    [`${baseName}.${resolvedFormat.suffix}`]: resolvedFormat.serializer
   }
 }
 

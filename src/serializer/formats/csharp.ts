@@ -21,6 +21,23 @@ interface TypeInfo {
   isReferenceType: boolean
 }
 
+function schemaUsesBigInt(node: TypeNode): boolean {
+  switch (node.kind) {
+    case 'primitive':
+      return (node.hintMeta?.strategyHint ?? (node as any).hint) === 'bigint'
+    case 'array':
+      return node.element ? schemaUsesBigInt(node.element) : false
+    case 'tuple':
+      return (node.elements || []).some(element => schemaUsesBigInt(element))
+    case 'union':
+      return (node.variants || []).some(variant => schemaUsesBigInt(variant))
+    case 'object':
+      return (node.fields || []).some(field => schemaUsesBigInt(field.type))
+    default:
+      return false
+  }
+}
+
 export const csharpSerializer: Serializer = {
   plugins: [tableSchema, tableConvert],
   file: (data, fileName, _imports, context) => {
@@ -28,6 +45,7 @@ export const csharpSerializer: Serializer = {
     const rootName = makeClassName([fileName], 'Record')
     const tidMeta = (data as any).convert?.meta
     const tidAware = Array.isArray(tidMeta?.idSegments) && tidMeta.idSegments.length > 0
+    const usesBigInt = schemaUsesBigInt(model)
 
     const declarations = new Map<string, string>()
     const classNames = new Map<string, string>()
@@ -51,13 +69,18 @@ export const csharpSerializer: Serializer = {
       uses.add('System.Collections.Generic')
     }
     uses.add('System.Text.Json.Serialization')
-    if (tidAware) {
+    if (tidAware || usesBigInt) {
       uses.add('System.Text.Json')
+    }
+    if (usesBigInt) {
+      uses.add('System.Numerics')
+      uses.add('System.Globalization')
     }
 
     usingLines.push(...Array.from(uses).sort().map(u => `using ${u};`))
 
     const bodyLines = [
+      ...(usesBigInt ? [renderBigIntDeclarations()] : []),
       ...(tidAware ? [renderTidDefinitions(rootName)] : []),
       rootClass,
       ...nested.filter(line => line !== rootClass)
@@ -85,6 +108,36 @@ public sealed class ${converterName} : JsonConverter<${tidName}>
 public static class ${tidName}Extensions
 {
     public static ${tidName} To${tidName}(this string value) => new ${tidName}(value);
+}
+`
+}
+
+function renderBigIntDeclarations(): string {
+  return `[JsonConverter(typeof(BigIntStrConverter))]
+public readonly record struct BigIntStr(string Value)
+{
+    public BigInteger ToBigInteger() => BigInteger.Parse(Value, CultureInfo.InvariantCulture);
+
+    public long ToInt64()
+    {
+        if (!long.TryParse(Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+        {
+            throw new OverflowException($"BigIntStr '{Value}' exceeds Int64 range.");
+        }
+
+        return result;
+    }
+
+    public override string ToString() => Value;
+}
+
+public sealed class BigIntStrConverter : JsonConverter<BigIntStr>
+{
+    public override BigIntStr Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => new BigIntStr(reader.GetString() ?? string.Empty);
+
+    public override void Write(Utf8JsonWriter writer, BigIntStr value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value.Value);
 }
 `
 }
@@ -177,6 +230,10 @@ function renderTypeInfo(
 }
 
 function renderPrimitiveType(node: PrimitiveType): TypeInfo {
+  const strategy = node.hintMeta?.strategyHint ?? (node as any).hint
+  if (strategy === 'bigint') {
+    return { typeName: 'BigIntStr', isValueType: true, isReferenceType: false }
+  }
   switch (node.name) {
     case 'string':
       return { typeName: 'string', isValueType: false, isReferenceType: true }

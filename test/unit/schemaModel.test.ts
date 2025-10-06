@@ -1,4 +1,13 @@
-import { buildSchemaModel } from '../../src/serializer/core/schemaModel'
+import {
+  buildSchemaModel,
+  isEmptyArray,
+  isEnum,
+  isTuple,
+  isUnion,
+  type TupleType,
+  type EnumReferenceType,
+  type UnionType
+} from '../../src/serializer/core/schemaModel'
 import { MarkType, SDMType, SupportedTypes } from '@khgame/schema'
 
 describe('schemaModel buildSchemaModel', () => {
@@ -185,6 +194,29 @@ describe('schemaModel buildSchemaModel', () => {
     }
   })
 
+  it('annotates primitive nodes with hint metadata for numeric aliases', () => {
+    const int64Tdm = makeTdm(SupportedTypes.Int, { rawName: 'int64' })
+    const uint32Tdm = makeTdm(SupportedTypes.UInt, { rawName: 'uint32' })
+    const schema = {
+      sdmType: SDMType.Obj,
+      marks: [int64Tdm, uint32Tdm],
+      mds: [],
+      markInd: 1
+    }
+    const model = buildSchemaModel(schema as any, { A: 'damage', B: 'count' }, ['A', 'B'], {})
+    expect(model.kind).toBe('object')
+    if (model.kind === 'object') {
+      const bigIntField = model.fields[0].type
+      const safeIntField = model.fields[1].type
+      expect(bigIntField.kind).toBe('primitive')
+      expect((bigIntField as any).hintMeta?.strategyHint).toBe('bigint')
+      expect((bigIntField as any).hintMeta?.sourceAlias).toBe('int64')
+      expect(safeIntField.kind).toBe('primitive')
+      expect((safeIntField as any).hintMeta?.strategyHint).toBe('int')
+      expect((safeIntField as any).hintMeta?.sourceAlias).toBe('uint32')
+    }
+  })
+
   it('converts pair nodes into inline objects', () => {
     const pairTdm = {
       markType: MarkType.TDM,
@@ -212,6 +244,40 @@ describe('schemaModel buildSchemaModel', () => {
         expect(fieldType.fields.map(f => f.name)).toEqual(['key', 'val'])
       }
     }
+  })
+
+  it('wraps ghost arrays and objects with undefined variants', () => {
+    const tdm = makeTdm(SupportedTypes.String)
+    const arraySchema = {
+      sdmType: SDMType.Arr,
+      marks: [tdm],
+      mds: ['$ghost'],
+      markInd: 1
+    }
+    const model = buildSchemaModel(arraySchema as any, { A: 'items' }, ['A'], {})
+    expect(model.kind).toBe('union')
+    if (model.kind === 'union') {
+      expect(model.variants.some(variant => variant.kind === 'primitive' && (variant as any).name === 'undefined')).toBe(true)
+    }
+
+    const objSchema = {
+      sdmType: SDMType.Obj,
+      marks: [tdm],
+      mds: ['$ghost'],
+      markInd: 1
+    }
+    const objectModel = buildSchemaModel(objSchema as any, { A: 'name' }, ['A'], {})
+    expect(objectModel.kind).toBe('union')
+  })
+
+  it('exposes type guards for tuple and enum types', () => {
+    const tupleNode: TupleType = { kind: 'tuple', elements: [] }
+    const enumNode: EnumReferenceType = { kind: 'enum', name: 'Role', ref: 'Role', values: [] }
+    const unionNode: UnionType = { kind: 'union', variants: [tupleNode, enumNode] }
+    expect(isTuple(tupleNode)).toBe(true)
+    expect(isEnum(enumNode)).toBe(true)
+    expect(isUnion(unionNode)).toBe(true)
+    expect(isEmptyArray({ kind: 'array', empty: true } as any)).toBe(true)
   })
 
   it('defaults to primitive any for unsupported SDM types', () => {

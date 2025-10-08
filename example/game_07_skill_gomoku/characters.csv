@@ -1,4 +1,4 @@
-@,enum<RoleType>,string,string,string?,string?,string?,string?,string?,string
-tid,roleType,name,entryEffect,exitEffect,enablesCards,notes,defeatCondition,quote,artwork
-3001,Character,张兴朝,登场后允许我方发动所有合体技。,被 See You Again 迫使离场时移出棋盘。,1004|1007,,See You Again 发动时离场,技能五！,https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=600&q=80
-3002,Location,什刹海,记录所有被移除的棋子，可供相关技能选择。,棋盘被重置时清空。,,用于表示"墓地"概念。,,什刹海在此。,https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=600&q=80
+@,enum<RoleType>,string,string,string?,uint[]?,string?,string?,string?,string,string
+tid,roleType,name,entryEffect,exitEffect,enablesCards,tags,defeatCondition,notes,quote,artwork
+3001,Character,张兴朝,登场后允许我方发动所有合体技。,被 See You Again 迫使离场时移出棋盘。,1004|1007|1011|1013,Fusion|Support,See You Again 发动时离场,召唤的当回合仍需等到下一回合才能使用合体技。,技能五！,https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=600&q=80
+3002,Location,什刹海,记录所有被移除的棋子，可供相关技能查看。,棋盘被重置或时光倒流至更早状态时清空。,1001|1004|1005,Shichahai|Support,棋盘完全重置时清空记录,提供给合体技与反击卡的额外信息。,什刹海在此。,https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=600&q=80

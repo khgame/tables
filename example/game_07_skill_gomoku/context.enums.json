@@ -5,6 +5,13 @@
     "Counter": "counter",
     "Support": "support"
   },
+  "CardSubtype": {
+    "Standard": "standard",
+    "Fusion": "fusion",
+    "Legendary": "legendary",
+    "Reactive": "reactive",
+    "Support": "support"
+  },
   "CardTiming": {
     "PreMove": "pre-move",
     "Reaction": "reaction",
@@ -15,8 +22,22 @@
     "Rare": "rare",
     "Legendary": "legendary"
   },
-  "ComboType": {
-    "Fusion": "fusion"
+  "CardEffect": {
+    "RemoveToShichahai": "remove-to-shichahai",
+    "FreezeOpponent": "freeze-opponent",
+    "InstantWin": "instant-win",
+    "CleanSweep": "clean-sweep",
+    "TimeRewind": "time-rewind",
+    "SkipNextTurn": "skip-next-turn",
+    "CounterRetrieve": "counter-retrieve",
+    "CounterPreventRemoval": "counter-prevent-removal",
+    "CounterThaw": "counter-thaw",
+    "CounterReverseWin": "counter-reverse-win",
+    "CounterRestoreBoard": "counter-restore-board",
+    "CounterCancelFusion": "counter-cancel-fusion",
+    "CounterPunish": "counter-punish",
+    "SummonCharacter": "summon-character",
+    "ForceExit": "force-exit"
   },
   "RoleType": {
     "Character": "character",
@@ -28,16 +49,24 @@
   },
   "Tag": {
     "Removal": "removal",
+    "Shichahai": "shichahai",
+    "Control": "control",
     "Freeze": "freeze",
     "DirectWin": "direct-win",
     "Fusion": "fusion",
+    "Legendary": "legendary",
+    "Random": "random",
     "SkipTurn": "skip-turn",
     "Reset": "reset",
+    "Rewind": "rewind",
+    "Counter": "counter",
     "Recovery": "recovery",
     "Prevention": "prevention",
     "AntiFusion": "anti-fusion",
     "Punish": "punish",
     "Summon": "summon",
-    "Reflect": "reflect"
+    "Reflect": "reflect",
+    "Unseizeable": "unseizeable",
+    "Support": "support"
   }
 }

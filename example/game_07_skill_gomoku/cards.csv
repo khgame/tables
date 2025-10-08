@@ -1,18 +1,18 @@
-@,enum<CardType>,string?,string,string,enum<CardRarity>,uint?,enum<CardSpeed>?,enum<CardTiming>,string,string?,string?,string?,string?,string?,string?,string?,string,string
-tid,type,subtype,nameZh,nameEn,rarity,cost,speed,timing,effect,triggerCondition,counteredBy,requires,requiresCards,failCondition,tags,notes,quote,artwork
-1001,Attack,,飞沙走石,Sandstorm,Common,1,Normal,PreMove,指定敌方棋子移出棋盘，进入什刹海。,,拾金不昧|擒拿,,,,Removal,,飞沙走石！,https://images.unsplash.com/photo-1527482797697-8795b05a13fe?w=600&q=80
-1002,Control,,静如止水,Time Freeze,Rare,2,Normal,PreMove,冻结敌方，令其当前与下个回合无法落子或发动技能。,,水滴石穿,,,,Freeze,,静如止水！,https://images.unsplash.com/photo-1483086431886-3590a88317fe?w=600&q=80
-1003,Attack,,力拔山兮,Instant Win,Legendary,3,Normal,PreMove,直接摔坏棋盘并宣布胜利。,,两极反转|东山再起,,,,DirectWin,,力拔山兮气盖世！,https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=600&q=80
-1004,Attack,,我是保洁,Cleaner Service,Rare,1,Normal,PreMove,随机扫走对手一枚棋子。,,滚！,张兴朝在场,1015,张兴朝离场或技能被滚！打断,Fusion|Removal,合体技,我是保洁的！,https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80
-1005,Attack,,棒球，呀咧呀咧,Baseball Strike,Rare,1,Normal,PreMove,效果等同于飞沙走石，但无法被擒拿防御。,,拾金不昧,,,,Removal,,呀咧呀咧！,https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=600&q=80
-1006,Control,,时光倒流,Time Rewind,Legendary,3,Normal,PreMove,将棋盘状态重置至任意之前的回合。,,滚！,,,,Reset,,时光倒流！,https://images.unsplash.com/photo-1501139083538-0139583c060f?w=600&q=80
-1007,Control,,调呈离山·东,Distract,Rare,2,Normal,PreMove,跳过对手一个回合，使其该回合无法落子或发动技能。,,滚！,张兴朝在场,1015,张兴朝离场或技能被滚！打断,Fusion|SkipTurn,合体技,调呈离山东！,https://images.unsplash.com/photo-1579547944212-c4f4d62b7dd8?w=600&q=80
-1008,Counter,,拾金不昧,Item Retrieval,Common,1,Instant,Reaction,抵消飞沙走石效果，将被丢弃棋子恢复至其他指定位置。,敌方使用飞沙走石或棒球时,,,,,Recovery,,拾金不昧！,https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80
-1009,Counter,,擒拿,Seize,Common,1,Instant,Reaction,阻止飞沙走石发动，使目标棋子保留原位（对棒球无效）。,敌方使用飞沙走石时,,,,,Prevention,,擒拿！,https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&q=80
-1010,Counter,,水滴石穿,Break Free,Common,1,Instant,Reaction,解除静如止水的冻结效果，恢复自身行动权。,己方处于静如止水影响时,,,,,Recovery,,水滴石穿！,https://images.unsplash.com/photo-1439902315629-cd882022cea0?w=600&q=80
-1011,Counter,,两极反转,Reverse Trap,Legendary,2,Instant,Reaction,敌方发动力拔山兮时触发，直接夺取胜利，无需恢复棋局。,敌方发动力拔山兮时,,,,,DirectWin|Reflect,,两极反转！,https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=80
-1012,Counter,,东山再起,Resurgence,Rare,2,Instant,Reaction,力拔山兮生效后捡起摔坏的棋盘，恢复至破坏前状态并继续对局。,力拔山兮结算后,,,,,Recovery,,东山再起！,https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&q=80
-1013,Counter,,滚！,Shout,Rare,1,Instant,Reaction,对手发动任意合体技时触发，阻止该合体技效果生效。,敌方发动合体技时,你骂老人,,,,AntiFusion,,滚！,https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=600&q=80
-1014,Counter,,你骂老人,Moral Pressure,Legendary,2,Instant,Reaction,当己方合体技被滚！打断时触发；合体技仍被打断，但通过道德施压令对手少行动一个回合（对手连续两个回合无法操作）。,敌方使用滚！打断己方合体技时,,,,,Punish,,你骂老人！,https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&q=80
-1015,Support,,技能五,Summon Skill Five,Common,1,Normal,Anytime,召唤张兴朝入场，开启所有合体技。,,,,,,Summon,,技能五！,https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80
-1016,Support,,See You Again,Force Exit,Common,1,Normal,Anytime,强制让对方张兴朝退场；若无目标则作废。,,,,,,AntiFusion,,See you again！,https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=80
+@,enum<CardType>,enum<CardSubtype>?,string,string,enum<CardRarity>,uint,enum<CardSpeed>,enum<CardTiming>,string,string?,enum<CardEffect>,string?,uint[]?,uint?,uint[]?,string?,string?,string?,string,string
+tid,type,subtype,nameZh,nameEn,rarity,cost,speed,timing,effect,triggerCondition,effectId,effectParams,counteredBy,requiresCharacter,requiresCards,failCondition,tags,notes,quote,artwork
+1001,Attack,Standard,飞沙走石,Sandstorm,Common,1,Normal,PreMove,指定敌方棋子移出棋盘，进入什刹海。,,RemoveToShichahai,,1008|1009,,,被擒拿或拾金不昧打断时取消,Removal|Shichahai,,你管这个叫五子棋？,https://images.unsplash.com/photo-1527482797697-8795b05a13fe?w=600&q=80
+1002,Control,Standard,静如止水,Time Freeze,Rare,2,Normal,PreMove,冻结敌方，令其接下来两个回合无法落子或发动技能。,,FreezeOpponent,turns=2,1010,,,冻结期间仍可使用反击卡,Control|Freeze,,嗯嗯，嗯,https://images.unsplash.com/photo-1483086431886-3590a88317fe?w=600&q=80
+1003,Attack,Legendary,力拔山兮,Instant Win,Legendary,3,Normal,PreMove,直接摔坏棋盘并宣布胜利。,,InstantWin,,1011|1012,,,若被反制则视作发动失败,DirectWin|Legendary,,这可是我的最终奥义,https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=600&q=80
+1004,Attack,Fusion,我是保洁,Cleaner Service,Rare,1,Normal,PreMove,同时随机扫走敌我各一枚棋子，移入什刹海。,己方张兴朝在场,CleanSweep,,1013,3001,,张兴朝离场或被滚！打断,Fusion|Removal|Random|Shichahai,,我这招叫做保洁上门,https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80
+1005,Attack,Standard,这是棒球,Baseball Strike,Rare,1,Normal,PreMove,效果等同于飞沙走石，但无法被擒拿防御。,,RemoveToShichahai,ignoreSeize=true,1008,,,只能被拾金不昧挽回,Removal|Shichahai|Unseizeable,,呀咧呀咧,https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=600&q=80
+1006,Control,Legendary,时光倒流,Time Rewind,Legendary,3,Normal,PreMove,将棋盘状态和墓地重置至任意之前的回合。,,TimeRewind,maxSteps=6,1013,,,最多回溯最近6个落子,Control|Reset|Rewind,,这一招好,https://images.unsplash.com/photo-1501139083538-0139583c060f?w=600&q=80
+1007,Control,Fusion,调呈离山·东,Distract,Rare,2,Normal,PreMove,跳过对手一个回合，使其无法落子或使用进攻卡。,,SkipNextTurn,turns=1,1013,3001,,张兴朝离场或被滚！打断,Fusion|Control|SkipTurn,,就是调走张呈，离开山东！,https://images.unsplash.com/photo-1579547944212-c4f4d62b7dd8?w=600&q=80
+1008,Counter,Reactive,拾金不昧,Item Retrieval,Common,1,Instant,Reaction,当己方棋子被移除时，改为放回任意空位。,"敌方使用移除类技能时",CounterRetrieve,,,,,Counter|Recovery|Shichahai,,嘿，拾金不昧,https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80
+1009,Counter,Reactive,擒拿,Seize,Common,1,Instant,Reaction,阻止飞沙走石发动，使目标棋子保留原位。,"敌方使用飞沙走石时",CounterPreventRemoval,blocks=1001,,,,Counter|Prevention,,我只是受过九年制义务教育,https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&q=80
+1010,Counter,Reactive,水滴石穿,Break Free,Common,1,Instant,Reaction,解除静如止水效果，立即恢复行动权。,"己方被冻结时",CounterThaw,,,,,Counter|Recovery|Freeze,,水滴石穿,https://images.unsplash.com/photo-1439902315629-cd882022cea0?w=600&q=80
+1011,Counter,Legendary,两极反转,Reverse Trap,Legendary,2,Instant,Reaction,敌方发动力拔山兮时发动，直接反夺胜利。,"敌方发动力拔山兮时",CounterReverseWin,,,3001,,需要张兴朝见证,Fusion|Counter|Legendary|DirectWin|Reflect,,哈哈哈哈哈哈，两极反转,https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=80
+1012,Counter,Reactive,东山再起,Resurgence,Rare,2,Instant,Reaction,力拔山兮生效后恢复棋盘至破坏前状态并继续对局。,"力拔山兮结算后",CounterRestoreBoard,,,,,Counter|Recovery|Reset,,那我就，东山再起,https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&q=80
+1013,Counter,Fusion,滚！,Shout,Rare,1,Instant,Reaction,对手发动任意合体技时阻止其效果。,"敌方发动合体技时",CounterCancelFusion,,1014,3001,,需保持士气以阻断合体技,Fusion|Counter|AntiFusion,,诶, 怎么又走了,https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=600&q=80
+1014,Counter,Legendary,你骂老人,Moral Pressure,Legendary,2,Instant,Reaction,当己方合体技被滚！打断时触发，对手下回合无法行动。,"敌方使用滚！阻断己方合体技时",CounterPunish,,,,,Counter|Punish,,你骂老人！,https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&q=80
+1015,Support,Support,技能五,Summon Skill Five,Common,1,Normal,Anytime,召唤张兴朝入场，使合体技可以发动。,,SummonCharacter,character=3001,,,召唤当回合无法立刻发动合体技,Support|Summon|Fusion,,技能五子·张技能五,https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80
+1016,Support,Support,See You Again,Force Exit,Common,1,Normal,Anytime,强制让对方张兴朝退场；若无目标则作废。,,ForceExit,target=3001,,,,Support|AntiFusion,,胜天半子·王金宝,https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=80

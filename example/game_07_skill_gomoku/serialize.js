@@ -57,9 +57,17 @@ function writeArtifacts() {
 }
 
 function writeWebDemo(targetDir) {
-  const templatePath = Path.resolve(baseDir, 'ui/index.html')
-  if (!fs.existsSync(templatePath)) {
-    console.warn('[game07] ui/index.html not found, skip web demo generation')
+  const uiDir = Path.resolve(baseDir, 'ui')
+  if (!fs.existsSync(uiDir)) {
+    console.warn('[game07] ui directory not found, skip web demo generation')
+    return
+  }
+
+  fs.copySync(uiDir, targetDir, { overwrite: true })
+
+  const indexPath = Path.resolve(targetDir, 'index.html')
+  if (!fs.existsSync(indexPath)) {
+    console.warn('[game07] index.html missing after copy, skip replacements')
     return
   }
 
@@ -68,15 +76,14 @@ function writeWebDemo(targetDir) {
     ['__CHARACTERS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'characters.json'))]
   ])
 
-  let html = fs.readFileSync(templatePath, 'utf8')
+  let html = fs.readFileSync(indexPath, 'utf8')
   for (const [token, value] of replacements.entries()) {
     if (!value) continue
     html = html.replace(new RegExp(token, 'g'), value)
   }
 
-  const destPath = Path.resolve(targetDir, 'index.html')
-  fs.writeFileSync(destPath, html)
-  console.log(`[game07] wrote web demo to ${destPath}`)
+  fs.writeFileSync(indexPath, html)
+  console.log(`[game07] wrote web demo to ${indexPath}`)
 }
 
 function loadJsonForScript(filePath) {

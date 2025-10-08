@@ -6,10 +6,12 @@
     "cards": {
       "byNameEn": "nameEn",
       "byType": "type",
+      "bySubtype": "subtype",
       "byRarity": "rarity",
       "byTiming": "timing",
-      "byRequires": {
-        "path": "requires",
+      "byEffect": "effectId",
+      "byRequiresCharacter": {
+        "path": "requiresCharacter",
         "allowEmpty": true
       },
       "byRequiresCards": {
@@ -17,7 +19,7 @@
         "mode": "multi",
         "allowEmpty": true
       },
-      "byCounter": {
+      "byCounteredBy": {
         "path": "counteredBy",
         "mode": "multi",
         "allowEmpty": true
@@ -30,7 +32,12 @@
     },
     "characters": {
       "byRole": "roleType",
-      "byName": "name"
+      "byName": "name",
+      "byTags": {
+        "path": "tags",
+        "mode": "multi",
+        "allowEmpty": true
+      }
     }
   }
 }

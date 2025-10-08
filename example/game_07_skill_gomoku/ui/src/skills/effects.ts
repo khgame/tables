@@ -54,6 +54,7 @@ export interface EffectHelpers {
     updater: (statuses: GameStatus['statuses']) => GameStatus['statuses']
   ) => void;
   setCharacters: (characters: Record<Player, any>) => void;
+  enqueueVisual: (payload: { effectId?: string; card: RawCard; player: Player }) => void;
 }
 
 export interface PendingWithMeta extends PendingAction {

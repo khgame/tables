@@ -117,6 +117,7 @@ const createInitialState = (): GameStatus => ({
   timeline: [],
   winner: null,
   aiEnabled: false,
+  visuals: [],
   mulligan: {
     stage: 'idle',
     current: null,
@@ -531,6 +532,7 @@ const applyResolveCard = (
 const finalizeCounter = (state: GameStatus, helpers: EffectHelpers) => {
   if (!state.pendingCounter) return;
   const responder = state.pendingCounter.player;
+  helpers.enqueueVisual({ effectId: state.pendingCounter.card.effectId, card: state.pendingCounter.card, player: responder });
   addCardToGraveyard(state, responder, state.pendingCounter.card, 'counter');
   helpers.log(`${PLAYER_NAMES[responder]} 的反击结算完成`, 'counter');
   if (state.pendingAction) {
@@ -553,6 +555,7 @@ const finalizeCardResolution = (
   helpers: EffectHelpers
 ) => {
   const player = pending.player;
+  helpers.enqueueVisual({ effectId: pending.card.effectId, card: pending.card, player });
   addCardToGraveyard(state, player, pending.card, 'played');
   state.decks[player]?.discard(pending.card);
   state.pendingAction = null;
@@ -647,6 +650,7 @@ const cloneStateForEffect = (state: GameStatus): GameStatus => ({
   statuses: cloneStatuses(state.statuses),
   logs: [...state.logs],
   timeline: [...state.timeline],
+  visuals: [...state.visuals],
   targetRequest: null,
   counterWindow: null
 });
@@ -684,5 +688,15 @@ const createEffectHelpers = (state: GameStatus): EffectHelpers => ({
   },
   setCharacters: characters => {
     state.characters = { ...characters };
+  },
+  enqueueVisual: ({ effectId, card, player }) => {
+    const event = {
+      id: generateId('visual'),
+      effectId,
+      cardName: card.nameZh,
+      player,
+      createdAt: Date.now()
+    };
+    state.visuals = [...state.visuals, event].slice(-10);
   }
 });

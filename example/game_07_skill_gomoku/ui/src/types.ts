@@ -71,6 +71,14 @@ export interface GameLogEntry {
   time: number;
 }
 
+export interface VisualEffectEvent {
+  id: string;
+  effectId?: string;
+  cardName: string;
+  player: Player;
+  createdAt: number;
+}
+
 export interface PendingAction {
   id: string;
   card: RawCard;
@@ -128,6 +136,7 @@ export interface GameStatus {
   timeline: Array<{ id: string; turn: number; player: Player | null; move?: { row: number; col: number }; board: BoardSnapshot; shichahai: ShichahaiEntry[]; characters: Record<Player, RawCharacter | null> }>;
   winner: Player | null;
   aiEnabled: boolean;
+  visuals: VisualEffectEvent[];
   mulligan: {
     stage: 'idle' | 'active' | 'completed';
     current: Player | null;

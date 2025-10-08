@@ -65,6 +65,7 @@ const themeConfig: DefaultTheme.Config = {
           { text: 'Click Cookies', link: '/demos/click-cookies' },
           { text: 'A Dark Room', link: '/demos/a-dark-room' },
           { text: 'Arcane Depths', link: '/demos/arcane-depths' },
+          { text: 'Skill Gomoku', link: '/demos/skill-gomoku' },
           { text: 'Neon Aberration', link: '/demos/neon-aberration' }
         ]
       }

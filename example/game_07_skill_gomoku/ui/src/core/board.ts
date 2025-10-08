@@ -1,34 +1,38 @@
-import { BOARD_SIZE } from './constants.js';
+import { BOARD_SIZE } from './constants';
+import type { BoardSnapshot, GomokuBoard, Player } from '../types';
 
 const WIN_LENGTH = 5;
-const DIRECTIONS = [
+const DIRECTIONS: Array<[number, number]> = [
   [0, 1],
   [1, 0],
   [1, 1],
   [1, -1]
 ];
 
-function createGrid(size) {
-  return Array.from({ length: size }, () => Array(size).fill(null));
-}
+const createGrid = (size: number) =>
+  Array.from({ length: size }, () => Array<Player | null>(size).fill(null));
 
-export class GomokuBoard {
+export class GomokuBoardImpl implements GomokuBoard {
+  size: number;
+  grid: (Player | null)[][];
+  history: Array<{ row: number; col: number; player: Player }>;
+
   constructor(size = BOARD_SIZE) {
     this.size = size;
     this.grid = createGrid(size);
     this.history = [];
   }
 
-  inBounds(row, col) {
+  private inBounds(row: number, col: number): boolean {
     return row >= 0 && row < this.size && col >= 0 && col < this.size;
   }
 
-  get(row, col) {
+  get(row: number, col: number): Player | null {
     if (!this.inBounds(row, col)) return null;
     return this.grid[row][col];
   }
 
-  place(row, col, player) {
+  place(row: number, col: number, player: Player): boolean {
     if (!this.inBounds(row, col)) return false;
     if (this.grid[row][col] !== null) return false;
     this.grid[row][col] = player;
@@ -36,22 +40,22 @@ export class GomokuBoard {
     return true;
   }
 
-  remove(row, col) {
+  remove(row: number, col: number): Player | null {
     if (!this.inBounds(row, col)) return null;
     const prev = this.grid[row][col];
     this.grid[row][col] = null;
     return prev;
   }
 
-  forEachCell(fn) {
+  forEachCell(cb: (row: number, col: number, value: Player | null) => void): void {
     for (let row = 0; row < this.size; row++) {
       for (let col = 0; col < this.size; col++) {
-        fn(row, col, this.grid[row][col]);
+        cb(row, col, this.grid[row][col]);
       }
     }
   }
 
-  checkWin(player) {
+  checkWin(player: Player): boolean {
     for (let row = 0; row < this.size; row++) {
       for (let col = 0; col < this.size; col++) {
         if (this.grid[row][col] !== player) continue;
@@ -65,7 +69,7 @@ export class GomokuBoard {
     return false;
   }
 
-  countInDirection(row, col, dr, dc, player) {
+  private countInDirection(row: number, col: number, dr: number, dc: number, player: Player): number {
     let count = 0;
     let r = row;
     let c = col;
@@ -84,14 +88,14 @@ export class GomokuBoard {
     return count;
   }
 
-  clone() {
-    const copy = new GomokuBoard(this.size);
+  clone(): GomokuBoard {
+    const copy = new GomokuBoardImpl(this.size);
     copy.grid = this.grid.map(row => [...row]);
     copy.history = this.history.map(entry => ({ ...entry }));
     return copy;
   }
 
-  toSnapshot() {
+  toSnapshot(): BoardSnapshot {
     return {
       size: this.size,
       grid: this.grid.map(row => [...row]),
@@ -99,15 +103,15 @@ export class GomokuBoard {
     };
   }
 
-  restore(snapshot) {
+  restore(snapshot: BoardSnapshot): void {
     this.size = snapshot.size;
     this.grid = snapshot.grid.map(row => [...row]);
     this.history = snapshot.history ? snapshot.history.map(entry => ({ ...entry })) : [];
   }
 }
 
-export function deserializeBoard(snapshot) {
-  const board = new GomokuBoard(snapshot.size);
+export const deserializeBoard = (snapshot: BoardSnapshot): GomokuBoard => {
+  const board = new GomokuBoardImpl(snapshot.size);
   board.restore(snapshot);
   return board;
-}
+};

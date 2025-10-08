@@ -2,46 +2,28 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/skill-gomoku.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>技能五子棋 - Skill Gomoku</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <script>
-      tailwind = {
+      window.tailwind = {
         theme: {
           extend: {
             fontFamily: {
               display: ['"Ma Shan Zheng"', 'cursive'],
               body: ['"Noto Sans SC"', 'sans-serif']
-            },
-            colors: {
-              board: '#d4a574',
-              hearth: {
-                base: '#2b1d12',
-                panel: '#3b2a1e',
-                accent: '#f0b76e',
-                accentDark: '#c77f34'
-              }
             }
           }
         }
       };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   </head>
   <body class="min-h-screen bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 font-body text-amber-100">
-    <div id="app" class="min-h-screen"></div>
-
-    <script>
-      window.TABLES_DATA = {
-        cards: __CARDS_JSON__,
-        characters: __CHARACTERS_JSON__
-      };
-    </script>
-
-    <script type="module" src="./scripts/main.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

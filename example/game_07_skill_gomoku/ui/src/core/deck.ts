@@ -1,26 +1,33 @@
-function shuffle(list, rng = Math.random) {
+import type { CardDeck, RawCard } from '../types';
+
+const shuffle = <T>(list: T[], rng: () => number = Math.random): T[] => {
   const arr = [...list];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-}
+};
 
-export class CardDeck {
-  constructor(allCards, rng = Math.random) {
+export class CardDeckImpl implements CardDeck {
+  private deck: RawCard[] = [];
+  private discardPile: RawCard[] = [];
+  private readonly allCards: RawCard[];
+  private readonly rng: () => number;
+
+  constructor(allCards: RawCard[], rng: () => number = Math.random) {
     this.allCards = allCards;
     this.rng = rng;
     this.reset();
   }
 
-  reset() {
+  private reset() {
     this.deck = shuffle(this.allCards, this.rng);
     this.discardPile = [];
   }
 
-  draw(count = 1) {
-    const drawn = [];
+  draw(count = 1): RawCard[] {
+    const drawn: RawCard[] = [];
     for (let i = 0; i < count; i++) {
       if (this.deck.length === 0) {
         if (this.discardPile.length === 0) break;
@@ -28,20 +35,13 @@ export class CardDeck {
         this.discardPile = [];
       }
       if (this.deck.length > 0) {
-        drawn.push(this.deck.pop());
+        drawn.push(this.deck.pop() as RawCard);
       }
     }
     return drawn;
   }
 
-  discard(card) {
+  discard(card: RawCard): void {
     this.discardPile.push(card);
-  }
-
-  clone() {
-    const copy = new CardDeck(this.allCards, this.rng);
-    copy.deck = [...this.deck];
-    copy.discardPile = [...this.discardPile];
-    return copy;
   }
 }

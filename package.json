@@ -35,7 +35,7 @@
     "ex:nightfall:dev": "node ./example/game_06_abyssal_nightfall/_rebuild_data.js && node ./example/game_06_abyssal_nightfall/serialize.js && npx vite --config example/game_06_abyssal_nightfall/vite.config.js",
     
     "ex:skill-gomoku": "npm run build && node ./example/game_07_skill_gomoku/serialize.js",
-    "ex:skill-gomoku:dev": "npm run build && node ./example/game_07_skill_gomoku/serialize.js && node ./node_modules/hserve/bin/hserve.js -d ./example/game_07_skill_gomoku/out -p 8090 -l",
+    "ex:skill-gomoku:dev": "npm run build && node ./example/game_07_skill_gomoku/serialize.js --skip-build && npx vite --config example/game_07_skill_gomoku/vite.config.ts",
 
     "tool:tileset": "npx http-server example/tool_01_tileset_slicer -p 5210 -o"
   },
@@ -66,7 +66,9 @@
     "lodash": "^4.17.11",
     "path": "^0.12.7",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.3/xlsx-0.19.3.tgz",
-    "yargs": "^13.2.1"
+    "yargs": "^13.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
@@ -74,6 +76,8 @@
     "@babel/plugin-transform-runtime": "^7.3.4",
     "@babel/preset-env": "^7.3.4",
     "@babel/preset-typescript": "^7.27.1",
+    "@types/react": "^18.3.6",
+    "@types/react-dom": "^18.3.0",
     "@types/chalk": "^0.4.31",
     "@types/deep-equal": "^1.0.4",
     "@types/fs-extra": "^11.0.4",
@@ -94,7 +98,9 @@
     "ts-node": "^8.0.2",
     "tslint": "^5.13.0",
     "typescript": "^5.6.3",
-    "vitepress": "^1.6.4"
+    "vite": "^5.4.8",
+    "vitepress": "^1.6.4",
+    "@vitejs/plugin-react": "^4.3.2"
   },
   "files": [
     "lib"

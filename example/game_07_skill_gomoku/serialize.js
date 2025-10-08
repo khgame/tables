@@ -1,5 +1,6 @@
 const Path = require('path')
 const fs = require('fs-extra')
+const { spawnSync } = require('child_process')
 const {
   serialize,
   serializeContext,
@@ -11,6 +12,8 @@ const {
 
 const baseDir = __dirname
 const outDir = Path.resolve(baseDir, 'out')
+const uiDir = Path.resolve(baseDir, 'ui')
+const publicDir = Path.resolve(uiDir, 'public')
 
 const tableStems = ['cards', 'characters']
 
@@ -36,8 +39,10 @@ function resolveSourceFile(stem) {
   throw new Error(`[game07] missing source table for ${stem}, expected ${candidate}`)
 }
 
-function writeArtifacts() {
+function writeArtifacts(options = {}) {
+  const { skipBuild = false } = options
   fs.ensureDirSync(outDir)
+  fs.ensureDirSync(publicDir)
   const context = loadContext(baseDir)
   const serializerList = serializerConfigs.map(({ serializer }) => serializer)
   serializeContext(outDir, serializerList, context)
@@ -52,52 +57,41 @@ function writeArtifacts() {
     console.log(`[game07] serialized ${Path.basename(src)}`)
   }
 
-  writeWebDemo(outDir)
-  console.log(`[game07] artifacts written to ${outDir}`)
+  copyDataToPublic()
+
+  if (!skipBuild) {
+    runViteBuild()
+  }
+
+  console.log(`[game07] artifacts available in ${outDir}`)
 }
 
-function writeWebDemo(targetDir) {
-  const uiDir = Path.resolve(baseDir, 'ui')
-  if (!fs.existsSync(uiDir)) {
-    console.warn('[game07] ui directory not found, skip web demo generation')
-    return
+function copyDataToPublic() {
+  for (const stem of tableStems) {
+    const fileName = `${stem}.json`
+    const sourcePath = Path.resolve(outDir, fileName)
+    const publicPath = Path.resolve(publicDir, fileName)
+    if (fs.existsSync(sourcePath)) {
+      fs.copySync(sourcePath, publicPath)
+    }
   }
-
-  fs.copySync(uiDir, targetDir, { overwrite: true })
-
-  const indexPath = Path.resolve(targetDir, 'index.html')
-  if (!fs.existsSync(indexPath)) {
-    console.warn('[game07] index.html missing after copy, skip replacements')
-    return
-  }
-
-  const replacements = new Map([
-    ['__CARDS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'cards.json'))],
-    ['__CHARACTERS_JSON__', loadJsonForScript(Path.resolve(targetDir, 'characters.json'))]
-  ])
-
-  let html = fs.readFileSync(indexPath, 'utf8')
-  for (const [token, value] of replacements.entries()) {
-    if (!value) continue
-    html = html.replace(new RegExp(token, 'g'), value)
-  }
-
-  fs.writeFileSync(indexPath, html)
-  console.log(`[game07] wrote web demo to ${indexPath}`)
 }
 
-function loadJsonForScript(filePath) {
-  if (!fs.existsSync(filePath)) {
-    console.warn(`[game07] ${filePath} missing, placeholder left empty`)
-    return 'null'
+function runViteBuild() {
+  const configPath = Path.resolve(baseDir, 'vite.config.ts')
+  const result = spawnSync('npx', ['vite', 'build', '--config', configPath], {
+    stdio: 'inherit',
+    cwd: Path.resolve(baseDir, '..', '..')
+  })
+  if (result.status !== 0) {
+    throw new Error('[game07] Vite build failed')
   }
-  const json = fs.readJsonSync(filePath)
-  return JSON.stringify(json, null, 2).replace(/</g, '\\u003c')
 }
 
 if (require.main === module) {
   try {
-    writeArtifacts()
+    const skipBuild = process.argv.includes('--skip-build') || process.argv.includes('--dev')
+    writeArtifacts({ skipBuild })
   } catch (error) {
     console.error('[game07] serialization failed:', error)
     process.exitCode = 1

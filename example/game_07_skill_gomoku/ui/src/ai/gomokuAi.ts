@@ -1,7 +1,8 @@
-import { GamePhase, Player, SKILL_UNLOCK_MOVE } from '../core/constants.js';
-import { SkillEffect } from '../skills/effects.js';
+import { GamePhaseEnum, PlayerEnum, SKILL_UNLOCK_MOVE, getOpponent } from '../core/constants';
+import type { GameStatus, Player, RawCard } from '../types';
+import { SkillEffect } from '../skills/effects';
 
-const DIRECTIONS = [
+const DIRECTIONS: Array<[number, number]> = [
   [0, 1],
   [1, 0],
   [1, 1],
@@ -23,7 +24,7 @@ const PATTERN_SCORES = {
   closedTwo: 20
 };
 
-export function findBestMove(board, player) {
+export const findBestMove = (board: GameStatus['board'], player: Player) => {
   const opponent = getOpponent(player);
   const immediate = findImmediateWinningMove(board, player);
   if (immediate) return immediate;
@@ -54,22 +55,19 @@ export function findBestMove(board, player) {
       bestMove = move;
       alpha = Math.max(alpha, score);
     }
-    if (bestScore >= MAX_SCORE) {
-      break;
-    }
-    if (alpha >= beta) {
-      break;
-    }
+    if (bestScore >= MAX_SCORE) break;
+    if (alpha >= beta) break;
   }
 
   return bestMove;
-}
+};
 
-export function aiShouldPlayCard(gameState) {
-  const { currentPlayer, turnCount, hands, board, characters, statuses } = gameState;
-  if (turnCount + 1 < SKILL_UNLOCK_MOVE || gameState.phase !== GamePhase.PLAYING) return null;
+export const aiShouldPlayCard = (state: GameStatus) => {
+  const { currentPlayer, turnCount, hands, board, characters, statuses, phase } = state;
+  if (phase !== GamePhaseEnum.PLAYING) return null;
+  if (turnCount + 1 < SKILL_UNLOCK_MOVE) return null;
 
-  const hand = hands[currentPlayer] || [];
+  const hand = hands[currentPlayer] ?? [];
   if (hand.length === 0) return null;
 
   const opponent = getOpponent(currentPlayer);
@@ -77,22 +75,17 @@ export function aiShouldPlayCard(gameState) {
   const opponentThreat = detectStrongThreat(board, opponent);
   const selfThreat = detectStrongThreat(board, currentPlayer);
 
-  const hasFusionCards = hand.some(card => includesTag(card, 'Fusion'));
+  const hasFusion = hand.some(card => includesTag(card, 'Fusion'));
   const summonCard = hand.find(card => card.effectId === SkillEffect.SummonCharacter);
-
-  if (summonCard && !characters[currentPlayer] && hasFusionCards) {
+  if (summonCard && !characters[currentPlayer] && hasFusion) {
     return { index: hand.indexOf(summonCard) };
   }
 
   if (opponentThreat >= 4) {
-    const prevention = hand.find(card => includesTag(card, 'Removal'));
-    if (prevention) {
-      return { index: hand.indexOf(prevention) };
-    }
+    const removal = hand.find(card => includesTag(card, 'Removal'));
+    if (removal) return { index: hand.indexOf(removal) };
     const freeze = hand.find(card => card.effectId === SkillEffect.FreezeOpponent);
-    if (freeze) {
-      return { index: hand.indexOf(freeze) };
-    }
+    if (freeze) return { index: hand.indexOf(freeze) };
   }
 
   if (boardScore < -2000) {
@@ -102,14 +95,14 @@ export function aiShouldPlayCard(gameState) {
     if (sweep) return { index: hand.indexOf(sweep) };
   }
 
-  const directWin = hand.find(card => card.effectId === SkillEffect.InstantWin);
-  if (directWin && boardScore > 1200) {
-    return { index: hand.indexOf(directWin) };
+  const instant = hand.find(card => card.effectId === SkillEffect.InstantWin);
+  if (instant && boardScore > 1200) {
+    return { index: hand.indexOf(instant) };
   }
 
-  const skipTurn = hand.find(card => card.effectId === SkillEffect.SkipNextTurn);
-  if (skipTurn && opponentThreat === 3) {
-    return { index: hand.indexOf(skipTurn) };
+  const skip = hand.find(card => card.effectId === SkillEffect.SkipNextTurn);
+  if (skip && opponentThreat === 3) {
+    return { index: hand.indexOf(skip) };
   }
 
   const forceExit = hand.find(card => card.effectId === SkillEffect.ForceExit);
@@ -127,26 +120,23 @@ export function aiShouldPlayCard(gameState) {
   }
 
   return null;
-}
+};
 
-export function aiSelectCounterCard(gameState, pendingCard) {
-  const { counterWindow, hands } = gameState;
-  if (!counterWindow) return null;
-  const responder = counterWindow.responder;
-  const hand = hands[responder] || [];
-  const effectId = pendingCard.card?.effectId;
+export const aiSelectCounterCard = (state: GameStatus, pending: { card?: RawCard }) => {
+  const responder = state.counterWindow?.responder;
+  if (responder === undefined) return null;
+  const hand = state.hands[responder] ?? [];
+  const effectId = pending.card?.effectId;
   if (!effectId) return null;
 
-  const findByEffect = effect =>
-    hand.find(card => card.effectId === effect);
+  const findByEffect = (effect: string) => hand.find(card => card.effectId === effect) ?? null;
 
   if (effectId === SkillEffect.InstantWin) {
-    return findByEffect(SkillEffect.CounterReverseWin) || findByEffect(SkillEffect.CounterRestoreBoard);
+    return findByEffect(SkillEffect.CounterReverseWin) ?? findByEffect(SkillEffect.CounterRestoreBoard);
   }
 
   if (effectId === SkillEffect.RemoveToShichahai) {
-    const unstoppable = pendingCard.card?.params?.ignoreSeize;
-    if (!unstoppable) {
+    if (!pending.card?.effectParams?.includes('ignoreSeize')) {
       const seize = findByEffect(SkillEffect.CounterPreventRemoval);
       if (seize) return seize;
     }
@@ -154,23 +144,23 @@ export function aiSelectCounterCard(gameState, pendingCard) {
     if (retrieve) return retrieve;
   }
 
-  if (effectId === SkillEffect.CleanSweep || includesTag(pendingCard.card, 'Fusion')) {
+  if (effectId === SkillEffect.CleanSweep || includesTag(pending.card, 'Fusion')) {
     const shout = findByEffect(SkillEffect.CounterCancelFusion);
     if (shout) return shout;
   }
 
-  if (includesTag(pendingCard.card, 'SkipTurn')) {
+  if (includesTag(pending.card, 'SkipTurn')) {
     const thaw = findByEffect(SkillEffect.CounterThaw);
     if (thaw) return thaw;
   }
 
   return null;
-}
+};
 
-export function chooseRemovalTarget(board, player) {
+export const chooseRemovalTarget = (board: GameStatus['board'], player: Player) => {
   const opponent = getOpponent(player);
-  let best = null;
   let bestScore = -Infinity;
+  let best: { row: number; col: number } | null = null;
   board.forEachCell((row, col, value) => {
     if (value !== opponent) return;
     const threat = evaluateThreatAt(board, opponent, row, col);
@@ -179,13 +169,14 @@ export function chooseRemovalTarget(board, player) {
       best = { row, col };
     }
   });
-  return best;
-}
+  return best ?? { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+};
 
-export function chooseRetrievalPlacement(board, player) {
+export const chooseRetrievalPlacement = (board: GameStatus['board'], player: Player) => {
   const candidates = generateCandidateMoves(board);
   if (candidates.length === 0) {
-    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+    const center = Math.floor(board.size / 2);
+    return { row: center, col: center };
   }
   let best = candidates[0];
   let bestScore = -Infinity;
@@ -199,9 +190,16 @@ export function chooseRetrievalPlacement(board, player) {
     }
   }
   return best;
-}
+};
 
-function alphaBeta(board, depth, alpha, beta, player, isMaximizing) {
+const alphaBeta = (
+  board: GameStatus['board'],
+  depth: number,
+  alpha: number,
+  beta: number,
+  player: Player,
+  isMaximizing: boolean
+): number => {
   const opponent = getOpponent(player);
   const selfScore = evaluateBoard(board, player);
   const opponentScore = evaluateBoard(board, opponent);
@@ -211,9 +209,7 @@ function alphaBeta(board, depth, alpha, beta, player, isMaximizing) {
   }
 
   const candidates = generateCandidateMoves(board);
-  if (candidates.length === 0) {
-    return 0;
-  }
+  if (candidates.length === 0) return 0;
 
   const ordered = orderMoves(board, candidates, player);
   const limit = depth === MAX_DEPTH - 1 ? Math.min(ordered.length, 12) : Math.min(ordered.length, 8);
@@ -241,9 +237,9 @@ function alphaBeta(board, depth, alpha, beta, player, isMaximizing) {
     }
     return value;
   }
-}
+};
 
-function evaluateBoard(board, player) {
+const evaluateBoard = (board: GameStatus['board'], player: Player): number => {
   let score = 0;
   board.forEachCell((row, col, value) => {
     if (value !== player) return;
@@ -254,23 +250,24 @@ function evaluateBoard(board, player) {
     }
   });
   return score;
-}
+};
 
-function scorePattern(count, openEnds) {
+const scorePattern = (count: number, openEnds: number): number => {
   if (count >= 5) return PATTERN_SCORES.five;
-  if (count === 4) {
-    return openEnds === 2 ? PATTERN_SCORES.openFour : PATTERN_SCORES.closedFour;
-  }
-  if (count === 3) {
-    return openEnds === 2 ? PATTERN_SCORES.openThree : PATTERN_SCORES.closedThree;
-  }
-  if (count === 2) {
-    return openEnds === 2 ? PATTERN_SCORES.openTwo : PATTERN_SCORES.closedTwo;
-  }
+  if (count === 4) return openEnds === 2 ? PATTERN_SCORES.openFour : PATTERN_SCORES.closedFour;
+  if (count === 3) return openEnds === 2 ? PATTERN_SCORES.openThree : PATTERN_SCORES.closedThree;
+  if (count === 2) return openEnds === 2 ? PATTERN_SCORES.openTwo : PATTERN_SCORES.closedTwo;
   return 2;
-}
+};
 
-function countSequence(board, row, col, dr, dc, player) {
+const countSequence = (
+  board: GameStatus['board'],
+  row: number,
+  col: number,
+  dr: number,
+  dc: number,
+  player: Player
+) => {
   let count = 0;
   let r = row;
   let c = col;
@@ -290,21 +287,20 @@ function countSequence(board, row, col, dr, dc, player) {
   }
   if (board.get(r, c) === null) openEnds++;
   return { count, openEnds };
-}
+};
 
-function generateCandidateMoves(board) {
-  const candidates = new Set();
+const generateCandidateMoves = (board: GameStatus['board']) => {
+  const candidates = new Set<string>();
   let hasStone = false;
   board.forEachCell((row, col, value) => {
-    if (value !== null) {
-      hasStone = true;
-      for (let dr = -NEIGHBOR_RADIUS; dr <= NEIGHBOR_RADIUS; dr++) {
-        for (let dc = -NEIGHBOR_RADIUS; dc <= NEIGHBOR_RADIUS; dc++) {
-          const r = row + dr;
-          const c = col + dc;
-          if (board.get(r, c) === null) {
-            candidates.add(`${r},${c}`);
-          }
+    if (value === null) return;
+    hasStone = true;
+    for (let dr = -NEIGHBOR_RADIUS; dr <= NEIGHBOR_RADIUS; dr++) {
+      for (let dc = -NEIGHBOR_RADIUS; dc <= NEIGHBOR_RADIUS; dc++) {
+        const r = row + dr;
+        const c = col + dc;
+        if (board.get(r, c) === null) {
+          candidates.add(`${r},${c}`);
         }
       }
     }
@@ -317,10 +313,10 @@ function generateCandidateMoves(board) {
     const [r, c] = key.split(',').map(Number);
     return { row: r, col: c };
   });
-}
+};
 
-function orderMoves(board, moves, player) {
-  return moves
+const orderMoves = (board: GameStatus['board'], moves: Array<{ row: number; col: number }>, player: Player) =>
+  moves
     .map(move => {
       const clone = board.clone();
       clone.place(move.row, move.col, player);
@@ -328,10 +324,14 @@ function orderMoves(board, moves, player) {
       return { move, score };
     })
     .sort((a, b) => b.score - a.score)
-    .map(item => item.move);
-}
+    .map(entry => entry.move);
 
-function evaluateThreatAt(board, player, row, col) {
+const evaluateThreatAt = (
+  board: GameStatus['board'],
+  player: Player,
+  row: number,
+  col: number
+): number => {
   let score = 0;
   for (const [dr, dc] of DIRECTIONS) {
     if (board.get(row - dr, col - dc) === player) continue;
@@ -339,9 +339,9 @@ function evaluateThreatAt(board, player, row, col) {
     score = Math.max(score, scorePattern(count, openEnds));
   }
   return score;
-}
+};
 
-function detectStrongThreat(board, player) {
+const detectStrongThreat = (board: GameStatus['board'], player: Player): number => {
   let best = 0;
   board.forEachCell((row, col, value) => {
     if (value !== player) return;
@@ -354,24 +354,20 @@ function detectStrongThreat(board, player) {
     }
   });
   return best;
-}
+};
 
-function findImmediateWinningMove(board, player) {
+const findImmediateWinningMove = (board: GameStatus['board'], player: Player) => {
   const candidates = generateCandidateMoves(board);
   for (const move of candidates) {
     const sandbox = board.clone();
     sandbox.place(move.row, move.col, player);
-    if (sandbox.checkWin(player)) {
-      return move;
-    }
+    if (sandbox.checkWin(player)) return move;
   }
   return null;
-}
+};
 
-function includesTag(card, tag) {
-  return (card.tags || '').split('|').includes(tag);
-}
-
-function getOpponent(player) {
-  return player === Player.BLACK ? Player.WHITE : Player.BLACK;
-}
+const includesTag = (card: RawCard, tag: string): boolean =>
+  (card.tags ?? '')
+    .split('|')
+    .map(item => item.trim())
+    .includes(tag);

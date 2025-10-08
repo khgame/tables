@@ -4,7 +4,7 @@
 - [x] `cards.csv` 16 张卡牌：类型、稀有度、计数、克制关系、合体技依赖均通过 tables 校验
 - [x] `characters.csv` 角色与场景配置：张兴朝启用合体技、什刹海记录捕获棋子
 - [x] `context.enums.json` / `context.meta.json`：新增枚举 `CardEffect`、`CardSubtype`、`Tag` 与多字段索引均能正确生成
-- [x] `serialize.js` 同时输出 json/ts/interface，并拷贝 UI 资源至 `out/`
+- [x] `serialize.js` 输出 json/ts/interface，并同步数据到 `out/` 与 `ui/public/`；默认触发 Vite build，可通过 `--skip-build` 跳过
 
 ## ✅ 核心流程
 - [x] 开局每人 1 张手牌 + 调度阶段（换牌入墓，重新补牌）
@@ -44,4 +44,4 @@
 
 ## ✅ 总结
 - [x] 数据、逻辑、技能、AI、UI 均已完整覆盖
-- [x] 本地 `npm run ex:skill-gomoku:dev` 一键体验，生成资源与预览服务均通过验证
+- [x] 本地 `npm run ex:skill-gomoku:dev` 生成数据后启动 Vite Dev Server，浏览器实时热更新

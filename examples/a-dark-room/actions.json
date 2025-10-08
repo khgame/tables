@@ -1,0 +1,204 @@
+{
+  "tids": [
+    "40000001",
+    "40000002",
+    "40000003",
+    "40000004",
+    "40000005",
+    "40000006",
+    "40000007"
+  ],
+  "result": {
+    "40000001": {
+      "_tid": "40000001",
+      "tid": 40000001,
+      "key": "stoke_fire",
+      "label": "添柴",
+      "description": "投掷木材保持炉火旺盛。",
+      "cooldown": 10,
+      "cost": {
+        "wood": 5
+      },
+      "reward": {
+        "warmth": 30
+      },
+      "unlock": {
+        "resource": ""
+      },
+      "logStart": "把几根木柴塞进炉火。",
+      "logResult": "炉火腾起，驱散了刺骨的寒意。",
+      "offline": true
+    },
+    "40000002": {
+      "_tid": "40000002",
+      "tid": 40000002,
+      "key": "gather_wood",
+      "label": "拾荒",
+      "description": "外出搜寻散落的木材。",
+      "cooldown": 6,
+      "cost": {},
+      "reward": {
+        "wood": 7
+      },
+      "unlock": {
+        "resource": ""
+      },
+      "logStart": "你走入昏暗的林间。",
+      "logResult": "拖着沉重树枝回到了营地。",
+      "offline": true
+    },
+    "40000003": {
+      "_tid": "40000003",
+      "tid": 40000003,
+      "key": "check_traps",
+      "label": "巡查陷阱",
+      "description": "查看陷阱是否捕获猎物。",
+      "cooldown": 20,
+      "cost": {},
+      "reward": {
+        "fur": 3,
+        "meat": 4
+      },
+      "unlock": {
+        "building": 30000002,
+        "resource": ""
+      },
+      "logStart": "你踏雪而行，沿途检查陷阱。",
+      "logResult": "几只小兽无力挣扎，被你顺手收好。",
+      "offline": true
+    },
+    "40000004": {
+      "_tid": "40000004",
+      "tid": 40000004,
+      "key": "prepare_rations",
+      "label": "熏制口粮",
+      "description": "在熏肉房制作耐储存的口粮。",
+      "cooldown": 30,
+      "cost": {
+        "meat": 6,
+        "leather": 1
+      },
+      "reward": {
+        "supplies": 8
+      },
+      "unlock": {
+        "building": 30000003,
+        "resource": ""
+      },
+      "logStart": "你将肉悬挂在低温的炉火旁。",
+      "logResult": "口粮被妥善封存，足以支撑远行。",
+      "offline": true
+    },
+    "40000005": {
+      "_tid": "40000005",
+      "tid": 40000005,
+      "key": "craft_charcoal",
+      "label": "闷烧木炭",
+      "description": "将木材闷烧成木炭。",
+      "cooldown": 45,
+      "cost": {
+        "wood": 20
+      },
+      "reward": {
+        "charcoal": 12
+      },
+      "unlock": {
+        "building": 30000004,
+        "resource": ""
+      },
+      "logStart": "你用土壤封住炉膛。",
+      "logResult": "黑亮的木炭堆满炉旁。",
+      "offline": true
+    },
+    "40000006": {
+      "_tid": "40000006",
+      "tid": 40000006,
+      "key": "craft_steel",
+      "label": "冶炼钢材",
+      "description": "在铸炉中冶炼精钢。",
+      "cooldown": 60,
+      "cost": {
+        "charcoal": 18,
+        "iron": 10
+      },
+      "reward": {
+        "steel": 4
+      },
+      "unlock": {
+        "building": 30000005,
+        "resource": ""
+      },
+      "logStart": "你把铁锭推入炽热的炉膛。",
+      "logResult": "精钢发出银蓝色的光泽。",
+      "offline": true
+    },
+    "40000007": {
+      "_tid": "40000007",
+      "tid": 40000007,
+      "key": "trade_with_caravan",
+      "label": "与商队交易",
+      "description": "花费口粮换取铁料与其他资源。",
+      "cooldown": 120,
+      "cost": {
+        "supplies": 12
+      },
+      "reward": {
+        "fur": 10,
+        "charcoal": 6,
+        "iron": 8
+      },
+      "unlock": {
+        "building": 30000006,
+        "resource": ""
+      },
+      "logStart": "你摆出准备好的物资等待商队。",
+      "logResult": "商人留下货物与故事，踏雪而去。",
+      "offline": false
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z",
+      "AA",
+      "AB",
+      "AC",
+      "AD",
+      "AE",
+      "AF",
+      "AG",
+      "AH",
+      "AI",
+      "AJ",
+      "AK"
+    ]
+  }
+}

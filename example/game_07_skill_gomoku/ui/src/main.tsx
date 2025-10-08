@@ -102,14 +102,14 @@ const App: React.FC = () => {
 
   const { phase, board, currentPlayer, hands, logs, pendingAction, targetRequest, aiEnabled, moveCount, statuses } = gameState;
 
-  return (
-    <div className="min-h-screen p-6 space-y-6">
-      <header className="text-center space-y-2">
-        <h1 className="font-display text-6xl text-amber-200 drop-shadow-2xl">技能五子棋</h1>
-        <p className="text-amber-200/80 text-lg">@khgame/tables 演示 - 小品梗元素卡牌化</p>
-      </header>
-      {phase === GamePhaseEnum.SETUP ? (
-        <div className="max-w-2xl mx-auto text-center bg-white/90 p-8 rounded-3xl shadow-2xl space-y-6 text-stone-900">
+  if (phase === GamePhaseEnum.SETUP) {
+    return (
+      <div className="h-screen overflow-auto p-6 flex flex-col items-center justify-center space-y-6">
+        <header className="text-center space-y-2">
+          <h1 className="font-display text-6xl text-amber-200 drop-shadow-2xl">技能五子棋</h1>
+          <p className="text-amber-200/80 text-lg">@khgame/tables 演示 - 小品梗元素卡牌化</p>
+        </header>
+        <div className="max-w-2xl text-center bg-white/90 p-8 rounded-3xl shadow-2xl space-y-6 text-stone-900">
           <h2 className="text-3xl font-bold">游戏规则</h2>
           <div className="text-left space-y-2 text-gray-700">
             <p>• 15×15 棋盘连成五子获胜</p>
@@ -135,22 +135,53 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
-      ) : phase === GamePhaseEnum.MULLIGAN ? (
-        renderMulligan()
-      ) : (
-        <div className="max-w-7xl mx-auto space-y-6">
-          <AvatarBadge
-            player={PlayerEnum.WHITE}
-            handCount={(hands[PlayerEnum.WHITE] ?? []).length}
-            moveCount={moveCount[PlayerEnum.WHITE] ?? 0}
-            stonesCount={stonesByPlayer[PlayerEnum.WHITE]}
-            characters={gameState.characters}
-            statuses={statuses}
-            isCurrent={currentPlayer === PlayerEnum.WHITE}
-          />
-          <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)_280px] items-start">
+      </div>
+    );
+  }
+
+  if (phase === GamePhaseEnum.MULLIGAN) {
+    return (
+      <div className="h-screen overflow-auto p-6 space-y-6">
+        <header className="text-center space-y-2">
+          <h1 className="font-display text-6xl text-amber-200 drop-shadow-2xl">技能五子棋</h1>
+          <p className="text-amber-200/80 text-lg">@khgame/tables 演示 - 小品梗元素卡牌化</p>
+        </header>
+        {renderMulligan()}
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen overflow-hidden px-6 py-4">
+      <div className="flex flex-col h-full gap-4">
+        <header className="text-center space-y-1">
+          <h1 className="font-display text-4xl text-amber-200 drop-shadow-xl">技能五子棋</h1>
+          <p className="text-amber-200/70 text-sm">@khgame/tables 演示 - 小品梗元素卡牌化</p>
+        </header>
+        <div className="flex flex-col flex-1 gap-4 overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-3">
+            <AvatarBadge
+              player={PlayerEnum.WHITE}
+              handCount={(hands[PlayerEnum.WHITE] ?? []).length}
+              moveCount={moveCount[PlayerEnum.WHITE] ?? 0}
+              stonesCount={stonesByPlayer[PlayerEnum.WHITE]}
+              characters={gameState.characters}
+              statuses={statuses}
+              isCurrent={currentPlayer === PlayerEnum.WHITE}
+            />
+            <AvatarBadge
+              player={PlayerEnum.BLACK}
+              handCount={(hands[PlayerEnum.BLACK] ?? []).length}
+              moveCount={moveCount[PlayerEnum.BLACK] ?? 0}
+              stonesCount={stonesByPlayer[PlayerEnum.BLACK]}
+              characters={gameState.characters}
+              statuses={statuses}
+              isCurrent={currentPlayer === PlayerEnum.BLACK}
+            />
+          </div>
+          <div className="grid lg:grid-cols-[240px_minmax(0,1fr)_280px] flex-1 gap-4 overflow-hidden">
             <ZonePanel title="敌方情报" graveyard={gameState.graveyards[PlayerEnum.WHITE] ?? []} shichahai={shichahaiByPlayer[PlayerEnum.WHITE]} />
-            <div className="space-y-4">
+            <div className="flex flex-col h-full gap-3 overflow-hidden">
               <div className="bg-gradient-to-r from-amber-500/80 via-amber-400/80 to-amber-500/80 text-amber-950 rounded-2xl px-4 py-2 flex justify-between items-center shadow-lg">
                 <div className="font-semibold">第 {gameState.turnCount} 回合</div>
                 <div className="text-sm">{PLAYER_NAMES[currentPlayer]} 行动中</div>
@@ -158,34 +189,39 @@ const App: React.FC = () => {
                   {gameState.turnCount + 1 < SKILL_UNLOCK_MOVE ? `技能将于第 ${SKILL_UNLOCK_MOVE} 步解锁` : '技能已可使用'}
                 </div>
               </div>
-              <Board
-                board={board}
-                onCellClick={placeStone}
-                disabled={phase !== GamePhaseEnum.PLAYING || Boolean(pendingAction) || (targetRequest && targetRequest.type === 'snapshot')}
-                targetRequest={targetRequest && targetRequest.type === 'cell' ? targetRequest : null}
-                onTargetSelect={selectTarget}
-              />
-              <PendingCardPanel
-                pendingCard={pendingAction}
-                responder={responder}
-                availableCounters={availableCounters}
-                selectedCounter={selectedCounter}
-                setSelectedCounter={setSelectedCounter}
-                onResolve={(countered, card) => {
-                  resolveCard(countered, card);
-                  if (countered) setSelectedCounter(null);
-                }}
-                aiEnabled={aiEnabled}
-              />
+              <div className="flex-1 flex items-center justify-center overflow-hidden">
+                <Board
+                  board={board}
+                  onCellClick={placeStone}
+                  disabled={phase !== GamePhaseEnum.PLAYING || Boolean(pendingAction) || (targetRequest && targetRequest.type === 'snapshot')}
+                  targetRequest={targetRequest && targetRequest.type === 'cell' ? targetRequest : null}
+                  onTargetSelect={selectTarget}
+                  className="w-full max-w-[520px] aspect-square"
+                />
+              </div>
+              {pendingAction && (
+                <PendingCardPanel
+                  pendingCard={pendingAction}
+                  responder={responder}
+                  availableCounters={availableCounters}
+                  selectedCounter={selectedCounter}
+                  setSelectedCounter={setSelectedCounter}
+                  onResolve={(countered, card) => {
+                    resolveCard(countered, card);
+                    if (countered) setSelectedCounter(null);
+                  }}
+                  aiEnabled={aiEnabled}
+                />
+              )}
             </div>
-            <div className="space-y-4">
+            <div className="flex flex-col h-full gap-3 overflow-hidden">
               {phase === GamePhaseEnum.GAME_OVER && (
-                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-3xl shadow-2xl text-center space-y-3 text-white">
-                  <h2 className="text-3xl font-bold">{PLAYER_NAMES[gameState.winner ?? PlayerEnum.BLACK]} 获胜！</h2>
+                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-5 rounded-3xl shadow-2xl text-center space-y-3 text-white">
+                  <h2 className="text-2xl font-bold">{PLAYER_NAMES[gameState.winner ?? PlayerEnum.BLACK]} 获胜！</h2>
                   <button
                     type="button"
                     onClick={() => startGame(aiEnabled)}
-                    className="bg-white text-orange-600 px-6 py-3 rounded-full font-bold hover:shadow-lg transition-all"
+                    className="bg-white text-orange-600 px-6 py-2 rounded-full font-bold hover:shadow-lg transition-all"
                   >
                     再来一局
                   </button>
@@ -194,33 +230,19 @@ const App: React.FC = () => {
               <GameLog logs={logs} />
             </div>
           </div>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-            <div className="space-y-4">
-              <AvatarBadge
-                player={PlayerEnum.BLACK}
-                handCount={(hands[PlayerEnum.BLACK] ?? []).length}
-                moveCount={moveCount[PlayerEnum.BLACK] ?? 0}
-                stonesCount={stonesByPlayer[PlayerEnum.BLACK]}
-                characters={gameState.characters}
-                statuses={statuses}
-                isCurrent={currentPlayer === PlayerEnum.BLACK}
-              />
-              <HandPanel
-                cards={hands[PlayerEnum.BLACK] ?? []}
-                onCardClick={playCard}
-                disabled={
-                  !(phase === GamePhaseEnum.PLAYING &&
-                    gameState.turnCount + 1 >= SKILL_UNLOCK_MOVE &&
-                    !pendingAction &&
-                    !(targetRequest && targetRequest.type === 'cell'))
-                }
-                player={PlayerEnum.BLACK}
-              />
-            </div>
+          <div className="grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-4">
+            <HandPanel
+              cards={hands[PlayerEnum.BLACK] ?? []}
+              onCardClick={playCard}
+              disabled={
+                !(phase === GamePhaseEnum.PLAYING && gameState.turnCount + 1 >= SKILL_UNLOCK_MOVE && !pendingAction && !(targetRequest && targetRequest.type === 'cell'))
+              }
+              player={PlayerEnum.BLACK}
+            />
             <ZonePanel title="我方情报" graveyard={gameState.graveyards[PlayerEnum.BLACK] ?? []} shichahai={shichahaiByPlayer[PlayerEnum.BLACK]} />
           </div>
         </div>
-      )}
+      </div>
       {targetRequest && targetRequest.type === 'snapshot' && <SnapshotSelector request={targetRequest} onSelect={selectTarget} />}
     </div>
   );

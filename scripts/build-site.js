@@ -34,6 +34,12 @@ const demos = [
     description: '战术 Roguelike + 基地经营示例，覆盖 jsonx 协议与可视化战斗'
   },
   {
+    id: 'game_07_skill_gomoku',
+    slug: 'skill-gomoku',
+    title: 'Skill Gomoku',
+    description: '五子棋 + 技能卡示例，炉石风格 UI、AI 对手与反击体系'
+  },
+  {
     id: 'game_06_abyssal_nightfall',
     slug: 'abyssal-nightfall',
     title: 'Abyssal Nightfall',

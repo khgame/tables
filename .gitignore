@@ -89,3 +89,4 @@ typings/
 AGENTS.md
 docs-site/.vitepress/dist
 .vscode
+.ref

@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
 import type { GameLogEntry, Player, RawCard, TargetRequest, GameStatus, GraveyardEntry, ShichahaiEntry } from '../types';
 import { chooseRemovalTarget, chooseRetrievalPlacement } from '../ai/gomokuAi';
@@ -40,17 +40,16 @@ export const Board: React.FC<BoardProps> = ({ board, onCellClick, disabled, targ
 
   return (
     <div
-      className={['bg-board p-4 rounded-3xl shadow-2xl border border-amber-500/40', className ?? ''].join(' ')}
-      style={{
-        backgroundImage:
-          'repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(139,69,19,0.12) 35px, rgba(139,69,19,0.12) 36px), repeating-linear-gradient(90deg, transparent, transparent 35px, rgba(139,69,19,0.12) 35px, rgba(139,69,19,0.12) 36px)',
-        ...style
-      }}
+      className={['relative rounded-3xl shadow-2xl overflow-hidden', className ?? ''].join(' ')}
+      style={style}
     >
-      <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))` }}>
-        {Array.from({ length: board.size }).map((_, rowIdx) =>
-          Array.from({ length: board.size }).map((_, colIdx) => {
-            const key = `${rowIdx}-${colIdx}`;
+      <div className="absolute inset-0 bg-gradient-to-br from-[#c8904a] via-[#b17836] to-[#7a4d1f]" />
+      <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3), transparent 55%)' }} />
+      <div className="relative p-3 sm:p-4 h-full flex items-center justify-center">
+        <div className="grid gap-0 w-full h-full" style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))` }}>
+          {Array.from({ length: board.size }).map((_, rowIdx) =>
+            Array.from({ length: board.size }).map((_, colIdx) => {
+              const key = `${rowIdx}-${colIdx}`;
             const highlight = inTargetMode
               ? targetCells.has(key)
                 ? 'target'
@@ -65,26 +64,31 @@ export const Board: React.FC<BoardProps> = ({ board, onCellClick, disabled, targ
                 key={key}
                 type="button"
                 className={[
-                  'relative w-full aspect-[1/1] border border-amber-800/30 transition-all',
-                  !value && !highlight ? 'hover:bg-amber-200/40' : '',
-                  value === PlayerEnum.BLACK ? 'bg-none' : '',
-                  isLast ? 'ring-2 ring-amber-400' : '',
+                  'relative w-full aspect-square transition-all',
+                  !value && !highlight ? 'hover:bg-[#f5d9ab]/40' : '',
+                  isLast ? 'ring-2 ring-amber-300' : '',
                   highlight === 'target' ? 'ring-2 ring-sky-300 animate-pulse' : '',
                   highlight === 'origin' ? 'ring-2 ring-rose-400' : ''
                 ].join(' ')}
+                style={{
+                  backgroundImage:
+                    'linear-gradient(0deg, rgba(0,0,0,0.05) 0%, rgba(255,255,255,0.08) 100%), radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), transparent 60%)',
+                  boxShadow: 'inset 0 0 8px rgba(0,0,0,0.12)'
+                }}
                 onClick={() => handleClick(rowIdx, colIdx)}
                 disabled={Boolean(value) && !highlight}
               >
                 {value === PlayerEnum.BLACK && (
-                  <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-900 to-black shadow-inner" />
+                  <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-[#1f1f1f] to-[#050505] shadow-[0_4px_16px_rgba(0,0,0,0.55),0_0_20px_rgba(0,0,0,0.45)]" />
                 )}
                 {value === PlayerEnum.WHITE && (
-                  <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-slate-100 to-white shadow-inner" />
+                  <div className="absolute inset-1.5 rounded-full bg-gradient-to-br from-[#f8f8f8] to-[#ffffff] shadow-[0_4px_16px_rgba(0,0,0,0.25),0_0_18px_rgba(255,255,255,0.7)]" />
                 )}
               </button>
             );
           })
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -159,7 +163,7 @@ interface HandPanelProps {
 }
 
 export const HandPanel: React.FC<HandPanelProps> = ({ cards, onCardClick, disabled, player }) => (
-  <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-5 rounded-3xl shadow-2xl border border-amber-500/40 text-amber-100">
+  <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-4 rounded-3xl shadow-xl text-amber-100">
     <div className="flex items-center justify-between mb-3">
       <h3 className="font-semibold text-lg tracking-wide text-amber-200">{PLAYER_NAMES[player]} 手牌</h3>
       <span className="text-xs text-amber-200/80">{cards.length} 张</span>
@@ -203,7 +207,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs }) => {
   return (
     <div
       ref={ref}
-      className="bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-4 rounded-3xl shadow-2xl h-72 overflow-y-auto border border-amber-500/40 text-amber-100"
+      className="bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 p-4 rounded-3xl shadow-xl h-72 overflow-y-auto text-amber-100"
     >
       <h3 className="font-semibold mb-3 text-lg sticky top-0 bg-stone-900/90 py-1 text-amber-200">对局记录</h3>
       <div className="space-y-1 text-sm">
@@ -241,7 +245,7 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   const canCounter = responder !== null && availableCounters.length > 0 && !aiEnabled;
 
   return (
-    <div className="bg-gradient-to-br from-amber-100 to-amber-200 border-2 border-amber-500/70 p-4 rounded-3xl shadow-xl space-y-3 text-amber-900">
+    <div className="bg-gradient-to-br from-amber-100 to-amber-200 p-4 rounded-3xl shadow-xl space-y-3 text-amber-900">
       <div className="font-semibold text-base">
         {PLAYER_NAMES[actingPlayer]} 使用: {pendingCard.card.nameZh}
       </div>
@@ -318,7 +322,7 @@ export const AvatarBadge: React.FC<AvatarBadgeProps> = ({
   statuses,
   isCurrent
 }) => {
-  const gradient = player === PlayerEnum.BLACK ? 'from-slate-900 via-slate-800 to-slate-700' : 'from-amber-300 via-amber-200 to-amber-100';
+  const gradient = player === PlayerEnum.BLACK ? 'from-slate-900 via-slate-800 to-slate-700' : 'from-amber-200 via-amber-100 to-amber-50';
   const textColor = player === PlayerEnum.BLACK ? 'text-amber-100' : 'text-stone-900';
   const badge = player === PlayerEnum.BLACK ? '黑' : '白';
   const character = characters[player];
@@ -327,8 +331,8 @@ export const AvatarBadge: React.FC<AvatarBadgeProps> = ({
 
   return (
     <div
-      className={`flex items-center gap-4 px-5 py-3 rounded-3xl shadow-xl border border-amber-500/40 bg-gradient-to-br ${gradient} ${textColor} ${
-        isCurrent ? 'ring-2 ring-amber-400' : 'opacity-90'
+      className={`flex items-center gap-4 px-4 py-3 rounded-3xl shadow-xl bg-gradient-to-br ${gradient} ${textColor} ${
+        isCurrent ? 'ring-2 ring-amber-400/60' : 'opacity-95'
       }`}
     >
       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 via-amber-400 to-amber-300 flex items-center justify-center text-2xl font-bold text-stone-900 shadow-inner">
@@ -365,18 +369,32 @@ interface ZonePanelProps {
 }
 
 export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichahai }) => (
-  <div className="bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 text-amber-100 rounded-3xl shadow-2xl border border-amber-500/30 p-4 space-y-4 h-full">
+  <div className="bg-gradient-to-br from-stone-900 via-stone-900 to-stone-950 text-amber-100 rounded-3xl shadow-xl p-4 space-y-4 h-full">
     <h3 className="text-lg font-semibold tracking-wide uppercase text-amber-300">{title}</h3>
     <section className="space-y-2 text-sm">
       <header className="font-semibold text-amber-300">墓地</header>
       {graveyard.length === 0 ? (
         <p className="text-xs text-amber-200/70 italic">暂无卡牌</p>
       ) : (
-        <ul className="max-h-32 overflow-y-auto pr-1 space-y-1">
+        <ul className="max-h-36 overflow-y-auto pr-1 space-y-2">
           {graveyard.map(item => (
-            <li key={item.id} className="flex justify-between gap-3 bg-stone-900/60 rounded-xl px-3 py-1.5">
-              <span className="font-medium">{item.cardName}</span>
-              <span className="text-xs text-amber-200/70">T{item.turn}</span>
+            <li key={item.id} className="flex items-center gap-3 bg-stone-900/50 rounded-xl px-3 py-2">
+              <div className="relative w-16 aspect-[1/1.618] shrink-0">
+                <CardFrame
+                  type={item.cardType ?? 'Support'}
+                  width={70}
+                  height={113}
+                  className="absolute inset-0 w-full h-full"
+                  variant="front"
+                />
+                <span className="absolute bottom-2 left-1 text-[0.6rem] bg-stone-900/80 px-1.5 py-0.5 rounded">
+                  T{item.turn}
+                </span>
+              </div>
+              <div className="flex-1 text-[0.7rem] leading-snug">
+                <div className="font-semibold text-amber-100 line-clamp-2">{item.cardName}</div>
+                <div className="opacity-70">{describeReason(item.reason)}</div>
+              </div>
             </li>
           ))}
         </ul>
@@ -387,11 +405,29 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
       {shichahai.length === 0 ? (
         <p className="text-xs text-amber-200/70 italic">尚无被驱逐的棋子</p>
       ) : (
-        <ul className="max-h-32 overflow-y-auto pr-1 space-y-1">
+        <ul className="max-h-36 overflow-y-auto pr-1 space-y-2">
           {shichahai.map(entry => (
-            <li key={entry.id} className="bg-stone-900/60 rounded-xl px-3 py-1.5 text-xs leading-snug">
-              <div className="font-semibold">T{entry.turn} ({entry.row}, {entry.col})</div>
-              <div className="opacity-80">来源: {entry.cardName ?? '技能效果'}</div>
+            <li key={entry.id} className="flex items-center gap-3 bg-stone-900/50 rounded-xl px-3 py-2 text-xs leading-snug">
+              <div className="relative w-16 aspect-[1/1.618] shrink-0">
+                <CardFrame
+                  type={entry.cardType ?? 'Control'}
+                  width={70}
+                  height={113}
+                  className="absolute inset-0 w-full h-full"
+                  variant="back"
+                />
+                <span className="absolute bottom-2 left-1 text-[0.6rem] bg-stone-900/80 px-1.5 py-0.5 rounded">
+                  T{entry.turn}
+                </span>
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-amber-100">
+                  ({entry.row}, {entry.col})
+                </div>
+                <div className="opacity-80 text-[0.7rem]">
+                  来源: {entry.cardName ?? '技能效果'}
+                </div>
+              </div>
             </li>
           ))}
         </ul>
@@ -399,6 +435,23 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
     </section>
   </div>
 );
+
+const describeReason = (reason: string) => {
+  switch (reason) {
+    case 'played':
+      return '已使用';
+    case 'counter':
+      return '用于反击';
+    case 'countered':
+      return '被反击打出';
+    case 'mulligan':
+      return '调度阶段换牌';
+    case 'fizzled':
+      return '未命中目标';
+    default:
+      return reason;
+  }
+};
 
 interface MulliganPanelProps {
   player: Player;

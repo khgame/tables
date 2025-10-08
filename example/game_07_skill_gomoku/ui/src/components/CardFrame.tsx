@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 const TYPE_GRADIENT: Record<string, { start: string; end: string }> = {
   Attack: { start: '#f97316', end: '#ffa94d' },
@@ -17,8 +17,9 @@ interface CardFrameProps {
 
 export const CardFrame: React.FC<CardFrameProps> = ({ type, width = 220, height = 356, variant = 'front', className }) => {
   const gradient = TYPE_GRADIENT[type] ?? TYPE_GRADIENT.Attack;
-  const idSuffix = Math.random().toString(36).slice(2, 8);
-  const gradId = `card-grad-${idSuffix}`;
+  const uniqueId = useId().replace(/:/g, '-');
+  const gradId = `card-grad-${uniqueId}`;
+  const shadowId = `card-shadow-${uniqueId}`;
 
   return (
     <svg
@@ -33,7 +34,7 @@ export const CardFrame: React.FC<CardFrameProps> = ({ type, width = 220, height 
           <stop offset="0%" stopColor={gradient.start} />
           <stop offset="100%" stopColor={gradient.end} />
         </linearGradient>
-        <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
           <feOffset dx="0" dy="8" />
           <feGaussianBlur stdDeviation="12" result="offset-blur" />
           <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
@@ -42,12 +43,10 @@ export const CardFrame: React.FC<CardFrameProps> = ({ type, width = 220, height 
           <feComposite operator="over" in="shadow" in2="SourceGraphic" />
         </filter>
       </defs>
-      <g filter="url(#innerShadow)">
+      <g filter={`url(#${shadowId})`}>
         <path
           d="M24 10h172c8.837 0 16 7.163 16 16v304c0 8.837-7.163 16-16 16H24c-8.837 0-16-7.163-16-16V26c0-8.837 7.163-16 16-16Z"
           fill="#1f2937"
-          stroke="url(#card-border)"
-          strokeWidth={0}
         />
         <path
           d="M24 10h172c8.837 0 16 7.163 16 16v304c0 8.837-7.163 16-16 16H24c-8.837 0-16-7.163-16-16V26c0-8.837 7.163-16 16-16Z"

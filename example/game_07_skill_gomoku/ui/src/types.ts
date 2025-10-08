@@ -39,6 +39,7 @@ export interface ShichahaiEntry {
   owner: Player;
   cardTid?: string | number;
   cardName?: string;
+  cardType?: string;
   row: number;
   col: number;
   turn: number;
@@ -50,6 +51,8 @@ export interface GraveyardEntry {
   id: string;
   cardTid?: string | number;
   cardName: string;
+  cardType?: string;
+  rarity?: string;
   player: Player;
   reason: string;
   turn: number;

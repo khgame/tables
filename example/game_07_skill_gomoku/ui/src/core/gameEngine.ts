@@ -330,6 +330,13 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   const card = hand[index];
   if (!card) return prev;
 
+  const timing = (card.timing ?? '').toLowerCase();
+  const reactingAsResponder =
+    prev.phase === GamePhaseEnum.COUNTER_WINDOW && prev.counterWindow?.responder === player;
+  if (timing === 'reaction' && !reactingAsResponder) {
+    return appendLog(prev, createLog('这张卡只能在反击窗口使用', 'error'));
+  }
+
   if (prev.turnCount + 1 < SKILL_UNLOCK_MOVE) {
     return appendLog(prev, createLog(`第 ${SKILL_UNLOCK_MOVE} 步后才能使用技能！`, 'error'));
   }

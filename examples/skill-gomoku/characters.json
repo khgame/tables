@@ -1,0 +1,93 @@
+{
+  "tids": [
+    "3001",
+    "3002"
+  ],
+  "result": {
+    "3001": {
+      "_tid": "3001",
+      "tid": 3001,
+      "roleType": "character",
+      "name": "张兴朝",
+      "entryEffect": "登场后允许我方发动所有合体技。",
+      "exitEffect": "被 See You Again 迫使离场时移出棋盘。",
+      "enablesCards": "1004|1007|1011|1013",
+      "tags": "Fusion|Support",
+      "defeatCondition": "See You Again 发动时离场",
+      "notes": "召唤的当回合仍需等到下一回合才能使用合体技。",
+      "quote": "技能五！",
+      "artwork": "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=600&q=80"
+    },
+    "3002": {
+      "_tid": "3002",
+      "tid": 3002,
+      "roleType": "location",
+      "name": "什刹海",
+      "entryEffect": "记录所有被移除的棋子，可供相关技能查看。",
+      "exitEffect": "棋盘被重置或时光倒流至更早状态时清空。",
+      "enablesCards": "1001|1004|1005",
+      "tags": "Shichahai|Support",
+      "defeatCondition": "棋盘完全重置时清空记录",
+      "notes": "提供给合体技与反击卡的额外信息。",
+      "quote": "什刹海在此。",
+      "artwork": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=600&q=80"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K"
+    ],
+    "indexes": {
+      "byRole": {
+        "path": [
+          "roleType"
+        ],
+        "mode": "unique"
+      },
+      "byName": {
+        "path": [
+          "name"
+        ],
+        "mode": "unique"
+      },
+      "byTags": {
+        "path": [
+          "tags"
+        ],
+        "mode": "multi"
+      }
+    }
+  },
+  "indexes": {
+    "byRole": {
+      "character": "3001",
+      "location": "3002"
+    },
+    "byName": {
+      "张兴朝": "3001",
+      "什刹海": "3002"
+    },
+    "byTags": {
+      "Fusion|Support": [
+        "3001"
+      ],
+      "Shichahai|Support": [
+        "3002"
+      ]
+    }
+  }
+}

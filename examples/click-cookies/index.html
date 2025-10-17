@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Click Cookies Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Luckiest Guy"', 'cursive'],
+              body: ['"Inter"', 'system-ui']
+            },
+            colors: {
+              cookie: '#f2a365',
+              chocolate: '#5c3d27',
+              cream: '#fdf5e6',
+              sugar: '#ffe8d6',
+              caramel: '#d18952'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      @keyframes float-up {
+        from {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+        to {
+          transform: translate(-50%, calc(var(--float-distance, 120px) * -1));
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="h-screen overflow-hidden min-h-screen bg-gradient-to-br from-sugar via-cream to-sugar text-chocolate" style="font-family: 'Inter', system-ui;">
+    <div class="min-h-screen bg-[url('https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-fixed bg-center">
+      <div class="min-h-screen backdrop-blur-xl backdrop-brightness-110">
+        <div class="max-w-6xl mx-auto py-10 px-6 lg:px-10 flex flex-col h-screen overflow-hidden">
+          <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <p class="uppercase tracking-[0.35em] text-xs text-chocolate/70 font-semibold">@khgame/tables showcase</p>
+              <h1 class="font-display text-4xl text-cookie drop-shadow">Click Cookies</h1>
+              <p class="text-chocolate/80 text-sm mt-2 max-w-2xl">点击中央大饼干、购买建筑与升级、重置声望兑换神器——所有数据来自 Excel → tables → JSON。</p>
+            </div>
+            <div class="rounded-3xl bg-white/70 px-4 py-3 shadow-lg shadow-chocolate/30 text-sm text-chocolate flex items-center gap-3">
+              <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36a.png" alt="cookie" class="w-10 h-10" />
+              <div>
+                <p class="font-semibold">配置即玩法</p>
+                <p class="text-xs">Excel sheets → tables → React</p>
+              </div>
+            </div>
+          </header>
+
+          <div id="app" class="flex-1 overflow-hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.TABLES_DATA = {
+        producers: {
+  "tids": [
+    "60000001",
+    "60000002",
+    "60000003",
+    "60000004",
+    "60000005",
+    "60000006",
+    "60000007",
+    "60000008",
+    "60000009",
+    "60000010",
+    "60000011",
+    "60000012"
+  ],
+  "result": {
+    "60000001": {
+      "_tid": "60000001",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Cursor",
+      "desc": "雇佣手指自动点击，每个 +0.1 CPS。",
+      "baseCost": 15,
+      "costGrowth": 1.15,
+      "baseCps": 0.1,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f446.png",
+      "unlockCookies": 0
+    },
+    "60000002": {
+      "_tid": "60000002",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Grandma",
+      "desc": "奶奶烘焙饼干，每个约 +0.6 CPS。",
+      "baseCost": 100,
+      "costGrowth": 1.15,
+      "baseCps": 0.6,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f475.png",
+      "unlockCookies": 50
+    },
+    "60000003": {
+      "_tid": "60000003",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Farm",
+      "desc": "种植饼干树，每个约 +6.5 CPS。",
+      "baseCost": 1100,
+      "costGrowth": 1.15,
+      "baseCps": 6.5,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f33e.png",
+      "unlockCookies": 500
+    },
+    "60000004": {
+      "_tid": "60000004",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "name": "Mine",
+      "desc": "开采饼干矿脉，每个约 +65 CPS。",
+      "baseCost": 12000,
+      "costGrowth": 1.15,
+      "baseCps": 65,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png",
+      "unlockCookies": 6000
+    },
+    "60000005": {
+      "_tid": "60000005",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 5,
+      "sequence": 5,
+      "name": "Factory",
+      "desc": "批量生产饼干，每个约 +650 CPS。",
+      "baseCost": 130000,
+      "costGrowth": 1.15,
+      "baseCps": 650,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png",
+      "unlockCookies": 65000
+    },
+    "60000006": {
+      "_tid": "60000006",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 6,
+      "sequence": 6,
+      "name": "Bank",
+      "desc": "资本运作，每个约 +7000 CPS。",
+      "baseCost": 1400000,
+      "costGrowth": 1.15,
+      "baseCps": 7000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3e6.png",
+      "unlockCookies": 500000
+    },
+    "60000007": {
+      "_tid": "60000007",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 7,
+      "sequence": 7,
+      "name": "Temple",
+      "desc": "奶奶祈祷，每个约 +85K CPS。",
+      "baseCost": 20000000,
+      "costGrowth": 1.15,
+      "baseCps": 85000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png",
+      "unlockCookies": 7500000
+    },
+    "60000008": {
+      "_tid": "60000008",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 8,
+      "sequence": 8,
+      "name": "Wizard Tower",
+      "desc": "魔法师召唤饼干，每个约 +1.2M CPS。",
+      "baseCost": 330000000,
+      "costGrowth": 1.15,
+      "baseCps": 1200000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f52e.png",
+      "unlockCookies": 250000000
+    },
+    "60000009": {
+      "_tid": "60000009",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 9,
+      "sequence": 9,
+      "name": "Shipment",
+      "desc": "宇宙运输，每个约 +18M CPS。",
+      "baseCost": 5100000000,
+      "costGrowth": 1.15,
+      "baseCps": 18000000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6f8.png",
+      "unlockCookies": 1200000000
+    },
+    "60000010": {
+      "_tid": "60000010",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 10,
+      "sequence": 10,
+      "name": "Portal",
+      "desc": "跨维度门户，每个约 +260M CPS。",
+      "baseCost": 75000000000,
+      "costGrowth": 1.15,
+      "baseCps": 260000000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f300.png",
+      "unlockCookies": 60000000000
+    },
+    "60000011": {
+      "_tid": "60000011",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 11,
+      "sequence": 11,
+      "name": "Time Machine",
+      "desc": "扭曲时间，每个约 +3.2B CPS。",
+      "baseCost": 1000000000000,
+      "costGrowth": 1.15,
+      "baseCps": 3200000000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png",
+      "unlockCookies": 400000000000
+    },
+    "60000012": {
+      "_tid": "60000012",
+      "categoryCode": 60,
+      "subtypeCode": 0,
+      "sequenceCode": 12,
+      "sequence": 12,
+      "name": "Antimatter Condenser",
+      "desc": "凝聚物质，每个约 +42B CPS。",
+      "baseCost": 14000000000000,
+      "costGrowth": 1.15,
+      "baseCps": 42000000000,
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png",
+      "unlockCookies": 8000000000000
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K"
+    ]
+  }
+},
+        upgrades: {
+  "tids": [
+    "70000001",
+    "70000002",
+    "70000003",
+    "70000004",
+    "70000005",
+    "70000006",
+    "70000007",
+    "70000008",
+    "70000009",
+    "70000010",
+    "70000011",
+    "70000012"
+  ],
+  "result": {
+    "70000001": {
+      "_tid": "70000001",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Reinforced Index Finger",
+      "target": 60000001,
+      "upgradeType": "multiplier",
+      "value": 2,
+      "cost": 80,
+      "desc": "游标产出翻倍。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png",
+      "unlockCookies": 50
+    },
+    "70000002": {
+      "_tid": "70000002",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Forwards from Grandma",
+      "target": 60000002,
+      "upgradeType": "multiplier",
+      "value": 2,
+      "cost": 800,
+      "desc": "奶奶烘焙速度翻倍。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9d3.png",
+      "unlockCookies": 400
+    },
+    "70000003": {
+      "_tid": "70000003",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Steel Plows",
+      "target": 60000003,
+      "upgradeType": "multiplier",
+      "value": 2,
+      "cost": 9500,
+      "desc": "农场效率翻倍。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e0.png",
+      "unlockCookies": 2500
+    },
+    "70000004": {
+      "_tid": "70000004",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "name": "Deep Drills",
+      "target": 60000004,
+      "upgradeType": "multiplier",
+      "value": 2,
+      "cost": 100000,
+      "desc": "矿井深挖翻倍产出。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/26cf.png",
+      "unlockCookies": 60000
+    },
+    "70000005": {
+      "_tid": "70000005",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 5,
+      "sequence": 5,
+      "name": "Assembly Line",
+      "target": 60000005,
+      "upgradeType": "multiplier",
+      "value": 1.8,
+      "cost": 1100000,
+      "desc": "工厂效率 ×1.8。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png",
+      "unlockCookies": 600000
+    },
+    "70000006": {
+      "_tid": "70000006",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 6,
+      "sequence": 6,
+      "name": "Compound Interest",
+      "target": 60000006,
+      "upgradeType": "multiplier",
+      "value": 1.8,
+      "cost": 11000000,
+      "desc": "银行存款利滚利，CPS ×1.8。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b5.png",
+      "unlockCookies": 5000000
+    },
+    "70000007": {
+      "_tid": "70000007",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 7,
+      "sequence": 7,
+      "name": "Divine Inspiration",
+      "target": 60000007,
+      "upgradeType": "multiplier",
+      "value": 1.8,
+      "cost": 160000000,
+      "desc": "庙宇产出 ×1.8。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png",
+      "unlockCookies": 75000000
+    },
+    "70000008": {
+      "_tid": "70000008",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 8,
+      "sequence": 8,
+      "name": "Arcane Circuit",
+      "target": 60000008,
+      "upgradeType": "multiplier",
+      "value": 1.8,
+      "cost": 2400000000,
+      "desc": "巫师塔效率 ×1.8。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f52e.png",
+      "unlockCookies": 2200000000
+    },
+    "70000009": {
+      "_tid": "70000009",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 9,
+      "sequence": 9,
+      "name": "Interstellar Logistics",
+      "target": 60000009,
+      "upgradeType": "multiplier",
+      "value": 1.6,
+      "cost": 36000000000,
+      "desc": "宇宙运输效率 ×1.6。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6f8.png",
+      "unlockCookies": 35000000000
+    },
+    "70000010": {
+      "_tid": "70000010",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 10,
+      "sequence": 10,
+      "name": "Dimensional Stabilizer",
+      "target": 60000010,
+      "upgradeType": "multiplier",
+      "value": 1.6,
+      "cost": 540000000000,
+      "desc": "传送门稳定性提升，产出 ×1.6。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f300.png",
+      "unlockCookies": 520000000000
+    },
+    "70000011": {
+      "_tid": "70000011",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 11,
+      "sequence": 11,
+      "name": "Chrono Crystal",
+      "target": 60000011,
+      "upgradeType": "multiplier",
+      "value": 1.6,
+      "cost": 7200000000000,
+      "desc": "时间机器效率 ×1.6。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png",
+      "unlockCookies": 7500000000000
+    },
+    "70000012": {
+      "_tid": "70000012",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 12,
+      "sequence": 12,
+      "name": "Quantum Condenser",
+      "target": 60000012,
+      "upgradeType": "multiplier",
+      "value": 1.6,
+      "cost": 95000000000000,
+      "desc": "反物质凝聚器效率 ×1.6。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png",
+      "unlockCookies": 90000000000000
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L"
+    ]
+  }
+},
+        achievements: {
+  "tids": [
+    "80000001",
+    "80000002",
+    "80000003",
+    "80000004",
+    "80000005",
+    "80000006",
+    "80000007",
+    "80000008"
+  ],
+  "result": {
+    "80000001": {
+      "_tid": "80000001",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Getting Started",
+      "requirementType": "totalCookies",
+      "requirementValue": 100,
+      "flavor": "做出第一百块饼干。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36a.png"
+    },
+    "80000002": {
+      "_tid": "80000002",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Grandma Hive",
+      "requirementType": "buildingCount:60000002",
+      "requirementValue": 5,
+      "flavor": "招募 5 位奶奶。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9da.png"
+    },
+    "80000003": {
+      "_tid": "80000003",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Industrial Revolution",
+      "requirementType": "buildingCount:60000005",
+      "requirementValue": 3,
+      "flavor": "建成 3 座工厂。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3ed.png"
+    },
+    "80000004": {
+      "_tid": "80000004",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "name": "Cookie Tycoon",
+      "requirementType": "totalCookies",
+      "requirementValue": 10000,
+      "flavor": "烘焙 1 万块饼干。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b0.png"
+    },
+    "80000005": {
+      "_tid": "80000005",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 5,
+      "sequence": 5,
+      "name": "Millionaire Baker",
+      "requirementType": "totalCookies",
+      "requirementValue": 1000000,
+      "flavor": "烘焙 100 万饼干。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f911.png"
+    },
+    "80000006": {
+      "_tid": "80000006",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 6,
+      "sequence": 6,
+      "name": "Temple Choir",
+      "requirementType": "buildingCount:60000007",
+      "requirementValue": 5,
+      "flavor": "运营 5 座庙宇。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f3db.png"
+    },
+    "80000007": {
+      "_tid": "80000007",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 7,
+      "sequence": 7,
+      "name": "Space Entrepreneur",
+      "requirementType": "buildingCount:60000009",
+      "requirementValue": 3,
+      "flavor": "拥有 3 艘宇宙运输舰。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f680.png"
+    },
+    "80000008": {
+      "_tid": "80000008",
+      "categoryCode": 80,
+      "subtypeCode": 0,
+      "sequenceCode": 8,
+      "sequence": 8,
+      "name": "Temporal Lord",
+      "requirementType": "buildingCount:60000011",
+      "requirementValue": 1,
+      "flavor": "购入第一台时间机器。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f2.png"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I"
+    ]
+  }
+},
+        artifacts: {
+  "tids": [
+    "95000001",
+    "95000002",
+    "95000003",
+    "95000004",
+    "95010001"
+  ],
+  "result": {
+    "95000001": {
+      "_tid": "95000001",
+      "categoryCode": 95,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Golden Oven Mitts",
+      "effectType": "globalMultiplier",
+      "effectValue": 1.6,
+      "costPoints": 30,
+      "desc": "所有 CPS 乘以 1.6。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9b5.png"
+    },
+    "95000002": {
+      "_tid": "95000002",
+      "categoryCode": 95,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Sugar Rush",
+      "effectType": "clickMultiplier",
+      "effectValue": 3,
+      "costPoints": 25,
+      "desc": "点击产量翻至 3 倍，并更快上浮。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36c.png"
+    },
+    "95000003": {
+      "_tid": "95000003",
+      "categoryCode": 95,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Pocket Chronometer",
+      "effectType": "offlineMultiplier",
+      "effectValue": 2,
+      "costPoints": 35,
+      "desc": "离线收益翻倍，归来即可收割。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/23f1.png"
+    },
+    "95000004": {
+      "_tid": "95000004",
+      "categoryCode": 95,
+      "subtypeCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "name": "Quantum Ledger",
+      "effectType": "costReduction",
+      "effectValue": 0.15,
+      "costPoints": 40,
+      "desc": "所有建筑成本降低 15%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b0.png"
+    },
+    "95010001": {
+      "_tid": "95010001",
+      "categoryCode": 95,
+      "subtypeCode": 1,
+      "sequenceCode": 1,
+      "sequence": 5,
+      "name": "Starfarer Compass",
+      "effectType": "prestigeBonus",
+      "effectValue": 0.25,
+      "costPoints": 45,
+      "desc": "声望重置额外 +25% 神器点。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f320.png"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J"
+    ]
+  }
+},
+        globalConfig: {
+  "tids": [
+    "90000001",
+    "90000002",
+    "90000003",
+    "90000004",
+    "90000005",
+    "90000006",
+    "90000007",
+    "90000008",
+    "90010001"
+  ],
+  "result": {
+    "90000001": {
+      "_tid": "90000001",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "key": "baseClick",
+      "valueType": "Float",
+      "value": 1,
+      "description": "单次点击基础产量"
+    },
+    "90000002": {
+      "_tid": "90000002",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "key": "tickInterval",
+      "valueType": "Float",
+      "value": 0.1,
+      "description": "自动计算间隔（秒）"
+    },
+    "90000003": {
+      "_tid": "90000003",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "key": "clickFloatDuration",
+      "valueType": "Float",
+      "value": 0.9,
+      "description": "点击数字上浮动画时长（秒）"
+    },
+    "90000004": {
+      "_tid": "90000004",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "key": "clickFloatDistance",
+      "valueType": "Float",
+      "value": 140,
+      "description": "点击数字上浮距离（像素）"
+    },
+    "90000005": {
+      "_tid": "90000005",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 5,
+      "sequence": 5,
+      "key": "clickFloatSpread",
+      "valueType": "Float",
+      "value": 80,
+      "description": "点击数字随机偏移范围（像素）"
+    },
+    "90000006": {
+      "_tid": "90000006",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 6,
+      "sequence": 6,
+      "key": "prestigeBase",
+      "valueType": "Float",
+      "value": 250000000,
+      "description": "声望计算基数（总饼干 / 基数）"
+    },
+    "90000007": {
+      "_tid": "90000007",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 7,
+      "sequence": 7,
+      "key": "prestigeExponent",
+      "valueType": "Float",
+      "value": 0.6,
+      "description": "声望计算指数"
+    },
+    "90000008": {
+      "_tid": "90000008",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 8,
+      "sequence": 8,
+      "key": "prestigeResetMultiplier",
+      "valueType": "Float",
+      "value": 1.08,
+      "description": "每次声望提升的全局 CPS 乘数"
+    },
+    "90010001": {
+      "_tid": "90010001",
+      "categoryCode": 90,
+      "sectionCode": 1,
+      "sequenceCode": 1,
+      "sequence": 9,
+      "key": "autosaveInterval",
+      "valueType": "UInt",
+      "value": 30,
+      "description": "自动保存秒数（演示用途）"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ]
+  }
+}
+      };
+    </script>
+
+    <script type="text/babel">
+      const { useMemo, useState, useEffect, useRef } = React;
+      const data = window.TABLES_DATA || {};
+      const runeTexture = 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(242,163,101,0.12) 100%)';
+      const STORAGE_KEY = 'click-cookies-demo-v1';
+
+      const toOwnedSet = (value) => {
+        if (value instanceof Set) return value;
+        return new Set(value || []);
+      };
+
+      const computeArtifactEffects = (artifacts, ownedArtifacts) => {
+        const owned = toOwnedSet(ownedArtifacts);
+        const effects = {
+          globalMultiplier: 1,
+          clickMultiplier: 1,
+          cpsAdditive: 0,
+          producerBoost: new Map(),
+          costReduction: new Map(),
+          globalCostReduction: 0,
+          offlineMultiplier: 1,
+          prestigeBonus: 0
+        };
+        artifacts.forEach(art => {
+          if (!owned.has(art.id)) return;
+          const type = art.effectType || '';
+          const value = Number(art.effectValue) || 0;
+          if (type === 'globalMultiplier') {
+            effects.globalMultiplier *= value || 1;
+          } else if (type === 'clickMultiplier') {
+            effects.clickMultiplier *= value || 1;
+          } else if (type === 'cpsAdditive') {
+            effects.cpsAdditive += value;
+          } else if (type.startsWith('producerBoost')) {
+            const [, tidStr] = type.split(':');
+            const target = Number(tidStr);
+            const current = effects.producerBoost.get(target) || 1;
+            effects.producerBoost.set(target, current * (value || 1));
+          } else if (type.startsWith('costReduction')) {
+            const [, tidStr] = type.split(':');
+            const reduction = Math.max(0, Math.min(value || 0, 0.9));
+            if (tidStr) {
+              const target = Number(tidStr);
+              const current = effects.costReduction.get(target) || 0;
+              effects.costReduction.set(target, Math.max(current, reduction));
+            } else {
+              effects.globalCostReduction = Math.max(effects.globalCostReduction, reduction);
+            }
+          } else if (type === 'offlineMultiplier') {
+            effects.offlineMultiplier *= value || 1;
+          } else if (type === 'prestigeBonus') {
+            effects.prestigeBonus += Math.max(0, value || 0);
+          }
+        });
+        return effects;
+      };
+
+      const computeProducerMultipliers = (upgrades, ownedUpgrades) => {
+        const owned = toOwnedSet(ownedUpgrades);
+        const map = new Map();
+        upgrades.forEach(upg => {
+          const current = map.get(upg.target) ?? 1;
+          if (owned.has(upg.id)) {
+            if (upg.upgradeType === 'multiplier') {
+              map.set(upg.target, current * (Number(upg.value) || 1));
+            } else if (upg.upgradeType === 'additive') {
+              map.set(upg.target, current + (Number(upg.value) || 0));
+            } else {
+              map.set(upg.target, current);
+            }
+          } else if (!map.has(upg.target)) {
+            map.set(upg.target, current);
+          }
+        });
+        return map;
+      };
+
+      const computeBaseCpsTotal = (producers, counts, multipliers, artifactEffects) => (
+        producers.reduce((sum, prod) => {
+          const count = (counts || {})[prod.id] || 0;
+          if (!count) return sum;
+          const upgradeMult = multipliers.get(prod.id) ?? 1;
+          const artifactMult = artifactEffects.producerBoost.get(prod.id) || 1;
+          return sum + (Number(prod.baseCps) || 0) * count * upgradeMult * artifactMult;
+        }, 0)
+      );
+
+      const computePrestigeMultiplier = (config, prestigePoints) => (
+        Math.pow(Number(config.prestigeResetMultiplier) || 1.05, prestigePoints || 0)
+      );
+
+      const computeCpsSnapshot = ({ producers, upgrades, artifacts, config, counts, ownedUpgrades, ownedArtifacts, prestigePoints }) => {
+        const artifactEffects = computeArtifactEffects(artifacts, ownedArtifacts);
+        const upgradeMultipliers = computeProducerMultipliers(upgrades, ownedUpgrades);
+        const baseCpsTotal = computeBaseCpsTotal(producers, counts, upgradeMultipliers, artifactEffects);
+        const prestigeMultiplier = computePrestigeMultiplier(config, prestigePoints);
+        const baseWithGlobal = baseCpsTotal * (artifactEffects.globalMultiplier || 1);
+        const cps = (baseWithGlobal + (artifactEffects.cpsAdditive || 0)) * prestigeMultiplier;
+        return { cps, artifactEffects, upgradeMultipliers, baseCpsTotal, baseWithGlobal, prestigeMultiplier };
+      };
+
+      const TABS = [
+        { id: 'producers', label: '建筑' },
+        { id: 'upgrades', label: '升级' },
+        { id: 'artifacts', label: '神器' },
+        { id: 'achievements', label: '成就' }
+      ];
+
+      const formatNumber = value => {
+        if (value >= 1e12) return (value / 1e12).toFixed(2) + 'T';
+        if (value >= 1e9) return (value / 1e9).toFixed(2) + 'B';
+        if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M';
+        if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+        return value.toFixed(0);
+      };
+
+      const highlightNumbers = message => (
+        String(message).split(/(\d+(?:\.\d+)?)/g).map((part, idx) => (
+          /^\d/.test(part)
+            ? <span key={idx} className="text-cookie font-semibold">{part}</span>
+            : <React.Fragment key={idx}>{part}</React.Fragment>
+        ))
+      );
+
+      const SparkleNumber = ({ value, unit }) => (
+        <span className="font-semibold text-cookie">
+          {formatNumber(value)}{unit ? <span className="text-xs text-chocolate/70 ml-1">{unit}</span> : null}
+        </span>
+      );
+
+      const StatCard = ({ label, value }) => (
+        <div className="rounded-3xl bg-white/70 px-5 py-3 shadow flex flex-col">
+          <p className="text-xs text-chocolate/70">{label}</p>
+          <p className="text-xl font-display text-cookie drop-shadow">{value}</p>
+        </div>
+      );
+
+      const PanelTabs = ({ active, onChange }) => (
+        <div className="flex gap-2 rounded-3xl bg-white/70 p-2 shadow-inner shadow-chocolate/20 text-sm">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              className={`flex-1 rounded-full px-3 py-2 font-semibold transition ${active === tab.id ? 'bg-cookie text-chocolate shadow-lg shadow-cookie/40' : 'text-chocolate/70 hover:bg-cookie/15'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      );
+
+      const ListItem = ({ title, subtitle, caption, icon, state }) => {
+        const base = 'w-full rounded-2xl px-3 py-2 flex gap-3 items-center border transition shadow-sm';
+        const palette = {
+          locked: 'bg-white/30 text-chocolate/40 border-transparent cursor-not-allowed',
+          affordable: 'bg-white/95 text-chocolate border-cookie/40 hover:bg-cookie/25',
+          limited: 'bg-white/70 text-chocolate/80 border-chocolate/10',
+          owned: 'bg-cookie/25 text-chocolate border-cookie/40'
+        };
+        return (
+          <div className={`${base} ${palette[state] || palette.limited}`}>
+            <img src={icon} alt={title} className="w-8 h-8 rounded-xl object-cover shadow" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="text-xs text-chocolate/60">{subtitle}</p>
+            </div>
+            <div className="text-right text-xs text-chocolate/70">
+              {caption}
+            </div>
+          </div>
+        );
+      };
+
+      const ScrollPanel = ({ children }) => (
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 pe-2">
+          {children}
+        </div>
+      );
+
+      const BigCookie = ({ onClick, disabled, floaters, floatSettings }) => (
+        <div className="relative flex flex-col items-center justify-center">
+          <button
+            className={`relative flex items-center justify-center w-48 h-48 md:w-60 md:h-60 rounded-full shadow-2xl shadow-chocolate/50 border-[6px] border-white/70 transition transform active:scale-95 ${disabled ? 'opacity-60 cursor-not-allowed' : 'bg-cookie/90 hover:brightness-105'}`}
+            onClick={onClick}
+            disabled={disabled}
+          >
+            <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f36a.png" alt="Cookie" className="w-40 h-40 object-contain" />
+          </button>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            {floaters.map(f => (
+              <span
+                key={f.id}
+                className="absolute text-cookie font-semibold text-lg drop-shadow-lg"
+                style={{
+                  left: '50%',
+                  marginLeft: `${f.offsetX}px`,
+                  bottom: '25%',
+                  animation: `float-up ${floatSettings.duration}s ease-out forwards`,
+                  '--float-distance': `${floatSettings.distance}px`
+                }}
+              >
+                +{formatNumber(f.amount)}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+
+      const ProducersTab = (props) => {
+        const {
+          producers,
+          counts,
+          cookies,
+          totalCookies,
+          upgradeMultipliers,
+          artifactBoosts,
+          globalMultiplier,
+          costReducers,
+          globalCostReduction,
+          onBuy
+        } = props;
+        return (
+          <ScrollPanel>
+            {producers.map(prod => {
+              const owned = counts[prod.id] || 0;
+              const baseCost = Math.ceil(prod.baseCost * Math.pow(prod.costGrowth, owned));
+              const targetedReduction = (costReducers && costReducers.get(prod.id)) || 0;
+              const effectiveReduction = Math.max(targetedReduction, globalCostReduction || 0);
+              const discountedCost = Math.ceil(baseCost * (1 - effectiveReduction));
+              const locked = totalCookies < (prod.unlockCookies || 0);
+              const upgradeMult = upgradeMultipliers.get(prod.id) || 1;
+              const artMult = artifactBoosts.get(prod.id) || 1;
+              const displayCps = prod.baseCps * upgradeMult * artMult * globalMultiplier;
+              const state = locked ? 'locked' : cookies >= discountedCost ? 'affordable' : 'limited';
+              return (
+                <button key={prod.id} className="w-full text-left" onClick={() => onBuy(prod.id, discountedCost)} disabled={locked || cookies < discountedCost}>
+                  <ListItem
+                    title={`${prod.name} × ${owned}`}
+                    subtitle={prod.desc}
+                    caption={(
+                      <span>
+                        CPS {displayCps.toFixed(2)} · Cost <SparkleNumber value={discountedCost} />
+                        {effectiveReduction > 0 ? (
+                          <span className="ml-1 text-[11px] text-chocolate/60">(-{Math.round(effectiveReduction * 100)}%)</span>
+                        ) : null}
+                      </span>
+                    )}
+                    icon={prod.icon}
+                    state={state}
+                  />
+                </button>
+              );
+            })}
+          </ScrollPanel>
+        );
+      };
+
+      const UpgradesTab = ({ upgrades, owned, cookies, unlockSet, onBuy }) => (
+        <ScrollPanel>
+          {upgrades.map(upg => {
+            const purchased = owned.has(upg.id);
+            const locked = !unlockSet.has(upg.id);
+            const state = purchased ? 'owned' : locked ? 'locked' : cookies >= upg.cost ? 'affordable' : 'limited';
+            return (
+              <button key={upg.id} className="w-full text-left" onClick={() => onBuy(upg.id, upg.cost)} disabled={purchased || locked || cookies < upg.cost}>
+                <ListItem
+                  title={upg.name}
+                  subtitle={upg.desc}
+                  caption={<span>Cost <SparkleNumber value={upg.cost} /></span>}
+                  icon={upg.icon}
+                  state={state}
+                />
+              </button>
+            );
+          })}
+        </ScrollPanel>
+      );
+
+      const ArtifactsTab = ({ artifacts, ownedArtifacts, availablePoints, onBuy }) => (
+        <ScrollPanel>
+          {artifacts.map(art => {
+            const owned = ownedArtifacts.has(art.id);
+            const state = owned ? 'owned' : availablePoints >= art.costPoints ? 'affordable' : 'limited';
+            return (
+              <button key={art.id} className="w-full text-left" onClick={() => onBuy(art.id, art.costPoints)} disabled={owned || availablePoints < art.costPoints}>
+                <ListItem
+                  title={art.name}
+                  subtitle={art.desc}
+                  caption={<span>{art.costPoints} 点</span>}
+                  icon={art.icon}
+                  state={state}
+                />
+              </button>
+            );
+          })}
+        </ScrollPanel>
+      );
+
+      const AchievementsTab = ({ achievements, unlocked }) => (
+        <ScrollPanel>
+          {achievements.map(ach => (
+            <ListItem
+              key={ach.id}
+              title={ach.name}
+              subtitle={ach.flavor}
+              caption={unlocked.has(ach.id) ? '已达成' : '未达成'}
+              icon={ach.icon}
+              state={unlocked.has(ach.id) ? 'owned' : 'locked'}
+            />
+          ))}
+        </ScrollPanel>
+      );
+
+      const LogView = ({ entries, onReset }) => (
+        <section className="relative overflow-hidden rounded-3xl bg-white/80 backdrop-blur-md shadow-xl shadow-chocolate/30 flex flex-col h-full">
+          <div className="absolute inset-0 opacity-20" style={{ background: runeTexture }}></div>
+          <div className="relative z-10 p-4 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-xl text-cookie drop-shadow">日志</h2>
+              <button className="text-xs text-chocolate/70 hover:text-cookie" onClick={onReset}>清空</button>
+            </div>
+            <div id="log-view" className="flex-1 overflow-y-auto rounded-2xl bg-white/70 px-3 py-3 text-sm text-chocolate/80 space-y-2">
+              {entries.length === 0 && <p className="text-chocolate/50">开始点击或购买建筑来触发日志。</p>}
+              {entries.map((item, idx) => (
+                <p key={idx} className="leading-5">
+                  <span className="text-cookie/80">[{item.when}]</span>
+                  <span className="ml-2">{highlightNumbers(item.message)}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+
+      const useDictionary = dataset => useMemo(() => {
+        const map = new Map();
+        Object.entries(dataset || {}).forEach(([tid, node]) => map.set(Number(tid), node));
+        return map;
+      }, [dataset]);
+
+      const calculatePrestigePoints = (total, config) => {
+        const base = Math.max(1, Number(config.prestigeBase) || 1e10);
+        const exp = Number(config.prestigeExponent) || 0.6;
+        if (total <= 0) return 0;
+        return Math.floor(Math.pow(total / base, exp));
+      };
+
+      function App() {
+        const producersDataset = data.producers || { tids: [], result: {} };
+        const upgradesDataset = data.upgrades || { tids: [], result: {} };
+        const achievementsDataset = data.achievements || { tids: [], result: {} };
+        const artifactsDataset = data.artifacts || { tids: [], result: {} };
+        const globalDataset = data.globalConfig || { result: {} };
+
+        const producers = useMemo(() => producersDataset.tids.map(id => ({ id: Number(id), ...(producersDataset.result[id] || {}) })), [producersDataset]);
+        const upgrades = useMemo(() => upgradesDataset.tids.map(id => ({ id: Number(id), ...(upgradesDataset.result[id] || {}) })), [upgradesDataset]);
+        const achievements = useMemo(() => achievementsDataset.tids.map(id => ({ id: Number(id), ...(achievementsDataset.result[id] || {}) })), [achievementsDataset]);
+        const artifacts = useMemo(() => artifactsDataset.tids.map(id => ({ id: Number(id), ...(artifactsDataset.result[id] || {}) })), [artifactsDataset]);
+
+        const config = useMemo(() => {
+          const res = {};
+          Object.values(globalDataset.result || {}).forEach(entry => { res[entry.key] = entry.value; });
+          return res;
+        }, [globalDataset]);
+
+        const floatSettings = useMemo(() => ({
+          duration: Number(config.clickFloatDuration) || 0.9,
+          distance: Number(config.clickFloatDistance) || 140,
+          spread: Number(config.clickFloatSpread) || 80
+        }), [config]);
+
+        const loadInitialState = () => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const ownedUpgrades = new Set(parsed.ownedUpgrades || []);
+            const ownedArtifacts = new Set(parsed.ownedArtifacts || []);
+            const result = {
+              cookies: parsed.cookies || 0,
+              totalCookies: parsed.totalCookies || 0,
+              producerCounts: parsed.producerCounts || {},
+              ownedUpgrades,
+              ownedArtifacts,
+              artifactPoints: parsed.artifactPoints || 0,
+              prestigePoints: parsed.prestigePoints || 0,
+              unlockedAchievements: new Set(parsed.unlockedAchievements || []),
+              log: parsed.log || [],
+              lastActiveAt: Date.now()
+            };
+            const lastTimestamp = parsed.timestamp || parsed.lastActiveAt;
+              if (lastTimestamp) {
+                const elapsedSeconds = Math.max(0, (Date.now() - lastTimestamp) / 1000);
+                if (elapsedSeconds > 0) {
+                  const restoreEffects = computeArtifactEffects(artifacts, ownedArtifacts);
+                  const snapshot = computeCpsSnapshot({
+                    producers,
+                    upgrades,
+                    artifacts,
+                    config,
+                    counts: result.producerCounts,
+                    ownedUpgrades,
+                    ownedArtifacts,
+                    prestigePoints: result.prestigePoints
+                  });
+                  const offlineGain = snapshot.cps * elapsedSeconds * (restoreEffects.offlineMultiplier || 1);
+                  if (offlineGain > 0) {
+                    result.cookies += offlineGain;
+                    result.totalCookies += offlineGain;
+                  const message = `离线收益 +${offlineGain.toFixed(1)} 饼干（${elapsedSeconds.toFixed(1)} 秒）`;
+                  const timestamp = new Date().toLocaleTimeString();
+                  result.log = [...result.log.slice(-99), { when: timestamp, message }];
+                }
+              }
+            }
+            return result;
+          } catch (err) {
+            console.warn('[click-cookies] Failed to load save:', err);
+            return null;
+          }
+        };
+
+        const initial = loadInitialState();
+
+        const [cookies, setCookies] = useState(initial ? initial.cookies : 0);
+        const [totalCookies, setTotalCookies] = useState(initial ? initial.totalCookies : 0);
+        const [producerCounts, setProducerCounts] = useState(initial ? initial.producerCounts : {});
+        const [ownedUpgrades, setOwnedUpgrades] = useState(initial ? initial.ownedUpgrades : new Set());
+        const [ownedArtifacts, setOwnedArtifacts] = useState(initial ? initial.ownedArtifacts : new Set());
+        const [artifactPoints, setArtifactPoints] = useState(initial ? initial.artifactPoints : 0);
+        const [prestigePoints, setPrestigePoints] = useState(initial ? initial.prestigePoints : 0);
+        const [unlockedAchievements, setUnlockedAchievements] = useState(initial ? initial.unlockedAchievements : new Set());
+        const [log, setLog] = useState(initial ? initial.log : []);
+        const [floaters, setFloaters] = useState([]);
+        const [activeTab, setActiveTab] = useState('producers');
+        const lastActiveRef = useRef(initial ? initial.lastActiveAt || Date.now() : Date.now());
+
+        const upgradeLookup = useDictionary(upgradesDataset.result || {});
+        const artifactLookup = useDictionary(artifactsDataset.result || {});
+
+        useEffect(() => {
+          const persist = () => {
+            const now = Date.now();
+            const payload = {
+              cookies,
+              totalCookies,
+              producerCounts,
+              ownedUpgrades: Array.from(ownedUpgrades),
+              ownedArtifacts: Array.from(ownedArtifacts),
+              artifactPoints,
+              prestigePoints,
+              unlockedAchievements: Array.from(unlockedAchievements),
+              log,
+              timestamp: now
+            };
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+              lastActiveRef.current = now;
+            } catch (err) {
+              console.warn('[click-cookies] Failed to save:', err);
+            }
+          };
+          persist();
+          window.addEventListener('beforeunload', persist);
+          return () => {
+            window.removeEventListener('beforeunload', persist);
+          };
+        }, [cookies, totalCookies, producerCounts, ownedUpgrades, ownedArtifacts, artifactPoints, prestigePoints, unlockedAchievements, log]);
+
+        const upgradeUnlockSet = useMemo(() => {
+          const set = new Set();
+          upgrades.forEach(upg => { if (totalCookies >= (upg.unlockCookies || 0)) set.add(upg.id); });
+          return set;
+        }, [upgrades, totalCookies]);
+
+        const artifactEffects = useMemo(
+          () => computeArtifactEffects(artifacts, ownedArtifacts),
+          [artifacts, ownedArtifacts]
+        );
+
+        const producerMultipliers = useMemo(
+          () => computeProducerMultipliers(upgrades, ownedUpgrades),
+          [upgrades, ownedUpgrades]
+        );
+
+        const prestigeMultiplier = useMemo(
+          () => computePrestigeMultiplier(config, prestigePoints),
+          [config, prestigePoints]
+        );
+
+        const baseCpsTotal = useMemo(
+          () => computeBaseCpsTotal(producers, producerCounts, producerMultipliers, artifactEffects),
+          [producers, producerCounts, producerMultipliers, artifactEffects]
+        );
+
+        const baseCpsWithGlobal = useMemo(
+          () => baseCpsTotal * (artifactEffects.globalMultiplier || 1),
+          [baseCpsTotal, artifactEffects]
+        );
+
+        const cps = useMemo(
+          () => (baseCpsWithGlobal + (artifactEffects.cpsAdditive || 0)) * prestigeMultiplier,
+          [baseCpsWithGlobal, artifactEffects, prestigeMultiplier]
+        );
+
+        useEffect(() => {
+          let last = Date.now();
+          const tickMs = Math.max(50, (Number(config.tickInterval) || 0.1) * 1000);
+          const interval = setInterval(() => {
+            const now = Date.now();
+            const elapsed = (now - last) / 1000;
+            last = now;
+            if (cps <= 0 || elapsed <= 0) return;
+            const delta = cps * elapsed;
+            setCookies(prev => prev + delta);
+            setTotalCookies(prev => prev + delta);
+          }, tickMs);
+          return () => clearInterval(interval);
+        }, [cps, config.tickInterval]);
+
+        const baseClickAmount = useMemo(() => {
+          const base = Number(config.baseClick) || 1;
+          return base * (artifactEffects.clickMultiplier || 1) * prestigeMultiplier;
+        }, [config.baseClick, artifactEffects, prestigeMultiplier]);
+
+        const prestigePotential = useMemo(() => calculatePrestigePoints(totalCookies, config), [totalCookies, config]);
+        const basePrestigeGain = Math.max(0, prestigePotential - prestigePoints);
+        const prestigeBonusMultiplier = 1 + (artifactEffects.prestigeBonus || 0);
+        const prestigeGain = Math.floor(basePrestigeGain * prestigeBonusMultiplier);
+
+        const pushLog = message => {
+          const when = new Date().toLocaleTimeString();
+          setLog(prev => [...prev.slice(-99), { when, message }]);
+          requestAnimationFrame(() => {
+            const el = document.getElementById('log-view');
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+        };
+
+        const spawnFloater = amount => {
+          const id = Date.now() + Math.random();
+          const offsetX = (Math.random() - 0.5) * floatSettings.spread;
+          setFloaters(prev => [...prev, { id, amount, offsetX }]);
+          setTimeout(() => setFloaters(prev => prev.filter(f => f.id !== id)), floatSettings.duration * 1000);
+        };
+
+        const handleClickCookie = () => {
+          const amount = baseClickAmount;
+          setCookies(prev => prev + amount);
+          setTotalCookies(prev => prev + amount);
+          spawnFloater(amount);
+        };
+
+        const buyProducer = (id, cost) => {
+          if (cookies < cost) return;
+          setCookies(prev => prev - cost);
+          setProducerCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+        };
+
+        const buyUpgrade = (id, cost) => {
+          if (ownedUpgrades.has(id) || cookies < cost) return;
+          setCookies(prev => prev - cost);
+          setOwnedUpgrades(prev => new Set(prev).add(id));
+          const info = upgradeLookup.get(id);
+          if (info) pushLog(`购买升级「${info.name}」`);
+        };
+
+        const buyArtifact = (id, cost) => {
+          if (ownedArtifacts.has(id) || artifactPoints < cost) return;
+          setArtifactPoints(prev => prev - cost);
+          setOwnedArtifacts(prev => new Set(prev).add(id));
+          const info = artifactLookup.get(id);
+          if (info) pushLog(`激活神器「${info.name}」`);
+        };
+
+        const handleAscend = () => {
+          if (basePrestigeGain <= 0) {
+            pushLog('暂未满足声望条件，继续烘焙吧。');
+            return;
+          }
+          setPrestigePoints(prestigePotential);
+          setArtifactPoints(prev => prev + prestigeGain);
+          setCookies(0);
+          setTotalCookies(0);
+          setProducerCounts({});
+          setOwnedUpgrades(new Set());
+          if (artifactEffects.prestigeBonus) {
+            const bonus = prestigeGain - basePrestigeGain;
+            pushLog(`声望重置完成，获得 ${prestigeGain} 神器点（含神器额外 +${bonus}）。`);
+          } else {
+            pushLog(`声望重置完成，获得 ${prestigeGain} 神器点。`);
+          }
+        };
+
+        useEffect(() => {
+          const newlyUnlocked = [];
+          achievements.forEach(ach => {
+            if (unlockedAchievements.has(ach.id)) return;
+            const type = ach.requirementType || '';
+            if (type === 'totalCookies') {
+              if (totalCookies >= ach.requirementValue) newlyUnlocked.push(ach);
+            } else if (type.startsWith('buildingCount')) {
+              const [, tidStr] = type.split(':');
+              const target = Number(tidStr);
+              if ((producerCounts[target] || 0) >= ach.requirementValue) newlyUnlocked.push(ach);
+            }
+          });
+          if (newlyUnlocked.length) {
+            setUnlockedAchievements(prev => {
+              const next = new Set(prev);
+              newlyUnlocked.forEach(ach => next.add(ach.id));
+              return next;
+            });
+            newlyUnlocked.forEach(ach => pushLog(`达成成就「${ach.name}」！`));
+          }
+        }, [totalCookies, achievements, unlockedAchievements, producerCounts]);
+
+        return (
+          <div className="flex flex-col h-full gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <StatCard label="当前饼干" value={formatNumber(cookies)} />
+              <StatCard label="总共烘焙" value={formatNumber(totalCookies)} />
+              <StatCard label="每秒产量" value={(cps || 0).toFixed(2)} />
+              <StatCard label="声望等级" value={prestigePoints} />
+              <StatCard label="神器点" value={artifactPoints} />
+              <button
+                className={`rounded-3xl px-5 py-3 text-sm font-semibold text-white shadow ${prestigeGain > 0 ? 'bg-cookie hover:brightness-105' : 'bg-chocolate/30 cursor-not-allowed'}`}
+                onClick={handleAscend}
+                disabled={prestigeGain <= 0}
+              >
+                声望重置 {prestigeGain > 0 ? `(+${prestigeGain} 点)` : ''}
+              </button>
+            </div>
+
+            <div className="flex-1 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] min-h-0">
+              <div className="rounded-3xl bg-white/80 backdrop-blur-md shadow-lg shadow-chocolate/30 p-5 flex flex-col gap-4">
+                <BigCookie onClick={handleClickCookie} disabled={false} floaters={floaters} floatSettings={floatSettings} />
+                <LogView entries={log} onReset={() => setLog([])} />
+              </div>
+
+              <div className="rounded-3xl bg-white/80 backdrop-blur-md shadow-lg shadow-chocolate/30 px-5 py-4 flex flex-col min-h-0">
+                <PanelTabs active={activeTab} onChange={setActiveTab} />
+                <div className="mt-3 flex-1 min-h-0">
+                  {activeTab === 'producers' && (
+                    <ProducersTab
+                      producers={producers}
+                      counts={producerCounts}
+                      cookies={cookies}
+                      totalCookies={totalCookies}
+                      onBuy={buyProducer}
+                      upgradeMultipliers={producerMultipliers}
+                      artifactBoosts={artifactEffects.producerBoost}
+                      globalMultiplier={(artifactEffects.globalMultiplier || 1) * prestigeMultiplier}
+                      costReducers={artifactEffects.costReduction}
+                      globalCostReduction={artifactEffects.globalCostReduction || 0}
+                    />
+                  )}
+                  {activeTab === 'upgrades' && (
+                    <UpgradesTab
+                      upgrades={upgrades}
+                      owned={ownedUpgrades}
+                      cookies={cookies}
+                      unlockSet={upgradeUnlockSet}
+                      onBuy={buyUpgrade}
+                    />
+                  )}
+                  {activeTab === 'artifacts' && (
+                    <ArtifactsTab
+                      artifacts={artifacts}
+                      ownedArtifacts={ownedArtifacts}
+                      availablePoints={artifactPoints}
+                      onBuy={buyArtifact}
+                    />
+                  )}
+                  {activeTab === 'achievements' && (
+                    <AchievementsTab achievements={achievements} unlocked={unlockedAchievements} />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+    </script>
+  </body>
+</html>

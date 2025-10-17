@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tileset 切片工具 · tables</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Tileset 切片工具</h1>
+      <p>上传图像素材，配置 tile 参数，导出 JSON/CSV 配置供 tables 使用。</p>
+    </header>
+
+    <main>
+      <section class="toolbar">
+        <div class="toolbar-left">
+          <div class="source-actions">
+            <label class="file-input">
+              <span>选择素材图 (PNG/JPG)</span>
+              <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            </label>
+            <button id="resetBtn" type="button" class="ghost">清空</button>
+          </div>
+          <div class="preset-strip">
+            <span class="preset-label">候选 tileset</span>
+            <div id="presetList" class="preset-list" role="list"></div>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <div class="action-cluster">
+            <span class="cluster-title">标注数据</span>
+            <div class="action-buttons">
+              <button id="exportJson" type="button">导出 JSON</button>
+              <button id="exportCsv" type="button">导出 CSV</button>
+              <button id="copyJson" type="button" class="ghost">复制 JSON</button>
+              <button type="button" class="import-button" data-trigger="importTileset">导入 JSON</button>
+            </div>
+          </div>
+          <div class="action-cluster">
+            <span class="cluster-title">绘图数据</span>
+            <div class="action-buttons">
+              <button id="exportBoardJson" type="button">导出画板 JSON</button>
+              <button type="button" class="import-button ghost" data-trigger="importBoard">导入画板 JSON</button>
+            </div>
+          </div>
+          <span id="importStatus" aria-live="polite"></span>
+          <span id="status" aria-live="polite"></span>
+        </div>
+      </section>
+
+      <section class="summary-bar" aria-label="切片概览">
+        <div class="summary-stats" role="group">
+          <div class="stat-pill">
+            <span class="stat-label">原始尺寸</span>
+            <span id="imgSize" class="stat-value">—</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">列 × 行</span>
+            <span id="gridCount" class="stat-value">—</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">Tile 总数</span>
+            <span id="tileCount" class="stat-value">0</span>
+          </div>
+        </div>
+        <div class="summary-strip">
+          <div class="tile-strip inline">
+            <div id="tileList" class="tile-list" role="listbox" aria-label="切片列表"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="main-tabs" role="tablist">
+        <button type="button" class="main-tab active" data-main="marking" aria-selected="true">数据标注</button>
+        <button type="button" class="main-tab" data-main="painting" aria-selected="false">基于当前标注数据绘图</button>
+      </div>
+
+      <section class="main-pane active" data-main-pane="marking" role="tabpanel">
+        <div class="marking-content">
+          <div class="preview-panel">
+            <div class="preview-wrapper">
+              <canvas id="preview" width="960" height="540"></canvas>
+              <div id="overlayInfo" class="overlay" hidden></div>
+            </div>
+          </div>
+          <aside class="marking-side">
+            <div class="marking-grid card">
+              <h2>网格参数</h2>
+              <p class="hint">调整切片网格参数，自动刷新预览。</p>
+              <div class="control-grid">
+                <label>
+                  <span>Tile 宽度</span>
+                  <input id="tileWidth" type="number" min="1" value="64" />
+                </label>
+                <label>
+                  <span>Tile 高度</span>
+                  <input id="tileHeight" type="number" min="1" value="64" />
+                </label>
+                <label>
+                  <span>边距 Margin</span>
+                  <input id="margin" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  <span>间距 Spacing</span>
+                  <input id="spacing" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  <span>ID 前缀</span>
+                  <input id="idPrefix" type="text" placeholder="tile" value="tile" />
+                </label>
+                <label>
+                  <span>起始索引</span>
+                  <input id="startIndex" type="number" value="0" />
+                </label>
+              </div>
+            </div>
+
+            <div class="inspector-card">
+              <h2>元属性</h2>
+              <div class="inspector-grid">
+                <label>
+                  <span>类型</span>
+                  <select id="tileRole"></select>
+                </label>
+                <label>
+                  <span>分组</span>
+                  <input id="tileGroup" type="text" list="tileGroupOptions" placeholder="例如 grass_path" />
+                  <datalist id="tileGroupOptions"></datalist>
+                  <div id="groupSuggestions" class="group-suggestions" hidden></div>
+                </label>
+                <label>
+                  <span>渲染层</span>
+                  <select id="tileLayer"></select>
+                </label>
+                <label>
+                  <span>可通行</span>
+                  <select id="tilePassable">
+                    <option value="true">可通行</option>
+                    <option value="false">阻挡</option>
+                  </select>
+                </label>
+                <label>
+                  <span>限定通行者</span>
+                  <input id="tilePassableFor" type="text" placeholder="player, vehicle" />
+                </label>
+                <label>
+                  <span>标签</span>
+                  <input id="tileTags" type="text" placeholder="grass, wet" />
+                </label>
+              </div>
+            </div>
+
+            <div class="topology-shell" id="topologyShell">
+              <div class="topology-pane" data-topology-pane="road" role="group" hidden>
+                <h2>道路连通</h2>
+                <div class="road-panel">
+                  <div class="road-selected" id="selectedTileLabel">未选中 tile</div>
+                  <div class="road-variant-grid" id="roadVariantGrid" aria-live="polite" role="listbox"></div>
+                </div>
+              </div>
+              <div class="topology-pane" data-topology-pane="area" role="group" hidden>
+                <h2>区域标注</h2>
+                <p class="hint">填写中心素材与边/角地形，便于生成地形过渡。</p>
+                <div class="area-controls">
+                  <label class="area-center">
+                    <span>中心</span>
+                    <input id="areaCenter" type="text" placeholder="grass_center" />
+                  </label>
+                  <div class="area-edge-grid">
+                    <label>
+                      <span>北</span>
+                      <input id="areaEdgeN" type="text" placeholder="grass_edge" />
+                    </label>
+                    <label>
+                      <span>东</span>
+                      <input id="areaEdgeE" type="text" placeholder="grass_edge" />
+                    </label>
+                    <label>
+                      <span>南</span>
+                      <input id="areaEdgeS" type="text" placeholder="grass_edge" />
+                    </label>
+                    <label>
+                      <span>西</span>
+                      <input id="areaEdgeW" type="text" placeholder="grass_edge" />
+                    </label>
+                  </div>
+                  <div class="area-corner-grid">
+                    <label>
+                      <span>西北</span>
+                      <input id="areaCornerNW" type="text" placeholder="grass_corner" />
+                    </label>
+                    <label>
+                      <span>东北</span>
+                      <input id="areaCornerNE" type="text" placeholder="grass_corner" />
+                    </label>
+                    <label>
+                      <span>东南</span>
+                      <input id="areaCornerSE" type="text" placeholder="grass_corner" />
+                    </label>
+                    <label>
+                      <span>西南</span>
+                      <input id="areaCornerSW" type="text" placeholder="grass_corner" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="main-pane" data-main-pane="painting" role="tabpanel" hidden>
+        <div class="painting-intro">
+          <h2>绘制工具</h2>
+          <p class="hint">基于已有标注数据，快速搭建地表及事件预览。Brush 功能处于预览阶段。</p>
+        </div>
+        <div class="painting-layout">
+          <div class="board-pane">
+            <div class="board-controls">
+              <label>
+                <span>列数</span>
+                <input id="boardCols" type="number" min="1" value="8" />
+              </label>
+              <label>
+                <span>行数</span>
+                <input id="boardRows" type="number" min="1" value="8" />
+              </label>
+              <button id="resizeBoard" type="button">调整画板</button>
+              <button id="clearBoard" type="button" class="ghost">清空画板</button>
+            </div>
+            <div class="board-wrapper">
+              <canvas id="boardCanvas" width="512" height="512" role="img" aria-label="tileset 画板"></canvas>
+            </div>
+            <div class="board-actions">
+              <span id="boardStatus" aria-live="polite"></span>
+            </div>
+          </div>
+          <aside class="brush-panel">
+            <div class="brush-card">
+              <h3>Brush 工具</h3>
+              <div class="brush-grid">
+                <button type="button" class="brush-btn" data-brush="grass">草地铺设</button>
+                <button type="button" class="brush-btn" data-brush="road">道路连线</button>
+                <button type="button" class="brush-btn" data-brush="edge">矩形铺设</button>
+                <button type="button" class="brush-btn" data-brush="square">方块笔刷</button>
+                <button type="button" class="brush-btn" data-brush="fill">区域填充</button>
+                <button type="button" class="brush-btn" data-brush="erase">擦除</button>
+              </div>
+            </div>
+            <div class="brush-card">
+              <h3>事件点</h3>
+              <div class="event-grid">
+                <button type="button" class="event-btn" data-event="spawn">添加出生点</button>
+                <button type="button" class="event-btn" data-event="trigger">添加触发器</button>
+                <button type="button" class="event-btn" data-event="loot">添加掉落点</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <input id="importTilesetInput" type="file" accept="application/json" hidden />
+      <input id="importBoardInput" type="file" accept="application/json" hidden />
+    </main></main></main>
+
+    <footer>
+      <small>
+        导出的 JSON 结构：{ "tiles": [{ "id": string, "x": number, "y": number, "width": number, "height": number }],
+        "meta": { width, height, tileWidth, tileHeight, margin, spacing }}。
+      </small>
+    </footer>
+
+    <script src="dist/main.js" type="module"></script>
+  </body>
+</html>

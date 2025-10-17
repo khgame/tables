@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini RPG Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Unbounded"', 'sans-serif'],
+              body: ['"Inter"', 'system-ui']
+            },
+            colors: {
+              midnight: '#091426',
+              aurora: '#7de2d1',
+              ember: '#f97316'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="min-h-screen bg-midnight text-slate-100 overflow-y-auto" style="font-family: 'Inter', system-ui; background-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-attachment: fixed;">
+    <div class="min-h-screen backdrop-blur-2xl" style="background: linear-gradient(185deg, rgba(6,12,24,0.85) 0%, rgba(8,16,28,0.9) 45%, rgba(12,21,36,0.95) 100%);">
+      <div class="max-w-7xl mx-auto py-8 px-6 lg:px-10 xl:px-14 flex flex-col min-h-screen">
+        <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
+          <div>
+            <p class="uppercase tracking-[0.35em] text-xs text-aurora/80 font-medium">@khgame/tables showcase</p>
+            <h1 class="font-display text-3xl lg:text-4xl text-white drop-shadow">Mini RPG 数据驱动演示</h1>
+            <p class="text-slate-300 text-sm mt-2 max-w-2xl">
+              右侧读取 Excel → tables 导出的 JSON，左侧剧情日志实时反馈英雄、关卡与战斗的推进。
+            </p>
+          </div>
+          <div class="flex items-center gap-3 rounded-3xl bg-white/6 px-5 py-4 shadow-2xl shadow-black/40">
+            <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d6.png" alt="glyph" class="h-10 w-10 opacity-90" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4da.png';" />
+            <div class="text-sm text-slate-200">
+              <p class="font-semibold text-white">配置即剧情</p>
+              <p class="text-slate-400">Excel → tables → JSON → Browser</p>
+            </div>
+          </div>
+        </header>
+
+        <div id="app" class="flex-1"></div>
+      </div>
+    </div>
+
+    <script>
+      window.TABLES_DATA = {
+        heroes: {
+  "tids": [
+    "10000001",
+    "10000002",
+    "10000003",
+    "10010001"
+  ],
+  "result": {
+    "10000001": {
+      "_tid": "10000001",
+      "categoryCode": 10,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Aerin Frostshield",
+      "class": "Knight",
+      "element": "Frost",
+      "rarity": 2,
+      "maxLevel": 30,
+      "baseHp": 1200,
+      "baseAtk": 85,
+      "baseDef": 150,
+      "signatureItem": 30000004,
+      "primarySkill": 20001001,
+      "supportSkill": 20002001,
+      "ultimateSkill": 20006001,
+      "unlockStage": 40000001,
+      "role": "Vanguard",
+      "region": "Elder Peaks",
+      "story": "守护北境的年轻骑士，擅长用盾形构筑防线。",
+      "portrait": "https://images.unsplash.com/photo-1526272560260-5b1c131dea52?auto=format&fit=crop&w=600&q=80"
+    },
+    "10000002": {
+      "_tid": "10000002",
+      "categoryCode": 10,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Mira Silverquill",
+      "class": "Mage",
+      "element": "Arcane",
+      "rarity": 3,
+      "maxLevel": 40,
+      "baseHp": 900,
+      "baseAtk": 110,
+      "baseDef": 95,
+      "signatureItem": 30000005,
+      "primarySkill": 20003001,
+      "supportSkill": 20001002,
+      "ultimateSkill": 20009001,
+      "unlockStage": 40000002,
+      "role": "Burst",
+      "region": "Lumina Academy",
+      "story": "天赋异禀的法师，对古代秘术痴迷，善于远程压制。",
+      "portrait": "https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=600&q=80"
+    },
+    "10000003": {
+      "_tid": "10000003",
+      "categoryCode": 10,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Roth Dusktrail",
+      "class": "Rogue",
+      "element": "Shadow",
+      "rarity": 2,
+      "maxLevel": 32,
+      "baseHp": 1000,
+      "baseAtk": 95,
+      "baseDef": 105,
+      "signatureItem": 30000001,
+      "primarySkill": 20004001,
+      "supportSkill": 20005001,
+      "ultimateSkill": 20005001,
+      "unlockStage": 40000003,
+      "role": "Assassin",
+      "region": "Freeports",
+      "story": "雇佣兵出身的游侠，行动迅捷，擅长毒刃。",
+      "portrait": "https://images.unsplash.com/photo-1529245019870-59a6d1ef7c86?auto=format&fit=crop&w=600&q=80"
+    },
+    "10010001": {
+      "_tid": "10010001",
+      "categoryCode": 10,
+      "subtypeCode": 1,
+      "sequenceCode": 1,
+      "sequence": 4,
+      "name": "Nyx Moonweaver",
+      "class": "Assassin",
+      "element": "Lunar",
+      "rarity": 4,
+      "maxLevel": 45,
+      "baseHp": 1050,
+      "baseAtk": 120,
+      "baseDef": 115,
+      "signatureItem": 30000006,
+      "primarySkill": 20007001,
+      "supportSkill": 20002001,
+      "ultimateSkill": 20008001,
+      "unlockStage": 40000004,
+      "role": "Skirmisher",
+      "region": "Nightfall Enclave",
+      "story": "掌握月影之术的刺客，能在暗夜中穿梭并施展幻舞。",
+      "portrait": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U"
+    ]
+  }
+},
+        skills: {
+  "tids": [
+    "20001001",
+    "20001002",
+    "20002001",
+    "20003001",
+    "20004001",
+    "20005001",
+    "20006001",
+    "20007001",
+    "20008001",
+    "20009001"
+  ],
+  "result": {
+    "20001001": {
+      "_tid": "20001001",
+      "categoryCode": 20,
+      "skillCode": 1,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Shield Bash",
+      "target": "Enemy",
+      "cooldown": 8,
+      "power": 120,
+      "scaling": 1,
+      "energyCost": 20,
+      "unlockStage": 40000001,
+      "desc": "挥动盾牌造成伤害，并短暂眩晕敌人。"
+    },
+    "20001002": {
+      "_tid": "20001002",
+      "categoryCode": 20,
+      "skillCode": 1,
+      "levelCode": 2,
+      "level": 2,
+      "name": "Shield Bash",
+      "target": "Enemy",
+      "cooldown": 7,
+      "power": 150,
+      "scaling": 1.15,
+      "energyCost": 20,
+      "unlockStage": 40000002,
+      "desc": "强化版盾击，提升伤害并延长控制。"
+    },
+    "20002001": {
+      "_tid": "20002001",
+      "categoryCode": 20,
+      "skillCode": 2,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Guardian Aura",
+      "target": "AllyTeam",
+      "cooldown": 12,
+      "power": 0,
+      "scaling": 0,
+      "energyCost": 25,
+      "unlockStage": 40000001,
+      "desc": "为全队提供护盾并缓慢回复生命。"
+    },
+    "20003001": {
+      "_tid": "20003001",
+      "categoryCode": 20,
+      "skillCode": 3,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Arcane Nova",
+      "target": "EnemyAll",
+      "cooldown": 10,
+      "power": 180,
+      "scaling": 1.25,
+      "energyCost": 30,
+      "unlockStage": 40000002,
+      "desc": "释放大范围法术，造成高额爆发伤害。"
+    },
+    "20004001": {
+      "_tid": "20004001",
+      "categoryCode": 20,
+      "skillCode": 4,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Shadowstep",
+      "target": "Self",
+      "cooldown": 6,
+      "power": 90,
+      "scaling": 1.1,
+      "energyCost": 10,
+      "unlockStage": 40000002,
+      "desc": "迅速闪至目标背后并提升下次攻击。"
+    },
+    "20005001": {
+      "_tid": "20005001",
+      "categoryCode": 20,
+      "skillCode": 5,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Poisoned Blade",
+      "target": "Enemy",
+      "cooldown": 9,
+      "power": 110,
+      "scaling": 1.05,
+      "energyCost": 18,
+      "unlockStage": 40000003,
+      "desc": "附加毒素的攻击，会在后续造成持续伤害。"
+    },
+    "20006001": {
+      "_tid": "20006001",
+      "categoryCode": 20,
+      "skillCode": 6,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Celestial Lance",
+      "target": "Boss",
+      "cooldown": 14,
+      "power": 240,
+      "scaling": 1.4,
+      "energyCost": 40,
+      "unlockStage": 40000004,
+      "desc": "召唤星辉长枪贯穿敌人，造成巨额伤害。"
+    },
+    "20007001": {
+      "_tid": "20007001",
+      "categoryCode": 20,
+      "skillCode": 7,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Umbral Veil",
+      "target": "Self",
+      "cooldown": 11,
+      "power": 0,
+      "scaling": 0,
+      "energyCost": 22,
+      "unlockStage": 40000003,
+      "desc": "化作影子躲避伤害，并在现身时造成穿刺。"
+    },
+    "20008001": {
+      "_tid": "20008001",
+      "categoryCode": 20,
+      "skillCode": 8,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Moonfall Waltz",
+      "target": "EnemyAll",
+      "cooldown": 15,
+      "power": 260,
+      "scaling": 1.5,
+      "energyCost": 45,
+      "unlockStage": 40000004,
+      "desc": "月光化作刀舞横扫全场，附带易伤效果。"
+    },
+    "20009001": {
+      "_tid": "20009001",
+      "categoryCode": 20,
+      "skillCode": 9,
+      "levelCode": 1,
+      "level": 1,
+      "name": "Crystal Bloom",
+      "target": "Enemy",
+      "cooldown": 13,
+      "power": 210,
+      "scaling": 1.35,
+      "energyCost": 35,
+      "unlockStage": 40000003,
+      "desc": "凝聚水晶爆炸，造成范围伤害并减速。"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L"
+    ]
+  }
+},
+        items: {
+  "tids": [
+    "30010001",
+    "30020001",
+    "30030001",
+    "30040001",
+    "30050001",
+    "30050002"
+  ],
+  "result": {
+    "30010001": {
+      "_tid": "30010001",
+      "categoryCode": 30,
+      "subtypeCode": 1,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Iron Sword",
+      "slot": "Weapon",
+      "rarity": 1,
+      "currency": "gold",
+      "amount": 400,
+      "attack": 35,
+      "defense": 0,
+      "bonusHp": 0,
+      "effect": "基础长剑，增加物理伤害。",
+      "sourceStage": 40000002,
+      "flavor": "大量量产的骑士制式武器。"
+    },
+    "30020001": {
+      "_tid": "30020001",
+      "categoryCode": 30,
+      "subtypeCode": 2,
+      "sequenceCode": 1,
+      "sequence": 2,
+      "name": "Apprentice Robe",
+      "slot": "Armor",
+      "rarity": 1,
+      "currency": "gold",
+      "amount": 350,
+      "attack": 0,
+      "defense": 20,
+      "bonusHp": 120,
+      "effect": "提升法术抗性并加快回蓝。",
+      "sourceStage": 40000003,
+      "flavor": "学院学徒的制服，附带细微的魔力纹路。"
+    },
+    "30030001": {
+      "_tid": "30030001",
+      "categoryCode": 30,
+      "subtypeCode": 3,
+      "sequenceCode": 1,
+      "sequence": 3,
+      "name": "Mana Potion",
+      "slot": "Consumable",
+      "rarity": 1,
+      "currency": "gold",
+      "amount": 50,
+      "attack": 0,
+      "defense": 0,
+      "bonusHp": 0,
+      "effect": "立即恢复 60 点能量。",
+      "sourceStage": 40000001,
+      "flavor": "香甜的蓝莓味，深受学徒欢迎。"
+    },
+    "30040001": {
+      "_tid": "30040001",
+      "categoryCode": 30,
+      "subtypeCode": 4,
+      "sequenceCode": 1,
+      "sequence": 4,
+      "name": "Knight Emblem",
+      "slot": "Trinket",
+      "rarity": 2,
+      "currency": "guild",
+      "amount": 15,
+      "attack": 0,
+      "defense": 40,
+      "bonusHp": 200,
+      "effect": "强化护盾技能效果。",
+      "sourceStage": 40000001,
+      "flavor": "象征坚守的徽章，镶嵌寒霜之石。"
+    },
+    "30050001": {
+      "_tid": "30050001",
+      "categoryCode": 30,
+      "subtypeCode": 5,
+      "sequenceCode": 1,
+      "sequence": 5,
+      "name": "Ember Ring",
+      "slot": "Accessory",
+      "rarity": 3,
+      "currency": "gold",
+      "amount": 800,
+      "attack": 25,
+      "defense": 10,
+      "bonusHp": 80,
+      "effect": "释放技能时追加灼烧伤害。",
+      "sourceStage": 40000002,
+      "flavor": "炙热的火焰石戒指，不断散发余温。"
+    },
+    "30050002": {
+      "_tid": "30050002",
+      "categoryCode": 30,
+      "subtypeCode": 5,
+      "sequenceCode": 2,
+      "sequence": 6,
+      "name": "Moonlight Charm",
+      "slot": "Accessory",
+      "rarity": 3,
+      "currency": "honor",
+      "amount": 120,
+      "attack": 18,
+      "defense": 25,
+      "bonusHp": 60,
+      "effect": "夜间战斗时提升闪避与暴击。",
+      "sourceStage": 40000004,
+      "flavor": "由月神祭司编织的护符，散发柔和光芒。"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O"
+    ]
+  }
+},
+        enemies: {
+  "tids": [
+    "50000001",
+    "50000002",
+    "50000003",
+    "50010001"
+  ],
+  "result": {
+    "50000001": {
+      "_tid": "50000001",
+      "categoryCode": 50,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Frostfang Raider",
+      "element": "Frost",
+      "role": "Bruiser",
+      "hp": 950,
+      "attack": 80,
+      "defense": 60,
+      "skill": "冰霜冲撞",
+      "weakness": "火焰",
+      "rewardExp": 120,
+      "portrait": "https://images.unsplash.com/photo-1549887534-1541e9326642?auto=format&fit=crop&w=600&q=80"
+    },
+    "50000002": {
+      "_tid": "50000002",
+      "categoryCode": 50,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Obsidian Sentinel",
+      "element": "Arcane",
+      "role": "Guardian",
+      "hp": 1200,
+      "attack": 70,
+      "defense": 90,
+      "skill": "熔核护盾",
+      "weakness": "毒素",
+      "rewardExp": 160,
+      "portrait": "https://images.unsplash.com/photo-1558980664-10ea1989d896?auto=format&fit=crop&w=600&q=80"
+    },
+    "50000003": {
+      "_tid": "50000003",
+      "categoryCode": 50,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Marsh Wraith",
+      "element": "Shadow",
+      "role": "Caster",
+      "hp": 850,
+      "attack": 95,
+      "defense": 45,
+      "skill": "瘴雾缠绕",
+      "weakness": "圣光",
+      "rewardExp": 150,
+      "portrait": "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=600&q=80"
+    },
+    "50010001": {
+      "_tid": "50010001",
+      "categoryCode": 50,
+      "subtypeCode": 1,
+      "sequenceCode": 1,
+      "sequence": 4,
+      "name": "Lunar Shade",
+      "element": "Lunar",
+      "role": "Assassin",
+      "hp": 1000,
+      "attack": 105,
+      "defense": 70,
+      "skill": "月蚀狂袭",
+      "weakness": "雷电",
+      "rewardExp": 200,
+      "portrait": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N"
+    ]
+  }
+},
+        relics: {
+  "tids": [
+    "70000001",
+    "70000002",
+    "70000003",
+    "70000004",
+    "70000005",
+    "70000006"
+  ],
+  "result": {
+    "70000001": {
+      "_tid": "70000001",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "key": "everburningEmber",
+      "name": "Everburning Ember",
+      "effectType": "attackMultiplier",
+      "effectValue": 1.2,
+      "desc": "灼热火种让全体英雄攻击提高 20%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png"
+    },
+    "70000002": {
+      "_tid": "70000002",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "key": "aegisMirror",
+      "name": "Aegis Mirror",
+      "effectType": "defenseMultiplier",
+      "effectValue": 1.15,
+      "unlockStage": 40000001,
+      "desc": "远古护盾折射伤害，使防御提升 15%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e1.png"
+    },
+    "70000003": {
+      "_tid": "70000003",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "key": "crystalPrism",
+      "name": "Crystal Prism",
+      "effectType": "enemyDefenseReduction",
+      "effectValue": 0.18,
+      "unlockStage": 40000002,
+      "desc": "棱光削弱敌人护甲，战斗开始时破甲 18%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png"
+    },
+    "70000004": {
+      "_tid": "70000004",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "key": "scholarChronicle",
+      "name": "Scholar Chronicle",
+      "effectType": "expBonus",
+      "effectValue": 0.25,
+      "unlockStage": 40000002,
+      "desc": "编年史记录战术心得，额外获得 25% 经验。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d6.png"
+    },
+    "70000005": {
+      "_tid": "70000005",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 5,
+      "sequence": 5,
+      "key": "frostbrandSigil",
+      "name": "Frostbrand Sigil",
+      "effectType": "environmentBonus:Tundra",
+      "effectValue": 1.25,
+      "unlockStage": 40000001,
+      "desc": "寒霜纹章在冰原作战时提升 25% 伤害。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2744.png"
+    },
+    "70000006": {
+      "_tid": "70000006",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 6,
+      "sequence": 6,
+      "key": "moonlitCompass",
+      "name": "Moonlit Compass",
+      "effectType": "elementBonus:Lunar",
+      "effectValue": 1.3,
+      "unlockStage": 40000004,
+      "desc": "月辉罗盘唤醒月属性英雄力量，伤害提升 30%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f319.png"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K"
+    ],
+    "alias": {
+      "field": "key",
+      "column": "E",
+      "values": [
+        "aegisMirror",
+        "crystalPrism",
+        "everburningEmber",
+        "frostbrandSigil",
+        "moonlitCompass",
+        "scholarChronicle"
+      ]
+    }
+  },
+  "aliases": {
+    "key": {
+      "field": "key",
+      "map": {
+        "everburningEmber": "70000001",
+        "aegisMirror": "70000002",
+        "crystalPrism": "70000003",
+        "scholarChronicle": "70000004",
+        "frostbrandSigil": "70000005",
+        "moonlitCompass": "70000006"
+      }
+    }
+  },
+  "indexes": {
+    "key": {
+      "everburningEmber": "70000001",
+      "aegisMirror": "70000002",
+      "crystalPrism": "70000003",
+      "scholarChronicle": "70000004",
+      "frostbrandSigil": "70000005",
+      "moonlitCompass": "70000006"
+    }
+  }
+},
+        stages: {
+  "tids": [
+    "40010001",
+    "40010002",
+    "40010003",
+    "40020001"
+  ],
+  "result": {
+    "40010001": {
+      "_tid": "40010001",
+      "categoryCode": 40,
+      "routeCode": 1,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "name": "Frostfang Trail",
+      "stageType": "Main",
+      "environment": "Tundra",
+      "requiredPower": 12,
+      "recommendedLevel": 10,
+      "duration": 5,
+      "bossSkill": 20005001,
+      "bossEnemy": 50000001,
+      "unlockHero": 10000001,
+      "rewardItem1": 30000003,
+      "rewardQty1": 2,
+      "rewardItem2": 30000004,
+      "rewardQty2": 1,
+      "rewardItem3": 30000001,
+      "rewardQty3": 1,
+      "firstClearSkill": 20001001,
+      "prerequisiteStage": 0,
+      "backdrop": "https://images.unsplash.com/photo-1457269449834-928af64c684d?auto=format&fit=crop&w=1200&q=80",
+      "narrative": "沿着冰霜峡谷一路前行，驱逐盘踞的掠夺者。"
+    },
+    "40010002": {
+      "_tid": "40010002",
+      "categoryCode": 40,
+      "routeCode": 1,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "name": "Obsidian Keep",
+      "stageType": "Main",
+      "environment": "Volcano",
+      "requiredPower": 20,
+      "recommendedLevel": 15,
+      "duration": 6,
+      "bossSkill": 20004001,
+      "bossEnemy": 50000002,
+      "unlockHero": 10000002,
+      "rewardItem1": 30000001,
+      "rewardQty1": 1,
+      "rewardItem2": 30000005,
+      "rewardQty2": 1,
+      "rewardItem3": 30000003,
+      "rewardQty3": 2,
+      "firstClearSkill": 20001002,
+      "prerequisiteStage": 40000001,
+      "backdrop": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80",
+      "narrative": "深处火山的城堡中，守卫者掌控着熔岩机关。"
+    },
+    "40010003": {
+      "_tid": "40010003",
+      "categoryCode": 40,
+      "routeCode": 1,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "name": "Sunken Ruins",
+      "stageType": "Main",
+      "environment": "Marsh",
+      "requiredPower": 28,
+      "recommendedLevel": 18,
+      "duration": 7,
+      "bossSkill": 20003001,
+      "bossEnemy": 50000003,
+      "unlockHero": 10000003,
+      "rewardItem1": 30000002,
+      "rewardQty1": 1,
+      "rewardItem2": 30000003,
+      "rewardQty2": 1,
+      "rewardItem3": 30000004,
+      "rewardQty3": 1,
+      "firstClearSkill": 20005001,
+      "prerequisiteStage": 40000002,
+      "backdrop": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80",
+      "narrative": "被湖水吞噬的古代都市，仍散发着微弱魔力。"
+    },
+    "40020001": {
+      "_tid": "40020001",
+      "categoryCode": 40,
+      "routeCode": 2,
+      "sequenceCode": 1,
+      "sequence": 4,
+      "name": "Nightfall Citadel",
+      "stageType": "Elite",
+      "environment": "NightCity",
+      "requiredPower": 35,
+      "recommendedLevel": 22,
+      "duration": 8,
+      "bossSkill": 20006001,
+      "bossEnemy": 50010001,
+      "unlockHero": 10000004,
+      "rewardItem1": 30000005,
+      "rewardQty1": 1,
+      "rewardItem2": 30000006,
+      "rewardQty2": 1,
+      "rewardItem3": 30000004,
+      "rewardQty3": 1,
+      "firstClearSkill": 20008001,
+      "prerequisiteStage": 40000003,
+      "backdrop": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80",
+      "narrative": "月蚀之夜开启的秘境，月影刺客在此接受试炼。"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W"
+    ]
+  }
+},
+        globalConfig: {
+  "tids": [
+    "90000001",
+    "90000002",
+    "90000003",
+    "90000004",
+    "90010001",
+    "90010002"
+  ],
+  "result": {
+    "90000001": {
+      "_tid": "90000001",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "key": "gameVersion",
+      "valueType": "String",
+      "value": "1.0.0",
+      "description": "当前游戏版本号"
+    },
+    "90000002": {
+      "_tid": "90000002",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "key": "enableTutorial",
+      "valueType": "Bool",
+      "value": true,
+      "description": "是否开启新手引导"
+    },
+    "90000003": {
+      "_tid": "90000003",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "key": "rookieDiamonds",
+      "valueType": "UInt",
+      "value": 1500,
+      "description": "新手礼包钻石数量"
+    },
+    "90000004": {
+      "_tid": "90000004",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "key": "initialCurrency",
+      "valueType": "Currency",
+      "value": "gold",
+      "description": "初始主要货币类型"
+    },
+    "90010001": {
+      "_tid": "90010001",
+      "categoryCode": 90,
+      "sectionCode": 1,
+      "sequenceCode": 1,
+      "sequence": 5,
+      "key": "defaultStage",
+      "valueType": "StageId",
+      "value": 40000001,
+      "description": "默认剧情起始关卡"
+    },
+    "90010002": {
+      "_tid": "90010002",
+      "categoryCode": 90,
+      "sectionCode": 1,
+      "sequenceCode": 2,
+      "sequence": 6,
+      "key": "unlockHeroReward",
+      "valueType": "StageId",
+      "value": 40000002,
+      "description": "完成后解锁第二位英雄的关卡"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ]
+  }
+}
+      };
+    </script>
+
+    <script type="text/babel">
+      const { useMemo, useState, useEffect } = React;
+      const data = window.TABLES_DATA;
+
+      const heroFallback = 'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=1400&q=80';
+      const enemyFallback = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+      const stageFallback = 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=1400&q=80';
+      const runeTexture = 'linear-gradient(135deg, rgba(125,226,209,0.12) 0%, rgba(79,70,229,0.18) 100%)';
+      const relicEffectLabels = {
+        attackMultiplier: '攻击x',
+        defenseMultiplier: '防御x',
+        enemyDefenseReduction: '破甲',
+        expBonus: '经验+',
+        'environmentBonus:Tundra': '冰原增伤x',
+        'elementBonus:Lunar': '月属性x'
+      };
+
+      function useLookup(result) {
+        return useMemo(() => {
+          const map = new Map();
+          if (!result) return map;
+          Object.keys(result).forEach(key => map.set(Number(key), result[key]));
+          return map;
+        }, [result]);
+      }
+
+      function useFallbackImage(url, fallback) {
+        const [resolved, setResolved] = useState(url || fallback);
+        useEffect(() => {
+          if (!url) {
+            setResolved(fallback);
+            return;
+          }
+          let mounted = true;
+          const img = new Image();
+          img.onload = () => {
+            if (mounted) setResolved(url);
+          };
+          img.onerror = () => {
+            if (mounted) setResolved(fallback);
+          };
+          img.src = url;
+          return () => {
+            mounted = false;
+          };
+        }, [url, fallback]);
+        return resolved;
+      }
+
+      function getActiveRelics(relics, clearedSet) {
+        return relics.filter(relic => {
+          const unlock = relic.unlockStage;
+          if (!unlock) return true;
+          return clearedSet.has(Number(unlock));
+        });
+      }
+
+      function computeRelicEffects(relics, clearedSet, hero, stage) {
+        const activeRelics = getActiveRelics(relics, clearedSet);
+        let attackMultiplier = 1;
+        let defenseMultiplier = 1;
+        let enemyDefenseReduction = 0;
+        let expBonus = 0;
+
+        activeRelics.forEach(relic => {
+          const rawType = String(relic.effectType || '');
+          const [type, param] = rawType.split(':');
+          const value = Number(relic.effectValue) || 0;
+          switch (type) {
+            case 'attackMultiplier':
+              attackMultiplier *= value || 1;
+              break;
+            case 'defenseMultiplier':
+              defenseMultiplier *= value || 1;
+              break;
+            case 'enemyDefenseReduction':
+              enemyDefenseReduction = Math.max(enemyDefenseReduction, Math.min(Math.max(value, 0), 0.9));
+              break;
+            case 'expBonus':
+              expBonus += Math.max(0, value || 0);
+              break;
+            case 'elementBonus':
+              if (hero && hero.element === param) {
+                attackMultiplier *= value || 1;
+              }
+              break;
+            case 'environmentBonus':
+              if (stage && stage.environment === param) {
+                attackMultiplier *= value || 1;
+              }
+              break;
+            default:
+              break;
+          }
+        });
+
+        return {
+          attackMultiplier,
+          defenseMultiplier,
+          enemyDefenseReduction,
+          expBonus,
+          activeRelics
+        };
+      }
+
+      function buildRelicSummary(snapshot) {
+        const rows = [];
+        if (snapshot.attackMultiplier && Math.abs(snapshot.attackMultiplier - 1) > 0.01) {
+          rows.push(`攻击 ×${snapshot.attackMultiplier.toFixed(2)}`);
+        }
+        if (snapshot.defenseMultiplier && Math.abs(snapshot.defenseMultiplier - 1) > 0.01) {
+          rows.push(`防御 ×${snapshot.defenseMultiplier.toFixed(2)}`);
+        }
+        if (snapshot.enemyDefenseReduction > 0) {
+          rows.push(`破甲 ${Math.round(snapshot.enemyDefenseReduction * 100)}%`);
+        }
+      if (snapshot.expBonus > 0) {
+        rows.push(`经验 +${Math.round(snapshot.expBonus * 100)}%`);
+      }
+      return rows;
+      }
+
+      const statScale = {
+        hp: 1800,
+        atk: 160,
+        def: 180
+      };
+
+      function StatBar({ label, value, scaleKey, accentClass = 'bg-aurora/80' }) {
+        const max = statScale[scaleKey] || Math.max(value, 1);
+        const percent = Math.min(100, Math.round((value / max) * 100));
+        return (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-slate-300">
+              <span>{label}</span>
+              <span className="text-slate-100 font-medium">{value}</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-white/12 overflow-hidden">
+              <div className={`h-full rounded-full ${accentClass}`} style={{ width: `${percent}%` }}></div>
+            </div>
+          </div>
+        );
+      }
+
+      function HeroSummary({ hero, skill, item }) {
+        if (!hero) {
+          return (
+            <section className="rounded-3xl bg-white/5 p-6 text-sm text-slate-200 shadow-2xl shadow-black/30 backdrop-blur">
+              请选择一名英雄以查看概要。
+            </section>
+          );
+        }
+        const resolvedPortrait = useFallbackImage(hero.portrait, heroFallback);
+        return (
+          <section className="relative overflow-hidden rounded-3xl shadow-xl shadow-black/30 backdrop-blur">
+            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: `url(${resolvedPortrait})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(150deg, rgba(8,14,28,0.88) 0%, rgba(23,28,46,0.9) 55%, rgba(56,24,80,0.88) 100%)' }}></div>
+            <div className="relative z-10 px-5 py-4 lg:px-6 lg:py-5 space-y-3.5">
+              <div className="flex items-center gap-4">
+                <img src={resolvedPortrait} alt={hero.name} className="w-16 h-16 md:w-18 md:h-18 rounded-3xl object-cover shadow-lg shadow-black/25 border border-white/10" />
+                <div className="space-y-1">
+                  <p className="uppercase text-[11px] tracking-[0.3em] text-aurora/70">Selected Hero</p>
+                  <h2 className="font-display text-xl md:text-2xl text-white drop-shadow-sm">{hero.name}</h2>
+                  <p className="text-[12px] text-slate-300">{hero.class} · {hero.element} · {hero.role}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 text-[11px]">
+                <Badge icon="spark" label={`稀有度 ${'★'.repeat(Math.min(hero.rarity, 5))}`} />
+                <Badge icon="shield" label={`HP ${hero.baseHp}`} />
+                <Badge icon="sword" label={`ATK ${hero.baseAtk}`} />
+                <Badge icon="armor" label={`DEF ${hero.baseDef}`} />
+              </div>
+              <div className="grid gap-3 md:grid-cols-[1.1fr_1fr] text-sm text-slate-100">
+                <div className="rounded-2xl bg-white/9 px-4 py-3 shadow-inner shadow-black/25 space-y-2.5">
+                  <StatBar label="生命" value={hero.baseHp} scaleKey="hp" accentClass="bg-aurora/80" />
+                  <StatBar label="攻击" value={hero.baseAtk} scaleKey="atk" accentClass="bg-emerald-300/80" />
+                  <StatBar label="防御" value={hero.baseDef} scaleKey="def" accentClass="bg-sky-300/80" />
+                </div>
+                <div className="space-y-2.5 text-[13px]">
+                  <InfoRow title="主技能" value={skill ? `${skill.name}（${skill.target}）` : '未知技能'} />
+                  <InfoRow title="标志装" value={item ? `${item.name}（${item.effect}）` : '未知装备'} />
+                  <InfoRow title="解锁关卡" value={`Stage ${hero.unlockStage}`} />
+                </div>
+              </div>
+              <p className="rounded-3xl bg-white/6 px-4 py-3 text-[12px] leading-5 text-slate-200 shadow-inner shadow-black/25">
+                {hero.story}
+              </p>
+            </div>
+          </section>
+        );
+      }
+
+      function InfoRow({ title, value }) {
+        return (
+          <div className="flex items-center gap-3">
+            <span className="text-aurora text-xs uppercase tracking-[0.3em]">{title}</span>
+            <span className="text-slate-100 text-sm">{value}</span>
+          </div>
+        );
+      }
+
+      function Badge({ icon, label }) {
+        const iconSvg = {
+          spark: <path d="M12 2c.3 0 .58.16.73.43l1.65 2.98 3.35.57c.3.05.55.26.65.55a.87.87 0 0 1-.21.92l-2.46 2.32.6 3.3c.05.3-.07.6-.31.78a.88.88 0 0 1-.9.08L12 12.98l-3.08 1.95a.87.87 0 0 1-.9-.08.84.84 0 0 1-.31-.78l.6-3.3-2.46-2.32a.87.87 0 0 1-.21-.92.86.86 0 0 1 .65-.55l3.35-.57 1.65-2.98A.84.84 0 0 1 12 2Z" fill="currentColor"/>,
+          shield: <path d="M12 3.25 5.25 6v5.87c0 2.92 2.28 5.85 6.07 7.9a.85.85 0 0 0 .76 0c3.79-2.05 6.07-4.98 6.07-7.9V6L12 3.25Z" fill="currentColor"/>,
+          sword: <path d="M14.7 3.3a1 1 0 0 0-1.4 0L6 10.59V13l-1.7 1.7a1 1 0 0 0 1.4 1.4L7.4 14.7H9.8l7.3-7.3a1 1 0 0 0 0-1.4l-2.4-2.4Z" fill="currentColor"/>,
+          armor: <path d="M4.5 5.5 12 2l7.5 3.5V11c0 4.1-2.85 7.85-7.5 9.5-4.65-1.65-7.5-5.4-7.5-9.5V5.5Z" fill="currentColor"/>
+        }[icon];
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-aurora/20 px-3 py-1 text-aurora shadow-sm shadow-black/30">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">{iconSvg}</svg>
+            <span>{label}</span>
+          </span>
+        );
+      }
+
+      function StageControls({ stages, stageIds, clearedSet, currentIndex, onNext, onLog, onBattle, enemy, pendingBattle, activeRelics, effectSummary }) {
+        const stage = stages[currentIndex];
+        if (!stage) return null;
+        const backdrop = useFallbackImage(stage.backdrop, stageFallback);
+        const stageStyle = {
+          backgroundImage: `linear-gradient(135deg, rgba(12,20,34,0.92), rgba(12,22,38,0.96)), url(${backdrop})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        };
+        return (
+          <section className="relative rounded-3xl shadow-xl shadow-black/40 backdrop-blur overflow-hidden">
+            <div className="absolute inset-0 opacity-70" style={stageStyle}></div>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(11,18,32,0.9) 0%, rgba(9,15,28,0.92) 100%)' }}></div>
+            <div className="relative z-10 px-5 py-4 space-y-3.5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-lg text-aurora">当前关卡</h2>
+                  <p className="text-sm text-slate-100 mt-1">{stage.name}</p>
+                  <p className="text-xs text-slate-300 mt-1">环境：{stage.environment} · 推荐战力 {stage.requiredPower}</p>
+                  <p className="text-xs text-slate-400 mt-1">敌方：{enemy ? `${enemy.name} · ${enemy.element}` : '未知'}</p>
+                  {stage.prerequisiteStage && !clearedSet.has(stage.prerequisiteStage) && (
+                    <p className="text-xs text-amber-300 mt-1">前置关卡：{stage.prerequisiteStage}</p>
+                  )}
+                </div>
+                <div className="flex flex-col items-center gap-2 text-xs font-semibold">
+                  {enemy && (
+                    <img
+                      src={enemy.portrait || enemyFallback}
+                      alt={enemy.name}
+                      className="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-black/50 border border-white/10"
+                      onError={event => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = enemyFallback;
+                      }}
+                    />
+                  )}
+                  <button className={`rounded-full bg-aurora/80 hover:bg-aurora text-slate-900 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => onLog(`【关卡情报】${stage.narrative}`)} disabled={pendingBattle}>查看剧情</button>
+                  <button className={`rounded-full bg-ember/90 hover:bg-ember text-slate-950 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={onNext} disabled={pendingBattle}>推进关卡</button>
+                  <button className={`rounded-full bg-white/80 hover:bg-white text-slate-900 px-4 py-2 transition ${pendingBattle ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={onBattle} disabled={pendingBattle}>开始战斗</button>
+                </div>
+              </div>
+              <div className="flex gap-2 text-[11px] text-slate-200 overflow-x-auto">
+                {stages.map((item, idx) => {
+                  const isActive = idx === currentIndex;
+                  const locked = item.prerequisiteStage && !clearedSet.has(item.prerequisiteStage);
+                  return (
+                    <span
+                      key={item.sequence}
+                      className={`rounded-full px-3 py-1 flex items-center gap-1 ${isActive ? 'bg-aurora/35 text-aurora shadow-[0_0_12px_rgba(125,226,209,0.35)]' : 'bg-white/12 text-slate-100'} ${locked ? 'opacity-50' : ''}`}
+                    >
+                      {idx + 1}. {item.name}
+                      {locked && <span className="text-[10px] text-amber-200">锁定</span>}
+                    </span>
+                  );
+                })}
+              </div>
+              {effectSummary && effectSummary.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-aurora/90">
+                  {effectSummary.map((row, idx) => (
+                    <span key={idx} className="rounded-full bg-white/15 px-3 py-1 shadow-sm shadow-black/30">{row}</span>
+                  ))}
+                </div>
+              )}
+              {activeRelics && activeRelics.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-200">
+                  {activeRelics.map(relic => {
+                    const rawType = String(relic.effectType || '');
+                    const label = relicEffectLabels[rawType] || rawType;
+                    const value = Number(relic.effectValue) || 0;
+                    let valueText = '';
+                    if (rawType.includes('attackMultiplier') || rawType.includes('defenseMultiplier') || rawType.includes('environmentBonus') || rawType.includes('elementBonus')) {
+                      valueText = `×${value.toFixed(2)}`;
+                    } else if (rawType === 'enemyDefenseReduction') {
+                      valueText = `-${Math.round(value * 100)}% DEF`;
+                    } else if (rawType === 'expBonus') {
+                      valueText = `+${Math.round(value * 100)}% EXP`;
+                    }
+                    return (
+                      <span key={relic.sequence} className="rounded-full bg-aurora/15 px-3 py-1 flex items-center gap-2 text-aurora shadow-sm shadow-black/40">
+                        <span className="font-semibold">{relic.name}</span>
+                        <span className="text-[10px] text-aurora/80">{label}{valueText && ` ${valueText}`}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
+
+      function RelicGallery({ relics, clearedSet }) {
+        if (!relics.length) return null;
+        const unlockedCount = relics.filter(relic => !relic.unlockStage || clearedSet.has(Number(relic.unlockStage))).length;
+        return (
+          <section className="rounded-3xl bg-white/5 px-5 py-4 shadow-xl shadow-black/40 backdrop-blur">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display text-lg text-aurora">遗物图鉴</h2>
+              <span className="text-xs text-slate-300">已解锁 {unlockedCount} / {relics.length}</span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {relics.map(relic => {
+                const requiredStage = relic.unlockStage ? Number(relic.unlockStage) : null;
+                const unlocked = !requiredStage || clearedSet.has(requiredStage);
+                return (
+                  <div
+                    key={relic.id || relic.sequence}
+                    className={`relative rounded-2xl border border-white/10 px-4 py-3 shadow-inner shadow-black/30 transition ${unlocked ? 'bg-white/10 hover:bg-white/15' : 'bg-white/5 opacity-60'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={relic.icon}
+                        alt={relic.name}
+                        className="w-10 h-10 rounded-xl object-cover shadow shadow-black/30"
+                        onError={event => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f381.png';
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm text-slate-100 font-semibold">{relic.name}</p>
+                        <p className="text-[11px] text-aurora/80 uppercase tracking-[0.25em]">{relicEffectLabels[relic.effectType] || relic.effectType}</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-200 mt-2 leading-5">{relic.desc}</p>
+                    {requiredStage && !unlocked && (
+                      <p className="mt-2 text-[10px] text-amber-200">通关 Stage {requiredStage} 解锁</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      }
+
+      function HeroList({ heroes, selectedId, onSelect }) {
+        return (
+          <section className="rounded-3xl bg-white/5 px-4 py-4 shadow-xl shadow-black/40 backdrop-blur">
+            <h2 className="font-display text-lg text-aurora mb-2">英雄列表</h2>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {heroes.map(hero => {
+                const isActive = selectedId === hero.sequence;
+                return (
+                  <button
+                    key={hero.sequence}
+                    onClick={() => onSelect(hero)}
+                    className={`w-full rounded-2xl px-4 py-3 text-left transition flex items-center gap-3 ${isActive ? 'bg-aurora/20 text-aurora shadow-[0_0_25px_rgba(125,226,209,0.35)]' : 'bg-white/10 hover:bg-aurora/15'}`}
+                  >
+                    <img
+                      src={hero.portrait || heroFallback}
+                      alt={hero.name}
+                      className="w-10 h-10 rounded-2xl object-cover border border-white/10"
+                      onError={event => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = heroFallback;
+                      }}
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{hero.name}</p>
+                      <p className="text-xs text-slate-300 mt-1">{hero.class} · {hero.element}</p>
+                    </div>
+                    <span className="text-xs text-slate-400">Lv.{hero.maxLevel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      }
+
+      function GlobalPanel({ config, onLog }) {
+        const entries = useMemo(() => {
+          if (!config) return [];
+          return Object.values(config.result || {});
+        }, [config]);
+        if (!entries.length) return null;
+        return (
+          <section className="rounded-3xl bg-white/5 px-5 py-5 shadow-xl shadow-black/40 space-y-2 backdrop-blur text-xs max-h-48 overflow-y-auto">
+            <h2 className="font-display text-lg text-aurora mb-2">全局配置</h2>
+            {entries.map(entry => (
+              <button
+                key={entry.key}
+                className="w-full rounded-2xl bg-white/10 px-3 py-2 text-left hover:bg-aurora/15 hover:text-aurora transition"
+                onClick={() => onLog(`【配置】${entry.key} = ${JSON.stringify(entry.value)}（${entry.description}）`)}
+              >
+                <p className="text-sm font-medium text-slate-100">{entry.key}</p>
+                <p className="text-slate-400 mt-1">{entry.description}</p>
+              </button>
+            ))}
+          </section>
+        );
+      }
+
+      function LogView({ entries, onReset }) {
+        return (
+          <section className="relative overflow-hidden rounded-3xl bg-white/5 shadow-2xl shadow-black/50 backdrop-blur flex flex-col max-h-[82vh] min-h-[60vh]">
+            <div className="absolute inset-0" style={{ background: runeTexture }}></div>
+            <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(125,226,209,0.4), transparent 65%)' }}></div>
+            <div className="relative z-10 p-6 lg:p-8 flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="uppercase text-xs tracking-[0.4em] text-aurora/70">Story Log</p>
+                  <h2 className="font-display text-2xl text-white">剧情日志</h2>
+                </div>
+                <button className="text-xs text-slate-200 hover:text-aurora transition" onClick={onReset}>清空</button>
+              </div>
+              <div id="log-scroll" className="flex-1 overflow-y-auto rounded-3xl bg-white/6 px-4 py-4 text-sm space-y-3 shadow-inner shadow-black/40">
+                {entries.length === 0 && (
+                  <p className="text-slate-300">日志空空如也，选择英雄、推进关卡或点击战斗吧。</p>
+                )}
+                {entries.map((item, idx) => (
+                  <p key={idx} className="leading-6">
+                    <span className="text-aurora/70">[{item.when}]</span>
+                    <span className="ml-2 text-slate-100">{renderMessage(item.message)}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      function App() {
+        const heroes = useMemo(() => {
+          const dataset = data.heroes;
+          if (!dataset) return [];
+          return dataset.tids.map(id => dataset.result[id]);
+        }, []);
+
+        const stages = useMemo(() => {
+          const dataset = data.stages;
+          if (!dataset) return [];
+          return dataset.tids.map(id => dataset.result[id]);
+        }, []);
+
+        const stageIds = useMemo(() => (data.stages ? data.stages.tids.map(id => Number(id)) : []), []);
+
+        const skills = useLookup(data.skills?.result);
+        const items = useLookup(data.items?.result);
+        const enemies = useLookup(data.enemies?.result);
+        const relics = useMemo(() => {
+          const dataset = data.relics;
+          if (!dataset) return [];
+          return dataset.tids.map(id => ({ id: Number(id), ...(dataset.result[id] || {}) }));
+        }, []);
+
+        const [selectedHero, setSelectedHero] = useState(() => heroes[0] || null);
+        const [stageIndex, setStageIndex] = useState(0);
+        const [log, setLog] = useState([]);
+        const [booted, setBooted] = useState(false);
+        const [pendingBattle, setPendingBattle] = useState(false);
+        const [clearedStages, setClearedStages] = useState([]);
+
+        const clearedSet = useMemo(() => new Set(clearedStages.map(Number)), [clearedStages]);
+
+        const currentStage = stages[stageIndex] || null;
+        const currentStageId = stageIds[stageIndex];
+        const heroSkill = selectedHero ? skills.get(selectedHero.primarySkill) : null;
+        const heroItem = selectedHero ? items.get(selectedHero.signatureItem) : null;
+        const bossEnemy = currentStage ? enemies.get(currentStage.bossEnemy) : null;
+        const relicSnapshot = useMemo(
+          () => computeRelicEffects(relics, clearedSet, selectedHero, currentStage),
+          [relics, clearedSet, selectedHero, currentStage]
+        );
+
+        function pushLog(message) {
+          const when = new Date().toLocaleTimeString();
+          setLog(prev => [...prev.slice(-99), { when, message }]);
+          requestAnimationFrame(() => {
+            const el = document.getElementById('log-scroll');
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+        }
+
+        function handleSelectHero(hero) {
+          setSelectedHero(hero);
+          const skill = skills.get(hero.primarySkill);
+          const item = items.get(hero.signatureItem);
+          pushLog(`选择英雄「${hero.name}」，主技能：${skill ? skill.name : '未知'}，装备：${item ? item.name : '未知'}`);
+          pushLog(hero.story);
+        }
+
+        function advanceStage() {
+          if (!stages.length) return;
+          if (pendingBattle) {
+            pushLog('战斗进行中，无法切换关卡。');
+            return;
+          }
+          const nextIndex = (stageIndex + 1) % stages.length;
+          const nextStage = stages[nextIndex];
+          const prereq = nextStage?.prerequisiteStage;
+          if (prereq && !clearedSet.has(prereq)) {
+            pushLog(`【关卡锁定】需先完成 Stage ${prereq} 才能前往「${nextStage.name}」。`);
+            return;
+          }
+          setStageIndex(nextIndex);
+          pushLog(`已切换至关卡「${nextStage.name}」。`);
+        }
+
+        function simulateBattle(hero, enemy) {
+          if (!hero || !enemy || pendingBattle) {
+            if (!hero || !enemy) pushLog('战斗数据不足，无法开始。');
+            return;
+          }
+          setPendingBattle(true);
+
+          const messages = [];
+          messages.push(`战斗开始：${hero.name} VS ${enemy.name}`);
+
+          const effects = computeRelicEffects(relics, clearedSet, hero, currentStage);
+          if (effects.activeRelics.length > 0) {
+            const buffSummary = buildRelicSummary(effects);
+            if (buffSummary.length > 0) {
+              messages.push(`增益生效：${buffSummary.join('、')}`);
+            }
+          }
+
+          let heroHp = hero.baseHp;
+          let enemyHp = enemy.hp;
+          let turn = 1;
+
+          const heroAttack = hero.baseAtk * effects.attackMultiplier;
+          const heroDefense = hero.baseDef * effects.defenseMultiplier;
+          const enemyEffectiveDefense = enemy.defense * (1 - effects.enemyDefenseReduction);
+
+          while (heroHp > 0 && enemyHp > 0) {
+            const heroDamage = Math.max(1, Math.round(heroAttack - enemyEffectiveDefense * 0.32));
+            enemyHp -= heroDamage;
+            messages.push(`第 ${turn} 回合：${hero.name} 造成 ${heroDamage} 点伤害（敌剩 ${Math.max(enemyHp, 0)}）。`);
+            if (enemyHp <= 0) break;
+
+            const enemyDamage = Math.max(1, Math.round(enemy.attack - heroDefense * 0.22));
+            heroHp -= enemyDamage;
+            messages.push(`${enemy.name} 反击造成 ${enemyDamage} 点伤害（我方剩 ${Math.max(heroHp, 0)}）。`);
+            turn++;
+            if (turn > 50) break; // 保底，避免极端配置
+          }
+
+          let outcome;
+          if (heroHp <= 0 && enemyHp <= 0) outcome = '双方同归于尽，战斗平局。';
+          else if (heroHp <= 0) outcome = `${hero.name} 战败，${enemy.name} 获胜。`;
+          else if (enemyHp <= 0) outcome = `${hero.name} 战胜 ${enemy.name}，获得胜利！`;
+          else outcome = '战斗时间结束，双方暂时休整。';
+
+          messages.push(outcome);
+
+          if (enemyHp <= 0) {
+            const rewards = [currentStage?.rewardItem1, currentStage?.rewardItem2, currentStage?.rewardItem3]
+              .filter(Boolean)
+              .map(id => items.get(id)?.name || id);
+            const rewardText = rewards.length ? rewards.join('、') : '无';
+            const expGain = Math.round(enemy.rewardExp * (1 + effects.expBonus));
+            messages.push(`战利品：${rewardText}，经验 +${expGain}`);
+            if (currentStageId && !clearedSet.has(currentStageId)) {
+              setClearedStages(prev => prev.includes(currentStageId) ? prev : [...prev, currentStageId]);
+              messages.push('关卡标记为已通关，可解锁后续关卡。');
+              const newlyUnlockedRelics = relics.filter(relic => Number(relic.unlockStage) === currentStageId);
+              newlyUnlockedRelics.forEach(relic => {
+                messages.push(`解锁遗物「${relic.name}」：${relic.desc}`);
+              });
+            }
+          }
+
+          messages.forEach((msg, idx) => {
+            setTimeout(() => {
+              pushLog(msg);
+              if (idx === messages.length - 1) setPendingBattle(false);
+            }, idx * 420);
+          });
+        }
+
+        function resetLog() {
+          setLog([]);
+        }
+
+        useEffect(() => {
+          if (!booted && selectedHero) {
+            handleSelectHero(selectedHero);
+            setBooted(true);
+          }
+        }, [booted, selectedHero]);
+
+        return (
+          <div className="grid gap-5 lg:grid-cols-[1.2fr_1.8fr] h-full">
+            <LogView entries={log} onReset={resetLog} />
+            <div className="space-y-3 overflow-hidden">
+              <div className="grid gap-3 xl:grid-cols-2">
+                <HeroSummary hero={selectedHero} skill={heroSkill} item={heroItem} />
+                <StageControls
+                  stages={stages}
+                  stageIds={stageIds}
+                  clearedSet={clearedSet}
+                  currentIndex={stageIndex}
+                  onNext={advanceStage}
+                  onLog={pushLog}
+                  onBattle={() => simulateBattle(selectedHero, bossEnemy)}
+                  enemy={bossEnemy}
+                  pendingBattle={pendingBattle}
+                  activeRelics={relicSnapshot.activeRelics}
+                  effectSummary={buildRelicSummary(relicSnapshot)}
+                />
+              </div>
+              <div className="grid gap-3 xl:grid-cols-[1.3fr_0.7fr]">
+                <RelicGallery relics={relics} clearedSet={clearedSet} />
+                <div className="space-y-3">
+                  <GlobalPanel config={data.globalConfig} onLog={pushLog} />
+                  <HeroList heroes={heroes} selectedId={selectedHero?.sequence} onSelect={handleSelectHero} />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function renderMessage(message) {
+        const parts = String(message).split(/(\d+)/g);
+        return parts.map((part, idx) => {
+          if (/^\d+$/.test(part)) {
+            return <span key={idx} className="text-aurora font-semibold">{part}</span>;
+          }
+          return <React.Fragment key={idx}>{part}</React.Fragment>;
+        });
+      }
+
+      ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,137 @@
+/** this file is auto generated */
+import * as TableContext from "./context";
+import { IEvents, EventsTID, toEventsTID, EventsRepo } from "./events";
+        
+const raw = {
+  "tids": [
+    "50000001",
+    "50000002",
+    "50000003",
+    "50000004",
+    "50000005"
+  ],
+  "result": {
+    "50000001": {
+      "_tid": "50000001",
+      "tid": 50000001,
+      "key": "stranger_fire",
+      "label": "结霜的旅人",
+      "description": "炉火吸引了一名瑟瑟发抖的陌生人。",
+      "trigger": {
+        "resource": "warmth",
+        "min": 60
+      },
+      "effects": [
+        {
+          "type": "resource",
+          "resource": "villagers",
+          "amount": 1,
+          "message": ""
+        }
+      ],
+      "cooldown": 600,
+      "once": true,
+      "log": "陌生人蜷缩在火旁，慢慢伸出双手烤火。"
+    },
+    "50000002": {
+      "_tid": "50000002",
+      "tid": 50000002,
+      "key": "settler_arrives",
+      "label": "新的居民",
+      "description": "有人在棚屋里安顿下来。",
+      "trigger": {
+        "resource": "",
+        "building": 30000001
+      },
+      "effects": [
+        {
+          "type": "resource",
+          "resource": "villagers",
+          "amount": 1,
+          "message": ""
+        }
+      ],
+      "cooldown": 300,
+      "once": false,
+      "log": "有人敲了敲门，想留在这里。"
+    },
+    "50000003": {
+      "_tid": "50000003",
+      "tid": 50000003,
+      "key": "embers_fading",
+      "label": "余烬渐息",
+      "description": "火势低迷时，人们瑟瑟发抖。",
+      "trigger": {
+        "resource": "warmth",
+        "max": 25
+      },
+      "effects": [
+        {
+          "type": "log",
+          "resource": "",
+          "message": "炉火濒临熄灭，必须添柴。"
+        }
+      ],
+      "cooldown": 180,
+      "once": false,
+      "log": "寒风灌入营地，大家不安地望向你。"
+    },
+    "50000004": {
+      "_tid": "50000004",
+      "tid": 50000004,
+      "key": "caravan_returns",
+      "label": "商队消息",
+      "description": "驿站传来消息，一支商队靠近。",
+      "trigger": {
+        "resource": "",
+        "building": 30000006
+      },
+      "effects": [
+        {
+          "type": "log",
+          "resource": "",
+          "message": "商队抵达，他们乐于交换口粮与补给。"
+        }
+      ],
+      "cooldown": 900,
+      "once": true,
+      "log": "商队在营地外搭起了帐篷。"
+    },
+    "50000005": {
+      "_tid": "50000005",
+      "tid": 50000005,
+      "key": "wolves_circle",
+      "label": "狼群盘旋",
+      "description": "储备过多肉类会引来狼群。",
+      "trigger": {
+        "resource": "meat",
+        "min": 180
+      },
+      "effects": [
+        {
+          "type": "resource",
+          "resource": "meat",
+          "amount": -20,
+          "message": ""
+        },
+        {
+          "type": "log",
+          "resource": "",
+          "message": "夜里传来低嚎，第二天肉少了一些。"
+        }
+      ],
+      "cooldown": 420,
+      "once": false,
+      "log": "黎明时，雪地里出现了狼爪的痕迹。"
+    }
+  },
+  "collisions": []
+}
+
+export const eventsRaw = raw;
+export const eventsTids: EventsTID[] = raw.tids.map(toEventsTID);
+export const eventsRecords: Record<EventsTID, IEvents> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toEventsTID(tid), value as IEvents])
+);
+export const events = eventsRecords;
+export const eventsRepo = EventsRepo.fromRaw(raw);

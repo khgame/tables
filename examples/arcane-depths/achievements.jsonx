@@ -1,0 +1,79 @@
+{
+  "protocol": {
+    "name": "khgame.tables",
+    "version": 1
+  },
+  "source": {
+    "fileName": "achievements",
+    "sheetName": "__data"
+  },
+  "convert": {
+    "tids": [
+      "91010000",
+      "91020000",
+      "91030000"
+    ],
+    "result": {
+      "91010000": {
+        "_tid": "91010000",
+        "familyCode": 91,
+        "achievementCode": 1,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "title": "余烬守望",
+        "description": "完成余烬裂隙所有难度。",
+        "trigger": "chapter:10010100:all",
+        "rewardType": "Relic",
+        "rewardValue": "60010000"
+      },
+      "91020000": {
+        "_tid": "91020000",
+        "familyCode": 91,
+        "achievementCode": 2,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 2,
+        "title": "翠潮庇佑",
+        "description": "在蔓生穹顶无伤通关。",
+        "trigger": "chapter:10020100:perfect",
+        "rewardType": "Resource",
+        "rewardValue": "Crystal:60"
+      },
+      "91030000": {
+        "_tid": "91030000",
+        "familyCode": 91,
+        "achievementCode": 3,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 3,
+        "title": "星火熔铸师",
+        "description": "解锁所有星界熔炉装备。",
+        "trigger": "equipment:all:crucible",
+        "rewardType": "Resource",
+        "rewardValue": "Arcane:80"
+      }
+    },
+    "collisions": [],
+    "meta": {
+      "idSegments": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "markCols": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    }
+  }
+}

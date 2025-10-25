@@ -12,34 +12,37 @@ export interface MulliganPanelProps {
 }
 
 export const MulliganPanel: React.FC<MulliganPanelProps> = ({ player, card, onKeep, onReplace, hidden }) => (
-  <div className="max-w-xl mx-auto bg-white/95 rounded-3xl shadow-2xl p-6 space-y-4 border-4 border-amber-400 text-stone-900">
-    <h2 className="text-2xl font-bold text-amber-700 text-center">{PLAYER_NAMES[player]} 的调度阶段</h2>
-    {hidden ? (
-      <p className="text-center text-sm text-amber-600">{PLAYER_NAMES[player]} 正在调整手牌…</p>
-    ) : (
-      <>
-        <p className="text-sm text-gray-600 text-center">你可以保留当前手牌或将其置入墓地并抽取新牌。</p>
-        <div className="flex justify-center">
-          {card ? <CardView card={card} disabled variant="showcase" style={{ width: '10.5rem' }} /> : <div className="text-gray-500 italic">无手牌</div>}
-        </div>
-        <div className="flex gap-4 justify-center">
-          <button
-            type="button"
-            onClick={onKeep}
-            className="px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            保留手牌
-          </button>
-          <button
-            type="button"
-            onClick={onReplace}
-            className="px-6 py-3 rounded-full bg-gradient-to-r from-rose-500 to-rose-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            换一张
-          </button>
-        </div>
-      </>
+  <div className="mulligan-panel">
+    <div className="mulligan-panel__inner">
+      <h2 className="mulligan-panel__title">{PLAYER_NAMES[player]} 的调度阶段</h2>
+      {hidden ? (
+        <p className="mulligan-panel__hint">{PLAYER_NAMES[player]} 正在调整手牌…</p>
+      ) : (
+        <>
+          <p className="mulligan-panel__description">你可以保留当前手牌或将其置入墓地并抽取新牌，回合结束后将自动继续。</p>
+          <div className="mulligan-panel__actions">
+            <button
+              type="button"
+              onClick={onKeep}
+              className="mulligan-panel__button mulligan-panel__button--keep"
+            >
+              保留手牌
+            </button>
+            <button
+              type="button"
+              onClick={onReplace}
+              className="mulligan-panel__button mulligan-panel__button--replace"
+            >
+              换一张
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+    {!hidden && (
+      <div className="mulligan-panel__card-floating">
+        {card ? <CardView card={card} disabled variant="showcase" style={{ width: '10rem' }} /> : <div className="mulligan-panel__empty">无手牌</div>}
+      </div>
     )}
   </div>
 );
-

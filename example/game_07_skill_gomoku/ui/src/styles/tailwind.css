@@ -1,0 +1,52 @@
+@import './base.css';
+@import './panels.css';
+@import './effects.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply min-h-screen bg-[#070a14] bg-gradient-to-br from-[#070a14] via-[#0e1729] to-[#1a1030] font-body text-amber-100 antialiased;
+  }
+
+  ::selection {
+    @apply bg-amber-300/70 text-slate-900;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-3xl border border-white/5 bg-white/5 backdrop-blur-xl shadow-[0_26px_58px_rgba(6,8,21,0.55)] overflow-hidden;
+  }
+
+  .card-drop-shadow {
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.32);
+  }
+}
+
+@layer utilities {
+  @keyframes board-shudder {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    25% {
+      transform: translate3d(4px, -3px, 0);
+    }
+    55% {
+      transform: translate3d(-3px, 2px, 0);
+    }
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .animate-board-shudder {
+    animation: board-shudder 280ms ease;
+  }
+}

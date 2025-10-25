@@ -13,32 +13,25 @@ export const CARD_TYPE_PALETTES: Record<
   }
 > = {
   Attack: {
-    core: '#f97316',
-    edge: '#fbbf24',
+    core: '#f97316CC',
+    edge: '#fbbf24CC',
     glow: '#fde68a',
     rune: '#fb923c',
     back: '#6b3710'
   },
-  Control: {
-    core: '#2563eb',
-    edge: '#60a5fa',
-    glow: '#bfdbfe',
-    rune: '#1d4ed8',
-    back: '#0b1e55'
-  },
   Counter: {
-    core: '#8b5cf6',
-    edge: '#c4b5fd',
+    core: '#8b5cf6CC',
+    edge: '#c4b5fdCC',
     glow: '#ede9fe',
     rune: '#6d28d9',
     back: '#2b1053'
   },
   Support: {
-    core: '#0ea5e9',
-    edge: '#67e8f9',
-    glow: '#cffafe',
-    rune: '#0284c7',
-    back: '#083c5c'
+    core: '#2563ebCC',
+    edge: '#60a5faCC',
+    glow: '#bfdbfe',
+    rune: '#1d4ed8',
+    back: '#0b1e55'
   }
 };
 
@@ -47,17 +40,13 @@ const TYPE_TINTS: Record<string, { glow: string; rim: string }> = {
     glow: 'rgba(249, 115, 22, 0.48)',
     rim: 'rgba(236, 72, 30, 0.45)'
   },
-  Control: {
-    glow: 'rgba(59, 130, 246, 0.46)',
-    rim: 'rgba(37, 99, 235, 0.42)'
-  },
   Counter: {
     glow: 'rgba(168, 85, 247, 0.48)',
     rim: 'rgba(139, 92, 246, 0.4)'
   },
   Support: {
-    glow: 'rgba(14, 165, 233, 0.46)',
-    rim: 'rgba(8, 145, 178, 0.4)'
+    glow: 'rgba(59, 130, 246, 0.46)',
+    rim: 'rgba(37, 99, 235, 0.42)'
   }
 };
 
@@ -70,6 +59,7 @@ interface CardFrameProps {
 }
 
 const FRAME_IMAGE_SRC = '/card_bg_002.png';
+const CARD_BACK_IMAGE_SRC = '/card_bg_2.png';
 
 export const CardFrame: React.FC<CardFrameProps> = ({
   type,
@@ -90,8 +80,12 @@ export const CardFrame: React.FC<CardFrameProps> = ({
       ].filter(Boolean).join(' ')}
       style={inlineSize}
     >
-      <img src={FRAME_IMAGE_SRC} alt="" className="card-frame__bg" draggable={false} />
-      <div className="card-frame__mask" />
+      {variant === 'back' ? (
+        <img src={CARD_BACK_IMAGE_SRC} alt="" className="card-frame__bg" draggable={false} />
+      ) : (
+        <img src={FRAME_IMAGE_SRC} alt="" className="card-frame__bg" draggable={false} />
+      )}
+      {/* <div className="card-frame__mask" />
       <div className="card-frame__shine" />
       <div
         className="card-frame__tint"
@@ -99,29 +93,18 @@ export const CardFrame: React.FC<CardFrameProps> = ({
           background:
             variant === 'front'
               ? `radial-gradient(125% 125% at 50% 38%, ${tint.glow} 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.68) 100%)`
-              : 'linear-gradient(155deg, rgba(14, 18, 28, 0.88) 0%, rgba(10, 14, 22, 0.95) 65%, rgba(5, 7, 12, 0.98) 100%)',
+              : 'transparent', // 卡背不需要额外的tint，直接显示原图
           mixBlendMode: variant === 'front' ? 'soft-light' : 'normal'
         }}
-      />
+      /> */}
       <div
         className="card-frame__rim"
         style={{
-          boxShadow: `inset 0 0 0 2px ${tint.rim}, inset 0 0 18px ${tint.rim}`
+          boxShadow: variant === 'front'
+            ? `inset 0 0 0 2px ${tint.rim}, inset 0 0 18px ${tint.rim}`
+            : 'none' // 卡背也不需要额外的rim效果
         }}
       />
-      {variant === 'back' && <div className="card-frame__back-emblem" />}
     </div>
   );
 };
-
-interface CardBadgeProps {
-  fusion?: boolean;
-  legend?: boolean;
-}
-
-export const CardBadges: React.FC<CardBadgeProps> = ({ fusion, legend }) => (
-  <div className="absolute inset-x-0 top-0 pointer-events-none flex justify-between px-5 pt-4 text-[0.65rem] uppercase tracking-[0.2em] font-semibold text-white drop-shadow-md">
-    {fusion ? <span className="card-badge card-badge--fusion">合体技</span> : <span />}
-    {legend ? <span className="card-badge card-badge--legend">传奇</span> : <span />}
-  </div>
-);

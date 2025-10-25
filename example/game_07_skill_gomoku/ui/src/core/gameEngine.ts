@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { GomokuBoardImpl } from './board';
-import { CardDeckImpl } from './deck';
+import { buildCardDeck } from './deck';
 import {
   BOARD_SIZE,
   DRAW_INTERVAL,
@@ -12,7 +12,7 @@ import {
   PLAYER_NAMES,
   getOpponent
 } from './constants';
-import { generateId, parseEffectParams, parseTags } from './utils';
+import { deepClone, generateId, parseEffectParams, parseTags } from './utils';
 import {
   prepareCardEffect,
   resolveCardEffect,
@@ -28,7 +28,8 @@ import type {
   CounterWindow,
   TargetRequest,
   EffectContext,
-  EffectHelpers
+  EffectHelpers,
+  CardDraftOption
 } from '../types';
 
 interface GameData {
@@ -39,11 +40,11 @@ interface GameData {
 interface UseGameEngineResult {
   gameState: GameStatus;
   startGame: (enableAI?: boolean) => void;
-  completeMulligan: (decision: { replace: boolean }) => void;
   placeStone: (row: number, col: number) => void;
   playCard: (index: number) => void;
   selectTarget: (selection: any) => void;
   resolveCard: (countered?: boolean, counterCard?: RawCard | null) => void;
+  selectDraftOption: (optionId: string) => void;
 }
 
 export const useGameEngine = (data: GameData): UseGameEngineResult => {
@@ -57,10 +58,6 @@ export const useGameEngine = (data: GameData): UseGameEngineResult => {
     },
     [context]
   );
-
-  const completeMulligan = useCallback((decision: { replace: boolean }) => {
-    setGameState(prev => applyMulliganDecision(prev, decision));
-  }, []);
 
   const placeStone = useCallback((row: number, col: number) => {
     setGameState(prev => applyStonePlacement(prev, row, col));
@@ -87,7 +84,11 @@ export const useGameEngine = (data: GameData): UseGameEngineResult => {
     [context]
   );
 
-  return { gameState, startGame, completeMulligan, placeStone, playCard, selectTarget, resolveCard };
+  const selectDraftOption = useCallback((optionId: string) => {
+    setGameState(prev => applyDraftSelection(prev, optionId));
+  }, []);
+
+  return { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, selectDraftOption };
 };
 
 const createInitialState = (): GameStatus => ({
@@ -118,10 +119,11 @@ const createInitialState = (): GameStatus => ({
   winner: null,
   aiEnabled: false,
   visuals: [],
+  draft: null,
   mulligan: {
-    stage: 'idle',
+    stage: 'completed',
     current: null,
-    resolved: [false, false],
+    resolved: [true, true],
     replaced: [false, false]
   }
 });
@@ -151,20 +153,14 @@ const buildDataContext = (data: GameData): EffectContext => {
 
 const createGameStartState = (context: EffectContext, enableAI: boolean): GameStatus => {
   const state = createInitialState();
-  const deck0 = new CardDeckImpl(context.allCards);
-  const deck1 = new CardDeckImpl(context.allCards);
-  const hands: RawCard[][] = [deck0.draw(INITIAL_HAND_SIZE), deck1.draw(INITIAL_HAND_SIZE)];
+  const deck0 = buildCardDeck(context.cardsByTid);
+  const deck1 = buildCardDeck(context.cardsByTid);
+  const hands: RawCard[][] = [[], []];
 
-  state.phase = GamePhaseEnum.MULLIGAN;
+  state.phase = GamePhaseEnum.PLAYING;
   state.decks = [deck0, deck1];
   state.hands = hands;
   state.aiEnabled = enableAI;
-  state.mulligan = {
-    stage: 'active',
-    current: PlayerEnum.BLACK,
-    resolved: [false, false],
-    replaced: [false, false]
-  };
   state.logs = [createLog(`对局开始！黑方将率先落子。${enableAI ? ' (AI 对战模式)' : ''}`, 'start')];
   state.timeline = [
     {
@@ -177,71 +173,21 @@ const createGameStartState = (context: EffectContext, enableAI: boolean): GameSt
     }
   ];
 
+  // Initial draw for both players (AI自动选, 玩家手动选)
+  triggerCardDraft(state, PlayerEnum.WHITE, 'initial');
+  triggerCardDraft(state, PlayerEnum.BLACK, 'initial');
+
+  if (!state.draft) {
+    beginMulliganPhase(state);
+    advanceMulliganState(state);
+  }
+
   return state;
-};
-
-const applyMulliganDecision = (prev: GameStatus, decision: { replace: boolean }): GameStatus => {
-  if (prev.phase !== GamePhaseEnum.MULLIGAN) return prev;
-  const current = prev.mulligan.current;
-  if (current === null || prev.mulligan.stage !== 'active') return prev;
-
-  const replace = decision.replace;
-  const hands = cloneHands(prev.hands);
-  const graveyards = cloneGraveyards(prev.graveyards);
-  const logs = [...prev.logs];
-  const resolved = [...prev.mulligan.resolved] as [boolean, boolean];
-  const replaced = [...prev.mulligan.replaced] as [boolean, boolean];
-
-  const hand = hands[current];
-  if (replace && hand.length > 0) {
-    const [card] = hand;
-    graveyards[current].push(createGraveyardEntry(card, current, 'mulligan', prev.turnCount));
-    const deck = prev.decks[current];
-    const drawn = deck?.draw(1) ?? [];
-    hands[current] = drawn.length > 0 ? drawn : [];
-    logs.push(createLog(`${PLAYER_NAMES[current]} 更换初始手牌`, 'mulligan'));
-    replaced[current] = true;
-  } else {
-    logs.push(createLog(`${PLAYER_NAMES[current]} 保留初始手牌`, 'mulligan'));
-  }
-
-  resolved[current] = true;
-  let nextStage: GameStatus['mulligan']['stage'] = 'active';
-  let nextCurrent: Player | null = null;
-  let nextPhase = prev.phase;
-  let nextCurrentPlayer = prev.currentPlayer;
-
-  const other = getOpponent(current);
-  if (!resolved[other]) {
-    nextCurrent = other;
-    if (prev.aiEnabled && other === PlayerEnum.WHITE) {
-      nextCurrent = other;
-    }
-  } else {
-    nextStage = 'completed';
-    nextPhase = GamePhaseEnum.PLAYING;
-    nextCurrentPlayer = PlayerEnum.BLACK;
-    logs.push(createLog('黑方先手，开始落子', 'info'));
-  }
-
-  return {
-    ...prev,
-    phase: nextPhase,
-    currentPlayer: nextCurrentPlayer,
-    hands,
-    graveyards,
-    logs,
-    mulligan: {
-      stage: nextStage,
-      current: nextCurrent,
-      resolved,
-      replaced
-    }
-  };
 };
 
 const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameStatus => {
   if (prev.phase !== GamePhaseEnum.PLAYING) return prev;
+  if (prev.draft) return prev;
   if (prev.pendingAction || prev.pendingCounter || prev.targetRequest) return prev;
 
   const player = prev.currentPlayer;
@@ -299,16 +245,8 @@ const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameSt
 
   const totalMoves = moveCount[0] + moveCount[1];
   const hands = cloneHands(prev.hands);
-  if (totalMoves % DRAW_INTERVAL === 0) {
-    const deck = prev.decks[opponent];
-    const drawn = deck?.draw(1) ?? [];
-    if (drawn.length > 0) {
-      hands[opponent] = [...hands[opponent], ...drawn];
-      logs.push(createLog(`${PLAYER_NAMES[opponent]} 抽取 1 张卡牌`, 'draw'));
-    }
-  }
 
-  return {
+  const nextState: GameStatus = {
     ...prev,
     board,
     moveCount,
@@ -319,10 +257,17 @@ const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameSt
     statuses,
     currentPlayer: opponent
   };
+
+  if (totalMoves % DRAW_INTERVAL === 0) {
+    triggerCardDraft(nextState, opponent, 'draw');
+  }
+
+  return nextState;
 };
 
 const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext): GameStatus => {
   if (prev.phase !== GamePhaseEnum.PLAYING) return prev;
+  if (prev.draft) return prev;
   if (prev.pendingAction || prev.targetRequest || prev.pendingCounter) return prev;
 
   const player = prev.currentPlayer;
@@ -382,7 +327,6 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   if (prepareResult.cancelled) {
     const graveyards = cloneGraveyards(prev.graveyards);
     graveyards[player].push(createGraveyardEntry(card, player, 'fizzled', prev.turnCount));
-    prev.decks[player]?.discard(card);
     return {
       ...prev,
       hands,
@@ -456,6 +400,29 @@ const applyTargetSelection = (prev: GameStatus, selection: any, context: EffectC
   return prev;
 };
 
+const applyDraftSelection = (prev: GameStatus, optionId: string): GameStatus => {
+  const draft = prev.draft;
+  if (!draft) return prev;
+  const deck = prev.decks[draft.player];
+  if (!deck) return prev;
+
+  const card = deck.take(optionId);
+  if (!card) return prev;
+
+  const hands = cloneHands(prev.hands);
+  hands[draft.player] = [...hands[draft.player], card];
+  const logs = [...prev.logs, createLog(`${PLAYER_NAMES[draft.player]} 选择了 ${card.nameZh}`, 'draw')];
+
+  const nextState: GameStatus = {
+    ...prev,
+    hands,
+    logs,
+    draft: null
+  };
+
+  return nextState;
+};
+
 const applyResolveCard = (
   prev: GameStatus,
   countered: boolean,
@@ -473,12 +440,10 @@ const applyResolveCard = (
     if (index === -1) return prev;
 
     const hands = cloneHands(prev.hands);
-    const deck = prev.decks[responder];
     const logs = [...prev.logs, createLog(`${PLAYER_NAMES[responder]} 使用 ${counterCard.nameZh}`, 'counter')];
 
     const card = hand[index];
     hands[responder] = hand.filter((_, idx) => idx !== index);
-    deck?.discard(card);
 
     const pendingCounter: PendingAction = {
       id: generateId('counter'),
@@ -545,7 +510,6 @@ const finalizeCounter = (state: GameStatus, helpers: EffectHelpers) => {
   if (state.pendingAction) {
     const owner = state.pendingAction.player;
     addCardToGraveyard(state, owner, state.pendingAction.card, 'countered');
-    state.decks[owner]?.discard(state.pendingAction.card);
   }
   state.pendingAction = null;
   state.pendingCounter = null;
@@ -564,7 +528,6 @@ const finalizeCardResolution = (
   const player = pending.player;
   helpers.enqueueVisual({ effectId: pending.card.effectId, card: pending.card, player });
   addCardToGraveyard(state, player, pending.card, 'played');
-  state.decks[player]?.discard(pending.card);
   state.pendingAction = null;
   state.pendingCounter = null;
   state.targetRequest = null;
@@ -658,6 +621,17 @@ const cloneStateForEffect = (state: GameStatus): GameStatus => ({
   logs: [...state.logs],
   timeline: [...state.timeline],
   visuals: [...state.visuals],
+  draft: state.draft
+    ? {
+        player: state.draft.player,
+        source: state.draft.source,
+        options: state.draft.options.map(option => ({
+          id: option.id,
+          card: deepClone(option.card),
+          remaining: option.remaining
+        }))
+      }
+    : null,
   targetRequest: null,
   counterWindow: null
 });
@@ -707,3 +681,48 @@ const createEffectHelpers = (state: GameStatus): EffectHelpers => ({
     state.visuals = [...state.visuals, event].slice(-10);
   }
 });
+
+type DraftSource = 'initial' | 'draw';
+
+function triggerCardDraft(state: GameStatus, player: Player, source: DraftSource): void {
+  const deck = state.decks[player];
+  if (!deck) return;
+  if (state.draft) return;
+  if (deck.remaining() <= 0) {
+    state.logs.push(createLog(`${PLAYER_NAMES[player]} 的牌堆已耗尽，无法抽牌`, 'draw'));
+    return;
+  }
+
+  const options = deck.drawOptions(Math.min(3, deck.remaining()));
+  if (options.length === 0) {
+    state.logs.push(createLog(`${PLAYER_NAMES[player]} 的牌堆已耗尽，无法抽牌`, 'draw'));
+    return;
+  }
+
+  const isAI = state.aiEnabled && player === PlayerEnum.WHITE;
+  if (isAI) {
+    const choice = chooseOptionForAI(options);
+    const card = deck.take(choice.id);
+    if (!card) return;
+    const updatedHands = cloneHands(state.hands);
+    updatedHands[player] = [...updatedHands[player], card];
+    state.hands = updatedHands;
+    state.logs.push(createLog(`${PLAYER_NAMES[player]} 抽取了 ${card.nameZh}`, 'draw'));
+    return;
+  }
+
+  state.draft = {
+    player,
+    options,
+    source
+  };
+  state.logs.push(createLog(`${PLAYER_NAMES[player]} 可以从 ${options.length} 张卡中选择`, 'draw'));
+}
+
+function chooseOptionForAI(options: CardDraftOption[]): CardDraftOption {
+  if (options.length === 0) {
+    throw new Error('No options available for AI draft');
+  }
+  const index = Math.floor(Math.random() * options.length);
+  return options[index];
+}

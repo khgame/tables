@@ -47,7 +47,7 @@ npm run ex:skill-gomoku
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `tid` | `@` | 卡牌 ID（1001-1016） |
-| `type` | `enum<CardType>` | Attack/Control/Counter/Support |
+| `type` | `enum<CardType>` | Attack/Counter/Support |
 | `timing` | `enum<CardTiming>` | PreMove/Reaction/Anytime |
 | `nameZh` / `nameEn` | `string` | 中英文卡名 |
 | `rarity` | `enum<CardRarity>` | Common/Rare/Legendary |

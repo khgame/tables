@@ -201,6 +201,14 @@ const effectHandlers: Record<SkillEffectId, {
         fusionLock: [...statuses.fusionLock] as [number, number]
       }));
       helpers.log(`${PLAYER_NAMES[opponent]} 将跳过 ${turns} 个回合`, 'effect');
+
+      const tid = String(action.card._tid ?? action.card.tid ?? '');
+      if (tid === '1007') {
+        const characters = { ...state.characters };
+        characters[action.player] = null;
+        state.characters = characters;
+        helpers.log('技能五离场，需重新召唤方可再发动合体技', 'effect');
+      }
     }
   },
   [SkillEffect.SummonCharacter]: {
@@ -332,10 +340,23 @@ const effectHandlers: Record<SkillEffectId, {
       state.phase = 'playing';
       state.winner = null;
       helpers.log('东山再起，棋局恢复如初', 'counter');
+
+      const punished = getOpponent(counter.player);
+      helpers.updateStatuses(statuses => ({
+        freeze: [...statuses.freeze] as [number, number],
+        skip: updateTuple(statuses.skip, punished, statuses.skip[punished] + 1),
+        fusionLock: [...statuses.fusionLock] as [number, number]
+      }));
+      helpers.log(`${PLAYER_NAMES[punished]} 将跳过下一个回合`, 'counter');
     }
   },
   [SkillEffect.CounterCancelFusion]: {
     resolve: (state, counter, _context, helpers) => {
+      const target = state.pendingAction;
+      if (target?.params && (target.params as Record<string, unknown>).immuneShout) {
+        helpers.log('目标技能免疫喝止，反击未奏效', 'error');
+        return;
+      }
       helpers.log('合体技被喝止，效果被取消', 'counter');
       state.pendingAction = null;
     }

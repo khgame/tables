@@ -3,22 +3,25 @@ import ReactDOM from 'react-dom/client';
 import {
   Board,
   GameLog,
-  MulliganPanel,
   PendingCardPanel,
   SnapshotSelector,
   ZonePanel,
   OpponentHUD,
   PlayerHUD,
-  CardPreviewOverlay,
   SkillEffectLayer,
-  AiSettingsPanel
+  AiSettingsPanel,
+  AiStatusBanner,
+  CardDraftPanel
 } from './components';
 import { useGameEngine } from './core/gameEngine';
 import { PLAYER_NAMES, PlayerEnum, SKILL_UNLOCK_MOVE, getOpponent, GamePhaseEnum } from './core/constants';
-import type { AiSettings, AiScenario, AiDecision } from './ai/openAiClient';
+import { parseTags, parseEffectParams } from './core/utils';
+import type { AiSettings, AiScenario, AiDecision, AiPlayingDecision } from './ai/openAiClient';
 import { hasValidSettings, requestAiDecision } from './ai/openAiClient';
+import { aiLog } from './ai/logger';
 import type { GameStatus, Player, RawCard, VisualEffectEvent } from './types';
-import './styles.css';
+import './styles/tailwind.css';
+import { SkillEffect } from './skills/effects';
 
 interface GameData {
   cards?: { result: Record<string, RawCard> };
@@ -40,7 +43,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCounter, setSelectedCounter] = useState<RawCard | null>(null);
-  const [previewCard, setPreviewCard] = useState<RawCard | null>(null);
   const [draggedCardIndex, setDraggedCardIndex] = useState<number | null>(null);
   const [boardBlockedFeedback, setBoardBlockedFeedback] = useState(false);
   const [activeVisuals, setActiveVisuals] = useState<VisualEffectEvent[]>([]);
@@ -81,7 +83,7 @@ const App: React.FC = () => {
   }, []);
 
   const engine = useGameEngine(data ?? {});
-  const { gameState, startGame, completeMulligan, placeStone, playCard, selectTarget, resolveCard } = engine;
+  const { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, selectDraftOption } = engine;
 
   useEffect(() => {
     setSelectedCounter(null);
@@ -100,12 +102,7 @@ const App: React.FC = () => {
     });
   }, [gameState.visuals]);
 
-  useAIActions(
-    gameState,
-    { playCard, placeStone, resolveCard, completeMulligan, selectTarget },
-    aiSettings,
-    updateAiStatus
-  );
+  useAIActions(gameState, { playCard, placeStone, resolveCard, selectTarget }, aiSettings, updateAiStatus);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -149,24 +146,12 @@ const App: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [gameState.phase, gameState.pendingAction, responder, resolveCard]);
 
-  const renderMulligan = () => {
-    const player = gameState.mulligan.current;
-    const card = player !== null ? gameState.hands[player]?.[0] ?? null : null;
-    const hidden = player === PlayerEnum.WHITE;
-    return (
-      <div className="mulligan-overlay" role="dialog" aria-label="调度阶段">
-        <div className="mulligan-overlay__panel">
-          <div className="mulligan-overlay__title">调度阶段</div>
-          <MulliganPanel
-            player={player ?? PlayerEnum.BLACK}
-            card={hidden ? null : card}
-            onKeep={() => completeMulligan({ replace: false })}
-            onReplace={() => completeMulligan({ replace: true })}
-            hidden={hidden}
-          />
-        </div>
-      </div>
-    );
+  const renderDraft = () => {
+    const draft = gameState.draft;
+    if (!draft) return null;
+    const isHumanDraft = !gameState.aiEnabled || draft.player !== PlayerEnum.WHITE;
+    if (!isHumanDraft) return null;
+    return <CardDraftPanel options={draft.options} source={draft.source} onSelect={selectDraftOption} />;
   };
 
   if (isLoading) {
@@ -244,7 +229,7 @@ const App: React.FC = () => {
     );
   }
 
-  const enemyHandCount = (hands[PlayerEnum.WHITE] ?? []).length;
+  const enemyHandCards = hands[PlayerEnum.WHITE] ?? [];
   const playerHandCards = hands[PlayerEnum.BLACK] ?? [];
   const enemyGraveyard = gameState.graveyards[PlayerEnum.WHITE] ?? [];
   const playerGraveyard = gameState.graveyards[PlayerEnum.BLACK] ?? [];
@@ -264,19 +249,16 @@ const App: React.FC = () => {
     if (sourceIndex === null) return;
     playCard(sourceIndex);
     setDraggedCardIndex(null);
-    setPreviewCard(null);
   };
 
   const handlePlayerCardHover = (card: RawCard | null) => {
-    if (card) {
-      setPreviewCard(card);
-    } else if (draggedCardIndex === null) {
-      setPreviewCard(null);
-    }
+    // 悬浮预览已移除，保留回调便于后续扩展
+    if (!card && draggedCardIndex === null) return;
   };
 
   return (
     <>
+      <AiStatusBanner status={aiStatus} />
       <div className="game-stage">
         <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
         <div className="game-stage__backdrop" />
@@ -295,15 +277,14 @@ const App: React.FC = () => {
           </aside>
           <div className="game-grid__opponent">
             <OpponentHUD
-              handCount={enemyHandCount}
+              handCards={enemyHandCards}
               graveyardCount={enemyGraveyard.length}
               shichahaiCount={shichahaiByPlayer[PlayerEnum.WHITE].length}
               moveCount={moveCount[PlayerEnum.WHITE] ?? 0}
-          stonesCount={stonesByPlayer[PlayerEnum.WHITE]}
-          characters={gameState.characters}
-          statuses={statuses}
-          isCurrent={currentPlayer === PlayerEnum.WHITE}
-          aiStatus={aiStatus}
+              stonesCount={stonesByPlayer[PlayerEnum.WHITE]}
+              characters={gameState.characters}
+              statuses={statuses}
+              isCurrent={currentPlayer === PlayerEnum.WHITE}
             />
           </div>
           <section className={`game-grid__board ${draggedCardIndex !== null ? 'game-grid__board--dragging' : ''}`}>
@@ -330,26 +311,25 @@ const App: React.FC = () => {
               }
             }}
           />
-          {previewCard && <CardPreviewOverlay card={previewCard} />}
           <SkillEffectLayer events={activeVisuals} />
         </div>
-        {phase === GamePhaseEnum.MULLIGAN && renderMulligan()}
+        {renderDraft()}
         {pendingAction && (
-          <div className="board-stage__pending">
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4 sm:px-6">
             <PendingCardPanel
               pendingCard={pendingAction}
-                    responder={responder}
-                    availableCounters={availableCounters}
-                    selectedCounter={selectedCounter}
-                    setSelectedCounter={setSelectedCounter}
-                    onResolve={(countered, card) => {
-                      resolveCard(countered, card);
-                      if (countered) setSelectedCounter(null);
-                    }}
-                    aiEnabled={aiEnabled}
-                  />
-                </div>
-              )}
+              responder={responder}
+              availableCounters={availableCounters}
+              selectedCounter={selectedCounter}
+              setSelectedCounter={setSelectedCounter}
+              onResolve={(countered, card) => {
+                resolveCard(countered, card);
+                if (countered) setSelectedCounter(null);
+              }}
+              aiEnabled={aiEnabled}
+            />
+          </div>
+        )}
             </div>
           </section>
           <aside className="game-grid__right">
@@ -371,18 +351,13 @@ const App: React.FC = () => {
           characters={gameState.characters}
           graveyardCount={playerGraveyard.length}
           shichahaiCount={shichahaiByPlayer[PlayerEnum.BLACK].length}
-          confirmDisabled={!canConfirm}
-          onConfirm={() => resolveCard(false, null)}
           onCardHover={handlePlayerCardHover}
           onCardDragStart={index => {
             if (!canPlayCard) return;
             setDraggedCardIndex(index);
-            const card = playerHandCards[index];
-            if (card) setPreviewCard(card);
           }}
           onCardDragEnd={() => {
             setDraggedCardIndex(null);
-            setPreviewCard(null);
           }}
           isCurrent={currentPlayer === PlayerEnum.BLACK}
         />
@@ -408,7 +383,8 @@ const loadAiSettings = (): AiSettings => {
     return {
       endpoint: '',
       apiKey: '',
-      model: ''
+      reasoningModel: '',
+      fastModel: ''
     };
   }
   try {
@@ -417,21 +393,24 @@ const loadAiSettings = (): AiSettings => {
       return {
         endpoint: '',
         apiKey: '',
-        model: ''
+        reasoningModel: '',
+        fastModel: ''
       };
     }
     const parsed = JSON.parse(raw);
     return {
       endpoint: parsed.endpoint ?? '',
       apiKey: parsed.apiKey ?? '',
-      model: parsed.model ?? ''
+      reasoningModel: parsed.reasoningModel ?? parsed.model ?? '',
+      fastModel: parsed.fastModel ?? ''
     };
   } catch (err) {
     console.warn('[game07] failed to load AI settings', err);
     return {
       endpoint: '',
       apiKey: '',
-      model: ''
+      reasoningModel: '',
+      fastModel: ''
     };
   }
 };
@@ -444,13 +423,6 @@ const AiSettingsTrigger: React.FC<{ onOpen: (open: boolean) => void; hasConfig: 
 
 const getScenarioMeta = (kind: AiScenario['kind']) => {
   switch (kind) {
-    case 'mulligan':
-      return {
-        message: '白方 AI 调整手牌…',
-        startLog: '白方 AI 正在评估是否更换起手牌',
-        successLog: (detail?: string) => detail ?? '白方 AI 完成调度判定',
-        fallbackLog: '白方 AI 调度判定使用默认策略'
-      };
     case 'card_targeting':
       return {
         message: '白方 AI 正在选择技能目标…',
@@ -465,13 +437,20 @@ const getScenarioMeta = (kind: AiScenario['kind']) => {
         successLog: (detail?: string) => detail ?? '白方 AI 完成反击判定',
         fallbackLog: '白方 AI 反击窗口使用保底策略'
       };
-    case 'playing':
+    case 'skill':
+      return {
+        message: '白方 AI 评估技能动作…',
+        startLog: '白方 AI 正在筛选可发动技能',
+        successLog: (detail?: string) => detail ?? '白方 AI 完成技能判定',
+        fallbackLog: '白方 AI 使用默认技能策略'
+      };
+    case 'stone':
     default:
       return {
-        message: '白方 AI 正在思考落子…',
-        startLog: '白方 AI 正在规划回合行动',
-        successLog: (detail?: string) => detail ?? '白方 AI 完成回合行动',
-        fallbackLog: '白方 AI 回合行动使用默认策略'
+        message: '白方 AI 规划落子…',
+        startLog: '白方 AI 正在计算落子位置',
+        successLog: (detail?: string) => detail ?? '白方 AI 完成落子决策',
+        fallbackLog: '白方 AI 落子使用默认策略'
       };
   }
 };
@@ -482,13 +461,12 @@ const useAIActions = (
     playCard: (index: number) => void;
     placeStone: (row: number, col: number) => void;
     resolveCard: (countered: boolean, counterCard?: RawCard | null) => void;
-    completeMulligan: (decision: { replace: boolean }) => void;
     selectTarget: (selection: any) => void;
   },
   aiSettings: AiSettings,
   updateAiStatus: (status: { scenario: AiScenario['kind'] | null; message: string; reason?: string }) => void
 ) => {
-  const { playCard, placeStone, resolveCard, completeMulligan, selectTarget } = actions;
+  const { playCard, placeStone, resolveCard, selectTarget } = actions;
   const processedRef = useRef<Set<string>>(new Set());
   const activeKeyRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -514,8 +492,7 @@ const useAIActions = (
       if (resetStatus) updateAiStatus({ scenario: null, message: '', reason: extra?.reason });
     };
 
-    const startScenario = (scenario: AiScenario) => {
-      const key = buildScenarioKey(scenario, gameState);
+    const startScenario = (scenario: AiScenario, key: string) => {
       if (processedRef.current.has(key)) return;
 
       const descriptor = getScenarioMeta(scenario.kind);
@@ -523,7 +500,7 @@ const useAIActions = (
 
       const schedule = (reason?: string) => {
         if (attempts >= 3) {
-          console.warn('[game07][ai] 多次尝试后仍未得到有效行动，使用保底策略');
+          aiLog.warn('多次尝试后仍未得到有效行动，使用保底策略');
           fallbackDecision(scenario, gameState, actions);
           processedRef.current.add(key);
           clearRunningTask();
@@ -531,10 +508,23 @@ const useAIActions = (
         }
 
         attempts += 1;
-        const baseDelay = scenario.kind === 'counter_window' ? 600 : scenario.kind === 'mulligan' ? 500 : 750;
+        const baseDelay = (() => {
+          switch (scenario.kind) {
+            case 'counter_window':
+              return 600;
+            case 'skill':
+              return 680;
+            case 'stone':
+              return 520;
+            default:
+              return 750;
+          }
+        })();
         const delay = reason ? 600 : baseDelay;
         updateAiStatus({ scenario: scenario.kind, message: descriptor.message, reason });
-        console.info(`[game07][ai][${scenario.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`);
+        aiLog.info(
+          `[${scenario.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`
+        );
 
         activeKeyRef.current = key;
         timerRef.current = window.setTimeout(async () => {
@@ -542,7 +532,7 @@ const useAIActions = (
 
           const feedbackMessage = reason;
 
-          console.info('[game07][ai][request_prepared]', {
+          aiLog.info('[request_prepared]', {
             scenario: scenario.kind,
             attempt: attempts,
             feedback: feedbackMessage
@@ -558,32 +548,34 @@ const useAIActions = (
             schedule(failReason);
           };
 
-      const runFallback = () => {
-        console.warn(`[game07][ai][${scenario.kind}] ${descriptor.fallbackLog}`);
-        fallbackDecision(scenario, gameState, actions);
-        finalize();
-      };
+          const runFallback = () => {
+            aiLog.warn(`[${scenario.kind}] ${descriptor.fallbackLog}`);
+            fallbackDecision(scenario, gameState, actions);
+            finalize();
+          };
 
           if (!hasValidSettings(aiSettings)) {
-            console.warn('[game07][ai] AI 设置未配置，使用保底逻辑');
+            aiLog.warn('AI 设置未配置，使用保底逻辑');
             runFallback();
             return;
           }
 
           try {
             const decision = await requestAiDecision(aiSettings, scenario, { feedback: feedbackMessage });
-            console.info('[game07][ai][response_json]', decision);
-            const outcome = decision ? applyDecision(decision, scenario, gameState, actions) : { success: false, reason: '未提供有效决策' };
+            aiLog.info('[response_json]', decision);
+            const outcome = decision
+              ? applyDecision(decision, scenario, gameState, actions)
+              : { success: false, reason: '未提供有效决策' };
             if (!outcome.success) {
               const reasonText = outcome.reason ?? '技能执行失败，需要重新决策';
-              console.warn(`[game07][ai] ${reasonText}`);
+              aiLog.warn(reasonText);
               rerun(reasonText);
               return;
             }
-            console.info(`[game07][ai] ${descriptor.successLog(outcome.detail)}`);
+            aiLog.info(descriptor.successLog(outcome.detail));
             finalize();
           } catch (err) {
-            console.error('[game07][ai] 决策调用失败', err);
+            aiLog.error('决策调用失败', err);
             runFallback();
           }
         }, delay);
@@ -597,25 +589,38 @@ const useAIActions = (
       return;
     }
 
-    const scenario = deriveScenario(gameState);
-    if (!scenario) {
+    const scenarios = deriveScenarios(gameState);
+    if (scenarios.length === 0) {
       clearRunningTask();
       return;
     }
 
-    const key = buildScenarioKey(scenario, gameState);
-    if (processedRef.current.has(key) || activeKeyRef.current === key) return;
+    const pickNext = (): { scenario: AiScenario; key: string } | null => {
+      for (const scenario of scenarios) {
+        const key = buildScenarioKey(scenario, gameState);
+        if (!processedRef.current.has(key) && activeKeyRef.current !== key) {
+          return { scenario, key };
+        }
+      }
+      return null;
+    };
 
-    if (activeKeyRef.current !== null || timerRef.current !== null) {
+    const next = pickNext();
+    if (!next) {
       clearRunningTask();
+      return;
     }
 
-    startScenario(scenario);
+    if (activeKeyRef.current && activeKeyRef.current !== next.key) {
+      clearRunningTask(false);
+    }
+
+    startScenario(next.scenario, next.key);
 
     return () => {
       clearRunningTask(false);
     };
-  }, [gameState, aiSettings, playCard, placeStone, resolveCard, completeMulligan, selectTarget, updateAiStatus]);
+  }, [gameState, aiSettings, playCard, placeStone, resolveCard, selectTarget, updateAiStatus]);
 
   useEffect(() => () => {
     if (timerRef.current !== null) {
@@ -629,70 +634,138 @@ type AiActionHandlers = {
   playCard: (index: number) => void;
   placeStone: (row: number, col: number) => void;
   resolveCard: (countered: boolean, counterCard?: RawCard | null) => void;
-  completeMulligan: (decision: { replace: boolean }) => void;
   selectTarget: (selection: any) => void;
 };
 
-const deriveScenario = (state: GameStatus): AiScenario | null => {
-  if (!state.aiEnabled) return null;
+function collectPlayableSkills(state: GameStatus, player: Player): Array<{ handIndex: number; card: RawCard }> {
+  if (state.turnCount + 1 < SKILL_UNLOCK_MOVE) return [];
+  if (state.statuses.freeze[player] > 0) return [];
+  const hand = state.hands[player] ?? [];
+  const fusionLockTurn = state.statuses.fusionLock[player] ?? 0;
+  const activeCharacter = state.characters[player];
+  const activeCharacterId = activeCharacter ? String(activeCharacter._tid ?? activeCharacter.tid) : null;
 
-  if (state.phase === GamePhaseEnum.MULLIGAN && state.mulligan.current === PlayerEnum.WHITE) {
-    const card = state.hands[PlayerEnum.WHITE]?.[0] ?? null;
-    return {
-      kind: 'mulligan',
-      player: PlayerEnum.WHITE,
-      card
-    };
+  return hand.reduce<Array<{ handIndex: number; card: RawCard }>>((acc, card, index) => {
+    const timing = (card.timing ?? '').toLowerCase();
+    if (timing.includes('reaction') && !timing.includes('anytime')) {
+      return acc;
+    }
+
+    const tags = parseTags(card.tags);
+    if (tags.has('Fusion') && fusionLockTurn > state.turnCount) {
+      return acc;
+    }
+
+    if (card.requiresCharacter) {
+      const requiredId = String(card.requiresCharacter);
+      if (!activeCharacterId || activeCharacterId !== requiredId) {
+        return acc;
+      }
+    }
+
+    if (isSkillCardPlayable(state, player, card)) {
+      acc.push({ handIndex: index, card });
+    }
+    return acc;
+  }, []);
+}
+
+function summariseBoardUrgency(board: GameStatus['board']): string | null {
+  const whitePatterns = analyzeBoardForPlayer(board, PlayerEnum.WHITE);
+  const blackPatterns = analyzeBoardForPlayer(board, PlayerEnum.BLACK);
+  const notes: string[] = [];
+  if (whitePatterns.winMoves.length > 0) {
+    const cell = whitePatterns.winMoves[0];
+    notes.push(`白方在 (${cell.row}, ${cell.col}) 落子即可形成五连。`);
   }
+  if (blackPatterns.winMoves.length > 0) {
+    const cell = blackPatterns.winMoves[0];
+    notes.push(`黑方若在 (${cell.row}, ${cell.col}) 落子将成五，需立即阻挡。`);
+  }
+  if (blackPatterns.openFours.length > 0) {
+    const cell = blackPatterns.openFours[0];
+    notes.push(`黑方存在活四威胁，代表位置 (${cell.row}, ${cell.col})。`);
+  }
+  if (notes.length === 0 && whitePatterns.openFours.length > 0) {
+    const cell = whitePatterns.openFours[0];
+    notes.push(`白方可在 (${cell.row}, ${cell.col}) 构建活四。`);
+  }
+  return notes.length > 0 ? notes.join(' ') : null;
+}
+
+const deriveScenarios = (state: GameStatus): AiScenario[] => {
+  if (!state.aiEnabled) return [];
+  if (state.draft) return [];
 
   if (state.phase === GamePhaseEnum.CARD_TARGETING) {
     const request = state.targetRequest;
     if (request && request.actingPlayer === PlayerEnum.WHITE) {
-      return {
-        kind: 'card_targeting',
-        player: PlayerEnum.WHITE,
-        request,
-        game: state
-      };
+      return [
+        {
+          kind: 'card_targeting',
+          player: PlayerEnum.WHITE,
+          request,
+          game: state
+        }
+      ];
     }
+    return [];
   }
 
   if (state.phase === GamePhaseEnum.COUNTER_WINDOW) {
-    if (!state.pendingAction) return null;
+    if (!state.pendingAction) return [];
     const window = state.counterWindow;
-    if (window?.responder !== PlayerEnum.WHITE) return null;
-    return {
-      kind: 'counter_window',
-      player: PlayerEnum.WHITE,
-      game: state,
-      pendingCard: state.pendingAction,
-      availableCounters: collectCounterOptions(state, PlayerEnum.WHITE)
-    };
+    if (window?.responder !== PlayerEnum.WHITE) return [];
+    return [
+      {
+        kind: 'counter_window',
+        player: PlayerEnum.WHITE,
+        game: state,
+        pendingCard: state.pendingAction,
+        availableCounters: collectCounterOptions(state, PlayerEnum.WHITE)
+      }
+    ];
   }
 
   if (state.phase === GamePhaseEnum.PLAYING) {
-    if (state.currentPlayer !== PlayerEnum.WHITE) return null;
-    if (state.pendingAction || state.pendingCounter || state.targetRequest) return null;
-    return {
-      kind: 'playing',
+    if (state.currentPlayer !== PlayerEnum.WHITE) return [];
+    if (state.pendingAction || state.pendingCounter || state.targetRequest) return [];
+    const note = summariseBoardUrgency(state.board);
+    const skills = collectPlayableSkills(state, PlayerEnum.WHITE);
+    const stoneAnalysis = buildStoneAnalysis(state.board);
+    const scenarios: AiScenario[] = [];
+    if (skills.length > 0) {
+      scenarios.push({
+        kind: 'skill',
+        player: PlayerEnum.WHITE,
+        game: state,
+        skills,
+        contextNote: note ?? undefined
+      });
+    }
+    scenarios.push({
+      kind: 'stone',
       player: PlayerEnum.WHITE,
-      game: state
-    };
+      game: state,
+      contextNote: note ?? (skills.length === 0 ? '当前无可发动技能，需选择落子方案。' : undefined),
+      analysis: stoneAnalysis ?? undefined
+    });
+    return scenarios;
   }
 
-  return null;
+  return [];
 };
 
 const buildScenarioKey = (scenario: AiScenario, state: GameStatus): string => {
   switch (scenario.kind) {
-    case 'mulligan':
-      return `mulligan:${state.mulligan.stage}:${state.mulligan.current}:${state.mulligan.resolved.join('-')}:${state.mulligan.replaced.join('-')}`;
     case 'card_targeting':
       return `target:${state.targetRequest?.id ?? 'none'}`;
     case 'counter_window':
       return `counter:${state.pendingAction?.id ?? 'none'}:${state.counterWindow?.id ?? 'none'}:${scenario.availableCounters.map(item => item.handIndex).join(',')}`;
-    case 'playing':
-      return `playing:${state.turnCount}:${state.board.history.length}:${state.hands[PlayerEnum.WHITE]?.length ?? 0}`;
+    case 'skill':
+      return `skill:${state.turnCount}:${state.board.history.length}:${scenario.skills.map(item => item.handIndex).join(',')}`;
+    case 'stone':
+      return `stone:${state.turnCount}:${state.board.history.length}`;
     default:
       return `fallback:${Date.now()}`;
   }
@@ -711,17 +784,14 @@ const applyDecision = (
   actions: AiActionHandlers
 ): DecisionOutcome => {
   switch (scenario.kind) {
-    case 'mulligan':
-      if (decision.kind === 'mulligan') {
-        actions.completeMulligan({ replace: Boolean(decision.replace) });
-        return { success: true };
-      }
-      return { success: false, reason: '未提供有效的调度决定' };
-    case 'playing':
+    case 'skill':
       if (decision.kind === 'play_card') {
         const hand = state.hands[PlayerEnum.WHITE] ?? [];
         const index = resolveHandIndexForDecision(decision, hand);
         if (index !== null) {
+          if (!scenario.skills.some(item => item.handIndex === index)) {
+            return { success: false, reason: '所选手牌不在可发动技能列表中' };
+          }
           const card = hand[index];
           actions.playCard(index);
           const cardLabel = card ? formatCardIdentifier(card) : `手牌索引 ${index}`;
@@ -730,7 +800,7 @@ const applyDecision = (
         return { success: false, reason: '无法匹配到指定的手牌' };
       }
       if (decision.kind === 'place_stone') {
-        const move = deriveMoveFromBoardMatrix(decision.board, state.board, PlayerEnum.WHITE);
+        const move = resolveMoveFromDecision(decision, state.board, PlayerEnum.WHITE);
         if (move) {
           actions.placeStone(move.row, move.col);
           return { success: true, detail: `白方 AI 在 (${move.row}, ${move.col}) 落子` };
@@ -738,8 +808,18 @@ const applyDecision = (
         return { success: false, reason: '无法从返回的盘面解析出合法落子' };
       }
       if (decision.kind === 'pass') {
-        console.info('[game07][ai] AI 选择暂不行动');
-        return { success: false, reason: 'AI 选择暂不行动' };
+        aiLog.info('技能阶段模型选择暂不行动');
+        return { success: false, reason: '技能阶段模型选择暂不行动' };
+      }
+      return { success: false, reason: '未识别的行动类型' };
+    case 'stone':
+      if (decision.kind === 'place_stone') {
+        const move = resolveMoveFromDecision(decision, state.board, PlayerEnum.WHITE);
+        if (move) {
+          actions.placeStone(move.row, move.col);
+          return { success: true, detail: `白方 AI 在 (${move.row}, ${move.col}) 落子` };
+        }
+        return { success: false, reason: '无法从返回的盘面解析出合法落子' };
       }
       return { success: false, reason: '未识别的行动类型' };
     case 'card_targeting':
@@ -778,32 +858,271 @@ const applyDecision = (
   }
 };
 
+const LINE_DIRECTIONS: Array<[number, number]> = [
+  [0, 1],
+  [1, 0],
+  [1, 1],
+  [1, -1]
+];
+
+interface StonePatternSummary {
+  winMoves: EmptyCell[];
+  openFours: EmptyCell[];
+  doubleThrees: Array<{ cell: EmptyCell; count: number }>;
+  openThrees: EmptyCell[];
+}
+
+interface LineEvaluation {
+  total: number;
+  openEnds: number;
+  isWin: boolean;
+  isOpenFour: boolean;
+  isOpenThree: boolean;
+}
+
+function analyzeBoardForPlayer(board: GameStatus['board'], player: Player): StonePatternSummary {
+  const winMoves: EmptyCell[] = [];
+  const openFours: EmptyCell[] = [];
+  const doubleThrees: Array<{ cell: EmptyCell; count: number }> = [];
+  const openThrees: EmptyCell[] = [];
+  const empties = collectEmptyCells(board);
+
+  empties.forEach(cell => {
+    let isWin = false;
+    let hasOpenFour = false;
+    let openThreeCount = 0;
+
+    LINE_DIRECTIONS.forEach(([dr, dc]) => {
+      const evaluation = evaluateLine(board, cell, player, dr, dc);
+      if (evaluation.isWin) isWin = true;
+      if (evaluation.isOpenFour) hasOpenFour = true;
+      if (evaluation.isOpenThree) openThreeCount += 1;
+    });
+
+    if (isWin) {
+      winMoves.push(cell);
+      return;
+    }
+
+    if (hasOpenFour) {
+      openFours.push(cell);
+    }
+
+    if (openThreeCount >= 2) {
+      doubleThrees.push({ cell, count: openThreeCount });
+    } else if (openThreeCount === 1) {
+      openThrees.push(cell);
+    }
+  });
+
+  return { winMoves, openFours, doubleThrees, openThrees };
+}
+
+function evaluateLine(
+  board: GameStatus['board'],
+  cell: EmptyCell,
+  player: Player,
+  dr: number,
+  dc: number
+): LineEvaluation {
+  let forward = 0;
+  let backward = 0;
+  let r = cell.row + dr;
+  let c = cell.col + dc;
+  while (isWithinBoard(board, r, c) && board.get(r, c) === player) {
+    forward += 1;
+    r += dr;
+    c += dc;
+  }
+  const forwardOpen = isWithinBoard(board, r, c) && board.get(r, c) === null;
+
+  r = cell.row - dr;
+  c = cell.col - dc;
+  while (isWithinBoard(board, r, c) && board.get(r, c) === player) {
+    backward += 1;
+    r -= dr;
+    c -= dc;
+  }
+  const backwardOpen = isWithinBoard(board, r, c) && board.get(r, c) === null;
+
+  const total = 1 + forward + backward;
+  const openEnds = (forwardOpen ? 1 : 0) + (backwardOpen ? 1 : 0);
+
+  const isWin = total >= 5;
+  const isOpenFour = total === 4 && openEnds === 2;
+  const isOpenThree = total === 3 && openEnds === 2;
+
+  return { total, openEnds, isWin, isOpenFour, isOpenThree };
+}
+
+function buildStoneAnalysis(board: GameStatus['board']): string | null {
+  const white = analyzeBoardForPlayer(board, PlayerEnum.WHITE);
+  const black = analyzeBoardForPlayer(board, PlayerEnum.BLACK);
+  const lines: string[] = [
+    '现在你是白方，需要在以下目标之间选择：形成五连、阻止黑方成五、构建活四 / 活三 / 双三。'
+  ];
+
+  lines.push(formatPatternLine('白方成五机会', white.winMoves));
+  lines.push(formatPatternLine('白方活四机会', white.openFours));
+  lines.push(formatPatternLine('白方双三机会', white.doubleThrees.map(item => item.cell)));
+  lines.push(formatPatternLine('白方活三铺垫', white.openThrees));
+
+  lines.push(formatPatternLine('黑方成五威胁', black.winMoves));
+  lines.push(formatPatternLine('黑方活四威胁', black.openFours));
+  lines.push(formatPatternLine('黑方双三威胁', black.doubleThrees.map(item => item.cell)));
+  lines.push(formatPatternLine('黑方活三铺垫', black.openThrees));
+
+  const meaningful = lines.filter(Boolean);
+  if (meaningful.length <= 1) return meaningful[0] ?? null;
+  return meaningful.join('\n');
+}
+
+function formatPatternLine(label: string, cells: EmptyCell[]): string {
+  if (cells.length === 0) return '';
+  const formatted = formatCells(cells);
+  return `${label}: ${formatted}`;
+}
+
+function formatCells(cells: EmptyCell[], limit = 5): string {
+  const picks = cells.slice(0, limit).map(cell => `(${cell.row}, ${cell.col})`);
+  if (cells.length > limit) {
+    picks.push(`... 共 ${cells.length} 处`);
+  }
+  return picks.join(' / ');
+}
+
+function isSkillCardPlayable(state: GameStatus, player: Player, card: RawCard): boolean {
+  const effectId = card.effectId ? String(card.effectId) : '';
+  switch (effectId) {
+    case SkillEffect.RemoveToShichahai:
+      return hasBoardMatch(state.board, cellPlayer => cellPlayer === getOpponent(player));
+    case SkillEffect.CleanSweep:
+      return hasBoardMatch(state.board, cellPlayer => cellPlayer !== null);
+    case SkillEffect.TimeRewind:
+      return state.timeline.some(entry => entry.turn > 0);
+    case SkillEffect.SummonCharacter: {
+      const params = parseEffectParams(card.effectParams);
+      const targetId = params.character != null ? String(params.character) : null;
+      const current = state.characters[player];
+      if (!targetId) return !current;
+      const currentId = current ? String(current._tid ?? current.tid) : null;
+      return currentId !== targetId;
+    }
+    case SkillEffect.ForceExit: {
+      const params = parseEffectParams(card.effectParams);
+      const targetId = params.target != null ? String(params.target) : null;
+      const opponentChar = state.characters[getOpponent(player)];
+      if (!opponentChar) return false;
+      if (!targetId) return true;
+      const opponentId = String(opponentChar._tid ?? opponentChar.tid);
+      return opponentId === targetId;
+    }
+    default:
+      return true;
+  }
+}
+
+function hasBoardMatch(board: GameStatus['board'], predicate: (cellPlayer: Player | null) => boolean): boolean {
+  let matched = false;
+  board.forEachCell((_row, _col, value) => {
+    if (!matched && predicate(value)) {
+      matched = true;
+    }
+  });
+  return matched;
+}
+
+interface EmptyCell {
+  row: number;
+  col: number;
+}
+
+function collectEmptyCells(board: GameStatus['board']): EmptyCell[] {
+  const cells: EmptyCell[] = [];
+  board.forEachCell((row, col, value) => {
+    if (value === null) cells.push({ row, col });
+  });
+  return cells;
+}
+
+function scorePlacement(board: GameStatus['board'], cell: EmptyCell, player: Player): number {
+  let best = 1;
+  LINE_DIRECTIONS.forEach(([dr, dc]) => {
+    let count = 1;
+    let r = cell.row + dr;
+    let c = cell.col + dc;
+    while (r >= 0 && r < board.size && c >= 0 && c < board.size && board.get(r, c) === player) {
+      count += 1;
+      r += dr;
+      c += dc;
+    }
+    r = cell.row - dr;
+    c = cell.col - dc;
+    while (r >= 0 && r < board.size && c >= 0 && c < board.size && board.get(r, c) === player) {
+      count += 1;
+      r -= dr;
+      c -= dc;
+    }
+    if (count > best) best = count;
+  });
+  return best;
+}
+
+function pickBestCandidate(
+  board: GameStatus['board'],
+  empties: EmptyCell[],
+  player: Player,
+  focus: number
+): { cell: EmptyCell | null; score: number } {
+  let bestScore = 0;
+  let bestCell: EmptyCell | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  empties.forEach(cell => {
+    const score = scorePlacement(board, cell, player);
+    if (score === 0) return;
+    const distance = Math.abs(cell.row - focus) + Math.abs(cell.col - focus);
+    if (score > bestScore || (score === bestScore && distance < bestDistance)) {
+      bestScore = score;
+      bestCell = cell;
+      bestDistance = distance;
+    }
+  });
+
+  return { cell: bestCell, score: bestScore };
+}
+
 const fallbackDecision = (scenario: AiScenario, state: GameStatus, actions: AiActionHandlers) => {
   switch (scenario.kind) {
-    case 'mulligan':
-      console.info('[game07][ai] 默认保留初始手牌');
-      actions.completeMulligan({ replace: false });
-      break;
-    case 'playing':
+    case 'stone':
       fallbackPlaceStone(state, actions);
+      break;
+    case 'skill':
+      if (scenario.skills.length > 0) {
+        const fallbackSkill = scenario.skills[0];
+        aiLog.info(`默认使用可发动技能 ${formatCardIdentifier(fallbackSkill.card)} (手牌索引 ${fallbackSkill.handIndex})`);
+        actions.playCard(fallbackSkill.handIndex);
+      } else {
+        fallbackPlaceStone(state, actions);
+      }
       break;
     case 'card_targeting':
       if (scenario.request.type === 'cell') {
         const target = scenario.request.cells?.[0];
         if (target) {
-          console.info(`[game07][ai] 默认选择目标格 (${target.row}, ${target.col})`);
+          aiLog.info(`默认选择目标格 (${target.row}, ${target.col})`);
           actions.selectTarget({ row: target.row, col: target.col });
         }
       } else if (scenario.request.type === 'snapshot') {
         const option = scenario.request.options?.[0];
         if (option) {
-          console.info(`[game07][ai] 默认选择时间节点 ${option.id}`);
+          aiLog.info(`默认选择时间节点 ${option.id}`);
           actions.selectTarget({ id: option.id });
         }
       }
       break;
     case 'counter_window':
-      console.info('[game07][ai] 默认放弃反击');
+      aiLog.info('默认放弃反击');
       actions.resolveCard(false, null);
       break;
     default:
@@ -836,19 +1155,42 @@ const collectCounterOptions = (state: GameStatus, responder: Player): Array<{ ha
 const fallbackPlaceStone = (state: GameStatus, actions: AiActionHandlers) => {
   const size = state.board.size;
   const center = Math.floor(size / 2);
-  if (state.board.get(center, center) === null) {
-    console.info(`[game07][ai] 默认落子在中心 (${center}, ${center})`);
+  if (state.board.history.length === 0 && state.board.get(center, center) === null) {
+    aiLog.info(`默认落子在中心 (${center}, ${center})`);
     actions.placeStone(center, center);
     return;
   }
-  let placed = false;
-  state.board.forEachCell((row, col, value) => {
-    if (!placed && value === null) {
-      placed = true;
-      console.info(`[game07][ai] 默认落子在 (${row}, ${col})`);
-      actions.placeStone(row, col);
-    }
-  });
+
+  const empties = collectEmptyCells(state.board);
+  if (empties.length === 0) return;
+
+  const selfBest = pickBestCandidate(state.board, empties, PlayerEnum.WHITE, center);
+  const opponentBest = pickBestCandidate(state.board, empties, PlayerEnum.BLACK, center);
+
+  let chosen: EmptyCell | null = null;
+  let message: string | null = null;
+
+  if (selfBest.cell && selfBest.score >= 5) {
+    chosen = selfBest.cell;
+    message = `默认策略：完成潜在五连，选择 (${chosen.row}, ${chosen.col})`;
+  } else if (opponentBest.cell && opponentBest.score >= 4) {
+    chosen = opponentBest.cell;
+    message = `默认策略：阻挡黑方 ${opponentBest.score} 连线，选择 (${chosen.row}, ${chosen.col})`;
+  } else if (selfBest.cell && selfBest.score >= Math.max(3, opponentBest.score)) {
+    chosen = selfBest.cell;
+    message = `默认策略：扩展白方连线 (${selfBest.score})，选择 (${chosen.row}, ${chosen.col})`;
+  } else if (opponentBest.cell) {
+    chosen = opponentBest.cell;
+    message = `默认策略：干扰黑方连线 (${opponentBest.score})，选择 (${chosen.row}, ${chosen.col})`;
+  } else {
+    chosen = empties[0];
+    message = `默认策略：使用可用空位 (${chosen.row}, ${chosen.col})`;
+  }
+
+  if (!chosen) return;
+
+  aiLog.info(message);
+  actions.placeStone(chosen.row, chosen.col);
 };
 
 const deriveMoveFromBoardMatrix = (
@@ -879,6 +1221,32 @@ const deriveMoveFromBoardMatrix = (
     }
   }
   return candidate;
+};
+
+type PlaceStoneDecision = Extract<AiPlayingDecision, { kind: 'place_stone' }>;
+
+const resolveMoveFromDecision = (
+  decision: PlaceStoneDecision,
+  board: GameStatus['board'],
+  player: Player
+): { row: number; col: number } | null => {
+  if ('board' in decision && decision.board) {
+    return deriveMoveFromBoardMatrix(decision.board, board, player);
+  }
+  if ('row' in decision && 'col' in decision) {
+    const row = Number(decision.row);
+    const col = Number(decision.col);
+    if (
+      Number.isInteger(row) &&
+      Number.isInteger(col) &&
+      isWithinBoard(board, row, col)
+    ) {
+      if (board.get(row, col) === null) {
+        return { row, col };
+      }
+    }
+  }
+  return null;
 };
 
 const resolveHandIndexForDecision = (

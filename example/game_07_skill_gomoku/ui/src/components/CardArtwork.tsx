@@ -1,673 +1,172 @@
-import React, { useId } from 'react';
+import React, { useId, useMemo } from 'react';
 import type { RawCard } from '../types';
 import { CARD_TYPE_PALETTES } from './CardFrame';
+// Prefer external game-icons assets when available. Fallback to built-in paths.
+import { GAME_ICON_BODIES } from '../assets/game-icons';
 
-interface ArtworkProps {
-  palette: typeof CARD_TYPE_PALETTES[keyof typeof CARD_TYPE_PALETTES];
-}
+type IconKey =
+  | 'sandstorm'
+  | 'brain-freeze'
+  | 'crown'
+  | 'magic-broom'
+  | 'baseball-bat'
+  | 'backward-time'
+  | 'distraction'
+  | 'return-arrow'
+  | 'grab'
+  | 'breaking-chain'
+  | 'time-trap'
+  | 'life-support'
+  | 'megaphone'
+  | 'prayer'
+  | 'magic-portal'
+  | 'exit-door';
 
-const withCanvas =
-  (
-    draw: (
-      palette: ArtworkProps['palette'],
-      ids: Record<string, string>
-    ) => React.ReactNode
-  ): React.FC<ArtworkProps> =>
-  ({ palette }) => {
-    const unique = useId().replace(/:/g, '-');
-    const ids = {
-      a: `grad-a-${unique}`,
-      b: `grad-b-${unique}`,
-      c: `grad-c-${unique}`,
-      d: `grad-d-${unique}`,
-      e: `grad-e-${unique}`,
-      glow: `glow-${unique}`
-    };
-    return (
-      <svg viewBox="0 0 220 220" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        {draw(palette, ids)}
-      </svg>
-    );
-  };
-
-const SandstormArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="45%" r="70%">
-        <stop offset="0%" stopColor="#fed7aa" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#3f1e05" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.7" />
-        <stop offset="100%" stopColor="#fcd34d" stopOpacity="0.05" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.9}>
-      <path
-        d="M8 126C24 116 60 134 96 122C132 110 152 76 190 76C210 76 220 88 220 88V144C220 144 208 158 178 160C136 162 108 202 70 198C40 194 6 156 6 156Z"
-        fill="rgba(255,255,255,0.12)"
-      />
-      <path
-        d="M-8 168C24 140 84 172 124 142C158 118 190 112 220 124V196C196 214 152 222 104 214C60 204 18 198 -8 168Z"
-        fill="rgba(241,182,76,0.32)"
-      />
-    </g>
-    <g opacity={0.75}>
-      <path
-        d="M32 58C62 36 100 54 124 40C148 26 170 22 190 30C210 38 220 60 220 60V92C188 68 152 86 120 104C88 122 40 114 28 102Z"
-        fill="rgba(255,237,213,0.35)"
-      />
-    </g>
-    <path
-      d="M-4 74C12 50 38 38 74 48C110 58 136 92 172 88C204 82 220 40 220 40V18C204 4 184 -4 158 4C110 18 62 8 24 22C2 30 -10 46 -4 74Z"
-      fill={`url(#${ids.b})`}
-    />
-    <g opacity={0.75} stroke="rgba(255,255,255,0.4)" strokeWidth={2} strokeLinecap="round">
-      <path d="M28 152C68 126 100 168 140 146C172 128 188 108 220 116" />
-      <path d="M10 122C58 86 108 142 152 108" opacity={0.6} />
-      <path d="M16 92C52 56 108 108 166 72" opacity={0.45} />
-    </g>
-  </>
-));
-
-const TimeFreezeArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#ecfeff" />
-        <stop offset="60%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#0c1d3a" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
-        <stop offset="100%" stopColor="#bae6fd" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.6} stroke="rgba(255,255,255,0.8)" strokeWidth={2}>
-      <circle cx="110" cy="110" r="70" fill="none" />
-      <circle cx="110" cy="110" r="46" fill="none" opacity={0.7} />
-      <path d="M110 46V110L158 136" strokeWidth={5} strokeLinecap="round" />
-    </g>
-    <g opacity={0.4}>
-      <path
-        d="M24 54C60 30 96 26 134 40C172 54 212 54 220 64V96C176 80 142 110 112 130C82 150 34 144 20 116Z"
-        fill={`url(#${ids.b})`}
-      />
-      <path
-        d="M12 170C48 142 98 170 132 150C166 130 180 120 220 132V198C190 214 150 214 108 208C66 202 34 202 12 170Z"
-        fill="rgba(129,212,250,0.35)"
-      />
-    </g>
-    <g opacity={0.6}>
-      <path
-        d="M60 34L86 28L108 22L126 28L156 34L170 60L186 76L170 96L158 120L126 134L112 150L88 138L60 128L54 94L40 64Z"
-        fill="rgba(255,255,255,0.18)"
-      />
-    </g>
-  </>
-));
-
-const InstantWinArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <linearGradient id={ids.a} x1="50%" y1="0%" x2="50%" y2="100%">
-        <stop offset="0%" stopColor="#fff7ed" />
-        <stop offset="40%" stopColor={palette.edge} />
-        <stop offset="100%" stopColor="#3b0211" />
-      </linearGradient>
-      <radialGradient id={ids.b} cx="50%" cy="40%" r="70%">
-        <stop offset="0%" stopColor="#fef08a" />
-        <stop offset="60%" stopColor="#f97316" />
-        <stop offset="100%" stopColor="#451a03" />
-      </radialGradient>
-      <linearGradient id={ids.c} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fde68a" stopOpacity="0.8" />
-        <stop offset="100%" stopColor="#fb923c" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.45}>
-      <circle cx="110" cy="120" r="72" fill={`url(#${ids.b})`} />
-    </g>
-    <g>
-      <path
-        d="M14 146C54 128 90 160 122 142C154 124 184 80 220 94V146C190 154 168 182 144 196C120 210 84 212 60 198C42 188 14 172 14 172Z"
-        fill="rgba(255,255,255,0.18)"
-      />
-      <path
-        d="M10 84C36 64 62 56 98 66C134 76 162 108 198 94C214 88 220 70 220 70V40C192 24 164 24 130 40C96 56 78 60 50 52C22 44 8 58 8 58Z"
-        fill={`url(#${ids.c})`}
-      />
-    </g>
-    <path
-      d="M34 198L74 112L108 160L150 70L186 162L210 106L220 130L194 198Z"
-      fill="rgba(254,240,138,0.65)"
-      stroke="rgba(255,255,255,0.5)"
-      strokeWidth={4}
-      strokeLinejoin="round"
-    />
-  </>
-));
-
-const CleanSweepArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="60%" r="70%">
-        <stop offset="0%" stopColor="#fde68a" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#1f1302" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fff7ed" stopOpacity="0.45" />
-        <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.08" />
-      </linearGradient>
-      <linearGradient id={ids.c} x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#ffedd5" />
-        <stop offset="100%" stopColor="#b45309" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <path
-      d="M24 182C48 158 86 186 110 162C134 138 168 130 202 138C214 140 220 162 220 162V200C202 216 180 222 152 216C102 208 48 220 24 200Z"
-      fill={`url(#${ids.b})`}
-    />
-    <g opacity={0.8}>
-      <path
-        d="M80 48L124 24L140 44L104 72Z"
-        fill="rgba(255,255,255,0.35)"
-      />
-      <path
-        d="M72 72L124 32L204 124L120 184C120 184 60 152 48 120C36 88 72 72 72 72Z"
-        fill={`url(#${ids.c})`}
-        stroke="rgba(255,255,255,0.35)"
-        strokeWidth={4}
-        strokeLinejoin="round"
-      />
-      <path
-        d="M84 96L108 122"
-        stroke="#fff7ed"
-        strokeWidth={6}
-        strokeLinecap="round"
-      />
-      <path
-        d="M150 122C150 122 162 108 170 102"
-        stroke="#fde68a"
-        strokeWidth={6}
-        strokeLinecap="round"
-      />
-    </g>
-    <g opacity={0.35}>
-      <path
-        d="M18 100C46 78 88 96 120 80C152 64 182 44 220 64V84C184 80 162 104 132 120C102 136 40 138 18 130Z"
-        fill="rgba(255,255,255,0.22)"
-      />
-    </g>
-  </>
-));
-
-const BaseballArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#ffe4e6" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#2b0c02" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#ea580c" stopOpacity="0.12" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.82}>
-      <circle cx="162" cy="82" r="34" fill="#fef2f2" stroke="#991b1b" strokeWidth={4} />
-      <path
-        d="M140 72C152 80 154 98 166 104"
-        stroke="#991b1b"
-        strokeWidth={4}
-        strokeLinecap="round"
-      />
-      <path
-        d="M160 108C168 96 186 94 192 80"
-        stroke="#991b1b"
-        strokeWidth={4}
-        strokeLinecap="round"
-      />
-    </g>
-    <g opacity={0.75}>
-      <path
-        d="M34 164C74 126 114 152 154 120L182 148L116 206C90 218 58 212 34 192C18 178 26 172 34 164Z"
-        fill="rgba(255,255,255,0.18)"
-      />
-      <path
-        d="M22 142C50 110 98 128 130 100C154 78 170 70 190 76C208 82 220 94 220 94L218 136C184 122 158 142 130 158C102 174 44 178 22 166Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-  </>
-));
-
-const TimeRewindArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#f0f9ff" />
-        <stop offset="42%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#04122f" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.75" />
-        <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.08" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.8}>
-      <path
-        d="M110 44C150 44 182 76 182 116C182 156 150 188 110 188C70 188 38 156 38 116H60C60 144 82 166 110 166C138 166 160 144 160 116C160 88 138 66 110 66C96 66 84 72 74 82L102 110H38V46L64 72C78 56 96 44 110 44Z"
-        fill="rgba(255,255,255,0.75)"
-      />
-    </g>
-    <g opacity={0.5}>
-      <path
-        d="M16 74C48 46 98 64 130 40C162 16 186 4 220 22V54C178 44 150 70 120 92C90 114 46 120 16 108Z"
-        fill="rgba(255,255,255,0.16)"
-      />
-      <path
-        d="M10 144C42 112 100 134 134 112C162 94 182 92 220 108V184C186 202 152 208 112 200C72 192 42 188 10 144Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-  </>
-));
-
-const DistractArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#e0e7ff" />
-        <stop offset="50%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#130a2a" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fbcfe8" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#f472b6" stopOpacity="0.08" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.75}>
-      <path
-        d="M42 80C58 56 86 42 112 48C138 54 160 78 184 78C208 78 220 54 220 54V104C184 108 162 142 132 156C102 170 58 170 36 146C18 128 30 96 42 80Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-      <path
-        d="M10 148C30 118 62 134 92 124C122 114 150 94 182 100C208 104 220 130 220 130V194C188 206 158 204 126 198C94 192 50 198 10 148Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-    <g transform="translate(60 60)" opacity={0.85}>
-      <path
-        d="M50 0C22 0 0 22 0 50C0 78 22 100 50 100C78 100 100 78 100 50C100 22 78 0 50 0ZM50 18C66 18 78 30 78 46C78 58 70 66 58 72C46 78 32 82 32 96C32 96 32 96 32 96C18 88 10 70 10 50C10 30 24 18 50 18Z"
-        fill="rgba(255,255,255,0.75)"
-      />
-      <circle cx="50" cy="50" r="14" fill="rgba(255,255,255,0.85)" />
-    </g>
-  </>
-));
-
-const RetrieveArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="55%" r="70%">
-        <stop offset="0%" stopColor="#ecfccb" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#0a1a36" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#f0fdf4" stopOpacity="0.7" />
-        <stop offset="100%" stopColor="#6ee7b7" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.78}>
-      <path
-        d="M44 112C60 86 100 66 120 76C140 86 138 112 160 116C176 118 184 116 200 104C208 98 216 100 220 108V160C204 170 162 182 128 174C94 166 66 156 42 176C30 186 10 170 18 154C24 142 32 126 44 112Z"
-        fill={`url(#${ids.b})`}
-      />
-      <path
-        d="M56 62C88 44 128 54 150 44C172 34 184 22 220 32V64C190 60 168 84 138 96C108 108 70 108 46 96C34 90 40 70 56 62Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-    </g>
-    <g opacity={0.85} stroke="#f7fee7" strokeWidth={6} strokeLinecap="round">
-      <path d="M78 144L102 180" />
-      <path d="M134 132L156 166" />
-      <path d="M96 162C112 150 134 138 160 142" />
-    </g>
-  </>
-));
-
-const SeizeArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#f5f3ff" />
-        <stop offset="50%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#22093b" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#ede9fe" stopOpacity="0.8" />
-        <stop offset="100%" stopColor="#a855f7" stopOpacity="0.05" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.85}>
-      <path
-        d="M38 88C54 64 88 46 112 54C136 62 140 90 154 96C168 102 194 94 212 108C220 114 220 124 220 132C220 150 204 170 188 178C150 198 98 186 64 204C44 214 18 196 22 170C26 146 28 120 38 88Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-    <g opacity={0.9}>
-      <path
-        d="M70 136C74 150 98 166 110 158C122 150 132 136 142 126C154 114 162 102 172 100C182 98 190 102 196 106C200 110 202 114 204 118C210 130 208 146 198 160C180 186 138 200 108 196C78 192 58 162 58 146C58 136 66 132 70 136Z"
-        fill="rgba(255,255,255,0.24)"
-      />
-      <path
-        d="M88 134C94 118 112 104 118 90"
-        stroke="#f5f3ff"
-        strokeWidth={6}
-        strokeLinecap="round"
-      />
-      <path
-        d="M142 122C148 110 164 96 174 92"
-        stroke="#f5f3ff"
-        strokeWidth={6}
-        strokeLinecap="round"
-      />
-    </g>
-  </>
-));
-
-const ThawArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#e0f2fe" />
-        <stop offset="50%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#03172f" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.8}>
-      <path
-        d="M32 190C56 164 90 184 112 166C134 148 162 122 194 126C212 128 220 142 220 142V186C198 198 168 202 134 200C100 198 70 212 32 190Z"
-        fill={`url(#${ids.b})`}
-      />
-      <path
-        d="M24 66C52 38 94 58 128 42C162 26 178 26 206 40C214 44 220 60 220 60V108C190 104 162 126 132 144C102 162 52 160 32 134C18 114 20 84 24 66Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-    </g>
-    <g opacity={0.85} stroke="#e0f2fe" strokeWidth={6} strokeLinecap="round">
-      <path d="M70 132L94 174" />
-      <path d="M118 112L138 152" />
-      <path d="M154 128L174 156" />
-    </g>
-  </>
-));
-
-const ReverseWinArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#fce7f3" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#180820" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fbcfe8" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#c084fc" stopOpacity="0.12" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.8}>
-      <path
-        d="M14 74C44 52 74 66 106 48C138 30 164 16 202 28C214 32 220 50 220 50V92C194 88 168 108 140 122C112 136 74 152 44 146C18 142 8 116 14 74Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-    </g>
-    <g opacity={0.85}>
-      <path
-        d="M26 166C54 130 96 156 134 128C158 110 178 102 200 108C220 114 220 136 220 136L218 194C180 210 126 220 72 208C40 200 12 200 26 166Z"
-        fill={`url(#${ids.b})`}
-      />
-      <path
-        d="M42 196L94 128L126 162L170 108L212 160L202 206L154 180L126 208L94 182L68 214Z"
-        fill="rgba(255,255,255,0.18)"
-      />
-    </g>
-  </>
-));
-
-const RestoreBoardArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="55%" r="70%">
-        <stop offset="0%" stopColor="#f0fdf4" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#042012" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#bbf7d0" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#4ade80" stopOpacity="0.08" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.8}>
-      <path
-        d="M10 90C26 62 54 50 88 58C122 66 142 100 176 102C198 102 220 90 220 90V128C190 128 172 148 148 160C124 172 90 178 62 166C22 150 -6 130 10 90Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-      <path
-        d="M16 152C54 126 82 162 120 142C158 122 182 108 220 116V180C196 214 156 220 110 214C64 208 26 214 16 152Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-    <g opacity={0.75} stroke="#dcfce7" strokeWidth={6} strokeLinecap="round">
-      <path d="M42 140L64 168" />
-      <path d="M74 122L96 150" />
-      <path d="M108 104L130 140" />
-      <path d="M148 116L170 144" />
-    </g>
-    <rect x="44" y="70" width="132" height="80" rx="14" stroke="#dcfce7" strokeWidth={4} fill="none" opacity={0.45} />
-  </>
-));
-
-const ShoutArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#ffe6e6" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#2b0208" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fecaca" stopOpacity="0.65" />
-        <stop offset="100%" stopColor="#f87171" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.8}>
-      <path
-        d="M14 82C48 56 82 62 120 54C158 46 180 22 220 36V90C190 82 154 102 124 120C94 138 56 142 26 132C4 124 2 102 14 82Z"
-        fill="rgba(255,255,255,0.22)"
-      />
-      <path
-        d="M20 134C56 116 84 154 122 134C160 114 188 100 220 106V180C194 210 154 220 108 212C62 204 22 204 20 134Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-    <g opacity={0.9}>
-      <path
-        d="M54 140L96 72L146 126L204 88L188 158L130 140L94 176Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-    </g>
-  </>
-));
-
-const PunishArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stopColor="#ffedd5" />
-        <stop offset="45%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#2c0404" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#fde68a" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.1" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.78}>
-      <path
-        d="M12 76C42 48 76 62 108 48C140 34 168 16 202 24C214 28 220 48 220 48V96C194 92 164 108 138 124C112 140 78 152 48 144C14 134 0 100 12 76Z"
-        fill="rgba(255,255,255,0.16)"
-      />
-      <path
-        d="M10 138C36 106 88 134 126 110C154 92 178 86 202 92C216 96 220 110 220 126V198C190 216 150 220 108 210C66 200 28 200 10 138Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-    <g opacity={0.9}>
-      <path
-        d="M78 118L96 146L74 174L102 190L132 160L154 192L180 174L154 118Z"
-        fill="rgba(255,255,255,0.22)"
-      />
-      <path
-        d="M128 86C136 74 154 66 164 70C174 74 176 86 168 100C160 114 138 122 130 118C120 114 122 98 128 86Z"
-        fill="rgba(255,255,255,0.18)"
-      />
-    </g>
-  </>
-));
-
-const SummonArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="50%" r="72%">
-        <stop offset="0%" stopColor="#dbeafe" />
-        <stop offset="46%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#051c3a" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#bfdbfe" stopOpacity="0.65" />
-        <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.12" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.9}>
-      <path
-        d="M110 48C138 48 164 72 164 102C164 132 138 156 110 156C82 156 56 132 56 102C56 72 82 48 110 48Z"
-        fill="rgba(255,255,255,0.18)"
-      />
-      <path
-        d="M12 144C40 118 80 134 116 110C152 86 188 70 220 88V164C182 206 130 214 82 204C48 196 10 196 12 144Z"
-        fill={`url(#${ids.b})`}
-      />
-      <path
-        d="M106 172C120 146 140 148 158 120L190 144L168 182L152 214L118 204L88 214L70 182L86 150Z"
-        fill="rgba(255,255,255,0.22)"
-      />
-    </g>
-    <g opacity={0.5}>
-      <path
-        d="M14 74C52 56 78 70 110 58C142 46 170 22 198 28C210 30 220 40 220 58C220 82 198 96 176 98C154 100 114 114 90 110C66 106 24 92 12 88Z"
-        fill="rgba(255,255,255,0.22)"
-      />
-    </g>
-  </>
-));
-
-const ForceExitArt = withCanvas((palette, ids) => (
-  <>
-    <defs>
-      <radialGradient id={ids.a} cx="50%" cy="52%" r="72%">
-        <stop offset="0%" stopColor="#dbeafe" />
-        <stop offset="50%" stopColor={palette.core} />
-        <stop offset="100%" stopColor="#031930" />
-      </radialGradient>
-      <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.6" />
-        <stop offset="100%" stopColor="#0284c7" stopOpacity="0.12" />
-      </linearGradient>
-    </defs>
-    <rect width="220" height="220" rx="26" fill={`url(#${ids.a})`} />
-    <g opacity={0.82}>
-      <path
-        d="M24 110C40 84 64 66 98 74C132 82 168 122 200 116C216 112 220 92 220 92V74C194 54 164 52 134 68C104 84 74 86 50 78C26 70 20 76 12 90C8 98 8 114 24 110Z"
-        fill="rgba(255,255,255,0.2)"
-      />
-      <path
-        d="M12 150C40 126 78 140 110 120C142 100 178 96 204 110C216 116 220 132 220 142V198C198 210 158 214 116 206C74 198 28 206 12 150Z"
-        fill={`url(#${ids.b})`}
-      />
-    </g>
-    <g opacity={0.85}>
-      <path
-        d="M68 98L126 160L188 94L204 114L154 184H98L40 114Z"
-        fill="rgba(255,255,255,0.22)"
-      />
-      <path
-        d="M132 98L158 72"
-        stroke="#bfdbfe"
-        strokeWidth={5}
-        strokeLinecap="round"
-      />
-    </g>
-  </>
-));
-
-const defaultArtByType: Record<string, React.FC<ArtworkProps>> = {
-  Attack: SandstormArt,
-  Control: TimeFreezeArt,
-  Counter: ReverseWinArt,
-  Support: SummonArt
+// Built-in minimal inline icons used as the last-resort fallback
+const ICON_PATHS: Record<IconKey, string> = {
+  'sandstorm': `<path fill="currentColor" d="M426.8 31.54c-3 2.57-2.1 8.5 2 13.2c4.1 4.72 9.8 6.62 12.8 4.05c2.5-2.14 2.3-6.9-.3-11c-2.6-4.1-7.5-7.3-10.4-6.26zm-58.2 19.32c-3.5-.04-7.2.86-10.5 2.74c-6.4 3.59-11.1 9.98-11.1 15.16c0 5.18 5.3 7.51 11.7 3.92c6.3-3.59 11.1-9.98 11.1-15.16c0-3.95-2.7-5.65-5.2-6.66c1.4-.11 2.7-.16 4-.16zm-90.7 9.83c-.6-.01-1.2.01-1.9.05c-6.2.41-11.4 2.36-13.3 6.25c-4.8 9.68 9.7 16.2 19.1 13.4c9.4-2.89 12.8-11.05 6.7-16.71c-2.6-2.41-6.3-2.87-10.6-2.97zm-189.1 2.76c-7.61-.1-15.52 2.41-18.47 8.07Z"/>`,
+  'brain-freeze': `<path fill="currentColor" d="M253.97 17.375c-103.018 0-188.532 105.858-188.532 237.02c0 131.173 85.514 237.031 188.532 237.031c103.017 0 188.562-105.858 188.562-237.031c0-131.162-85.545-237.02-188.562-237.02zm-2.281 64.845c16.823 0 30.5 7.49 30.5 16.719c0 9.229-13.677 16.72-30.5 16.72s-30.5-7.491-30.5-16.72c0-9.228 13.677-16.719 30.5-16.719Zm-67.938 38.781a11 11 0 0 1 10.938 11.062c0 5.869-4.917 10.656-10.938 10.656c-6.021 0-11.031-4.787-11.031-10.656a11 11 0 0 1 11.031-11.062ZM327 133.5c4.967 0 9 4.033 9 9s-4.033 9-9 9-9-4.033-9-9s4.033-9 9-9Zm-87.781 28.75c51.018 0 92.407 52.209 92.407 116.531c0 64.323-41.39 116.563-92.407 116.563c-51.018 0-92.407-52.24-92.407-116.563c0-64.322 41.389-116.53 92.407-116.53Z"/>`,
+  'crown': `<path fill="currentColor" d="m408.256 119.46l-37.7 52.165l19.57 44.426l34.8-37.236l31.02 94.927l-72.473 93.505h-229.97l-74.22-93.505l32.128-94.25l31.944 36.56l18.23-43.426l-38.762-52.319L23.57 221.28L23.533 379.12L99.41 477.61h312.47l74.063-96.433l.04-157.37l-77.727-104.35Zm-311.6-66.936c-30.386 0-55.082 24.668-55.082 55.052c0 30.386 24.696 55.082 55.083 55.082c30.386 0 55.082-24.696 55.082-55.082c0-30.384-24.696-55.052-55.082-55.052Zm312.27 0c-30.386 0-55.082 24.668-55.082 55.052c0 30.386 24.696 55.082 55.082 55.082c30.386 0 55.082-24.696 55.082-55.082c0-30.384-24.696-55.052-55.082-55.052Zm-156.7-35.5c-35.95 0-65.085 29.163-65.085 65.085c0 35.922 29.135 65.085 65.085 65.085c35.95 0 65.085-29.163 65.085-65.085c0-35.922-29.135-65.085-65.085-65.085Z"/>`,
+  'magic-broom': `<path fill="currentColor" d="M445.1 22.93c-3.8.11-7.9 1.81-11.5 5.98C379.2 107.6 328 152.4 272.9 178c-48 22.1-100.9 28.2-166.764 27.2l-6.531 22.18l61.074 16.98l-6.105 21.97l-61.047-16.97-4.947 16.69l61.047 16.97l-6.105 21.96-61.047-16.97-4.947 16.69l61.047 16.98l-6.105 21.96-61.047-16.97-6.02 20.38c40.23 31 82.966 59.9 123.538 90.15c84.326 62.2 90.366 68.59 105.336-36c16.7-172.5 72.3-227.1 173.5-336.2c6-6.56 8.6-11.9 8.3-16.5c-.4-6.36-5.08-11.28-13.03-11.05Zm-402.377 188.77l-15.95 53.8l107.095 29.84l6.105-21.96l-53.123-14.79l76.723-268.736z"/>`,
+  'baseball-bat': `<path fill="currentColor" d="M429.725 54.54c-3.023.094-5.838 1.16-8.16 3.48l-.05.05L207.31 272.267l-20.374 59.09l78.512 78.512l59.09-20.375l214.197-214.203l.048-.054c2.413-2.413 3.477-5.536 3.476-8.828c-.001-5.427-2.935-11.697-7.34-16.102c-7.495-7.495-19.78-8.792-25.142-3.43l-7.955 7.956l-42.012-42.013l7.956-7.955c5.362-5.362 4.065-17.647-3.43-25.142c-4.405-4.405-10.675-7.339-16.102-7.34c-.131 0-.262.002-.392.004zm-249.45 247.78l-24.32 71.631l-82.24 81.293c-13.586 13.586-37.485 14.325-55.95-4.14c-18.456-18.456-17.72-42.364-4.134-55.95l81.294-82.24l71.63-24.32z"/>`,
+  'backward-time': `<path fill="currentColor" d="m208.242 24.629l-52.058 95.205l95.207 52.059l17.271-26.707l36.934 33.435l-14.567 31.054l25.425 11.92l19.138-40.855l118.785 107.651l-110.64 121.486l-12.085-22.277l-23.63 12.076l88.697 163.457l23.63-12.075l-36.094-66.488L491.29 303.6l-23.65-61.139l38.344 34.741l15.95-17.461l-154.547-140.19l-11.315-80.575l-79.343-56.554l-16.559 23.227l37.957 27.047l-31.439 36.548l-19.476-17.624l-17.271 26.707l-29.6-16.188l36.019-65.846l-25.793-14.09zm-130.7 14.392c-17.03-.042-34.176 4.935-49.251 15.24c-48.27 33.621-54.33 107.89-13.13 166.62c35.48 50.92 96.46 73.35 141.49 53.39l34.308-15.332l-43.869-22.492l-17.872 7.932c-32.63 14.19-75.113-5.528-102.4-44.355c-31.087-44.606-26.351-99.837 10.605-125.47c24.839-17.32 58.332-12.562 84.458 10.674c21.265 18.9 34.525 46.077 32.337 70.7l-34.349-12.161l-5.742 16.308l59.69 21.135l21.136-59.69l-16.308-5.741l-11.87 33.548c.22-35.802-19.53-72.745-50.965-100.04c-15.662-13.910-34.391-21.355-52.607-21.4z"/>`,
+  'distraction': `<path fill="currentColor" d="M114.938 22.844L83.5 93.624l-60.906-44.06l41.062 56.344L15.5 122.5l51.688 6.906L43.5 178.594l41.344-34.844l5.594 39.468l21.312-34.5l90.968 24.094l-53.78 64.53l43.53-38.75l-16.94 59.72l42.094-60.218l32.907 48.156l-8.844-42.437l102.437 71.062l-87.718-78.688l60.906 11.906L182.22 151.22l75.03 3.125l-63.564-16.842l37.814-44.344L186.875 131.5l-1.156-90.188l-16.78 83.97z"/>`,
+  'return-arrow': `<path fill="currentColor" d="m19.828 18.256l-.002.015c249.642 36.995 371.904 169.688 420.194 304.302c49.29 138.233 26.504 262.842 3.074 311.362l-38.04-17.97c22.887-48.252 44.915-157.259-2.155-288.81c-45.566-127.722-160.72-253.128-402.085-288.695a24 24 0 0 1 4.014-20.204Z"/>`,
+  'grab': `<path fill="currentColor" d="M243.512 23.29c-27.105 18.337-53.533 32.92-82.274 40.25l-15.273 7.14l5.92 18.41l-54.256 29.025l-4.946 22.09l25.74 32.83l-43.786 50.25l7.733 14.688l54.38-14.688l12.324 58.69l17.17-6.375l32.717-43.313l38.89 53.03l15.133-5.188l21.15-60.75l46.536 35.28l12.063-4.063l21.814-66.72l29.75 16.188l11.345-3.813l12.557-68.47l24.03 6.53l12.094-3.813l23.55-88.344c-28.38-6.86-61.27-1.56-92.57 15.906c-22.25 12.29-43.44 29.52-61.16 50.56c-3.78-4.54-7.85-8.9-12.01-13.02c-23.29-22.84-50.38-36.52-70.31-41.59c-6.5-1.64-12.22-2.25-17.09-1.56Zm-.358 35.443c8.829-.001 20.806 4.04 31.15 10.784c9.39 6.254 20.36 16.26 28.59 24.888a200 200 0 0 1 29.09 40.963c4.82 8.809 8.26 16.464 10.47 21.9l8.63 21.57l12.79-42.6L388.7 96.1c.94-17.2 16.83-36.938 33.23-46.81c14.71-8.98 30.25-8.14 35.92 1.907c5.68 10.048-.56 27.798-15.27 36.78c-11.86 7.23-21.65 9.712-29.02 7.497l-18.56 95.932l-51.89-23.39l-21.112 88.577l-56.872-32.636l-28.66 78.25l-57.46-67.63l-44.35 61.79l-12.85-68.35l-63.376 17.114l1.88-7.99l48.658-49.642l-29.576-39.141l61.683-32.973l-3.574-12.145c25.554-8.12 50.513-21.25 77.217-39.15c7.3-4.93 13.38-7.337 17.93-7.338Z"/>`,
+  'breaking-chain': `<path fill="currentColor" d="m64.746 18l20.988 21a33 33 0 0 1-15.42 55.27l18.48 18.42l22.22-22.22l14.2 14.21l-22.22 22.22l40.56 40.54L15.037 379.65L18 493.04h346.21l134.23-134.23V18Zm322.228 84.273l45.023 45.022l26.227-26.218l14.21 14.21l-26.228 26.22l44.694 44.712l-14.22 14.232l-44.693-44.701l-26.228 26.22l-14.21-14.22l26.227-26.218l-45.022-45.022Z"/>`,
+  'time-trap': `<path fill="currentColor" d="M255.656 22.75c-131.173 0-237.72 33.326-237.72 74.344c0 41.018 106.547 74.343 237.72 74.343c131.173 0 237.719-33.325 237.719-74.344c0-41.018-106.546-74.343-237.72-74.343Zm0 33.312c59.003 0 106.78 13.556 106.78 30.375c0 16.818-47.777 30.374-106.78 30.374c-59.002 0-106.781-13.556-106.781-30.375c0-16.818 47.779-30.374 106.78-30.374Zm0 119.625c-131.173 0-237.72 33.325-237.72 74.343c0 41.018 106.547 74.344 237.72 74.344c131.173 0 237.719-33.326 237.719-74.344c0-41.018-106.546-74.343-237.72-74.343Zm0 33.312c59.003 0 106.78 13.556 106.78 30.375c0 16.818-47.777 30.374-106.78 30.374c-59.002 0-106.781-13.556-106.781-30.375c0-16.818 47.779-30.374 106.78-30.374Zm0 119.626c-131.173 0-237.72 33.325-237.72 74.343c0 41.018 106.547 74.344 237.72 74.344c131.173 0 237.719-33.326 237.719-74.344c0-41.018-106.546-74.343-237.72-74.343Zm0 33.312c59.003 0 106.78 13.556 106.78 30.375c0 16.818-47.777 30.374-106.78 30.374c-59.002 0-106.781-13.556-106.781-30.375c0-16.818 47.779-30.374 106.78-30.374Z"/>`,
+  'life-support': `<path fill="currentColor" d="M374.688 33.78c-40.753-.25-82.475 21.226-109.22 71.125c-34.48-6.628-70.004 6.627-87.845 32.983c-23.002 33.459-12.37 79.852 22.037 103.09c.972.747 1.966 1.448 2.977 2.118l-42.622 88.635l-24.035-133.795c-7.66-42.598-47.575-70.976-90.26-63.275c-42.702 7.662-71.04 47.615-63.381 90.21l40.719 226.467c7.66 42.598 47.575 71.039 90.26 63.338c29.044-5.208 51.143-25.057 60.248-50.592l82.943 52.055c35.83 22.497 81.695 16.482 110.191-14.473c23.275-25.17 27.941-61.63 14.48-92.053l79.176-86.51l71.306 41.524l-8.422 14.445c-19.607 33.604-7.865 76.55 25.7 96.279c33.566 19.73 76.382 7.971 96.023-25.634l6.276-10.768c7.66-13.15 8.78-28.11 4.21-41.207l-26.575-190.972c-7.66-42.597-47.575-70.975-90.26-63.275c-35.875 6.436-63.09 34.905-67.467 69.41L364.17 210.34c-35.382-20.21-81.44-12.017-108.965 21.613c-27.664 33.803-25.108 82.869 5.547 113.88l-53.623 72.72l-43.047-27.017l63.54-132.118c5.744 1.38 11.588 2.104 17.448 2.174c1.14.013 2.28.018 3.42-.002c.057 0 .113-.003.17-.004c1.09-.02 2.18-.067 3.27-.123c32.96-1.695 62.76-17.382 82.08-42.987c7.54-10.155 12.99-21.48 16.28-33.47c24.21-6.55 48.95-25.61 64.96-48.905c15.13-21.982 19.17-49.355 9.38-70.93c-8.62-19.083-26.92-29.908-48.137-30.037Z"/>`,
+  'megaphone': `<path fill="currentColor" d="m383.46 123.668l-4.66 17.387C430.868 155.005 467 205.416 467 263.385c0 62.508-41.418 115.731-97.835 134.918l4.314 16.828c67.916-22.135 116.87-85.76 116.87-161.746c0-70.892-43.932-131.746-106.888-155.717zM33.5 150l-.5 226.5h.5L87 439V87z"/>`,
+  'prayer': `<path fill="currentColor" d="M261.78 18.063c-52.004 0-94.686 45.7-94.686 103.156c0 44.727 26.285 82.753 62.922 96.953l-43.123 103.96l-25.658-74.345l-45.588 1.47l17.8 67.624L66.78 304.22l-45.72 39.845 65.282 90.188L25.813 353.97l-13 55.906c20.59 14.448 41.586 27.274 61.343 40.97c84.326 62.2 90.366 68.59 105.336-36l13.846-142.742l19.69 47.497c-.892 8.438-1.393 17.373-1.393 26.75c0 99.5 61.904 181.49 138.22 181.49c76.316 0 138.218-81.99 138.218-181.49c0-18.952-2.186-37.206-6.156-54.31l33.25 81.844l53.125-1.406l-20-84.72l55.407 71.656l45.72-39.845-65.28-90.19l60.53 81.72l13-55.906c-20.589-14.448-41.585-27.273-61.343-40.97c-84.326-62.2-90.366-68.59-105.336 36l-13.844 142.742l-19.692-47.497c.893-8.438 1.395-17.373 1.395-26.75c0-99.5-61.905-181.49-138.22-181.49c-3.285 0-6.548.14-9.78.41c12.806-20.5 20.538-45.546 20.538-72.44c0-57.457-42.675-103.156-94.68-103.156Zm0 12.04c45.535 0 82.43 41.471 82.43 91.238c0 49.766-36.896 91.207-82.43 91.207c-45.535 0-82.46-41.44-82.46-91.207c0-49.767 36.925-91.238 82.46-91.238Z"/>`,
+  'magic-portal': `<path fill="currentColor" d="m88.418 17.17l-66.12 475.242h18.866l66.12-475.242H88.42Zm245.754 0l66.12 475.242h18.866L352.04 17.17h-17.867Zm-194 63.96l-45.12 323.832h21.697l17.17-122.967h146.287l17.17 122.967h21.698L293.94 81.13H140.172Zm30.9 20.809L253.5 308.07h-127.6l32.27-226.131Zm150.4 78.62l-11.996 85.975h51.21l-11.997-85.974h-27.216Zm-242.93.507l-11.997 85.975h51.21l-11.996-85.975h-27.218Z"/>`,
+  'exit-door': `<path fill="currentColor" d="M217 28.098v455.804l142-42.597V70.697zm159.938 26.806l-17.127 3.543v343.126l17.127-5.14zm-208.718-.002l-17.126 3.543v357.257l17.126-5.142zm261.097 37.19l-17.125 3.542v294.66l17.125-5.143zM56.697 100.51L36 120.102l88.668 88.718h175.67V165.64H139.135zM103.576 238.82L36 306.396l20.697 19.596l82.386-82.5z"/>`
 };
 
-const artByTid: Record<number, React.FC<ArtworkProps>> = {
-  1001: SandstormArt,
-  1002: TimeFreezeArt,
-  1003: InstantWinArt,
-  1004: CleanSweepArt,
-  1005: BaseballArt,
-  1006: TimeRewindArt,
-  1007: DistractArt,
-  1008: RetrieveArt,
-  1009: SeizeArt,
-  1010: ThawArt,
-  1011: ReverseWinArt,
-  1012: RestoreBoardArt,
-  1013: ShoutArt,
-  1014: PunishArt,
-  1015: SummonArt,
-  1016: ForceExitArt
+// Try to normalize imported raw SVGs from game-icons so they respect currentColor.
+// This replaces hard-coded fills/strokes with currentColor where safe.
+const normalizeIconSvg = (svg: string): string => {
+  try {
+    let s = svg
+      // remove XML headers if present
+      .replace(/<\?xml[^>]*>/g, '')
+      // strip width/height to allow our viewport scaling
+      .replace(/\s(width|height)="[^"]*"/g, '')
+      // unify fills to currentColor (common cases from game-icons)
+      .replace(/fill="#?[0-9a-fA-F]{3,6}"/g, 'fill="currentColor"')
+      .replace(/stroke="#?[0-9a-fA-F]{3,6}"/g, 'stroke="currentColor"');
+    // Ensure there is no outer <svg> since we will inject paths only. If there is, extract inner.
+    const m = s.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
+    if (m) return m[1];
+    return s;
+  } catch {
+    return svg;
+  }
 };
+
+const CARD_ICON_MAP: Record<number, IconKey> = {
+  1001: 'sandstorm',
+  1002: 'brain-freeze',
+  1003: 'crown',
+  1004: 'magic-broom',
+  1005: 'baseball-bat',
+  1006: 'backward-time',
+  1007: 'distraction',
+  1008: 'return-arrow',
+  1009: 'grab',
+  1010: 'breaking-chain',
+  1011: 'time-trap',
+  1012: 'life-support',
+  1013: 'megaphone',
+  1014: 'prayer',
+  1015: 'magic-portal',
+  1016: 'exit-door'
+};
+
+const TYPE_DEFAULT_ICON: Record<string, IconKey> = {
+  Attack: 'sandstorm',
+  Counter: 'megaphone',
+  Support: 'magic-portal'
+};
+
+const FALLBACK_ICON: IconKey = 'sandstorm';
+
+const resolveTid = (card: RawCard): number | null => {
+  const raw = card._tid ?? card.tid;
+  if (raw == null) return null;
+  const tid = Number(raw);
+  return Number.isFinite(tid) ? tid : null;
+};
+
+const buildGradientStops = (palette: (typeof CARD_TYPE_PALETTES)[keyof typeof CARD_TYPE_PALETTES]) => ({
+  core: palette.core,
+  edge: palette.edge,
+  back: palette.back,
+  glow: palette.glow
+});
 
 export const CardArtwork: React.FC<{ card: RawCard }> = ({ card }) => {
   const palette = CARD_TYPE_PALETTES[card.type] ?? CARD_TYPE_PALETTES.Attack;
-  const tid = Number(card._tid ?? card.tid ?? 0);
-  const Art = artByTid[tid] ?? defaultArtByType[card.type] ?? SandstormArt;
+  const tid = resolveTid(card);
+  const iconKey = useMemo<IconKey>(() => {
+    if (tid && CARD_ICON_MAP[tid]) {
+      return CARD_ICON_MAP[tid];
+    }
+    if (TYPE_DEFAULT_ICON[card.type]) {
+      return TYPE_DEFAULT_ICON[card.type];
+    }
+    return FALLBACK_ICON;
+  }, [tid, card.type]);
+
+  // Prefer external game-icons assets when present, fallback to inline hard-coded ones.
+  const external = GAME_ICON_BODIES[iconKey as keyof typeof GAME_ICON_BODIES];
+  const iconBody = external ? normalizeIconSvg(external) : (ICON_PATHS[iconKey] ?? ICON_PATHS[FALLBACK_ICON]);
+  const unique = useId().replace(/:/g, '-');
+  const bgId = `${unique}-bg`;
+  const glowId = `${unique}-glow`;
+  const strokeId = `${unique}-stroke`;
+  const highlightId = `${unique}-highlight`;
+  const { core, edge, back, glow } = buildGradientStops(palette);
+
   return (
-    <div className="card-art">
-      <Art palette={palette} />
-    </div>
+    <svg viewBox="0 0 512 512" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id={bgId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={edge} />
+          <stop offset="55%" stopColor={core} />
+          <stop offset="100%" stopColor={back} />
+        </linearGradient>
+        <radialGradient id={glowId} cx="50%" cy="40%" r="70%">
+          <stop offset="5%" stopColor="rgba(255,255,255,0.22)" />
+          <stop offset="55%" stopColor={glow} stopOpacity={0.35} />
+          <stop offset="100%" stopColor="rgba(8,15,35,0.65)" />
+        </radialGradient>
+        <linearGradient id={strokeId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.65)" />
+          <stop offset="50%" stopColor="rgba(255,255,255,0.25)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
+        </linearGradient>
+        <linearGradient id={highlightId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+          <stop offset="45%" stopColor="rgba(255,255,255,0.12)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </linearGradient>
+      </defs>
+
+      <rect width="512" height="512" rx="56" fill={`url(#${bgId})`} />
+      <rect x="24" y="24" width="464" height="464" rx="48" fill={`url(#${glowId})`} opacity={0.82} />
+      <rect x="24" y="24" width="464" height="464" rx="48" fill={`url(#${highlightId})`} opacity={0.7} />
+      <rect x="24" y="24" width="464" height="464" rx="48" fill="none" stroke={`url(#${strokeId})`} strokeWidth="6" />
+
+      <g opacity={0.25} stroke="rgba(255,255,255,0.18)" strokeWidth="10">
+        <path d="M40 160C120 120 200 136 280 104C360 72 440 24 472 40" />
+        <path d="M40 344C136 296 224 332 320 284C392 248 440 216 472 232" />
+      </g>
+
+      <g
+        transform="translate(64 64) scale(0.75)"
+        style={{ color: 'rgba(255,255,255,0.95)' }}
+        dangerouslySetInnerHTML={{ __html: iconBody }}
+      />
+    </svg>
   );
 };

@@ -38,12 +38,12 @@
       "tags": "Removal|Shichahai",
       "notes": "",
       "quote": "你管这个叫五子棋？",
-      "artwork": "https://images.unsplash.com/photo-1527482797697-8795b05a13fe?w=600&q=80"
+      "artwork": ""
     },
     "1002": {
       "_tid": "1002",
       "tid": 1002,
-      "type": "control",
+      "type": "attack",
       "subtype": "standard",
       "nameZh": "静如止水",
       "nameEn": "Time Freeze",
@@ -51,16 +51,16 @@
       "cost": 2,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "冻结敌方，令其接下来两个回合无法落子或发动技能。",
+      "effect": "冻结敌方，跳过对方下一轮落子或发动魔法卡 (反击卡不受影响)。",
       "triggerCondition": "",
       "effectId": "freeze-opponent",
-      "effectParams": "turns=2",
+      "effectParams": "turns=1",
       "counteredBy": 1010,
       "failCondition": "冻结期间仍可使用反击卡",
-      "tags": "Control|Freeze",
+      "tags": "Attack|Freeze",
       "notes": "",
       "quote": "嗯嗯，嗯",
-      "artwork": "https://images.unsplash.com/photo-1483086431886-3590a88317fe?w=600&q=80"
+      "artwork": ""
     },
     "1003": {
       "_tid": "1003",
@@ -82,7 +82,7 @@
       "tags": "DirectWin|Legendary",
       "notes": "",
       "quote": "这可是我的最终奥义",
-      "artwork": "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=600&q=80"
+      "artwork": ""
     },
     "1004": {
       "_tid": "1004",
@@ -105,7 +105,7 @@
       "tags": "Fusion|Removal|Random|Shichahai",
       "notes": "",
       "quote": "我这招叫做保洁上门",
-      "artwork": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80"
+      "artwork": ""
     },
     "1005": {
       "_tid": "1005",
@@ -118,21 +118,21 @@
       "cost": 1,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "效果等同于飞沙走石，但无法被擒拿防御。",
+      "effect": "效果等同于飞沙走石，但视为合体技，无法被擒拿或“滚！”阻断；拾金不昧仍可事后挽回棋子。",
       "triggerCondition": "",
       "effectId": "remove-to-shichahai",
-      "effectParams": "ignoreSeize=true",
+      "effectParams": "ignoreSeize=true,immuneShout=true",
       "counteredBy": 1008,
       "failCondition": "只能被拾金不昧挽回",
-      "tags": "Removal|Shichahai|Unseizeable",
+      "tags": "Attack|Fusion|Removal|Shichahai|Unseizeable",
       "notes": "",
       "quote": "呀咧呀咧",
-      "artwork": "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=600&q=80"
+      "artwork": ""
     },
     "1006": {
       "_tid": "1006",
       "tid": 1006,
-      "type": "control",
+      "type": "attack",
       "subtype": "legendary",
       "nameZh": "时光倒流",
       "nameEn": "Time Rewind",
@@ -146,15 +146,15 @@
       "effectParams": "maxSteps=6",
       "counteredBy": 1013,
       "failCondition": "最多回溯最近6个落子",
-      "tags": "Control|Reset|Rewind",
+      "tags": "Attack|Reset|Rewind",
       "notes": "",
       "quote": "这一招好",
-      "artwork": "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=600&q=80"
+      "artwork": ""
     },
     "1007": {
       "_tid": "1007",
       "tid": 1007,
-      "type": "control",
+      "type": "attack",
       "subtype": "fusion",
       "nameZh": "调呈离山·东",
       "nameEn": "Distract",
@@ -162,17 +162,17 @@
       "cost": 2,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "跳过对手一个回合，使其无法落子或使用进攻卡。",
+      "effect": "跳过对手 1 回合，发动后消耗技能五，使其离场。",
       "triggerCondition": "",
       "effectId": "skip-next-turn",
       "effectParams": "turns=1",
       "counteredBy": 1013,
       "requiresCharacter": 3001,
       "failCondition": "张兴朝离场或被滚！打断",
-      "tags": "Fusion|Control|SkipTurn",
+      "tags": "Fusion|Attack|SkipTurn",
       "notes": "",
       "quote": "就是调走张呈，离开山东！",
-      "artwork": "https://images.unsplash.com/photo-1579547944212-c4f4d62b7dd8?w=600&q=80"
+      "artwork": ""
     },
     "1008": {
       "_tid": "1008",
@@ -192,7 +192,7 @@
       "failCondition": "Counter|Recovery|Shichahai",
       "tags": "",
       "notes": "嘿，拾金不昧",
-      "quote": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
+      "quote": "",
       "artwork": ""
     },
     "1009": {
@@ -213,7 +213,7 @@
       "failCondition": "Counter|Prevention",
       "tags": "",
       "notes": "我只是受过九年制义务教育",
-      "quote": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&q=80",
+      "quote": "",
       "artwork": ""
     },
     "1010": {
@@ -234,7 +234,7 @@
       "failCondition": "Counter|Recovery|Freeze",
       "tags": "",
       "notes": "水滴石穿",
-      "quote": "https://images.unsplash.com/photo-1439902315629-cd882022cea0?w=600&q=80",
+      "quote": "",
       "artwork": ""
     },
     "1011": {
@@ -257,7 +257,7 @@
       "tags": "Fusion|Counter|Legendary|DirectWin|Reflect",
       "notes": "",
       "quote": "哈哈哈哈哈哈，两极反转",
-      "artwork": "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=80"
+      "artwork": ""
     },
     "1012": {
       "_tid": "1012",
@@ -270,14 +270,14 @@
       "cost": 2,
       "speed": "instant",
       "timing": "reaction",
-      "effect": "力拔山兮生效后恢复棋盘至破坏前状态并继续对局。",
+      "effect": "力拔山兮生效后恢复棋盘至破坏前状态并继续对局，同时令对手跳过下一个回合。",
       "triggerCondition": "力拔山兮结算后",
       "effectId": "counter-restore-board",
       "effectParams": "",
       "failCondition": "Counter|Recovery|Reset",
       "tags": "",
       "notes": "那我就，东山再起",
-      "quote": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&q=80",
+      "quote": "",
       "artwork": ""
     },
     "1013": {
@@ -321,7 +321,7 @@
       "failCondition": "Counter|Punish",
       "tags": "",
       "notes": "你骂老人！",
-      "quote": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&q=80",
+      "quote": "",
       "artwork": ""
     },
     "1015": {
@@ -343,7 +343,7 @@
       "failCondition": "Support|Summon|Fusion",
       "tags": "",
       "notes": "技能五子·张技能五",
-      "quote": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
+      "quote": "",
       "artwork": ""
     },
     "1016": {
@@ -364,7 +364,7 @@
       "failCondition": "Support|AntiFusion",
       "tags": "",
       "notes": "胜天半子·王金宝",
-      "quote": "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=80",
+      "quote": "",
       "artwork": ""
     }
   },
@@ -413,15 +413,10 @@
             "key": "attack",
             "tids": [
               "1001",
+              "1002",
               "1003",
               "1004",
-              "1005"
-            ]
-          },
-          {
-            "key": "control",
-            "tids": [
-              "1002",
+              "1005",
               "1006",
               "1007"
             ]
@@ -647,7 +642,6 @@
     },
     "byType": {
       "attack": "1001",
-      "control": "1002",
       "counter": "1008",
       "support": "1015"
     },
@@ -719,7 +713,7 @@
       "Removal|Shichahai": [
         "1001"
       ],
-      "Control|Freeze": [
+      "Attack|Freeze": [
         "1002"
       ],
       "DirectWin|Legendary": [
@@ -728,13 +722,13 @@
       "Fusion|Removal|Random|Shichahai": [
         "1004"
       ],
-      "Removal|Shichahai|Unseizeable": [
+      "Attack|Fusion|Removal|Shichahai|Unseizeable": [
         "1005"
       ],
-      "Control|Reset|Rewind": [
+      "Attack|Reset|Rewind": [
         "1006"
       ],
-      "Fusion|Control|SkipTurn": [
+      "Fusion|Attack|SkipTurn": [
         "1007"
       ],
       "": [

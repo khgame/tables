@@ -10,7 +10,8 @@ export interface AiSettingsPanelProps {
 const emptySettings: AiSettings = {
   endpoint: '',
   apiKey: '',
-  model: ''
+  reasoningModel: '',
+  fastModel: ''
 };
 
 export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings, onClose, onSave }) => {
@@ -53,13 +54,22 @@ export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings
             />
           </label>
           <label className="ai-settings__field">
-            <span>模型名称</span>
+            <span>推理模型 (技能/复杂场景)</span>
             <input
               type="text"
               placeholder="gpt-4o-mini"
-              value={localSettings.model}
-              onChange={event => update({ model: event.target.value })}
+              value={localSettings.reasoningModel}
+              onChange={event => update({ reasoningModel: event.target.value })}
               required
+            />
+          </label>
+          <label className="ai-settings__field">
+            <span>快速模型 (落子决策)</span>
+            <input
+              type="text"
+              placeholder="gpt-4o-mini-mini"
+              value={localSettings.fastModel}
+              onChange={event => update({ fastModel: event.target.value })}
             />
           </label>
           <label className="ai-settings__field">

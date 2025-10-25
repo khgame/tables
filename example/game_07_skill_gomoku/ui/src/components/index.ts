@@ -10,6 +10,9 @@ export type { HandPanelProps } from './HandPanel';
 export { GameLog } from './GameLog';
 export type { GameLogProps } from './GameLog';
 
+export { CardDraftPanel } from './CardDraftPanel';
+export type { CardDraftPanelProps } from './CardDraftPanel';
+
 export { PendingCardPanel } from './PendingCardPanel';
 export type { PendingCardPanelProps } from './PendingCardPanel';
 
@@ -17,9 +20,7 @@ export {
   AvatarBadge,
   OpponentHUD,
   PlayerHUD,
-  OpponentDeckFan,
-  ConfirmButton,
-  CardPreviewOverlay
+  OpponentDeckFan
 } from './Hud';
 export type { AvatarBadgeProps, OpponentHudProps, PlayerHudProps } from './Hud';
 
@@ -35,6 +36,11 @@ export type { MulliganPanelProps } from './MulliganPanel';
 export { SnapshotSelector } from './SnapshotSelector';
 export type { SnapshotSelectorProps } from './SnapshotSelector';
 
+export { AiStatusBanner } from './AiStatusBanner';
+export type { AiStatusBannerProps } from './AiStatusBanner';
 
 export { AiSettingsPanel } from './AiSettingsPanel';
 export type { AiSettingsPanelProps } from './AiSettingsPanel';
+
+export { GameIcon, GAME_ICONS } from './IconLibrary';
+export type { IconName, IconProps, GameIconProps } from './IconLibrary';

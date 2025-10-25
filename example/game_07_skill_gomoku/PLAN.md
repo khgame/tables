@@ -7,12 +7,12 @@
   `scripts/build-site.js` 已将 `game_07_skill_gomoku` 纳入发布流程（scripts/build-site.js:30-46），`docs-site/demos/skill-gomoku.md` 也提供了链接，但 `.vitepress/config.ts` 的导航/侧边栏尚未注入对应入口（docs-site/.vitepress/config.ts:63-69），也没有验证 `npm run build:site` 的真实产物，因此线上仍会返回 404。
 - **卡牌图像加载失败 → 基础 SVG 占位**  
   目前 `CardIllustration` 以程序化渐变替代外链图片（ui/src/components/index.tsx:97-181），卡背也只是一层渐变（ui/src/components/CardFrame.tsx:1-81）。虽然避免了加载失败，但与要求的“炉石风格插画＋标志性卡背”相差甚远，且未针对每张技能卡定制插画。
-- **UI 重构未达 UIDESIGN**  
-  `main.tsx` 已将布局收敛到单屏（ui/src/main.tsx:175-339）并引入 HUD/日志组件，`ZonePanel` 等也实现基础信息展示。然而：  
-  - 棋盘仍是简易木纹渐变（ui/src/components/index.tsx:41-95），缺少三维质感、光影和特效。  
-  - 墓地与什刹海面板依旧是文字列表（ui/src/components/index.tsx:503-566），不符合“图标 + 缩略卡”设计。  
-  - 反击窗口、确认按钮、HUD 等仍偏线框风，未呈现面性、浮雕、粒子特效。  
-  - 缺少参考图里的右侧对局记录栏装饰、顶部手牌背面堆叠、背景场景。
+- **UI 架构持续迭代中**  
+  最新版实现了窄条信息区、漂浮手牌预览和自适应棋盘（`ui/src/components/Hud.tsx`, `ui/src/components/Board.tsx`），卡牌也换成 ribbon + 浅色正文结构（`ui/src/components/CardView.tsx`）。仍待补完：  
+  - 棋盘材质与动效仍为占位木纹，需要与美术确认最终贴图/光影。  
+  - 墓地/什刹海面板暂用文字列表，缺少缩略卡与 hover 预览。  
+  - 反击与调度弹窗尚未统一新视觉语言，缺乏粒子/亮度反馈。  
+  - 日志、按钮等控件的最终面性与层级仍需设计师确认。
 - **美术素材与技能特效缺失**  
   当前仅有 `public/skill-gomoku.svg` 简易 logo（ui/public/skill-gomoku.svg:1-12），没有背景插画、牌背纹理、墓地区/什刹海图标，也未实现 UIDESIGN 描述的飞沙走石、时光倒流等动画特效（skills 层只处理逻辑，未触发视觉效果）。
 - **脚本语言**  
@@ -56,3 +56,4 @@
 2. 与设计确认 SVG 资产切图方案，搭建卡牌/背景基础组件。
 3. 按 UIDESIGN 分阶段还原 UI（先布局、后特效、最后动画）。
 4. 加入基础视觉回归测试（截图对比或 Storybook Snapshot），避免后续改动破坏美术布局。
+5. 与设计确认 info strip 及弹窗最终版式，梳理浮层/面板的交互规范并在 UIDESIGN.md 中维护。

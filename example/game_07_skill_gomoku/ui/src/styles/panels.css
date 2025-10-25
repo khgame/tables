@@ -1,0 +1,317 @@
+/* === Game Layout === */
+.game-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: clamp(0.8rem, 1.5vw, 1.6rem);
+  position: relative;
+  background-color: #05070d;
+  background-image: url('/bg.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 100% auto;
+}
+
+.game-stage__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23654321' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat,
+    radial-gradient(circle at 25% 25%, rgba(218, 165, 32, 0.08), transparent 45%),
+    radial-gradient(circle at 75% 75%, rgba(160, 82, 45, 0.06), transparent 50%);
+}
+
+.game-stage__halo {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  filter: blur(120px);
+  pointer-events: none;
+}
+
+.game-stage__halo--left {
+  background: radial-gradient(circle at 20% 50%, rgba(218, 165, 32, 0.3), transparent 60%);
+}
+
+.game-stage__halo--right {
+  background: radial-gradient(circle at 80% 60%, rgba(160, 82, 45, 0.25), transparent 60%);
+}
+
+.game-stage__overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0,0,0,0.1) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.1) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.1) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.game-frame {
+  position: relative;
+  z-index: 1;
+  width: min(1600px, 98vw);
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 24px;
+  padding: clamp(0.6rem, 1vw, 1rem);
+  background: transparent;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.game-frame::before {
+  content: none;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-areas:
+    'opponent-info opponent-info opponent-zone'
+    'board board log'
+    'player-zone player-zone player-zone';
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(320px, 380px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(0.6rem, 0.8vw, 1rem);
+  height: 100%;
+}
+
+.game-grid__opponent {
+  grid-area: opponent-info;
+}
+
+.game-grid__left {
+  grid-area: opponent-zone;
+}
+
+.game-grid__board {
+  grid-area: board;
+  position: relative;
+}
+
+.game-grid__board--dragging {
+  background: rgba(251, 191, 36, 0.05);
+  border-radius: 12px;
+}
+
+.game-grid__right {
+  grid-area: log;
+}
+
+.game-grid__player {
+  grid-area: player-zone;
+}
+
+.game-grid__player-zone {
+  grid-area: player-zone;
+}
+
+.board-stage {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.board-stage--blocked-feedback {
+  animation: boardShudder 0.32s ease-out forwards;
+}
+
+.board-stage__ambient {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.08), transparent 70%);
+  filter: blur(40px);
+  opacity: 0.6;
+}
+
+.board-stage__inner {
+  position: relative;
+  width: 100%;
+  max-width: min(70vh, 70vw);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-stage__board {
+  width: 100%;
+  height: 100%;
+}
+
+
+@keyframes boardShudder {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* === AI Settings === */
+.ai-settings__trigger {
+  position: fixed;
+  right: 2rem;
+  top: 1.5rem;
+  z-index: 20;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  padding: 0.4rem 1rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.35);
+  transition: all 200ms ease;
+}
+
+.ai-settings__trigger--ready {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: rgba(16, 185, 129, 0.9);
+}
+
+.ai-settings__trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.45);
+}
+
+/* === Overlays === */
+.mulligan-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  background: linear-gradient(165deg, rgba(8, 13, 24, 0.82) 0%, rgba(20, 8, 26, 0.85) 40%, rgba(6, 15, 32, 0.88) 100%);
+  backdrop-filter: blur(8px);
+}
+
+.mulligan-overlay__panel {
+  max-width: min(640px, 92%);
+  border-radius: 28px;
+  padding: clamp(1.8rem, 4vw, 2.6rem);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  box-shadow: 0 36px 68px rgba(5, 9, 26, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.mulligan-overlay__title {
+  font-family: 'Ma Shan Zheng', serif;
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  letter-spacing: 0.08em;
+  color: rgba(251, 191, 36, 1);
+  margin-bottom: 1rem;
+}
+
+/* === Pending Panel === */
+/* === Mulligan Panel === */
+.mulligan-panel {
+  position: relative;
+  max-width: 540px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.94) 100%);
+  color: #1f2937;
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.18);
+  overflow: visible;
+}
+
+.mulligan-panel__inner {
+  display: grid;
+  gap: 1rem;
+  text-align: center;
+}
+
+.mulligan-panel__title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #b45309;
+}
+
+.mulligan-panel__hint {
+  font-size: 0.92rem;
+  color: #be185d;
+}
+
+.mulligan-panel__description {
+  font-size: 0.86rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.mulligan-panel__card-floating {
+  position: absolute;
+  top: 50%;
+  right: -5.5rem;
+  transform: translate(0, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 24px 38px rgba(8, 17, 35, 0.3));
+}
+
+.mulligan-panel__empty {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.mulligan-panel__actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.mulligan-panel__button {
+  padding: 0.62rem 1.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.mulligan-panel__button:hover {
+  transform: translateY(-1px);
+}
+
+.mulligan-panel__button--keep {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.82), rgba(5, 150, 105, 0.86));
+  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.18);
+}
+
+.mulligan-panel__button--replace {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.82), rgba(190, 24, 93, 0.88));
+  box-shadow: 0 12px 24px rgba(244, 63, 94, 0.18);
+}
+
+@media (max-width: 1100px) {
+  .mulligan-panel {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .mulligan-panel__card-floating {
+    position: static;
+    transform: none;
+    margin: 0 auto 0.8rem;
+    pointer-events: none;
+  }
+
+  .mulligan-panel__actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+}

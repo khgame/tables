@@ -2,27 +2,14 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/skill-gomoku.svg" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%skill-gomoku.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>技能五子棋 - Skill Gomoku</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
-    <script>
-      window.tailwind = {
-        theme: {
-          extend: {
-            fontFamily: {
-              display: ['"Ma Shan Zheng"', 'cursive'],
-              body: ['"Noto Sans SC"', 'sans-serif']
-            }
-          }
-        }
-      };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="min-h-screen bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 font-body text-amber-100">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

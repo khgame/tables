@@ -3,6 +3,7 @@ export type Player = 0 | 1;
 export interface RawCard {
   _tid?: string;
   tid?: number;
+  instanceId?: string;
   nameZh: string;
   nameEn?: string;
   type: string;
@@ -137,6 +138,7 @@ export interface GameStatus {
   winner: Player | null;
   aiEnabled: boolean;
   visuals: VisualEffectEvent[];
+  draft: DraftState | null;
   mulligan: {
     stage: 'idle' | 'active' | 'completed';
     current: Player | null;
@@ -160,8 +162,21 @@ export interface GomokuBoard {
 }
 
 export interface CardDeck {
-  draw(count?: number): RawCard[];
-  discard(card: RawCard): void;
+  remaining(): number;
+  drawOptions(count: number): CardDraftOption[];
+  take(optionId: string): RawCard | null;
 }
 
 export type GamePhase = 'setup' | 'mulligan' | 'playing' | 'card_targeting' | 'counter_window' | 'game_over';
+
+export interface CardDraftOption {
+  id: string;
+  card: RawCard;
+  remaining: number;
+}
+
+export interface DraftState {
+  player: Player;
+  options: CardDraftOption[];
+  source: 'initial' | 'draw';
+}

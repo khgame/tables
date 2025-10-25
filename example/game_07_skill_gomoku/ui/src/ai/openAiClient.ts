@@ -12,16 +12,19 @@ import {
   SKILL_DECISION_HINTS,
   BOARD_RESPONSE_INSTRUCTIONS,
 } from "./promptTemplates";
+import { aiLog } from "./logger";
 
 export interface AiSettings {
   endpoint: string;
   apiKey: string;
-  model: string;
+  reasoningModel: string;
+  fastModel: string;
 }
 
 export type AiScenario =
   | { kind: "mulligan"; player: Player; card: RawCard | null }
-  | { kind: "playing"; player: Player; game: GameStatus }
+  | { kind: "skill"; player: Player; game: GameStatus; skills: Array<{ handIndex: number; card: RawCard }>; contextNote?: string }
+  | { kind: "stone"; player: Player; game: GameStatus; contextNote?: string; analysis?: string }
   | {
       kind: "card_targeting";
       player: Player;
@@ -38,13 +41,13 @@ export type AiScenario =
 
 export type AiPlayingDecision =
   | { kind: "place_stone"; board: number[][] }
+  | { kind: "place_stone"; row: number; col: number }
   | {
       kind: "play_card";
       cardId?: string;
       handIndex?: number;
       targets?: unknown;
-    }
-  | { kind: "pass" };
+    };
 
 export type AiDecision =
   | { kind: "mulligan"; replace: boolean }
@@ -90,12 +93,23 @@ const RULES_TEXT = RULES_OVERVIEW({
 });
 const STRATEGY_TEXT = GOMOKU_STRATEGY_HINTS;
 const SKILL_HINT_TEXT = SKILL_DECISION_HINTS;
+const AI_REQUEST_TIMEOUT_MS = 45000;
 
 export const hasValidSettings = (
   settings: AiSettings | null | undefined,
 ): settings is AiSettings => {
   if (!settings) return false;
-  return Boolean(settings.endpoint && settings.model);
+  return Boolean(settings.endpoint && settings.reasoningModel);
+};
+
+const selectModelForScenario = (
+  settings: AiSettings,
+  scenario: AiScenario["kind"],
+): string => {
+  if (scenario === "stone") {
+    return settings.fastModel || settings.reasoningModel;
+  }
+  return settings.reasoningModel;
 };
 
 export const requestAiDecision = async (
@@ -104,12 +118,10 @@ export const requestAiDecision = async (
   options?: { feedback?: string },
 ): Promise<AiDecision | null> => {
   const userContent = buildUserPrompt(scenario, options);
-  console.info("[game07][ai][request_prompt]", {
-    scenario: scenario.kind,
-    prompt: userContent,
-  });
+  const model = selectModelForScenario(settings, scenario.kind);
+  const modelSelectionInfo = { scenario: scenario.kind, model }
   const body: Record<string, unknown> = {
-    model: settings.model,
+    model,
     messages: [
       { role: "system", content: DEFAULT_SYSTEM_PROMPT },
       { role: "user", content: userContent },
@@ -117,16 +129,36 @@ export const requestAiDecision = async (
     temperature: 0.1,
   };
 
-  const response = await fetch(settings.endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(settings.apiKey
-        ? { Authorization: `Bearer ${settings.apiKey}` }
-        : {}),
-    },
-    body: JSON.stringify(body),
-  });
+  aiLog.info("[request_prompt]", body.messages, modelSelectionInfo);
+
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => {
+    controller.abort();
+  }, AI_REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(settings.endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(settings.apiKey
+          ? { Authorization: `Bearer ${settings.apiKey}` }
+          : {}),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if ((err as DOMException)?.name === "AbortError") {
+      throw new Error(
+        `AI request timed out after ${AI_REQUEST_TIMEOUT_MS}ms`,
+      );
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timer);
+  }
 
   if (!response.ok) {
     const text = await safeReadText(response);
@@ -138,11 +170,11 @@ export const requestAiDecision = async (
   const payload = await response.json().catch(() => {
     throw new Error("AI response is not valid JSON");
   });
-  console.info("[game07][ai][response_raw]", payload);
+  aiLog.info("[response_raw]", payload, modelSelectionInfo);
 
   const content = extractMessageContent(payload);
   if (!content) return null;
-  console.info("[game07][ai][response_content]", content);
+  aiLog.info("[response_content]", content, modelSelectionInfo);
 
   const parsed = parseDecision(content, scenario.kind);
   return parsed;
@@ -152,7 +184,7 @@ const safeReadText = async (resp: Response): Promise<string> => {
   try {
     return await resp.text();
   } catch (err) {
-    console.error("[game07] failed to read response text", err);
+    aiLog.error("failed to read response text", err);
     return "";
   }
 };
@@ -176,7 +208,7 @@ const parseDecision = (
     const data = JSON.parse(json);
     return normaliseDecision(data, scenario);
   } catch (err) {
-    console.error("[game07] failed to parse AI JSON", err, raw);
+    aiLog.error("failed to parse AI JSON", err, raw);
     return null;
   }
 };
@@ -215,7 +247,7 @@ const normaliseDecision = (
         return { kind: "mulligan", replace: data.swap };
       break;
     }
-    case "playing": {
+    case "skill": {
       if (
         rawAction === "place_stone" ||
         rawAction === "board" ||
@@ -233,6 +265,9 @@ const normaliseDecision = (
           return { kind: "place_stone", board: boardMatrix };
         }
       }
+      if (isNumber(data.row) && isNumber(data.col)) {
+        return { kind: "place_stone", row: Number(data.row), col: Number(data.col) };
+      }
       if (rawAction === "play_card" || rawAction === "skill") {
         const handIndex = isNumber(data.handIndex ?? data.cardIndex)
           ? Number(data.handIndex ?? data.cardIndex)
@@ -249,6 +284,42 @@ const normaliseDecision = (
           handIndex,
           targets: data.targets ?? data.selection ?? null,
         };
+      }
+      if (
+        rawAction === "pass" ||
+        rawAction === "wait" ||
+        rawAction === "end_turn"
+      ) {
+        return { kind: "pass" };
+      }
+      if (Array.isArray(data.result)) {
+        const boardMatrix = normaliseBoardMatrix(data.result);
+        if (boardMatrix) {
+          return { kind: "place_stone", board: boardMatrix };
+        }
+      }
+      break;
+    }
+    case "stone": {
+      if (
+        rawAction === "place_stone" ||
+        rawAction === "board" ||
+        rawAction === "result" ||
+        typeof data.result !== "undefined" ||
+        typeof data.board !== "undefined" ||
+        typeof data.boardAscii !== "undefined"
+      ) {
+        const boardMatrixRaw =
+          (typeof data.result !== "undefined" ? data.result : null) ??
+          (typeof data.board !== "undefined" ? data.board : null) ??
+          (typeof data.boardAscii !== "undefined" ? data.boardAscii : null);
+        const boardMatrix = normaliseBoardMatrix(boardMatrixRaw);
+        if (boardMatrix) {
+          return { kind: "place_stone", board: boardMatrix };
+        }
+      }
+      if (isNumber(data.row) && isNumber(data.col)) {
+        return { kind: "place_stone", row: Number(data.row), col: Number(data.col) };
       }
       if (
         rawAction === "pass" ||
@@ -326,10 +397,20 @@ const buildUserPrompt = (
         scenario.card,
         options?.feedback,
       );
-    case "playing":
-      return buildPlayingPrompt(
+    case "skill":
+      return buildSkillPrompt(
         scenario.player,
         scenario.game,
+        scenario.skills,
+        scenario.contextNote,
+        options?.feedback,
+      );
+    case "stone":
+      return buildStonePrompt(
+        scenario.player,
+        scenario.game,
+        scenario.contextNote,
+        scenario.analysis,
         options?.feedback,
       );
     case "card_targeting":
@@ -376,41 +457,36 @@ const buildMulliganPrompt = (
     .join("\n");
 };
 
-const buildPlayingPrompt = (
+const buildSkillPrompt = (
   player: Player,
   game: GameStatus,
+  skills: Array<{ handIndex: number; card: RawCard }>,
+  note?: string,
   feedback?: string,
 ): string => {
   const boardMatrix = serializeBoardMatrix(game.board);
   const boardAscii = formatBoardAscii(boardMatrix);
-  const hand = (game.hands[player] ?? []).map((card, index) => ({
-    handIndex: index,
-    ...simplifyCard(card),
-  }));
-  const context = {
-    phase: game.phase,
-    turn: game.turnCount,
-    player: describePlayer(player),
-    opponent: describePlayer(
-      player === PlayerEnum.BLACK ? PlayerEnum.WHITE : PlayerEnum.BLACK,
-    ),
-    hand,
-    statuses: serializeStatuses(game.statuses),
-    characters: serializeCharacters(game.characters),
-    graveyards: serializeGraveyards(game.graveyards),
-    shichahai: game.shichahai,
-    pendingAction: game.pendingAction
-      ? simplifyPending(game.pendingAction)
-      : null,
-    timelineSize: game.timeline.length,
-    recentMoves: serializeRecentTimeline(game.timeline),
-    boardAscii,
-  };
+  const timelineNarrative = serializeTimelineNarrative(game.timeline);
+  const statuses = serializeStatuses(game.statuses);
+  const characters = serializeCharacters(game.characters);
+  const graveyards = serializeGraveyards(game.graveyards);
+  const handSize = (game.hands[player] ?? []).length;
+  const skillsSummary = skills.map(({ handIndex, card }) => formatSkillPromptLine(handIndex, card));
   return [
     "棋盘快照 (0 空, 1 黑, 2 白):",
     boardAscii,
-    "对局上下文:",
-    JSON.stringify(context),
+    timelineNarrative ? `最近棋谱: ${timelineNarrative}` : undefined,
+    `可发动技能 (${skillsSummary.length} 张，handIndex 对应手牌位置):`,
+    skillsSummary.length ? skillsSummary.join("\n") : "(当前无可发动技能)",
+    `白方手牌数量：${handSize}`,
+    statuses.freeze.some((val: number) => val > 0) || statuses.skip.some((val: number) => val > 0)
+      ? `状态提示：冻结 ${statuses.freeze.join('/')}，跳过 ${statuses.skip.join('/')}`
+      : undefined,
+    characters.white ? `白方角色：${characters.white}` : undefined,
+    characters.black ? `黑方角色：${characters.black}` : undefined,
+    graveyards.black.length || graveyards.white.length
+      ? `墓地概览：黑方 ${graveyards.black.length} 张，白方 ${graveyards.white.length} 张`
+      : undefined,
     "规则速览:",
     RULES_TEXT,
     "策略提示:",
@@ -418,11 +494,47 @@ const buildPlayingPrompt = (
     "技能决策提示:",
     SKILL_HINT_TEXT,
     feedback ? `上一次行动执行失败：${feedback}` : undefined,
-    "你在下五子棋，你是白子(2)，对手为黑子(1)。0 表示空位。你可以：",
-    `1. 在空位上落下一枚白子，并返回最新盘面: ${BOARD_RESPONSE_INSTRUCTIONS[0]}`,
-    `   ${BOARD_RESPONSE_INSTRUCTIONS[1]}`,
-    '2. 使用手牌技能: {"action":"play_card","cardId":"<tid或effectId>","targets":[]}',
-    '3. 暂时不动作: {"action":"pass"}',
+    note ? `局面提示：${note}` : undefined,
+    "你是白方 (2)，请优先判断哪些技能可以立即改善局面；若技能不足胜任，可返回落子或暂不行动。",
+    PROMPT_ONLY_JSON_NOTICE,
+  ]
+    .filter(Boolean)
+    .join("\n");
+};
+
+const buildStonePrompt = (
+  player: Player,
+  game: GameStatus,
+  note?: string,
+  analysis?: string,
+  feedback?: string,
+): string => {
+  const boardMatrix = serializeBoardMatrix(game.board);
+  const boardAscii = formatBoardAscii(boardMatrix);
+  const timelineNarrative = serializeTimelineNarrative(game.timeline);
+  const statuses = serializeStatuses(game.statuses);
+  const characters = serializeCharacters(game.characters);
+  const graveyards = serializeGraveyards(game.graveyards);
+  return [
+    "棋盘快照 (0 空, 1 黑, 2 白):",
+    boardAscii,
+    timelineNarrative ? `最近棋谱: ${timelineNarrative}` : undefined,
+    statuses.freeze.some((val: number) => val > 0) || statuses.skip.some((val: number) => val > 0)
+      ? `状态提示：冻结 ${statuses.freeze.join('/')}，跳过 ${statuses.skip.join('/')}`
+      : undefined,
+    characters.white ? `白方角色：${characters.white}` : undefined,
+    characters.black ? `黑方角色：${characters.black}` : undefined,
+    graveyards.black.length || graveyards.white.length
+      ? `墓地概览：黑方 ${graveyards.black.length} 张，白方 ${graveyards.white.length} 张`
+      : undefined,
+    "基本规则：棋盘 15×15，连成五子即胜，黑先白后。",
+    "策略提示:",
+    STRATEGY_TEXT,
+    analysis ? `局面分析:\n${analysis}` : undefined,
+    feedback ? `上一次行动执行失败：${feedback}` : undefined,
+    note ? `局面提示：${note}` : undefined,
+    "你是白方 (2)，当前目标仅是选择落子位置，可优先阻挡黑方威胁或制造胜势。",
+    '返回 JSON：{"action":"place_stone","row":目标行,"col":目标列}。必须选择一个合法空位，不允许返回 pass；如无法提供坐标，可回退为完整棋盘数组。',
     PROMPT_ONLY_JSON_NOTICE,
   ]
     .filter(Boolean)
@@ -497,6 +609,15 @@ const buildCounterPrompt = (
   ]
     .filter(Boolean)
     .join("\n");
+};
+
+const formatSkillPromptLine = (handIndex: number, card: RawCard): string => {
+  const segments: string[] = [];
+  segments.push(`#${handIndex} ${card.nameZh}`);
+  if (card.effect) segments.push(card.effect.trim());
+  if (card.triggerCondition) segments.push(`触发：${card.triggerCondition}`);
+  if (card.timing) segments.push(`时机：${card.timing}`);
+  return segments.join(" — ");
 };
 
 const simplifyCard = (card: RawCard) => ({
@@ -641,3 +762,22 @@ const serializeRecentTimeline = (
 
 const formatBoardAscii = (matrix: number[][]) =>
   matrix.map((row) => row.join("")).join("\n");
+
+const serializeTimelineNarrative = (
+  timeline: GameStatus["timeline"],
+  limit = 5,
+): string | null => {
+  const meaningful = timeline
+    .filter((entry) => typeof entry.turn === "number" && entry.turn > 0)
+    .slice(-limit);
+  if (!meaningful.length) return null;
+  const sentences = meaningful.map((entry) => {
+    const prefix = `第${entry.turn}手`;
+    const actor = entry.player === null ? "未知" : describePlayer(entry.player as Player);
+    if (entry.move && typeof entry.move.row === "number") {
+      return `${prefix}：${actor} 落子 (${entry.move.row}, ${entry.move.col})。`;
+    }
+    return `${prefix}：${actor} 通过技能或状态改变局面。`;
+  });
+  return sentences.join(" ");
+};

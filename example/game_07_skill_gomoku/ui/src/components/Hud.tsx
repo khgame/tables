@@ -1,48 +1,85 @@
 import React from 'react';
 import type { GameStatus, Player, RawCard } from '../types';
-import type { AiScenario } from '../ai/openAiClient';
 import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
 import { CardFrame } from './CardFrame';
 import { HandPanel } from './HandPanel';
 import { CardView } from './CardView';
+import { GameIcon, FreezeIcon, SkipIcon, CurrentTurnIcon } from './IconLibrary';
+
+const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
 const AVATAR_GLYPHS: React.ReactNode[] = [
   (
-    <svg viewBox="0 0 120 120" className="avatar-badge__glyph" xmlns="http://www.w3.org/2000/svg">
+    // 黑方 - 小黑龙
+    <svg viewBox="0 0 120 120" className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="avatar-black-core" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#60a5fa" />
-          <stop offset="70%" stopColor="#1e40af" />
-          <stop offset="100%" stopColor="#0b1220" />
+        <radialGradient id="dragon-body" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#374151" />
+          <stop offset="100%" stopColor="#111827" />
         </radialGradient>
       </defs>
-      <circle cx="60" cy="60" r="54" fill="url(#avatar-black-core)" />
-      <path d="M38 80C50 66 54 50 60 32C66 50 70 66 82 80C70 90 50 90 38 80Z" fill="#93c5fd" opacity="0.85" />
-      <circle cx="68" cy="46" r="12" fill="#bfdbfe" opacity="0.8" />
+      {/* 龙身 */}
+      <ellipse cx="60" cy="70" rx="35" ry="28" fill="url(#dragon-body)" />
+      {/* 龙头 */}
+      <ellipse cx="60" cy="45" rx="25" ry="20" fill="url(#dragon-body)" />
+      {/* 龙角 */}
+      <polygon points="45,35 50,25 55,35" fill="#fbbf24" />
+      <polygon points="65,35 70,25 75,35" fill="#fbbf24" />
+      {/* 眼睛 */}
+      <circle cx="52" cy="42" r="4" fill="#dc2626" />
+      <circle cx="68" cy="42" r="4" fill="#dc2626" />
+      <circle cx="52" cy="40" r="2" fill="#ffffff" />
+      <circle cx="68" cy="40" r="2" fill="#ffffff" />
+      {/* 鼻孔 */}
+      <ellipse cx="58" cy="50" rx="1.5" ry="2" fill="#000000" />
+      <ellipse cx="62" cy="50" rx="1.5" ry="2" fill="#000000" />
+      {/* 翅膀 */}
+      <ellipse cx="35" cy="65" rx="12" ry="18" fill="#4b5563" transform="rotate(-20 35 65)" />
+      <ellipse cx="85" cy="65" rx="12" ry="18" fill="#4b5563" transform="rotate(20 85 65)" />
+      {/* 肚子 */}
+      <ellipse cx="60" cy="75" rx="20" ry="15" fill="#6b7280" />
     </svg>
   ),
   (
-    <svg viewBox="0 0 120 120" className="avatar-badge__glyph" xmlns="http://www.w3.org/2000/svg">
+    // 白方 - 小白狐
+    <svg viewBox="0 0 120 120" className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <radialGradient id="avatar-white-core" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#f9a8d4" />
-          <stop offset="70%" stopColor="#be185d" />
-          <stop offset="100%" stopColor="#2b0618" />
+        <radialGradient id="fox-body" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#f9fafb" />
+          <stop offset="100%" stopColor="#e5e7eb" />
         </radialGradient>
       </defs>
-      <circle cx="60" cy="60" r="54" fill="url(#avatar-white-core)" />
-      <path d="M52 32L68 32L82 70L60 92L38 70L52 32Z" fill="#fbcfe8" opacity="0.9" />
-      <circle cx="60" cy="46" r="10" fill="#fecdd3" opacity="0.85" />
+      {/* 狐狸身体 */}
+      <ellipse cx="60" cy="75" rx="28" ry="25" fill="url(#fox-body)" />
+      {/* 狐狸头 */}
+      <ellipse cx="60" cy="50" rx="22" ry="18" fill="url(#fox-body)" />
+      {/* 狐狸耳朵 */}
+      <ellipse cx="48" cy="35" rx="8" ry="12" fill="url(#fox-body)" />
+      <ellipse cx="72" cy="35" rx="8" ry="12" fill="url(#fox-body)" />
+      <ellipse cx="48" cy="35" rx="4" ry="6" fill="#fbbf24" />
+      <ellipse cx="72" cy="35" rx="4" ry="6" fill="#fbbf24" />
+      {/* 眼睛 */}
+      <circle cx="53" cy="46" r="3" fill="#000000" />
+      <circle cx="67" cy="46" r="3" fill="#000000" />
+      <circle cx="54" cy="44" r="1" fill="#ffffff" />
+      <circle cx="68" cy="44" r="1" fill="#ffffff" />
+      {/* 鼻子 */}
+      <ellipse cx="60" cy="52" rx="2" ry="1.5" fill="#000000" />
+      {/* 嘴巴 */}
+      <path d="M60 54 Q56 57 54 55 M60 54 Q64 57 66 55" stroke="#000000" strokeWidth="1" fill="none" />
+      {/* 尾巴 */}
+      <ellipse cx="85" cy="80" rx="15" ry="8" fill="url(#fox-body)" transform="rotate(45 85 80)" />
+      <ellipse cx="85" cy="80" rx="8" ry="4" fill="#fbbf24" transform="rotate(45 85 80)" />
+      {/* 胸前白毛 */}
+      <ellipse cx="60" cy="70" rx="15" ry="12" fill="#ffffff" />
     </svg>
   )
 ];
 
 const statsMeta = [
-  { key: 'hand', label: '手牌' },
-  { key: 'move', label: '落子' },
-  { key: 'stones', label: '棋子' },
-  { key: 'grave', label: '墓地' },
-  { key: 'sea', label: '什刹海' }
+  { key: 'hand', label: '手牌', icon: 'hand' },
+  { key: 'move', label: '落子', icon: 'move' },
+  { key: 'stones', label: '棋子', icon: 'stones' }
 ] as const;
 
 type StatsItem = (typeof statsMeta)[number]['key'];
@@ -52,18 +89,20 @@ type StatsMap = Record<StatsItem, number>;
 const buildStats = (partial: Partial<StatsMap>): StatsMap => ({
   hand: partial.hand ?? 0,
   move: partial.move ?? 0,
-  stones: partial.stones ?? 0,
-  grave: partial.grave ?? 0,
-  sea: partial.sea ?? 0
+  stones: partial.stones ?? 0
 });
 
 const StatsPills: React.FC<{ stats: StatsMap }> = ({ stats }) => (
-  <div className="stats-pills">
+  <div className="flex flex-wrap items-center gap-1">
     {statsMeta.map(item => (
-      <span key={item.key} className="stats-pills__item">
-        <span className="stats-pills__label">{item.label}</span>
-        <span className="stats-pills__value">{stats[item.key]}</span>
-      </span>
+      <div
+        key={item.key}
+        className="flex items-center gap-1 rounded-sm bg-slate-600/40 px-1 py-1 text-xs backdrop-blur-sm"
+      >
+        <GameIcon name={item.icon} size="xs" className="text-slate-400" />
+        <span className="text-slate-400 font-medium">{item.label}</span>
+        <span className="text-slate-200 font-bold">{stats[item.key]}</span>
+      </div>
     ))}
   </div>
 );
@@ -76,35 +115,69 @@ export interface AvatarBadgeProps {
 }
 
 export const AvatarBadge: React.FC<AvatarBadgeProps> = ({ player, characters, statuses, isCurrent }) => {
-  const palette =
-    player === PlayerEnum.BLACK
-      ? { base: 'rgba(30,64,175,0.65)', glow: 'rgba(96,165,250,0.55)' }
-      : { base: 'rgba(190,18,60,0.65)', glow: 'rgba(248,113,113,0.55)' };
   const character = characters[player];
   const freeze = statuses.freeze[player];
   const skip = statuses.skip[player];
 
+  const isBlack = player === PlayerEnum.BLACK;
+
   return (
-    <div className={`avatar-badge avatar-badge--${player === PlayerEnum.BLACK ? 'player' : 'opponent'} ${isCurrent ? 'avatar-badge--active' : ''}`}>
-      <div
-        className="avatar-badge__portrait"
-        style={{
-          background: `radial-gradient(circle at 50% 35%, rgba(255,255,255,0.65), rgba(255,255,255,0)), radial-gradient(circle at 50% 80%, ${palette.glow}, ${palette.base})`
-        }}
-      >
+    <div className={`relative flex items-center gap-4 rounded-2xl p-4 transition-all duration-300 ${
+      isCurrent
+        ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/25'
+        : 'bg-slate-700 shadow-md'
+    }`}>
+
+      {/* 当前回合指示器 */}
+      {isCurrent && (
+        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-400 shadow-md">
+          <CurrentTurnIcon size="xs" className="text-yellow-900" />
+        </div>
+      )}
+
+      {/* 头像 */}
+      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl shadow-sm ${
+        isBlack ? 'bg-blue-500' : 'bg-pink-500'
+      }`}>
         {AVATAR_GLYPHS[player]}
       </div>
-      <div className="avatar-badge__body">
-        <div className="avatar-badge__row">
-          {PLAYER_NAMES[player]}
-          {isCurrent && <span className="avatar-badge__tag">当前行动</span>}
+
+      {/* 玩家信息 */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className={`text-base font-bold truncate ${
+            isCurrent ? 'text-white' : 'text-slate-200'
+          }`}>
+            {PLAYER_NAMES[player]}
+          </span>
+          {isCurrent && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-1 py-0.5 text-[7px] font-medium text-white">
+              回合中
+            </span>
+          )}
         </div>
-        <div className="avatar-badge__character">{character ? `角色：${character.name}` : '未召唤角色'}</div>
+        <div className={`text-sm truncate ${
+          isCurrent ? 'text-emerald-100' : 'text-slate-400'
+        }`}>
+          {character ? character.name : '未召唤角色'}
+        </div>
       </div>
+
+      {/* 状态效果 */}
       {(freeze > 0 || skip > 0) && (
-        <div className="avatar-badge__status">
-          {freeze > 0 && <span className="avatar-status avatar-status--freeze">冻结 {freeze}</span>}
-          {skip > 0 && <span className="avatar-status avatar-status--skip">跳过 {skip}</span>}
+        <div className="flex shrink-0 flex-col gap-1">
+          {freeze > 0 && (
+            <div className="inline-flex items-center gap-1 rounded-lg bg-blue-500 px-2 py-1 text-xs font-medium text-white">
+              <FreezeIcon size="xs" />
+              冻结 {freeze}
+            </div>
+          )}
+          {skip > 0 && (
+            <div className="inline-flex items-center gap-1 rounded-lg bg-orange-500 px-2 py-1 text-xs font-medium text-white">
+              <SkipIcon size="xs" />
+              跳过 {skip}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -112,7 +185,7 @@ export const AvatarBadge: React.FC<AvatarBadgeProps> = ({ player, characters, st
 };
 
 export interface OpponentHudProps {
-  handCount: number;
+  handCards: RawCard[];
   graveyardCount: number;
   shichahaiCount: number;
   moveCount: number;
@@ -120,11 +193,11 @@ export interface OpponentHudProps {
   characters: GameStatus['characters'];
   statuses: GameStatus['statuses'];
   isCurrent: boolean;
-  aiStatus?: { scenario: AiScenario['kind'] | null; message: string; reason?: string };
+  className?: string;
 }
 
 export const OpponentHUD: React.FC<OpponentHudProps> = ({
-  handCount,
+  handCards,
   graveyardCount,
   shichahaiCount,
   moveCount,
@@ -132,31 +205,30 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
   characters,
   statuses,
   isCurrent,
-  aiStatus
-}) => {
-  const showStatus = Boolean(aiStatus?.scenario);
-  const scenario = aiStatus?.scenario ?? 'idle';
-  return (
-  <div className="hud-strip hud-strip--opponent">
-    <div className="hud-strip__avatar">
+  className
+}) => (
+  <div className={cx('flex w-full items-center gap-4', className)}>
+    {/* 左侧玩家信息 - 固定宽度 */}
+    <div className="flex items-center gap-4 rounded-xl p-4 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
       <AvatarBadge player={PlayerEnum.WHITE} characters={characters} statuses={statuses} isCurrent={isCurrent} />
-      <StatsPills stats={buildStats({ hand: handCount, move: moveCount, stones: stonesCount, grave: graveyardCount, sea: shichahaiCount })} />
+      <div className="flex flex-col gap-3">
+        <StatsPills
+          stats={buildStats({ hand: handCards.length, move: moveCount, stones: stonesCount })}
+        />
+      </div>
     </div>
-    <div className="hud-strip__cards">
-      <OpponentDeckFan count={handCount} />
-      {showStatus && (
-        <div className={`opponent-status-badge opponent-status-badge--${scenario}`}>
-          <span className="opponent-status-badge__spinner" aria-hidden />
-          <span className="opponent-status-badge__text">
-            <span>{aiStatus?.message}</span>
-            {aiStatus?.reason && <span className="opponent-status-badge__reason">{aiStatus.reason}</span>}
-          </span>
-        </div>
-      )}
+
+    {/* 中央手牌区域 - 完全居中 */}
+    <div className="relative flex flex-1 items-start justify-center h-[9.5rem]">
+      <HandPanel
+        className="w-full"
+        cards={handCards}
+        disabled={true}
+        isOpponent={true}
+      />
     </div>
   </div>
-  );
-};
+);
 
 export interface PlayerHudProps {
   handCards: RawCard[];
@@ -167,12 +239,11 @@ export interface PlayerHudProps {
   characters: GameStatus['characters'];
   graveyardCount: number;
   shichahaiCount: number;
-  confirmDisabled: boolean;
-  onConfirm: () => void;
   onCardHover?: (card: RawCard | null) => void;
   onCardDragStart?: (index: number) => void;
   onCardDragEnd?: () => void;
   isCurrent: boolean;
+  className?: string;
 }
 
 export const PlayerHUD: React.FC<PlayerHudProps> = ({
@@ -184,27 +255,33 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
   characters,
   graveyardCount,
   shichahaiCount,
-  confirmDisabled,
-  onConfirm,
   onCardHover,
   onCardDragStart,
   onCardDragEnd,
-  isCurrent
+  isCurrent,
+  className
 }) => (
-  <div className="player-hud">
-    <div className="player-hud__avatar">
+  <div className={cx('flex w-full items-center gap-4', className)}>
+    {/* 左侧玩家信息 - 紧凑设计 */}
+    <div className="flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
       <AvatarBadge player={PlayerEnum.BLACK} characters={characters} statuses={statuses} isCurrent={isCurrent} />
-      <StatsPills stats={buildStats({ hand: handCards.length, move: moveCount, stones: stonesCount, grave: graveyardCount, sea: shichahaiCount })} />
-    </div>
-    <div className="player-hud__hand">
-      <div className="player-hand-meta">
-        <div className={`player-hand-meta__hint ${disabled ? 'player-hand-meta__hint--disabled' : ''}`}>拖拽技能卡到棋盘中央即可发动</div>
-        <div className="player-hand-meta__actions">
-          <ConfirmButton disabled={confirmDisabled} onClick={onConfirm} />
-        </div>
+      <div className="flex flex-col gap-2">
+        <span className={cx(
+          'text-xs font-medium text-slate-300',
+          disabled && 'opacity-60'
+        )}>
+          拖拽发动技能卡
+        </span>
+        <StatsPills
+          stats={buildStats({ hand: handCards.length, move: moveCount, stones: stonesCount })}
+        />
       </div>
+    </div>
+
+    {/* 中央手牌区域 - 完全居中 */}
+    <div className="relative flex flex-1 items-end justify-center h-[9.5rem]">
       <HandPanel
-        className="player-hand-meta__cards"
+        className="w-full"
         cards={handCards}
         disabled={disabled}
         onCardHover={onCardHover}
@@ -215,19 +292,23 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
   </div>
 );
 
-const CardBackFan: React.FC<{ count: number; className?: string; size?: number }> = ({ count, className, size = 88 }) => {
+const CardBackFan: React.FC<{ count: number; size?: number }> = ({ count, size = 88 }) => {
   const display = Math.min(count, 5);
   const cards = Array.from({ length: display }, (_, idx) => idx);
   const mid = (display - 1) / 2;
 
   return (
-    <div className={['card-back-fan', className].filter(Boolean).join(' ')}>
+    <div className="flex items-end justify-center">
       {cards.map(idx => {
         const offset = idx - mid;
         const angle = offset * 9;
         const translate = offset * (size * 0.18);
         return (
-          <div key={idx} className="card-back-fan__item" style={{ transform: `translateX(${translate}px) rotate(${angle}deg)` }}>
+          <div
+            key={idx}
+            className="transition-transform duration-150 ease-out"
+            style={{ transform: `translateX(${translate}px) rotate(${angle}deg)` }}
+          >
             <CardFrame type="Counter" variant="back" width={size} height={size * 1.618} />
           </div>
         );
@@ -237,19 +318,7 @@ const CardBackFan: React.FC<{ count: number; className?: string; size?: number }
 };
 
 export const OpponentDeckFan: React.FC<{ count: number }> = ({ count }) => (
-  <div className="opponent-deck-stack">
-    <CardBackFan count={count} size={96} />
-  </div>
-);
-
-export const ConfirmButton: React.FC<{ disabled: boolean; onClick: () => void }> = ({ disabled, onClick }) => (
-  <button type="button" onClick={disabled ? undefined : onClick} className={`confirm-button ${disabled ? 'confirm-button--disabled' : ''}`}>
-    <span>确认</span>
-  </button>
-);
-
-export const CardPreviewOverlay: React.FC<{ card: RawCard }> = ({ card }) => (
-  <div className="card-preview-overlay">
-    <CardView card={card} variant="showcase" revealBack={false} disabled />
+  <div className="pointer-events-none">
+    <CardBackFan count={count} />
   </div>
 );

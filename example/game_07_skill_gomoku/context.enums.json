@@ -1,7 +1,6 @@
 {
   "CardType": {
     "Attack": "attack",
-    "Control": "control",
     "Counter": "counter",
     "Support": "support"
   },
@@ -50,7 +49,6 @@
   "Tag": {
     "Removal": "removal",
     "Shichahai": "shichahai",
-    "Control": "control",
     "Freeze": "freeze",
     "DirectWin": "direct-win",
     "Fusion": "fusion",

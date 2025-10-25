@@ -1,0 +1,96 @@
+{
+  "tids": [
+    "90000001",
+    "90000002",
+    "90000003",
+    "90000004",
+    "90010001",
+    "90010002"
+  ],
+  "result": {
+    "90000001": {
+      "_tid": "90000001",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "key": "gameVersion",
+      "valueType": "String",
+      "value": "1.0.0",
+      "description": "当前游戏版本号"
+    },
+    "90000002": {
+      "_tid": "90000002",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "key": "enableTutorial",
+      "valueType": "Bool",
+      "value": true,
+      "description": "是否开启新手引导"
+    },
+    "90000003": {
+      "_tid": "90000003",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "key": "rookieDiamonds",
+      "valueType": "UInt",
+      "value": 1500,
+      "description": "新手礼包钻石数量"
+    },
+    "90000004": {
+      "_tid": "90000004",
+      "categoryCode": 90,
+      "sectionCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "key": "initialCurrency",
+      "valueType": "Currency",
+      "value": "gold",
+      "description": "初始主要货币类型"
+    },
+    "90010001": {
+      "_tid": "90010001",
+      "categoryCode": 90,
+      "sectionCode": 1,
+      "sequenceCode": 1,
+      "sequence": 5,
+      "key": "defaultStage",
+      "valueType": "StageId",
+      "value": 40000001,
+      "description": "默认剧情起始关卡"
+    },
+    "90010002": {
+      "_tid": "90010002",
+      "categoryCode": 90,
+      "sectionCode": 1,
+      "sequenceCode": 2,
+      "sequence": 6,
+      "key": "unlockHeroReward",
+      "valueType": "StageId",
+      "value": 40000002,
+      "description": "完成后解锁第二位英雄的关卡"
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ]
+  }
+}

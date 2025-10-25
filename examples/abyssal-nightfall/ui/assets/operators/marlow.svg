@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 960" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#041421" />
+      <stop offset="55%" stop-color="#0e7490" />
+      <stop offset="100%" stop-color="#01070d" />
+    </linearGradient>
+    <linearGradient id="sil" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.85" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="960" fill="url(#bg)" />
+  <path fill="url(#sil)" d="M320 150c60 0 110 64 110 140 0 84-48 132-48 164 0 32 50 68 50 132 0 112-82 192-192 192s-192-80-192-192c0-64 50-100 50-132 0-32-48-80-48-164 0-76 50-140 110-140 44 0 72 34 80 48 8-14 36-48 80-48z" opacity="0.9" />
+  <path fill="#67e8f9" opacity="0.25" d="M80 640c32 72 96 128 240 128s208-56 240-128c-32 40-96 64-240 64s-208-24-240-64z" />
+  <text x="40" y="900" font-size="64" font-family="'Montserrat', 'Arial', sans-serif" font-weight="700" letter-spacing="8" fill="#ecfeff" opacity="0.35">MARLOW</text>
+</svg>

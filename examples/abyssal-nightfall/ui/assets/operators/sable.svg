@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 960" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="60%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="sil" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.85" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="960" fill="url(#bg)" />
+  <path fill="url(#sil)" d="M320 160c64 0 112 76 112 148 0 88-64 132-64 164 0 32 56 70 56 150 0 110-82 188-184 188s-184-78-184-188c0-80 56-118 56-150 0-32-64-76-64-164 0-72 48-148 112-148 44 0 72 30 88 52 16-22 44-52 88-52z" opacity="0.9" />
+  <path fill="#93c5fd" opacity="0.35" d="M132 540c18 64 74 112 188 112s170-48 188-112c-24 28-66 44-188 44s-164-16-188-44z" />
+  <text x="40" y="900" font-size="64" font-family="'Montserrat', 'Arial', sans-serif" font-weight="700" letter-spacing="8" fill="#f8fafc" opacity="0.35">SABLE</text>
+</svg>

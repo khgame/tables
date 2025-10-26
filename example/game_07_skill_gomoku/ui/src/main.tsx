@@ -421,6 +421,18 @@ const AiSettingsTrigger: React.FC<{ onOpen: (open: boolean) => void; hasConfig: 
   </button>
 );
 
+const DEFAULT_PROGRESS_MESSAGES = ['持续分析局势', '推演后续回合', '评估风险收益'];
+
+const PROGRESS_MESSAGES: Record<AiScenario['kind'], string[]> = {
+  stone: ['扫描棋型威胁', '推演双方落子', '验证占位收益'],
+  skill: ['梳理技能组合', '模拟效果连锁', '评估反制风险'],
+  card_targeting: ['对比目标优先级', '校验可选范围', '预估技能结果'],
+  counter_window: ['检测可用反击牌', '判断对手威胁', '计算反击收益'],
+  mulligan: ['评估初始手牌', '权衡重抽价值', '预测开局走势']
+};
+
+const PROGRESS_UPDATE_INTERVAL = 10000;
+
 const getScenarioMeta = (kind: AiScenario['kind']) => {
   switch (kind) {
     case 'card_targeting':
@@ -470,6 +482,7 @@ const useAIActions = (
   const processedRef = useRef<Set<string>>(new Set());
   const activeKeyRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const progressTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (gameState.turnCount === 0 && gameState.board.history.length === 0) {
@@ -483,11 +496,38 @@ const useAIActions = (
   }, [gameState.turnCount, gameState.board.history.length]);
 
   useEffect(() => {
+    const stopProgressUpdates = () => {
+      if (progressTimerRef.current !== null) {
+        window.clearTimeout(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+    };
+
+    const cycleProgressMessage = (
+      scenario: AiScenario,
+      baseMessage: string,
+      reason?: string
+    ) => {
+      stopProgressUpdates();
+      const source = PROGRESS_MESSAGES[scenario.kind] ?? DEFAULT_PROGRESS_MESSAGES;
+      const phrases = source.length > 0 ? source : DEFAULT_PROGRESS_MESSAGES;
+      let index = 0;
+      const tick = () => {
+        const suffix = phrases[index % phrases.length];
+        index += 1;
+        const message = suffix ? `${baseMessage} · ${suffix}` : baseMessage;
+        updateAiStatus({ scenario: scenario.kind, message, reason });
+        progressTimerRef.current = window.setTimeout(tick, PROGRESS_UPDATE_INTERVAL);
+      };
+      tick();
+    };
+
     const clearRunningTask = (resetStatus = true, extra?: { reason?: string }) => {
       if (timerRef.current !== null) {
         window.clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      stopProgressUpdates();
       activeKeyRef.current = null;
       if (resetStatus) updateAiStatus({ scenario: null, message: '', reason: extra?.reason });
     };
@@ -521,7 +561,7 @@ const useAIActions = (
           }
         })();
         const delay = reason ? 600 : baseDelay;
-        updateAiStatus({ scenario: scenario.kind, message: descriptor.message, reason });
+        cycleProgressMessage(scenario, descriptor.message, reason);
         aiLog.info(
           `[${scenario.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`
         );
@@ -626,6 +666,10 @@ const useAIActions = (
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
+    }
+    if (progressTimerRef.current !== null) {
+      window.clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
     }
   }, []);
 };

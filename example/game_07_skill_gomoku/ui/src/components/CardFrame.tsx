@@ -73,38 +73,24 @@ export const CardFrame: React.FC<CardFrameProps> = ({
 
   return (
     <div
-      className={[
-        'card-frame',
-        `card-frame--${variant}`,
-        className ?? ''
-      ].filter(Boolean).join(' ')}
+      className={['relative w-full h-full pointer-events-none overflow-visible', className ?? ''].join(' ')}
       style={inlineSize}
     >
-      {variant === 'back' ? (
-        <img src={CARD_BACK_IMAGE_SRC} alt="" className="card-frame__bg" draggable={false} />
-      ) : (
-        <img src={FRAME_IMAGE_SRC} alt="" className="card-frame__bg" draggable={false} />
-      )}
-      {/* <div className="card-frame__mask" />
-      <div className="card-frame__shine" />
-      <div
-        className="card-frame__tint"
-        style={{
-          background:
-            variant === 'front'
-              ? `radial-gradient(125% 125% at 50% 38%, ${tint.glow} 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.68) 100%)`
-              : 'transparent', // 卡背不需要额外的tint，直接显示原图
-          mixBlendMode: variant === 'front' ? 'soft-light' : 'normal'
-        }}
-      /> */}
-      <div
-        className="card-frame__rim"
-        style={{
-          boxShadow: variant === 'front'
-            ? `inset 0 0 0 2px ${tint.rim}, inset 0 0 18px ${tint.rim}`
-            : 'none' // 卡背也不需要额外的rim效果
-        }}
+      <img
+        src={variant === 'back' ? CARD_BACK_IMAGE_SRC : FRAME_IMAGE_SRC}
+        alt=""
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-cover saturate-[1.05] contrast-[1.05]"
       />
+      {variant === 'front' && (
+        <div
+          className="absolute inset-0"
+          style={{
+            boxShadow: `inset 0 0 0 2px ${tint.rim}, inset 0 0 18px ${tint.rim}`,
+            mixBlendMode: 'screen' as const
+          }}
+        />
+      )}
     </div>
   );
 };

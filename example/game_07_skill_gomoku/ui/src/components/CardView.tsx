@@ -240,48 +240,56 @@ export const CardView: React.FC<CardViewProps> = ({
     return { min: '6rem', max: '6rem', clamp: 5 } as const; // showcase/default
   }, [variant]);
 
+  const overlayPad = variant === 'hand'
+    ? 'pt-[0.44rem] px-[0.52rem] pb-[0.48rem] gap-[0.34rem]'
+    : 'pt-[0.64rem] px-[0.56rem] pb-[0.50rem] gap-[0.44rem]';
+
+  const bodyGridRows = variant === 'hand'
+    ? 'grid-rows-[auto_minmax(5.6rem,6.6rem)_minmax(3.8rem,auto)_auto] gap-[0.42rem]'
+    : 'grid-rows-[auto_minmax(9.5rem,10.8rem)_minmax(5.6rem,auto)_auto] gap-2';
+
+  const effectPanelClass = variant === 'hand'
+    ? 'relative z-[2] mt-[0.35rem] bg-[rgba(6,10,18,0.74)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 shadow-[0_8px_18px_rgba(5,8,14,0.35)]'
+    : 'relative z-[2] mt-[0.25rem] bg-[rgba(12,18,30,0.55)] border border-white/10 rounded-[0.6rem] px-2 py-1.5';
+
+  const wrapperClasses = [
+    'relative block rounded-xl overflow-hidden outline-none',
+    variant !== 'showcase' ? 'transition-transform duration-200' : '',
+    disabled ? 'cursor-not-allowed grayscale-[0.25] brightness-90' : (variant === 'hand' ? 'cursor-grab hover:-translate-y-2 active:cursor-grabbing' : ''),
+    hoverClass
+  ].filter(Boolean).join(' ');
+
   return (
     <>
       <button
-      type="button"
-      ref={buttonRef}
-      onClick={enableClick ? onClick : undefined}
-      disabled={disabled}
-      className={[
-        'card-view',
-        `card-view--${variant}`,
-        variant !== 'showcase' ? 'transition-transform duration-200' : '',
-        disabled ? 'card-view--petrified cursor-not-allowed' : '',
-        cursorClass,
-        hoverClass
-      ].filter(Boolean).join(' ')}
-      style={{ width: baseWidth, aspectRatio: '1 / 1.618', ...style }}
-      data-type={card.type}
-      data-variant={variant}
-      data-disabled={disabled ? 'true' : 'false'}
-      onMouseEnter={handleHoverStart}
-      onMouseLeave={handleHoverEnd}
-      onFocus={handleHoverStart}
-      onBlur={handleHoverEnd}
-      draggable={interactive && variant === 'hand' && Boolean(onDragStart)}
-      onDragStart={event => {
-        if (!interactive || variant !== 'hand') return;
-        event.dataTransfer.effectAllowed = 'move';
-        setIsDragging(true);
-        hideTooltip();
-        onDragStart?.(event);
-      }}
-      onDragEnd={() => {
-        if (!interactive || variant !== 'hand') return;
-        setIsDragging(false);
-        hideTooltip();
-        onDragEnd?.();
-      }}
-    >
-      <CardFrame type={card.type} variant={revealBack ? 'back' : 'front'} className="absolute inset-0 w-full h-full" />
-      {!revealBack && (
-        <>
-          <div className="card-overlay card-overlay--flat">
+        type="button"
+        ref={buttonRef}
+        onClick={enableClick ? onClick : undefined}
+        disabled={disabled}
+        className={wrapperClasses}
+        style={{ width: baseWidth, aspectRatio: '1 / 1.618', ...style }}
+        onMouseEnter={handleHoverStart}
+        onMouseLeave={handleHoverEnd}
+        onFocus={handleHoverStart}
+        onBlur={handleHoverEnd}
+        draggable={interactive && variant === 'hand' && Boolean(onDragStart)}
+        onDragStart={event => {
+          if (!interactive || variant !== 'hand') return;
+          event.dataTransfer.effectAllowed = 'move';
+          setIsDragging(true);
+          hideTooltip();
+          onDragStart?.(event);
+        }}
+        onDragEnd={() => {
+          if (!interactive || variant !== 'hand') return;
+          setIsDragging(false);
+          hideTooltip();
+          onDragEnd?.();
+        }}
+      >
+        <CardFrame type={card.type} variant={revealBack ? 'back' : 'front'} className="absolute inset-0 w-full h-full" />
+        {!revealBack && (
+          <div className={['absolute inset-0 flex flex-col text-white', overlayPad].join(' ')}>
             {variant !== 'hand' && (
               <header
                 className="flex items-center gap-1 rounded-md px-1 py-1 text-[0.6rem] uppercase tracking-[0.16em] pointer-events-auto"
@@ -316,14 +324,10 @@ export const CardView: React.FC<CardViewProps> = ({
                 </span>
               </header>
             )}
-            <div className="card-overlay__body">
-              <div className="card-body__title flex flex-col gap-1">
-                <span
-                  className={[
-                    'font-extrabold tracking-[0.12em] text-white whitespace-nowrap overflow-hidden text-ellipsis',
-                    nameZhClass
-                  ].join(' ')}
-                >
+
+            <div className={['relative z-[1] grid', bodyGridRows].join(' ')}>
+              <div className={[variant === 'hand' ? 'gap-[0.12rem]' : 'gap-1', 'flex flex-col'].join(' ')}>
+                <span className={['font-extrabold tracking-[0.12em] text-white whitespace-nowrap overflow-hidden text-ellipsis', nameZhClass].join(' ')}>
                   {card.nameZh}
                 </span>
                 {card.nameEn && (
@@ -332,43 +336,30 @@ export const CardView: React.FC<CardViewProps> = ({
                   </span>
                 )}
               </div>
-              <div className="card-overlay__art card-overlay__art--flat">
+
+              <div className={['relative rounded-[12px] overflow-hidden aspect-[4/5] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),0_16px_32px_rgba(8,15,35,0.38)]', variant === 'hand' ? 'mt-[-0.28rem]' : ''].join(' ')}>
                 <CardArtwork card={card} />
               </div>
-              <section className="card-section card-section--content card-body__effect">
-                <div className="card-effect-panel">
-                  <p
-                    className="card-section__value text-[0.78rem] leading-[1.38] whitespace-pre-line overflow-hidden"
-                    style={{
-                      minHeight: effectHeights.min,
-                      maxHeight: effectHeights.max,
-                      display: '-webkit-box',
-                      WebkitLineClamp: effectHeights.clamp,
-                      WebkitBoxOrient: 'vertical' as const
-                    }}
-                  >
+
+              <section>
+                <div className={effectPanelClass}>
+                  <p className={[
+                    'text-[0.8rem] leading-[1.38] text-white whitespace-pre-line overflow-hidden',
+                    variant === 'hand' ? 'line-clamp-3' : (variant === 'list' ? 'line-clamp-4' : 'line-clamp-5')
+                  ].join(' ')}>
                     {card.effect}
                   </p>
                 </div>
               </section>
+
               {variant !== 'hand' && card.quote && (
-                <div
-                  className="text-[0.62rem] leading-relaxed text-amber-100/80 text-center whitespace-pre-line overflow-hidden italic"
-                  style={{
-                    minHeight: '2.6rem',
-                    maxHeight: '2.6rem',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical' as const
-                  }}
-                >
+                <div className="text-[0.62rem] leading-relaxed text-amber-100/80 text-center whitespace-pre-line overflow-hidden italic line-clamp-2">
                   “{card.quote}”
                 </div>
               )}
             </div>
           </div>
-        </>
-      )}
+        )}
       </button>
       <TooltipOverlay tooltip={tooltip} />
     </>

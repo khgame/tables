@@ -93,7 +93,7 @@ const RULES_TEXT = RULES_OVERVIEW({
 });
 const STRATEGY_TEXT = GOMOKU_STRATEGY_HINTS;
 const SKILL_HINT_TEXT = SKILL_DECISION_HINTS;
-const AI_REQUEST_TIMEOUT_MS = 45000;
+const AI_REQUEST_TIMEOUT_MS = 90000;
 
 export const hasValidSettings = (
   settings: AiSettings | null | undefined,
@@ -133,8 +133,13 @@ export const requestAiDecision = async (
 
   const controller = new AbortController();
   const timer = window.setTimeout(() => {
-    controller.abort();
-  }, AI_REQUEST_TIMEOUT_MS);
+          controller.abort();
+          aiLog.warn('[timeout_abort]', {
+            scenario: scenario.kind,
+            timeoutMs: AI_REQUEST_TIMEOUT_MS,
+            attemptModel: model,
+          });
+        }, AI_REQUEST_TIMEOUT_MS);
 
   let response: Response;
   try {

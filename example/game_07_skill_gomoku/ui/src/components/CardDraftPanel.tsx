@@ -22,22 +22,21 @@ export const CardDraftPanel: React.FC<CardDraftPanelProps> = ({ options, source,
       </header>
       <div className="grid gap-5 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
         {options.map(option => (
-          <button
+          <div
             key={option.id}
-            type="button"
             className="group relative block focus:outline-none"
-            onClick={() => onSelect(option.id)}
           >
             <CardView
               card={option.card}
               variant="showcase"
               style={{ width: '15.5rem' }}
               disabled={false}
+              onClick={() => onSelect(option.id)}
             />
             <span className="absolute top-3 right-3 rounded-full bg-slate-900/80 px-3 py-1 text-xs font-semibold text-amber-100 shadow-lg">
               剩余 {option.remaining}
             </span>
-          </button>
+          </div>
         ))}
       </div>
     </div>

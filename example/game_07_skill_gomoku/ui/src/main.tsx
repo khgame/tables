@@ -27,6 +27,9 @@ import type { GameStatus, Player, RawCard, VisualEffectEvent } from './types';
 import './styles/tailwind.css';
 import { SkillEffect } from './skills/effects';
 
+// Utility for conditional classnames
+const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
+
 // 导入智能路由和监控测试 (仅在开发环境)
 if (import.meta.env.DEV) {
   import('./ai/tests');
@@ -449,15 +452,55 @@ const App: React.FC = () => {
   return (
     <>
       <AiStatusBanner status={aiStatus} />
-      <div className="game-stage">
+      <div className="flex items-center justify-center min-h-screen max-h-screen h-screen relative bg-[#05070d] overflow-hidden" style={{
+        padding: 'clamp(0.8rem, 1.5vw, 1.6rem)',
+        backgroundImage: "url('/gom_page_bg.png')",
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center center',
+        backgroundSize: '100% auto'
+      }}>
         <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
-        <div className="game-stage__backdrop" />
-        <div className="game-stage__halo game-stage__halo--left" />
-        <div className="game-stage__halo game-stage__halo--right" />
-        <div className="game-stage__overlay" />
-        <div className="game-frame">
-          <div className="game-grid">
-          <aside className="game-grid__left">
+
+        {/* Backdrop decorative layers */}
+        <div className="absolute inset-0" style={{
+          background: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23654321' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat, radial-gradient(circle at 25% 25%, rgba(218, 165, 32, 0.08), transparent 45%), radial-gradient(circle at 75% 75%, rgba(160, 82, 45, 0.06), transparent 50%)`
+        }} />
+
+        {/* Halo effects */}
+        <div className="absolute inset-0 opacity-40 pointer-events-none" style={{
+          filter: 'blur(120px)',
+          background: 'radial-gradient(circle at 20% 50%, rgba(218, 165, 32, 0.3), transparent 60%)'
+        }} />
+        <div className="absolute inset-0 opacity-40 pointer-events-none" style={{
+          filter: 'blur(120px)',
+          background: 'radial-gradient(circle at 80% 60%, rgba(160, 82, 45, 0.25), transparent 60%)'
+        }} />
+
+        {/* Overlay pattern */}
+        <div className="absolute inset-0 opacity-15 pointer-events-none" style={{
+          background: `linear-gradient(45deg, rgba(0,0,0,0.1) 25%, transparent 25%), linear-gradient(-45deg, rgba(0,0,0,0.1) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.1) 75%), linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.1) 75%)`,
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+        }} />
+
+        <div className="relative z-[1] rounded-3xl bg-transparent overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.45)]" style={{
+          width: 'min(1600px, 98vw)',
+          height: 'calc(100vh - clamp(1.6rem, 3vw, 3.2rem))',
+          maxHeight: '100vh',
+          padding: 'clamp(0.6rem, 1vw, 1rem)'
+        }}>
+          <div className="grid h-full" style={{
+            gridTemplateAreas: `
+              'opponent-info . opponent-zone'
+              'board board log'
+              'player-info . player-zone'
+            `,
+            gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr) minmax(320px, 380px)',
+            gridTemplateRows: 'auto minmax(0, 1fr) auto',
+            gap: 'clamp(1rem, 1.5vw, 2rem)',
+            padding: 'clamp(0.6rem, 1vw, 1.2rem)'
+          }}>
+          <aside style={{ gridArea: 'opponent-zone' }}>
             <ZonePanel
               title="墓地 / 什刹海"
               graveyard={enemyGraveyard}
@@ -465,7 +508,7 @@ const App: React.FC = () => {
               variant="opponent"
             />
           </aside>
-          <div className="game-grid__opponent">
+          <div style={{ gridArea: 'opponent-info' }}>
             <OpponentHUD
               handCards={enemyHandCards}
               graveyardCount={enemyGraveyard.length}
@@ -479,75 +522,88 @@ const App: React.FC = () => {
               bubble={aiBubble}
             />
           </div>
-          <section className={`game-grid__board ${draggedCardIndex !== null ? 'game-grid__board--dragging' : ''}`}>
-      <div className={`board-stage ${boardBlockedFeedback ? 'board-stage--blocked-feedback' : ''}`}>
-        <div className="board-stage__ambient" />
-        <div className="board-stage__inner">
-          <Board
-            board={board}
-            onCellClick={placeStone}
-            disabled={
-              phase !== GamePhaseEnum.PLAYING ||
-              !isPlayerTurn ||
-              Boolean(pendingAction) ||
-              (targetRequest && targetRequest.type === 'snapshot')
-            }
-            targetRequest={targetRequest && targetRequest.type === 'cell' ? targetRequest : null}
-            onTargetSelect={(sel) => { try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}; selectTarget(sel); }}
-            className="board-stage__board"
-            style={{ aspectRatio: '1 / 1' }}
-            onCardDrop={handleCardDropOnBoard}
-            onBlockedInteract={() => {
-              if (phase === GamePhaseEnum.PLAYING && !isPlayerTurn) {
-                setBoardBlockedFeedback(true);
-              }
-            }}
-            winLineLit={winLineLit}
-            hoveredPosition={hoveredPosition}
-            skillTargetPosition={skillTargetPosition}
-            sealedCells={gameState.statuses.sealedCells}
-            currentTurn={gameState.turnCount}
-          />
-          <SkillEffectLayer events={activeVisuals} />
-        </div>
-        {renderDraft()}
-        {pendingAction && (
-          <>
-            {/* subtle dim + blur overlay behind confirm panel (non-blocking) */}
-            <div className="fixed inset-0 z-[120] pointer-events-none">
-              <div className="absolute inset-0 bg-slate-900/30" />
-            </div>
-            <div className="pointer-events-auto fixed right-6 bottom-28 z-[130]">
-            <PendingCardPanel
-              pendingCard={pendingAction}
-              responder={responder}
-              availableCounters={availableCounters}
-              selectedCounter={selectedCounter}
-              setSelectedCounter={setSelectedCounter}
-              onResolve={(countered, card) => {
-                try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
-                resolveCard(countered, card);
-                if (countered) setSelectedCounter(null);
-              }}
-              aiEnabled={aiEnabled}
-              onReact={(text) => {
-                const id = `pb-${Date.now()}`;
-                setPlayerBubble({ id, text });
-                window.setTimeout(() => {
-                  setPlayerBubble(prev => (prev && prev.id === id ? null : prev));
-                }, 1600);
-              }}
-              onCancel={() => {
-                try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
-                cancelPending();
-              }}
-            />
-            </div>
-          </>
-        )}
+          <section className="relative" style={{ gridArea: 'board' }}>
+            <div className={cx(
+              'h-full flex items-center justify-center relative',
+              boardBlockedFeedback && 'animate-board-shudder'
+            )}>
+              {/* Ambient glow behind board */}
+              <div className="absolute rounded-full opacity-60" style={{
+                inset: '8%',
+                background: 'radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.08), transparent 70%)',
+                filter: 'blur(40px)'
+              }} />
+
+              {/* Board container */}
+              <div className="relative w-full flex items-center justify-center" style={{
+                maxWidth: 'min(68vh, 70vw)',
+                aspectRatio: '1'
+              }}>
+                <Board
+                  board={board}
+                  onCellClick={placeStone}
+                  disabled={
+                    phase !== GamePhaseEnum.PLAYING ||
+                    !isPlayerTurn ||
+                    Boolean(pendingAction) ||
+                    (targetRequest && targetRequest.type === 'snapshot')
+                  }
+                  targetRequest={targetRequest && targetRequest.type === 'cell' ? targetRequest : null}
+                  onTargetSelect={(sel) => { try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}; selectTarget(sel); }}
+                  className="w-full h-full"
+                  style={{ aspectRatio: '1 / 1' }}
+                  onCardDrop={handleCardDropOnBoard}
+                  onBlockedInteract={() => {
+                    if (phase === GamePhaseEnum.PLAYING && !isPlayerTurn) {
+                      setBoardBlockedFeedback(true);
+                    }
+                  }}
+                  winLineLit={winLineLit}
+                  hoveredPosition={hoveredPosition}
+                  skillTargetPosition={skillTargetPosition}
+                  sealedCells={gameState.statuses.sealedCells}
+                  currentTurn={gameState.turnCount}
+                />
+                <SkillEffectLayer events={activeVisuals} />
+              </div>
+              {renderDraft()}
+              {pendingAction && (
+                <>
+                  {/* subtle dim + blur overlay behind confirm panel (non-blocking) */}
+                  <div className="fixed inset-0 z-[120] pointer-events-none">
+                    <div className="absolute inset-0 bg-slate-900/30" />
+                  </div>
+                  <div className="pointer-events-auto fixed right-6 bottom-28 z-[130]">
+                    <PendingCardPanel
+                      pendingCard={pendingAction}
+                      responder={responder}
+                      availableCounters={availableCounters}
+                      selectedCounter={selectedCounter}
+                      setSelectedCounter={setSelectedCounter}
+                      onResolve={(countered, card) => {
+                        try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
+                        resolveCard(countered, card);
+                        if (countered) setSelectedCounter(null);
+                      }}
+                      aiEnabled={aiEnabled}
+                      onReact={(text) => {
+                        const id = `pb-${Date.now()}`;
+                        setPlayerBubble({ id, text });
+                        window.setTimeout(() => {
+                          setPlayerBubble(prev => (prev && prev.id === id ? null : prev));
+                        }, 1600);
+                      }}
+                      onCancel={() => {
+                        try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
+                        cancelPending();
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </section>
-          <aside className="game-grid__right">
+          <aside style={{ gridArea: 'log' }}>
             <GameLog
               logs={logs}
               onPositionHover={setHoveredPosition}
@@ -562,7 +618,7 @@ const App: React.FC = () => {
               variant="player"
             />
           </aside>
-          <div className="game-grid__player">
+          <div style={{ gridArea: 'player-info' }}>
             <PlayerHUD
               handCards={playerHandCards}
               disabled={!canPlayCard}

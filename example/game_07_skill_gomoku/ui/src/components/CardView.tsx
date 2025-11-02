@@ -320,6 +320,15 @@ export const CardView: React.FC<CardViewProps> = ({
     className ?? ''
   ].filter(Boolean).join(' ');
 
+  // 漫画风格白色描边样式
+  const comicStrokeStyle: React.CSSProperties = {
+    boxShadow: `
+      0 0 0 3px rgba(255, 255, 255, 0.9),
+      0 0 0 4px rgba(0, 0, 0, 0.4),
+      0 4px 8px rgba(0, 0, 0, 0.3)
+    `
+  };
+
   return (
     <>
       <button
@@ -328,7 +337,7 @@ export const CardView: React.FC<CardViewProps> = ({
         onClick={enableClick ? onClick : undefined}
         disabled={disabled}
         className={wrapperClasses}
-        style={{ width: baseWidth, aspectRatio: '1 / 1.618', ...style }}
+        style={{ width: baseWidth, aspectRatio: '1 / 1.618', ...comicStrokeStyle, ...style }}
         onMouseEnter={handleHoverStart}
         onMouseLeave={handleHoverEnd}
         onFocus={handleHoverStart}

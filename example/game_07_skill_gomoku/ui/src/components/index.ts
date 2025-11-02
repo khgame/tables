@@ -16,6 +16,9 @@ export type { CardDraftPanelProps } from './CardDraftPanel';
 export { PendingCardPanel } from './PendingCardPanel';
 export type { PendingCardPanelProps } from './PendingCardPanel';
 
+export { GameOverPanel } from './GameOverPanel';
+export type { GameOverPanelProps } from './GameOverPanel';
+
 export {
   AvatarBadge,
   OpponentHUD,
@@ -44,3 +47,6 @@ export type { AiSettingsPanelProps } from './AiSettingsPanel';
 
 export { GameIcon, GAME_ICONS } from './IconLibrary';
 export type { IconName, IconProps, GameIconProps } from './IconLibrary';
+
+export { RulesIntroPanel } from './RulesIntroPanel';
+export type { RulesIntroPanelProps } from './RulesIntroPanel';

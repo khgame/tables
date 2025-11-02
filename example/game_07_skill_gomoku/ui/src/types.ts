@@ -70,6 +70,7 @@ export interface GameLogEntry {
   message: string;
   type: string;
   time: number;
+  position?: { row: number; col: number }; // 添加位置信息用于 hover 高亮
 }
 
 export interface VisualEffectEvent {
@@ -78,6 +79,8 @@ export interface VisualEffectEvent {
   cardName: string;
   player: Player;
   createdAt: number;
+  sequence?: number; // 序列号，用于确保相同时间戳的事件按正确顺序排列
+  role?: 'attacker' | 'counter' | 'normal'; // 角色：攻击方、反击方或普通
 }
 
 export interface PendingAction {
@@ -118,6 +121,11 @@ export interface GameStatus {
   board: GomokuBoard;
   currentPlayer: Player;
   turnCount: number;
+  /**
+   * AI 可行动回合的唯一令牌（每次轮转/开始可行动的回合时递增）。
+   * 供调度/防重用，比仅看 turnCount/历史长度更鲁棒。
+   */
+  aiTurnId: number;
   moveCount: [number, number];
   decks: Array<CardDeck | null>;
   hands: RawCard[][];
@@ -128,6 +136,10 @@ export interface GameStatus {
     freeze: [number, number];
     skip: [number, number];
     fusionLock: [number, number];
+    sealedCells: [
+      { row: number; col: number; expiresAtTurn: number } | null,
+      { row: number; col: number; expiresAtTurn: number } | null
+    ];
   };
   pendingAction: PendingAction | null;
   pendingCounter: PendingAction | null;

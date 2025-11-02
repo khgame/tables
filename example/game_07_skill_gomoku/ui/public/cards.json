@@ -29,7 +29,7 @@
       "cost": 1,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "指定敌方棋子移出棋盘，进入什刹海。",
+      "effect": "指定敌方棋子移出棋盘，进入什刹海；目标落点下回合被封禁，同时自己放弃本回合落子。",
       "triggerCondition": "",
       "effectId": "remove-to-shichahai",
       "effectParams": "",
@@ -118,11 +118,12 @@
       "cost": 1,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "效果等同于飞沙走石，但视为合体技，无法被擒拿或“滚！”阻断；拾金不昧仍可事后挽回棋子。",
+      "effect": "效果等同于飞沙走石（含封禁落点与自我跳过落子），但视为合体技，无法被擒拿或“滚！”阻断；拾金不昧仍可事后挽回棋子。",
       "triggerCondition": "",
       "effectId": "remove-to-shichahai",
       "effectParams": "ignoreSeize=true,immuneShout=true",
       "counteredBy": 1008,
+      "requiresCharacter": 3001,
       "failCondition": "只能被拾金不昧挽回",
       "tags": "Attack|Fusion|Removal|Shichahai|Unseizeable",
       "notes": "",
@@ -140,12 +141,12 @@
       "cost": 3,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "将棋盘状态和墓地重置至任意之前的回合。",
+      "effect": "移除双方最近一轮的落子（各移除一手；若某方无落子则忽略），不还原已使用的卡牌。",
       "triggerCondition": "",
       "effectId": "time-rewind",
-      "effectParams": "maxSteps=6",
+      "effectParams": "",
       "counteredBy": 1013,
-      "failCondition": "最多回溯最近6个落子",
+      "failCondition": "悔棋效果：不恢复手牌/墓地/牌堆",
       "tags": "Attack|Reset|Rewind",
       "notes": "",
       "quote": "这一招好",
@@ -162,7 +163,7 @@
       "cost": 2,
       "speed": "normal",
       "timing": "pre-move",
-      "effect": "跳过对手 1 回合，发动后消耗技能五，使其离场。",
+      "effect": "跳过对手 1 回合，张兴朝仍然留场助战。",
       "triggerCondition": "",
       "effectId": "skip-next-turn",
       "effectParams": "turns=1",
@@ -356,7 +357,7 @@
       "rarity": "common",
       "cost": 1,
       "speed": "normal",
-      "timing": "anytime",
+      "timing": "pre-move",
       "effect": "强制让对方张兴朝退场；若无目标则作废。",
       "triggerCondition": "",
       "effectId": "force-exit",
@@ -545,7 +546,8 @@
               "1004",
               "1005",
               "1006",
-              "1007"
+              "1007",
+              "1016"
             ]
           },
           {
@@ -558,13 +560,6 @@
               "1012",
               "1013",
               "1014"
-            ]
-          },
-          {
-            "key": "anytime",
-            "tids": [
-              "1015",
-              "1016"
             ]
           }
         ]
@@ -594,6 +589,7 @@
             "key": "3001",
             "tids": [
               "1004",
+              "1005",
               "1007",
               "1011",
               "1013"

@@ -21,7 +21,7 @@ export const SnapshotSelector: React.FC<SnapshotSelectorProps> = ({ request, onS
             className="w-full text-left px-4 py-3 rounded-xl border border-amber-300 hover:bg-amber-50 transition-all"
           >
             第 {option.turn} 回合
-            {option.player !== null && option.move ? ` · ${PLAYER_NAMES[option.player]} 落子 (${option.move.row}, ${option.move.col})` : ''}
+            {option.player !== null && option.move ? ` · ${PLAYER_NAMES[option.player]} 落子 (${option.move.row + 1}, ${option.move.col + 1})` : ''}
           </button>
         ))}
       </div>

@@ -107,6 +107,15 @@
   filter: drop-shadow(0 18px 22px rgba(59, 130, 246, 0.28));
 }
 
+/* Hide native scrollbars for sleeker horizontal lists */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
 .card-overlay__art {
   position: relative;
   border-radius: 12px;
@@ -139,7 +148,7 @@
 /* On small hand cards, reduce art and description min-heights to avoid clipping text */
 .card-view[data-variant='hand'] .card-overlay__body {
   /* Title | Art | Effect | Footer */
-  grid-template-rows: auto minmax(5.6rem, 6.6rem) minmax(3.8rem, auto) auto;
+  grid-template-rows: auto minmax(5.6rem, 6.6rem) minmax(4.8rem, auto) auto;
   gap: 0.42rem;
 }
 
@@ -179,6 +188,21 @@
   text-transform: uppercase;
   color: rgba(253, 230, 138, 0.78);
 }
+
+/* Card header ink/brush texture */
+.card-header__ink {
+  position: absolute;
+  inset: -2px;
+  background:
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.08) 0 4px, rgba(255,255,255,0.02) 4px 10px),
+    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.16), rgba(255,255,255,0.0) 60%);
+  mix-blend-mode: overlay;
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-header > * { position: relative; z-index: 1; }
 
 .card-section {
   display: flex;
@@ -493,6 +517,28 @@
 .card-view--petrified .card-overlay {
   filter: grayscale(0.25) brightness(0.9);
   text-shadow: 0 0 8px rgba(15, 23, 42, 0.4);
+}
+
+/* Bubble swing-in animation for reaction speech bubbles */
+.bubble-swing-in {
+  animation: bubbleSwingIn 260ms ease-out both;
+}
+
+@keyframes bubbleSwingIn {
+  0% { opacity: 0; transform: translateY(8px) rotate(-2.5deg) scale(0.96); }
+  60% { opacity: 1; transform: translateY(-2px) rotate(1.5deg) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+}
+
+/* Comic bubble shake-in: a bit more snappy and playful */
+.bubble-shake-in {
+  animation: bubbleShakeIn 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes bubbleShakeIn {
+  0% { opacity: 0; transform: translateY(10px) rotate(-4deg) scale(0.94); }
+  55% { opacity: 1; transform: translateY(-4px) rotate(2deg) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
 }
 
 .card-frame {

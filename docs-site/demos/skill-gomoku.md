@@ -105,7 +105,7 @@ npm run ex:skill-gomoku
   rarity: "Common",
   cost: 1,
   speed: "Normal",
-  effect: "指定敌方棋子移出棋盘，进入什刹海。",
+  effect: "指定敌方棋子移出棋盘，进入什刹海；目标落点下回合被封禁，同时自己放弃本回合落子。",
   counteredBy: "拾金不昧|擒拿",
   tags: "Removal",
   quote: "飞沙走石！"

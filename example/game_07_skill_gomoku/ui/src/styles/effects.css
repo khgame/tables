@@ -1,4 +1,129 @@
-/* === Skill Effects === */
+/* === 涂鸦风格技能效果动画 === */
+
+/* 技能序列总动画 */
+@keyframes graffiti-skill-sequence {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 背景光晕脉冲 */
+@keyframes skill-glow-pulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  30% { transform: scale(1.2); opacity: 0.3; }
+  70% { transform: scale(1.5); opacity: 0.15; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* 反击碰撞光晕 */
+@keyframes counter-clash-glow {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.2);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 反击碰撞冲击波 */
+@keyframes counter-clash-wave {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(3);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(5);
+    opacity: 0;
+  }
+}
+
+/* 文字飞入效果 */
+@keyframes graffiti-text-fly-in {
+  0% {
+    transform: translateY(-100px) translateX(-50px) rotate(-15deg) scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(10px) translateX(10px) rotate(5deg) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 文字飞出效果 */
+@keyframes graffiti-text-fly-out {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(-10px) translateX(5px) rotate(-2deg) scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(80px) translateX(30px) rotate(10deg) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* 星花四溅动画 */
+@keyframes graffiti-sparkle {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  30% {
+    transform: scale(1.5) rotate(180deg);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.2) rotate(360deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.2) rotate(540deg);
+    opacity: 0;
+  }
+}
+
+/* 冲击波动画 */
+@keyframes graffiti-shockwave {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+    border-width: 8px;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+    border-width: 4px;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* === 旧的技能效果样式（保留以防需要） === */
 .skill-effect-layer {
   position: absolute;
   inset: 0;
@@ -93,7 +218,7 @@
 }
 
 .skill-effect--win {
-  background: radial-gradient(circle at 50% 40%, rgba(250, 204, 21, 0.55), rgba(253, 224, 71, 0.18), transparent);
+  background: radial-gradient(circle at 50% 40%, rgba(250, 204, 21, 0.65), rgba(253, 224, 71, 0.22), transparent);
 }
 
 .skill-effect--win::before {
@@ -105,7 +230,22 @@
 }
 
 .skill-effect--win .skill-effect__burst {
-  background: radial-gradient(circle at 50% 50%, rgba(253, 224, 71, 0.85), rgba(251, 191, 36, 0.25));
+  background: radial-gradient(circle at 50% 50%, rgba(253, 224, 71, 0.95), rgba(251, 191, 36, 0.35));
+  box-shadow: 0 0 64px rgba(250, 204, 21, 0.6), 0 0 128px rgba(253, 224, 71, 0.35);
+}
+
+/* Win shock ring */
+.skill-effect--win::after {
+  background:
+    conic-gradient(from 0deg, rgba(253, 224, 71, 0.6), rgba(251, 191, 36, 0.15), rgba(253, 224, 71, 0.6), rgba(251, 191, 36, 0.15)),
+    radial-gradient(circle at 50% 50%, rgba(253, 224, 71, 0.45), transparent 65%);
+  animation: winShock 1.2s ease-out forwards;
+}
+
+@keyframes winShock {
+  0% { opacity: 0.6; transform: scale(0.6) rotate(0deg); }
+  60% { opacity: 1; transform: scale(1.1) rotate(20deg); }
+  100% { opacity: 0; transform: scale(1.6) rotate(40deg); }
 }
 
 .skill-effect--rewind {

@@ -55,18 +55,7 @@ const TIMING_META: Record<string, IconMeta> = {
   }
 };
 
-const SPEED_META: Record<string, IconMeta> = {
-  Instant: {
-    label: 'Instant - 瞬发',
-    description: '瞬发速度，发动后立即结算效果。',
-    icon: createIcon('lightning-frequency', 'Instant')
-  },
-  Normal: {
-    label: 'Normal - 常规',
-    description: '常规速度，按标准流程排队结算。',
-    icon: createIcon('snail', 'Normal')
-  }
-};
+// NOTE: 速度展示已移除，避免与时机信息冲突（仅展示 Timing 信息）。
 
 const STATUS_META = {
   fusion: {
@@ -102,10 +91,12 @@ export interface CardViewProps {
   revealBack?: boolean;
   variant?: CardVariant;
   style?: React.CSSProperties;
+  className?: string;
   onHover?: (card: RawCard) => void;
   onHoverEnd?: () => void;
   onDragStart?: (event: React.DragEvent<HTMLButtonElement>) => void;
   onDragEnd?: () => void;
+  compact?: boolean;
 }
 
 export const CardView: React.FC<CardViewProps> = ({
@@ -115,20 +106,77 @@ export const CardView: React.FC<CardViewProps> = ({
   revealBack,
   variant = 'hand',
   style,
+  className,
   onHover,
   onHoverEnd,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  compact = false
 }) => {
+  // Debug: 检查卡牌数据
+  console.log('CardView render:', {
+    nameZh: card.nameZh,
+    type: card.type,
+    timing: card.timing,
+    tags: card.tags,
+    typeInfo: TYPE_META[card.type],
+    timingInfo: TIMING_META[card.timing ?? 'Anytime']
+  });
+
   const tags = new Set((card.tags ?? '').split('|').map(tag => tag.trim()).filter(Boolean));
   const fusion = tags.has('Fusion');
   const legend = card.rarity === 'Legendary';
   const interactive = !disabled && variant !== 'showcase';
-  const hoverClass = interactive && variant !== 'hand' ? 'hover:scale-[1.03] hover:drop-shadow-xl' : '';
-  const typeInfo = TYPE_META[card.type] ?? TYPE_META.Support;
-  const timingInfo = TIMING_META[card.timing ?? 'Anytime'] ?? TIMING_META.Anytime;
-  const speedInfo = SPEED_META[card.speed ?? 'Normal'] ?? SPEED_META.Normal;
-  const palette = CARD_TYPE_PALETTES[card.type] ?? CARD_TYPE_PALETTES.Support;
+  // Visual hover should work even when disabled; interaction (click/drag) still respects disabled
+  const hoverClass = variant !== 'hand' ? 'hover:scale-[1.03] hover:drop-shadow-xl' : '';
+
+  // 修复大小写不匹配问题：JSON 是小写/kebab-case，组件期望 PascalCase
+  const normalizeType = (type: string): string => {
+    if (!type) return 'Support';
+    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+  };
+
+  const normalizeTiming = (timing: string): string => {
+    if (!timing) return 'Anytime';
+    // pre-move → PreMove, reaction → Reaction, anytime → Anytime
+    return timing.split('-').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join('');
+  };
+
+  const typeKey = normalizeType(card.type);
+  const timingKey = normalizeTiming(card.timing);
+
+  const typeInfo = TYPE_META[typeKey] || TYPE_META.Support;
+  const timingInfo = TIMING_META[timingKey] || TIMING_META.Anytime;
+  const palette = CARD_TYPE_PALETTES[typeKey] || CARD_TYPE_PALETTES.Support;
+  const tidStr = String((card as any)._tid ?? (card as any).tid ?? '');
+  const isSkillFive = tidStr === '1015' || (card.nameZh && card.nameZh.includes('技能五'));
+  const headerBg = (() => {
+    // 橙色：技能五 & See You Again（tid 1015 / 1016 或名称匹配）
+    const isSeeYouAgain = tidStr === '1016' || (card.nameEn?.toLowerCase().includes('see you again') ?? false) || (card.nameZh?.includes('See You Again') ?? false);
+    if (isSkillFive || isSeeYouAgain) {
+      // vivid orange
+      return 'linear-gradient(135deg, rgba(249,115,22,0.96), rgba(245,158,11,0.94))';
+    }
+    const type = (card.type || '').toLowerCase();
+    if (type === 'attack') {
+      if (fusion) {
+        // 主动技 + 合体技：绿色打底，叠加到橙色的渐变，营造能量感
+        return [
+          'linear-gradient(135deg, rgba(16,185,129,0.92) 0%, rgba(16,185,129,0.0) 38%)',
+          'linear-gradient(135deg, rgba(249,115,22,0.92), rgba(245,158,11,0.9))'
+        ].join(', ');
+      }
+      // 普通主动技：绿色
+      return 'linear-gradient(135deg, rgba(16,185,129,0.95), rgba(5,150,105,0.92))';
+    }
+    if (type === 'counter') {
+      // 反击：紫色（Persona-like）
+      return 'linear-gradient(135deg, rgba(168,85,247,0.96), rgba(124,58,237,0.93))';
+    }
+    return `linear-gradient(135deg, ${palette.edge}, ${palette.core})`;
+  })();
   const rarityStars = card.rarity === 'Legendary' ? 3 : card.rarity === 'Rare' ? 2 : 1;
   const nameZhLength = card.nameZh?.length ?? 0;
   const nameZhClass = useMemo(() => {
@@ -147,8 +195,7 @@ export const CardView: React.FC<CardViewProps> = ({
   const cursorClass = disabled ? 'cursor-not-allowed' : enableClick ? 'cursor-pointer' : '';
   const ribbonItems: Array<{ key: string; label: string; description: string; icon: React.ReactNode }> = [
     { key: 'type', label: typeInfo.label, description: typeInfo.description, icon: typeInfo.icon },
-    { key: 'timing', label: timingInfo.label, description: timingInfo.description, icon: timingInfo.icon },
-    { key: 'speed', label: speedInfo.label, description: speedInfo.description, icon: speedInfo.icon }
+    { key: 'timing', label: timingInfo.label, description: timingInfo.description, icon: timingInfo.icon }
   ];
   if (fusion) {
     ribbonItems.push({ key: 'fusion', ...STATUS_META.fusion });
@@ -234,29 +281,43 @@ export const CardView: React.FC<CardViewProps> = ({
   };
 
   // Variant-aware layout tweaks
-  const effectHeights = useMemo(() => {
-    if (variant === 'hand') return { min: '3.8rem', max: '4.2rem', clamp: 3 } as const;
-    if (variant === 'list') return { min: '4.8rem', max: '5.6rem', clamp: 4 } as const;
-    return { min: '6rem', max: '6rem', clamp: 5 } as const; // showcase/default
+  // Fixed heights for artwork and description to keep a consistent layout
+  // 调整描述区域高度，确保与行数限制匹配，避免文字溢出
+  const fixedHeights = useMemo(() => {
+    // 根据字体大小 0.78rem 和行高 1.36 计算合适的高度
+    // 4行 ≈ 4 * 0.78 * 1.36 ≈ 4.24rem，加上padding约0.5rem = 4.8rem
+    // 5行 ≈ 5 * 0.78 * 1.36 ≈ 5.3rem，加上padding约0.5rem = 5.8rem
+    // 6行 ≈ 6 * 0.78 * 1.36 ≈ 6.36rem，加上padding约0.5rem = 6.9rem
+    if (variant === 'hand') return { art: '7.2rem', desc: '4.8rem', clamp: 4 } as const;
+    if (variant === 'list') return { art: '8.2rem', desc: '5.8rem', clamp: 5 } as const;
+    return { art: '10.2rem', desc: '6.9rem', clamp: 6 } as const; // showcase/default
   }, [variant]);
 
+  // Slightly move content upward by reducing bottom padding and margins
   const overlayPad = variant === 'hand'
-    ? 'pt-[0.44rem] px-[0.52rem] pb-[0.48rem] gap-[0.34rem]'
-    : 'pt-[0.64rem] px-[0.56rem] pb-[0.50rem] gap-[0.44rem]';
+    ? 'pt-[0.40rem] px-[0.52rem] pb-[0.32rem] gap-[0.24rem]'
+    : 'pt-[0.56rem] px-[0.56rem] pb-[0.42rem] gap-[0.36rem]';
 
-  const bodyGridRows = variant === 'hand'
-    ? 'grid-rows-[auto_minmax(5.6rem,6.6rem)_minmax(3.8rem,auto)_auto] gap-[0.42rem]'
-    : 'grid-rows-[auto_minmax(9.5rem,10.8rem)_minmax(5.6rem,auto)_auto] gap-2';
+  const bodyGridRows = (() => {
+    // Use fixed internal heights via inline styles; keep grid rows generic
+    if (variant === 'hand') {
+      return 'grid-rows-[auto_auto_auto] gap-[0.32rem]';
+    }
+    return 'grid-rows-[auto_auto_auto] gap-[0.4rem]';
+  })();
 
   const effectPanelClass = variant === 'hand'
-    ? 'relative z-[2] mt-[0.35rem] bg-[rgba(6,10,18,0.74)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 shadow-[0_8px_18px_rgba(5,8,14,0.35)]'
-    : 'relative z-[2] mt-[0.25rem] bg-[rgba(12,18,30,0.55)] border border-white/10 rounded-[0.6rem] px-2 py-1.5';
+    ? 'relative z-[2] mt-[0.12rem] bg-[rgba(6,10,18,0.76)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 shadow-[0_8px_18px_rgba(5,8,14,0.35)] overflow-hidden'
+    : 'relative z-[2] mt-[0.12rem] bg-[rgba(12,18,30,0.55)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 overflow-hidden';
 
   const wrapperClasses = [
     'relative block rounded-xl overflow-hidden outline-none',
     variant !== 'showcase' ? 'transition-transform duration-200' : '',
-    disabled ? 'cursor-not-allowed grayscale-[0.25] brightness-90' : (variant === 'hand' ? 'cursor-grab hover:-translate-y-2 active:cursor-grabbing' : ''),
-    hoverClass
+    // keep hover lift even when disabled; only remove grab cursor/active state
+    variant === 'hand' ? 'hover:-translate-y-2' : '',
+    disabled ? 'cursor-not-allowed' : (variant === 'hand' ? 'cursor-grab active:cursor-grabbing' : ''),
+    hoverClass,
+    className ?? ''
   ].filter(Boolean).join(' ');
 
   return (
@@ -290,62 +351,81 @@ export const CardView: React.FC<CardViewProps> = ({
         <CardFrame type={card.type} variant={revealBack ? 'back' : 'front'} className="absolute inset-0 w-full h-full" />
         {!revealBack && (
           <div className={['absolute inset-0 flex flex-col text-white', overlayPad].join(' ')}>
-            {variant !== 'hand' && (
-              <header
-                className="flex items-center gap-1 rounded-md px-1 py-1 text-[0.6rem] uppercase tracking-[0.16em] pointer-events-auto"
-                style={{ background: `linear-gradient(135deg, ${palette.edge}, ${palette.core})`, color: '#0f172a' }}
-              >
-                {ribbonItems.map(item => (
-                  <div
-                    key={item.key}
-                    className="relative group pointer-events-auto"
-                    role="presentation"
-                    tabIndex={0}
-                    onMouseEnter={event => showTooltip(item, event.currentTarget)}
-                    onMouseLeave={hideTooltip}
-                    onFocus={event => showTooltip(item, event.currentTarget)}
-                    onBlur={hideTooltip}
-                    onKeyDown={event => {
-                      if (event.key === 'Escape') hideTooltip();
-                    }}
+            {/* 顶部功能标签（所有变体均显示；手牌使用更紧凑样式） */}
+            <header
+              className={[
+                'card-header relative z-[10] flex items-center gap-1 rounded-md uppercase tracking-[0.16em] pointer-events-auto w-full',
+                // unify header height across variants for consistency
+                'px-1 text-[0.58rem] h-[28px] min-h-[28px] leading-[1]'
+              ].join(' ')}
+              style={{ background: headerBg, color: '#0f172a' }}
+            >
+              <span className="card-header__ink" />
+              {ribbonItems.map(item => (
+                <div
+                  key={item.key}
+                  className="relative group pointer-events-auto"
+                  role="presentation"
+                  tabIndex={0}
+                  onMouseEnter={event => showTooltip(item, event.currentTarget)}
+                  onMouseLeave={hideTooltip}
+                  onFocus={event => showTooltip(item, event.currentTarget)}
+                  onBlur={hideTooltip}
+                  onKeyDown={event => {
+                    if (event.key === 'Escape') hideTooltip();
+                  }}
+                >
+                  <span
+                    className={[
+                      'flex items-center justify-center rounded bg-white/60 text-slate-900 shadow-sm',
+                      // fixed icon size for consistent placement
+                      variant === 'hand' ? 'h-3 w-3' : 'h-4 w-4'
+                    ].join(' ')}
+                    aria-label={item.label}
                   >
-                    <span
-                      className="flex h-4 w-4 items-center justify-center rounded bg-white/60 text-slate-900 shadow-sm"
-                      aria-label={item.label}
-                    >
-                      {item.icon}
-                    </span>
-                  </div>
+                    {item.icon}
+                  </span>
+                </div>
+              ))}
+              <span className={['ml-auto flex gap-0.5 text-amber-50 drop-shadow', variant === 'hand' ? 'text-[0.65rem]' : 'text-[0.75rem]'].join(' ')}>
+                {Array.from({ length: rarityStars }).map((_, idx) => (
+                  <span key={idx}>★</span>
                 ))}
-                <span className="ml-auto flex gap-0.5 text-[0.75rem] text-amber-50 drop-shadow">
-                  {Array.from({ length: rarityStars }).map((_, idx) => (
-                    <span key={idx}>★</span>
-                  ))}
-                </span>
-              </header>
-            )}
+              </span>
+            </header>
 
             <div className={['relative z-[1] grid', bodyGridRows].join(' ')}>
-              <div className={[variant === 'hand' ? 'gap-[0.12rem]' : 'gap-1', 'flex flex-col'].join(' ')}>
-                <span className={['font-extrabold tracking-[0.12em] text-white whitespace-nowrap overflow-hidden text-ellipsis', nameZhClass].join(' ')}>
+              <div className={[variant === 'hand' ? 'gap-[0.04rem]' : 'gap-[0.5rem]', 'flex flex-col'].join(' ')}>
+                <span className={[
+                  'font-extrabold tracking-[0.12em] text-white whitespace-nowrap overflow-hidden text-ellipsis',
+                  'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] text-shadow-sm',
+                  nameZhClass
+                ].join(' ')}>
                   {card.nameZh}
                 </span>
                 {card.nameEn && (
-                  <span className="text-[0.55rem] uppercase tracking-[0.35em] text-amber-200/75 whitespace-nowrap overflow-hidden text-ellipsis">
+                  <span className="text-[0.55rem] uppercase tracking-[0.35em] text-amber-200/85 whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
                     {card.nameEn}
                   </span>
                 )}
               </div>
 
-              <div className={['relative rounded-[12px] overflow-hidden aspect-[4/5] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),0_16px_32px_rgba(8,15,35,0.38)]', variant === 'hand' ? 'mt-[-0.28rem]' : ''].join(' ')}>
+              <div
+                className={['relative rounded-[12px] overflow-hidden shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),0_16px_32px_rgba(8,15,35,0.38)]'].join(' ')}
+                style={{ height: fixedHeights.art }}
+              >
                 <CardArtwork card={card} />
               </div>
 
-              <section>
-                <div className={effectPanelClass}>
+              <section className="flex flex-col">
+                <div
+                  className={effectPanelClass}
+                  style={{ height: fixedHeights.desc }}
+                >
                   <p className={[
-                    'text-[0.8rem] leading-[1.38] text-white whitespace-pre-line overflow-hidden',
-                    variant === 'hand' ? 'line-clamp-3' : (variant === 'list' ? 'line-clamp-4' : 'line-clamp-5')
+                    'text-left text-[0.78rem] leading-[1.36] text-white whitespace-pre-line pb-1',
+                    'overflow-hidden text-ellipsis break-words', // 确保文字不溢出
+                    variant === 'hand' ? 'line-clamp-4' : (variant === 'list' ? 'line-clamp-5' : 'line-clamp-6')
                   ].join(' ')}>
                     {card.effect}
                   </p>
@@ -354,7 +434,7 @@ export const CardView: React.FC<CardViewProps> = ({
 
               {variant !== 'hand' && card.quote && (
                 <div className="text-[0.62rem] leading-relaxed text-amber-100/80 text-center whitespace-pre-line overflow-hidden italic line-clamp-2">
-                  “{card.quote}”
+                  "{card.quote}"
                 </div>
               )}
             </div>
@@ -401,8 +481,21 @@ function createIcon(name: string, title: string) {
   );
 }
 
+const getTooltipRoot = (): HTMLElement | null => {
+  if (typeof document === 'undefined') return null;
+  let el = document.getElementById('game07-tooltip-root');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'game07-tooltip-root';
+    document.body.appendChild(el);
+  }
+  return el;
+};
+
 const TooltipOverlay: React.FC<{ tooltip: TooltipState | null }> = ({ tooltip }) => {
   if (typeof document === 'undefined' || tooltip == null) return null;
+  const root = getTooltipRoot();
+  if (!root) return null;
   return createPortal(
     <div
       className="pointer-events-none z-[100000] max-w-[14rem] rounded-md bg-slate-900/95 px-3 py-2 text-amber-50 shadow-xl ring-1 ring-white/10"
@@ -419,6 +512,6 @@ const TooltipOverlay: React.FC<{ tooltip: TooltipState | null }> = ({ tooltip })
       </div>
       <div className="mt-1 text-[0.62rem] leading-snug text-slate-100/90">{tooltip.description}</div>
     </div>,
-    document.body
+    root
   );
 };

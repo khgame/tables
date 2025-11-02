@@ -31,6 +31,8 @@
 }
 
 @layer utilities {
+  /* old fidget animation removed; replaced by JS-driven pick-up scheduling */
+
   @keyframes board-shudder {
     0% {
       transform: translate3d(0, 0, 0);

@@ -17,8 +17,10 @@ import {
   prepareCardEffect,
   resolveCardEffect,
   prepareCounterEffect,
-  resolveCounterEffect
+  resolveCounterEffect,
+  SkillEffect
 } from '../skills/effects';
+import { skillPerformanceManager } from './skillPerformance';
 import type {
   GameStatus,
   RawCard,
@@ -44,6 +46,7 @@ interface UseGameEngineResult {
   playCard: (index: number) => void;
   selectTarget: (selection: any) => void;
   resolveCard: (countered?: boolean, counterCard?: RawCard | null) => void;
+  cancelPending: () => void;
   selectDraftOption: (optionId: string) => void;
 }
 
@@ -84,11 +87,15 @@ export const useGameEngine = (data: GameData): UseGameEngineResult => {
     [context]
   );
 
+  const cancelPending = useCallback(() => {
+    setGameState(prev => applyCancelPending(prev));
+  }, []);
+
   const selectDraftOption = useCallback((optionId: string) => {
     setGameState(prev => applyDraftSelection(prev, optionId));
   }, []);
 
-  return { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, selectDraftOption };
+  return { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, cancelPending, selectDraftOption };
 };
 
 const createInitialState = (): GameStatus => ({
@@ -96,6 +103,7 @@ const createInitialState = (): GameStatus => ({
   board: new GomokuBoardImpl(BOARD_SIZE),
   currentPlayer: PlayerEnum.BLACK,
   turnCount: 0,
+  aiTurnId: 0,
   moveCount: [0, 0],
   decks: [null, null],
   hands: [[], []],
@@ -108,7 +116,8 @@ const createInitialState = (): GameStatus => ({
   statuses: {
     freeze: [0, 0],
     skip: [0, 0],
-    fusionLock: [0, 0]
+    fusionLock: [0, 0],
+    sealedCells: [null, null]
   },
   pendingAction: null,
   pendingCounter: null,
@@ -198,22 +207,27 @@ const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameSt
   if (statuses.freeze[player] > 0) {
     statuses.freeze[player] -= 1;
     logs.push(createLog(`${PLAYER_NAMES[player]} 因冻结效果跳过回合`, 'effect'));
-    return {
-      ...prev,
-      currentPlayer: opponent,
-      statuses,
-      logs
-    };
+    const skippedState: GameStatus = { ...prev, statuses, logs } as GameStatus;
+    return beginTurnMut(skippedState, opponent);
   }
   if (statuses.skip[player] > 0) {
     statuses.skip[player] -= 1;
     logs.push(createLog(`${PLAYER_NAMES[player]} 因技能效果跳过回合`, 'effect'));
-    return {
-      ...prev,
-      currentPlayer: opponent,
-      statuses,
-      logs
-    };
+    const skippedState: GameStatus = { ...prev, statuses, logs } as GameStatus;
+    return beginTurnMut(skippedState, opponent);
+  }
+
+  const sealedCell = statuses.sealedCells[player];
+  if (sealedCell) {
+    if (prev.turnCount >= sealedCell.expiresAtTurn) {
+      statuses.sealedCells[player] = null;
+    } else if (sealedCell.row === row && sealedCell.col === col) {
+      logs.push(createLog('该位置暂时被风沙封禁，本回合无法在此落子', 'error'));
+      return {
+        ...prev,
+        logs
+      };
+    }
   }
 
   if (prev.board.get(row, col) !== null) return prev;
@@ -224,7 +238,7 @@ const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameSt
   const moveCount: [number, number] = [...prev.moveCount] as [number, number];
   moveCount[player]++;
   const timeline = [...prev.timeline, createTimelineEntry(board, prev, player, row, col)];
-  logs.push(createLog(`${PLAYER_NAMES[player]} 落子 (${row}, ${col})`, 'move'));
+  logs.push(createLog(`${PLAYER_NAMES[player]} 落子`, 'move', { row, col }));
 
   const turnCount = prev.turnCount + 1;
 
@@ -246,7 +260,13 @@ const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameSt
   const totalMoves = moveCount[0] + moveCount[1];
   const hands = cloneHands(prev.hands);
 
-  const nextState: GameStatus = {
+  // 回合结束时检查并清除当前玩家的封禁（如果已到期）
+  const ownSealedCell = statuses.sealedCells[player];
+  if (ownSealedCell && turnCount >= ownSealedCell.expiresAtTurn) {
+    statuses.sealedCells[player] = null;
+  }
+
+  let nextState: GameStatus = {
     ...prev,
     board,
     moveCount,
@@ -257,11 +277,8 @@ const applyStonePlacement = (prev: GameStatus, row: number, col: number): GameSt
     statuses,
     currentPlayer: opponent
   };
-
-  if (totalMoves % DRAW_INTERVAL === 0) {
-    triggerCardDraft(nextState, opponent, 'draw');
-  }
-
+  // 开启对手回合（统一处理冻结/跳过/抽牌/AI令牌）
+  nextState = beginTurnMut(nextState, opponent);
   return nextState;
 };
 
@@ -376,7 +393,10 @@ const applyTargetSelection = (prev: GameStatus, selection: any, context: EffectC
   if (request.source === 'card' && prev.pendingAction) {
     const pending = { ...prev.pendingAction, selection, status: 'ready' as const };
     const counterWindow = createCounterWindow(prev.pendingAction.player);
-    logs.push(createLog(`${PLAYER_NAMES[prev.pendingAction.player]} 选择了技能目标`, 'effect'));
+    const pos = (selection && typeof selection.row === 'number' && typeof selection.col === 'number')
+      ? ` (${selection.row}, ${selection.col})`
+      : '';
+    logs.push(createLog(`${PLAYER_NAMES[prev.pendingAction.player]} 选择了技能目标${pos}`, 'effect'));
     return {
       ...prev,
       pendingAction: pending,
@@ -501,10 +521,56 @@ const applyResolveCard = (
   return nextState;
 };
 
+const applyCancelPending = (prev: GameStatus): GameStatus => {
+  // 允许在反击窗口阶段取消自己的技能
+  if (prev.phase !== GamePhaseEnum.COUNTER_WINDOW) return prev;
+  if (!prev.pendingAction) return prev;
+  const actor = prev.pendingAction.player;
+  // 仅允许行动方取消自身技能
+  if (actor !== prev.currentPlayer) return prev;
+
+  const next = cloneStateForEffect(prev);
+  const helpers = createEffectHelpers(next);
+
+  // 将卡牌退回到手牌（不进入墓地，不消耗回合）
+  const card = next.pendingAction!.card;
+  const hands = cloneHands(next.hands);
+  hands[actor] = [...(hands[actor] ?? []), card];
+  next.hands = hands;
+
+  helpers.log(`${PLAYER_NAMES[actor]} 取消了技能释放（卡牌已退回手牌）`, 'effect');
+
+  next.pendingAction = null;
+  next.pendingCounter = null;
+  next.targetRequest = null;
+  next.counterWindow = null;
+  next.phase = GamePhaseEnum.PLAYING;
+  return next;
+};
+
 const finalizeCounter = (state: GameStatus, helpers: EffectHelpers) => {
   if (!state.pendingCounter) return;
   const responder = state.pendingCounter.player;
-  helpers.enqueueVisual({ effectId: state.pendingCounter.card.effectId, card: state.pendingCounter.card, player: responder });
+
+  // 先显示攻击方的技能视觉效果（明确标记为 attacker）
+  if (state.pendingAction) {
+    const attacker = state.pendingAction.player;
+    helpers.enqueueVisual({
+      effectId: state.pendingAction.card.effectId,
+      card: state.pendingAction.card,
+      player: attacker,
+      role: 'attacker' // 明确标记为攻击方
+    });
+  }
+
+  // 再显示反击方的技能视觉效果（明确标记为 counter）
+  helpers.enqueueVisual({
+    effectId: state.pendingCounter.card.effectId,
+    card: state.pendingCounter.card,
+    player: responder,
+    role: 'counter' // 明确标记为反击方
+  });
+
   addCardToGraveyard(state, responder, state.pendingCounter.card, 'counter');
   helpers.log(`${PLAYER_NAMES[responder]} 的反击结算完成`, 'counter');
   if (state.pendingAction) {
@@ -535,6 +601,13 @@ const finalizeCardResolution = (
   if (state.phase !== GamePhaseEnum.GAME_OVER) {
     state.phase = GamePhaseEnum.PLAYING;
   }
+
+  // 若技能效果消耗本回合落子（例如飞沙走石/棒球），自动结束该玩家回合
+  const effectId = String(pending.effectId ?? '');
+  if (effectId === SkillEffect.RemoveToShichahai) {
+    const opponent = getOpponent(player);
+    beginTurnMut(state, opponent);
+  }
 };
 
 const addCardToGraveyard = (state: GameStatus, player: Player, card: RawCard, reason: string) => {
@@ -548,10 +621,11 @@ const appendLog = (state: GameStatus, logEntry: { message: string; type: string;
   logs: [...state.logs, logEntry]
 });
 
-const createLog = (message: string, type = 'info') => ({
+const createLog = (message: string, type = 'info', position?: { row: number; col: number }) => ({
   message,
   type,
-  time: Date.now()
+  time: Date.now(),
+  ...(position && { position })
 });
 
 const createGraveyardEntry = (card: RawCard, player: Player, reason: string, turn: number) => ({
@@ -607,7 +681,11 @@ const cloneGraveyards = (graveyards: GameStatus['graveyards']): GameStatus['grav
 const cloneStatuses = (statuses: GameStatus['statuses']): GameStatus['statuses'] => ({
   freeze: [...statuses.freeze] as [number, number],
   skip: [...statuses.skip] as [number, number],
-  fusionLock: [...statuses.fusionLock] as [number, number]
+  fusionLock: [...statuses.fusionLock] as [number, number],
+  sealedCells: statuses.sealedCells.map(cell => (cell ? { ...cell } : null)) as [
+    { row: number; col: number; expiresAtTurn: number } | null,
+    { row: number; col: number; expiresAtTurn: number } | null
+  ]
 });
 
 const cloneStateForEffect = (state: GameStatus): GameStatus => ({
@@ -670,14 +748,8 @@ const createEffectHelpers = (state: GameStatus): EffectHelpers => ({
   setCharacters: characters => {
     state.characters = { ...characters };
   },
-  enqueueVisual: ({ effectId, card, player }) => {
-    const event = {
-      id: generateId('visual'),
-      effectId,
-      cardName: card.nameZh,
-      player,
-      createdAt: Date.now()
-    };
+  enqueueVisual: ({ effectId, card, player, role = 'normal' }) => {
+    const event = skillPerformanceManager.createVisualEvent(effectId ?? '', card, player, role);
     state.visuals = [...state.visuals, event].slice(-10);
   }
 });
@@ -707,7 +779,7 @@ function triggerCardDraft(state: GameStatus, player: Player, source: DraftSource
     const updatedHands = cloneHands(state.hands);
     updatedHands[player] = [...updatedHands[player], card];
     state.hands = updatedHands;
-    state.logs.push(createLog(`${PLAYER_NAMES[player]} 抽取了 ${card.nameZh}`, 'draw'));
+    state.logs.push(createLog(`${PLAYER_NAMES[player]} 补充了一张手牌`, 'draw'));
     return;
   }
 
@@ -717,6 +789,41 @@ function triggerCardDraft(state: GameStatus, player: Player, source: DraftSource
     source
   };
   state.logs.push(createLog(`${PLAYER_NAMES[player]} 可以从 ${options.length} 张卡中选择`, 'draw'));
+}
+
+// 统一的回合启动入口：处理冻结/跳过、抽牌、AI回合令牌递增
+function beginTurnMut(state: GameStatus, player: Player): GameStatus {
+  const logs = [...state.logs];
+  let statuses = cloneStatuses(state.statuses);
+  let current = player;
+  // 折返处理：如果当前方被冻结/跳过，则切换对手并继续判断
+  while (true) {
+    if (statuses.freeze[current] > 0) {
+      statuses.freeze[current] -= 1;
+      logs.push(createLog(`${PLAYER_NAMES[current]} 因冻结效果跳过回合`, 'effect'));
+      current = getOpponent(current);
+      continue;
+    }
+    if (statuses.skip[current] > 0) {
+      statuses.skip[current] -= 1;
+      logs.push(createLog(`${PLAYER_NAMES[current]} 因技能效果跳过回合`, 'effect'));
+      current = getOpponent(current);
+      continue;
+    }
+    break;
+  }
+
+  // 抽牌：在新回合开始时按总手数间隔发起抽牌
+  const totalMoves = (state.moveCount[0] ?? 0) + (state.moveCount[1] ?? 0);
+  if (totalMoves % DRAW_INTERVAL === 0) {
+    triggerCardDraft(state, current, 'draw');
+  }
+
+  state.statuses = statuses;
+  state.logs = logs;
+  state.currentPlayer = current;
+  state.aiTurnId = (state.aiTurnId ?? 0) + 1;
+  return state;
 }
 
 function chooseOptionForAI(options: CardDraftOption[]): CardDraftOption {

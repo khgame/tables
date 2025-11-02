@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import standPng from '../assets/stand.png';
 import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
 import type { GameStatus, Player, RawCard } from '../types';
 import { CardView } from './CardView';
@@ -11,6 +12,8 @@ export interface PendingCardPanelProps {
   setSelectedCounter: (card: RawCard | null) => void;
   onResolve: (countered: boolean, counterCard: RawCard | null) => void;
   aiEnabled: boolean;
+  onReact?: (text: string) => void;
+  onCancel?: () => void;
 }
 
 export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
@@ -20,90 +23,176 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   selectedCounter,
   setSelectedCounter,
   onResolve,
-  aiEnabled
+  aiEnabled,
+  onReact,
+  onCancel
 }) => {
   if (!pendingCard) return null;
+  const [appear, setAppear] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setAppear(true), 16);
+    return () => window.clearTimeout(t);
+  }, []);
   const actingPlayer = pendingCard.player;
   const isResponderAI = aiEnabled && responder === PlayerEnum.WHITE;
   const canCounter = responder === PlayerEnum.BLACK && availableCounters.length > 0;
 
-  const baseButtonClasses =
-    'rounded-full px-4 py-2 text-xs font-semibold tracking-[0.22em] uppercase transition-transform duration-150';
+  return (
+    <div className="pointer-events-auto relative">
+      <div
+        className="relative rounded-2xl bg-slate-900/95 ring-2 ring-white/25 ring-offset-1 ring-offset-white/5 border border-white/10 shadow-[0_20px_48px_rgba(6,12,28,0.55)] p-4 w-[clamp(22rem,32vw,32rem)]"
+        style={{ transform: appear ? 'translateX(0)' : 'translateX(12px)', opacity: appear ? 1 : 0, transition: 'all 260ms ease' }}
+      >
+        {/* White-side stand illustration in panel top-left (place stand.png in /public) */}
+        {pendingCard.player === PlayerEnum.WHITE && (
+          <img
+            src={standPng}
+            alt="White caster"
+            className="pointer-events-none select-none absolute bottom-16 right-2 w-[172px] h-auto z-[10] drop-shadow-[0_12px_26px_rgba(33,150,243,0.38)]"
+            style={{ opacity: appear ? 1 : 0, transform: appear ? 'translateY(0)' : 'translateY(4px)', transition: 'all 220ms ease' }}
+          />
+        )}
+        {/* Persona-like header stripes */}
+        <div className="relative mb-3 overflow-hidden rounded-xl">
+          <div className="h-10 w-full" style={{
+            background: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 6px, rgba(255,255,255,0.04) 6px 12px), linear-gradient(135deg, rgba(236,72,153,0.35), rgba(59,130,246,0.35))'
+          }} />
+          <div className="pointer-events-none absolute inset-0" style={{
+            background: 'radial-gradient(60% 120% at 90% 20%, rgba(251,191,36,0.25), transparent), radial-gradient(70% 140% at 0% 100%, rgba(14,165,233,0.18), transparent)'
+          }} />
+          <div className="absolute inset-0 ring-1 ring-white/10 rounded-xl" />
+          <div className="absolute left-3 top-1 text-xs font-extrabold tracking-[0.28em] text-slate-950 uppercase mix-blend-overlay">Skill Cast</div>
+        </div>
+        {/* 卡牌名称 + 玩家标识 */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-7 h-7 rounded-full bg-amber-300/90 flex items-center justify-center shadow">
+            <span className="text-slate-900 text-xs font-extrabold">{PLAYER_NAMES[actingPlayer][0]}</span>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-amber-100 font-bold text-sm tracking-wide">{pendingCard.card.nameZh || pendingCard.card.nameEn || '技能卡'}</h3>
+            <div className="text-amber-200/80 text-[0.7rem]">发动技能</div>
+          </div>
+        </div>
+
+        {canCounter ? (
+          <div className="space-y-2">
+            <div className="text-amber-100 text-xs font-semibold">
+              {PLAYER_NAMES[responder!]} 可以反击：
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {availableCounters.map((card, idx) => {
+                const tid = card._tid ?? card.tid;
+                const key = card.instanceId ?? `${tid}-${idx}`;
+                const isSelected = selectedCounter && ((selectedCounter.instanceId && selectedCounter.instanceId === card.instanceId) || (selectedCounter._tid ?? selectedCounter.tid) === tid);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelectedCounter(card)}
+                    className={`px-2 py-1 text-xs rounded transition-all duration-150 font-semibold ring-1 ${
+                      isSelected
+                        ? 'bg-fuchsia-600/90 text-white ring-white/20 shadow'
+                        : 'bg-slate-800/70 text-amber-100 ring-white/10 hover:bg-fuchsia-600/60 hover:text-white'
+                    }`}
+                  >
+                    {card.nameZh || card.nameEn || `卡${idx + 1}`}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={!selectedCounter}
+                onClick={() => selectedCounter && onResolve(true, selectedCounter)}
+                className="px-3 py-1 bg-gradient-to-r from-fuchsia-600 to-rose-600 text-white text-xs font-bold rounded-full shadow shadow-rose-500/20 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                反击！
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onResolve(false, null);
+                  setSelectedCounter(null);
+                }}
+                className="px-3 py-1 bg-slate-700/80 text-white text-xs font-bold rounded-full shadow"
+              >
+                放弃
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="pt-1">
+            {/**
+             * 当白方（AI）发动技能、且黑方（玩家）没有可用反击时，
+             * 用情绪化的反应按钮（等价于“放弃反击/我知道了”），而不是“取消”。
+             */}
+            {pendingCard.player === PlayerEnum.WHITE && responder === PlayerEnum.BLACK ? (
+              <div className="flex items-center gap-2">
+                {['可恶', '我知道了', '竟然'].map((label, i) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => { onReact?.(label); onResolve(false, null); }}
+                    className={[
+                      'px-3 py-1 rounded-full text-xs font-bold text-white shadow transition-colors duration-150',
+                      i === 0
+                        ? 'bg-rose-600/90 hover:bg-rose-600'
+                        : i === 1
+                        ? 'bg-slate-700/90 hover:bg-slate-700'
+                        : 'bg-amber-600/90 hover:bg-amber-600'
+                    ].join(' ')}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : pendingCard.player === PlayerEnum.BLACK ? (
+              <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} />
+            ) : null}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CountdownCancel: React.FC<{ onCancel?: () => void; onTimeout: () => void }> = ({ onCancel, onTimeout }) => {
+  const [remain, setRemain] = useState(3);
+  const cancelledRef = React.useRef(false);
+  const firedRef = React.useRef(false);
+  useEffect(() => {
+    const t1 = window.setInterval(() => {
+      setRemain(prev => {
+        if (prev <= 1) {
+          window.clearInterval(t1);
+          if (!cancelledRef.current && !firedRef.current) {
+            firedRef.current = true;
+            onTimeout();
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(t1);
+  }, [onTimeout]);
 
   return (
-    <div className="pointer-events-auto w-full max-w-3xl rounded-2xl bg-gradient-to-br from-amber-100/95 via-amber-50/95 to-amber-200/90 p-5 shadow-[0_20px_45px_rgba(120,53,15,0.25)] ring-1 ring-amber-500/30">
-      <header className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.26em] text-amber-900">
-        <span className="rounded-full bg-rose-200/60 px-3 py-1 text-rose-700 shadow-sm">
-          {PLAYER_NAMES[actingPlayer]}
-        </span>
-        <span>发动技能</span>
-      </header>
-
-      <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-start">
-        <div className="w-full max-w-[9.5rem] shrink-0">
-          <CardView card={pendingCard.card} variant="list" style={{ width: '9rem' }} />
-        </div>
-        <p className="flex-1 text-sm leading-relaxed text-amber-900/90">
-          {pendingCard.card.effect || '该技能暂无效果描述'}
-        </p>
-      </div>
-
-      {canCounter ? (
-        <div className="mt-4 space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-900/80">
-            {PLAYER_NAMES[responder!]} 可用反击卡
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {availableCounters.map(card => {
-              const tid = card._tid ?? card.tid;
-              const isSelected = selectedCounter && (selectedCounter._tid ?? selectedCounter.tid) === tid;
-              return (
-                <button
-                  key={tid}
-                  type="button"
-                  onClick={() => setSelectedCounter(card)}
-                  className={`rounded-2xl border border-amber-200/60 bg-white/60 p-2 shadow-sm transition duration-150 hover:-translate-y-1 hover:border-amber-400 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
-                    isSelected ? 'border-indigo-400 bg-indigo-50/80 shadow-lg' : ''
-                  }`}
-                >
-                  <CardView card={card} variant="list" style={{ width: '7.2rem' }} />
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex flex-wrap justify-end gap-3">
-            <button
-              type="button"
-              disabled={!selectedCounter}
-              onClick={() => selectedCounter && onResolve(true, selectedCounter)}
-              className={`${baseButtonClasses} bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`}
-            >
-              使用反击卡
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onResolve(false, null);
-                setSelectedCounter(null);
-              }}
-              className={`${baseButtonClasses} bg-slate-700/90 text-slate-100 shadow-md shadow-slate-800/30 hover:-translate-y-0.5`}
-            >
-              放弃反击
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-5 flex justify-end">
-          <button
-            type="button"
-            onClick={isResponderAI ? undefined : () => onResolve(false, null)}
-            disabled={isResponderAI}
-            className={`${baseButtonClasses} bg-gradient-to-r from-emerald-400 to-emerald-500 text-emerald-950 shadow-lg shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`}
-          >
-            确认生效
-          </button>
-        </div>
-      )}
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          cancelledRef.current = true;
+          onCancel?.();
+        }}
+        className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
+      >
+        取消
+      </button>
+      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-900/90 text-white font-extrabold text-sm ring-1 ring-white/10">
+        {remain}
+      </span>
     </div>
   );
 };

@@ -5,6 +5,8 @@ import { CardFrame } from './CardFrame';
 import { HandPanel } from './HandPanel';
 import { CardView } from './CardView';
 import { GameIcon, FreezeIcon, SkipIcon, CurrentTurnIcon } from './IconLibrary';
+import { ComicBubble } from './ComicBubble';
+import standPng from '../assets/stand.png';
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
@@ -136,10 +138,19 @@ export const AvatarBadge: React.FC<AvatarBadgeProps> = ({ player, characters, st
       )}
 
       {/* 头像 */}
-      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl shadow-sm ${
-        isBlack ? 'bg-blue-500' : 'bg-pink-500'
-      }`}>
-        {AVATAR_GLYPHS[player]}
+      <div className={`relative h-14 w-14 shrink-0 rounded-xl shadow-sm overflow-hidden ${isBlack ? 'bg-blue-500' : 'bg-pink-500'}`}>
+        {isBlack ? (
+          <div className="flex h-full w-full items-center justify-center">
+            {AVATAR_GLYPHS[player]}
+          </div>
+        ) : (
+          <img
+            src={standPng}
+            alt="White avatar"
+            className="h-full w-full object-cover object-top select-none pointer-events-none origin-top"
+            style={{ transform: 'scale(1.35)' }}
+          />
+        )}
       </div>
 
       {/* 玩家信息 */}
@@ -194,6 +205,8 @@ export interface OpponentHudProps {
   statuses: GameStatus['statuses'];
   isCurrent: boolean;
   className?: string;
+  animateThinking?: boolean;
+  bubble?: { text: string; tone?: 'prompt' | 'praise' | 'taunt' | 'info' | 'frustrated' } | null;
 }
 
 export const OpponentHUD: React.FC<OpponentHudProps> = ({
@@ -205,12 +218,19 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
   characters,
   statuses,
   isCurrent,
-  className
+  className,
+  animateThinking = false,
+  bubble = null
 }) => (
-  <div className={cx('flex w-full items-center gap-4', className)}>
+  <div className={cx('relative z-[50] flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 固定宽度 */}
-    <div className="flex items-center gap-4 rounded-xl p-4 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
+    <div className="relative flex items-center gap-4 rounded-xl p-4 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm overflow-visible">
       <AvatarBadge player={PlayerEnum.WHITE} characters={characters} statuses={statuses} isCurrent={isCurrent} />
+      {bubble && (
+        <div className="pointer-events-none absolute top-[calc(100%+8px)] right-1">
+          <ComicBubble text={bubble.text} tone={bubble.tone ?? 'info'} align="right" direction="up" size="md" />
+        </div>
+      )}
       <div className="flex flex-col gap-3">
         <StatsPills
           stats={buildStats({ hand: handCards.length, move: moveCount, stones: stonesCount })}
@@ -218,13 +238,14 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
       </div>
     </div>
 
-    {/* 中央手牌区域 - 完全居中 */}
-    <div className="relative flex flex-1 items-start justify-center h-[9.5rem]">
+    {/* 中央手牌区域 - 靠右对齐，避免与棋盘重叠 */}
+    <div className="relative flex flex-1 items-start justify-end pr-2 h-[7.5rem] overflow-visible max-w-[560px] ml-auto">
       <HandPanel
         className="w-full"
         cards={handCards}
         disabled={true}
         isOpponent={true}
+        animateThinking={animateThinking}
       />
     </div>
   </div>
@@ -244,6 +265,7 @@ export interface PlayerHudProps {
   onCardDragEnd?: () => void;
   isCurrent: boolean;
   className?: string;
+  bubble?: { text: string } | null;
 }
 
 export const PlayerHUD: React.FC<PlayerHudProps> = ({
@@ -259,11 +281,17 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
   onCardDragStart,
   onCardDragEnd,
   isCurrent,
-  className
+  className,
+  bubble = null
 }) => (
   <div className={cx('flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 紧凑设计 */}
-    <div className="flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
+    <div className="relative overflow-visible flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
+      {bubble && (
+        <div className="pointer-events-none absolute -top-16 left-2">
+          <ComicBubble text={bubble.text} tone={'info'} align="left" direction="down" size="lg" />
+        </div>
+      )}
       <AvatarBadge player={PlayerEnum.BLACK} characters={characters} statuses={statuses} isCurrent={isCurrent} />
       <div className="flex flex-col gap-2">
         <span className={cx(

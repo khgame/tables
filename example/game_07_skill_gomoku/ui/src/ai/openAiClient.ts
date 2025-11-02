@@ -1,4 +1,5 @@
 import type { GameStatus, RawCard, Player, TargetRequest } from "../types";
+import type { LocalMoveSuggestion } from "./local";
 import {
   PlayerEnum,
   SKILL_UNLOCK_MOVE,
@@ -24,7 +25,14 @@ export interface AiSettings {
 export type AiScenario =
   | { kind: "mulligan"; player: Player; card: RawCard | null }
   | { kind: "skill"; player: Player; game: GameStatus; skills: Array<{ handIndex: number; card: RawCard }>; contextNote?: string }
-  | { kind: "stone"; player: Player; game: GameStatus; contextNote?: string; analysis?: string }
+  | {
+      kind: "stone";
+      player: Player;
+      game: GameStatus;
+      contextNote?: string;
+      analysis?: string;
+      localSuggestion?: LocalMoveSuggestion | null | undefined;
+    }
   | {
       kind: "card_targeting";
       player: Player;
@@ -75,6 +83,7 @@ export const DEFAULT_SYSTEM_PROMPT = [
   BOARD_RESPONSE_PROMPT,
   '- {"action":"play_card","cardId":"<card tid or effectId>","targets":[...]}',
   "  Indicate a skill card from your hand to cast. Include any required targets (cells, snapshots, cards).",
+  "  When a usable skill can materially improve the situation (create a win, prevent a loss, unlock key conditions, or yield clear advantage), prefer {\"action\":\"play_card\"} over placing a stone.",
   "",
   '- {"action":"pass"}',
   "  Skip using a skill or placing a stone this opportunity.",
@@ -477,16 +486,19 @@ const buildSkillPrompt = (
   const graveyards = serializeGraveyards(game.graveyards);
   const handSize = (game.hands[player] ?? []).length;
   const skillsSummary = skills.map(({ handIndex, card }) => formatSkillPromptLine(handIndex, card));
+  const allowed = skills.map(({ handIndex, card }) => ({ handIndex, cardId: String(card._tid ?? card.tid) }));
   return [
     "棋盘快照 (0 空, 1 黑, 2 白):",
     boardAscii,
     timelineNarrative ? `最近棋谱: ${timelineNarrative}` : undefined,
     `可发动技能 (${skillsSummary.length} 张，handIndex 对应手牌位置):`,
     skillsSummary.length ? skillsSummary.join("\n") : "(当前无可发动技能)",
+    skillsSummary.length ? `可选技能（JSON，可用于编程化选择）：${JSON.stringify(allowed)}` : undefined,
     `白方手牌数量：${handSize}`,
     statuses.freeze.some((val: number) => val > 0) || statuses.skip.some((val: number) => val > 0)
       ? `状态提示：冻结 ${statuses.freeze.join('/')}，跳过 ${statuses.skip.join('/')}`
       : undefined,
+    formatSealedStatus(statuses.sealedCells, player),
     characters.white ? `白方角色：${characters.white}` : undefined,
     characters.black ? `黑方角色：${characters.black}` : undefined,
     graveyards.black.length || graveyards.white.length
@@ -498,6 +510,15 @@ const buildSkillPrompt = (
     STRATEGY_TEXT,
     "技能决策提示:",
     SKILL_HINT_TEXT,
+    // 强化指令：技能优先
+    skillsSummary.length
+      ? "当存在可用技能且能改善局势（创造胜势、化解必败、或带来显著优势）时，优先返回 {\"action\":\"play_card\"}；仅在技能收益明显不足或不满足条件时再选择落子。"
+      : undefined,
+    "返回 JSON 仅允许以下其一：",
+    '- {"action":"play_card","handIndex":数字 或 "cardId":"tid/effectId","targets":可选}',
+    '- {"action":"place_stone","row":行,"col":列}',
+    '- {"action":"pass"}',
+    skillsSummary.length ? '如选择发动技能，请从上述可选技能中选择（handIndex 或 cardId 任填其一），返回 {"action":"play_card","handIndex":数字 或 "cardId":"tid"}，必要时包含 targets。' : undefined,
     feedback ? `上一次行动执行失败：${feedback}` : undefined,
     note ? `局面提示：${note}` : undefined,
     "你是白方 (2)，请优先判断哪些技能可以立即改善局面；若技能不足胜任，可返回落子或暂不行动。",
@@ -527,6 +548,7 @@ const buildStonePrompt = (
     statuses.freeze.some((val: number) => val > 0) || statuses.skip.some((val: number) => val > 0)
       ? `状态提示：冻结 ${statuses.freeze.join('/')}，跳过 ${statuses.skip.join('/')}`
       : undefined,
+    formatSealedStatus(statuses.sealedCells, player),
     characters.white ? `白方角色：${characters.white}` : undefined,
     characters.black ? `黑方角色：${characters.black}` : undefined,
     graveyards.black.length || graveyards.white.length
@@ -563,7 +585,7 @@ const buildTargetPrompt = (
   const instruction =
     request.type === "snapshot"
       ? '返回 JSON: {"action":"select_snapshot","id":"选项 id"}'
-      : '返回 JSON: {"action":"select_cell","row":number,"col":number}';
+      : '返回 JSON: {"action":"select_cell","row":number,"col":number} (注意：坐标从0开始计数)';
   return [
     "选择技能或反击所需的目标。",
     instruction,
@@ -675,7 +697,28 @@ const serializeStatuses = (statuses: GameStatus["statuses"]) => ({
   freeze: statuses.freeze,
   skip: statuses.skip,
   fusionLock: statuses.fusionLock,
+  sealedCells: statuses.sealedCells.map((cell) =>
+    cell ? { row: cell.row, col: cell.col, expiresAtTurn: cell.expiresAtTurn } : null,
+  ),
 });
+
+const formatSealedStatus = (
+  sealed: Array<{ row: number; col: number; expiresAtTurn: number } | null>,
+  perspective: Player,
+): string | null => {
+  const own = sealed[perspective];
+  const opponentIndex = perspective === PlayerEnum.WHITE ? PlayerEnum.BLACK : PlayerEnum.WHITE;
+  const opponentSeal = sealed[opponentIndex];
+  const segments: string[] = [];
+  if (own) {
+    segments.push(`本方禁手：(${own.row}, ${own.col}) 本回合不得落子`);
+  }
+  if (opponentSeal) {
+    segments.push(`对方禁手：(${opponentSeal.row}, ${opponentSeal.col}) 正在生效`);
+  }
+  if (segments.length === 0) return null;
+  return `封禁提示：${segments.join('；')}`;
+};
 
 const serializeCharacters = (characters: GameStatus["characters"]) => ({
   black: characters[PlayerEnum.BLACK]?.name ?? null,
@@ -780,7 +823,7 @@ const serializeTimelineNarrative = (
     const prefix = `第${entry.turn}手`;
     const actor = entry.player === null ? "未知" : describePlayer(entry.player as Player);
     if (entry.move && typeof entry.move.row === "number") {
-      return `${prefix}：${actor} 落子 (${entry.move.row}, ${entry.move.col})。`;
+      return `${prefix}：${actor} 落子 (${entry.move.row + 1}, ${entry.move.col + 1})。`;
     }
     return `${prefix}：${actor} 通过技能或状态改变局面。`;
   });

@@ -12,6 +12,14 @@ export interface BoardProps {
   style?: React.CSSProperties;
   onCardDrop?: (index: number | null) => void;
   onBlockedInteract?: () => void;
+  winLineLit?: Set<string> | null;
+  hoveredPosition?: { row: number; col: number } | null;
+  skillTargetPosition?: { row: number; col: number } | null;
+  sealedCells?: [
+    { row: number; col: number; expiresAtTurn: number } | null,
+    { row: number; col: number; expiresAtTurn: number } | null
+  ];
+  currentTurn?: number;
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
@@ -32,7 +40,12 @@ export const Board: React.FC<BoardProps> = ({
   className,
   style,
   onCardDrop,
-  onBlockedInteract
+  onBlockedInteract,
+  winLineLit = null,
+  hoveredPosition = null,
+  skillTargetPosition = null,
+  sealedCells = [null, null],
+  currentTurn = 0
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [boardPixels, setBoardPixels] = useState<number | null>(null);
@@ -139,13 +152,35 @@ export const Board: React.FC<BoardProps> = ({
                 : null;
               const value = board.get(rowIdx, colIdx);
               const isLast = Boolean(lastMove && lastMove.row === rowIdx && lastMove.col === colIdx);
+              const isWinLit = winLineLit ? winLineLit.has(key) : false;
+              const isHovered = Boolean(hoveredPosition && hoveredPosition.row === rowIdx && hoveredPosition.col === colIdx);
+              const isSkillTarget = Boolean(skillTargetPosition && skillTargetPosition.row === rowIdx && skillTargetPosition.col === colIdx);
+
+              // 检查此位置是否被封禁
+              const sealedForPlayer = sealedCells.findIndex(
+                cell => cell && cell.row === rowIdx && cell.col === colIdx && currentTurn < cell.expiresAtTurn
+              );
+              const isSealed = sealedForPlayer >= 0;
+              const remainingTurns = isSealed && sealedCells[sealedForPlayer]
+                ? sealedCells[sealedForPlayer]!.expiresAtTurn - currentTurn
+                : 0;
+              // 封禁是哪个玩家的：0=黑方，1=白方
+              const sealedByPlayer = sealedForPlayer as Player;
 
               const cellStyle: React.CSSProperties = {
                 background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), rgba(0,0,0,0) 70%)'
               };
 
-              if (isLast) {
+              if (isWinLit) {
+                cellStyle.boxShadow = 'inset 0 0 0 2px rgba(250,204,21,0.95), 0 0 24px rgba(250,204,21,0.55)';
+              } else if (isLast) {
                 cellStyle.boxShadow = 'inset 0 0 0 2px rgba(250,204,21,0.9), 0 0 20px rgba(250,204,21,0.4)';
+              } else if (isSkillTarget) {
+                cellStyle.boxShadow = 'inset 0 0 0 3px rgba(239,68,68,0.9), 0 0 20px rgba(239,68,68,0.6)';
+                cellStyle.background = 'radial-gradient(circle at 50% 50%, rgba(239,68,68,0.2), rgba(0,0,0,0) 70%)';
+              } else if (isHovered) {
+                cellStyle.boxShadow = 'inset 0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)';
+                cellStyle.background = 'radial-gradient(circle at 50% 50%, rgba(168,85,247,0.15), rgba(0,0,0,0) 70%)';
               }
               if (highlight === 'target') {
                 cellStyle.boxShadow = 'inset 0 0 0 2px rgba(56,189,248,0.9), 0 0 18px rgba(56,189,248,0.5)';
@@ -190,6 +225,48 @@ export const Board: React.FC<BoardProps> = ({
                         boxShadow: 'inset 0 0 0 1px rgba(148,163,184,0.4), 0 14px 20px rgba(148,163,184,0.45)'
                       }}
                     />
+                  )}
+                  {isSealed && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div
+                        className="relative w-[70%] h-[70%] rounded-full flex items-center justify-center"
+                        style={{
+                          background: 'radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.3), rgba(251, 146, 60, 0.1) 70%)',
+                          boxShadow: 'inset 0 0 0 2px rgba(251, 146, 60, 0.8), 0 0 12px rgba(251, 146, 60, 0.5)'
+                        }}
+                      >
+                        <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" stroke="rgba(251, 146, 60, 0.95)" strokeWidth="2.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+
+                        {/* 玩家标识：小棋子 */}
+                        <div
+                          className="absolute -top-2 -left-2 w-5 h-5 rounded-full border-2"
+                          style={{
+                            background: sealedByPlayer === PlayerEnum.BLACK
+                              ? 'radial-gradient(circle at 30% 25%, rgba(209, 213, 219, 0.35), rgba(17, 17, 17, 1))'
+                              : 'radial-gradient(circle at 30% 25%, rgba(255,255,255,1), rgba(209,213,219,0.5))',
+                            borderColor: sealedByPlayer === PlayerEnum.BLACK ? 'rgba(255,255,255,0.2)' : 'rgba(148,163,184,0.4)',
+                            boxShadow: sealedByPlayer === PlayerEnum.BLACK
+                              ? 'inset 0 0 0 1px rgba(255,255,255,0.12), 0 2px 4px rgba(0,0,0,0.5)'
+                              : 'inset 0 0 0 1px rgba(148,163,184,0.4), 0 2px 4px rgba(148,163,184,0.3)'
+                          }}
+                        />
+
+                        <div
+                          className="absolute -bottom-1 right-0 rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.95), rgba(234, 88, 12, 0.95))',
+                            color: '#fff',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                          }}
+                        >
+                          {remainingTurns}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </button>
               );

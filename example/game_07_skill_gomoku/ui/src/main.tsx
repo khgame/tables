@@ -11,17 +11,27 @@ import {
   SkillEffectLayer,
   AiSettingsPanel,
   AiStatusBanner,
-  CardDraftPanel
+  CardDraftPanel,
+  GameOverPanel,
+  RulesIntroPanel
 } from './components';
 import { useGameEngine } from './core/gameEngine';
 import { PLAYER_NAMES, PlayerEnum, SKILL_UNLOCK_MOVE, getOpponent, GamePhaseEnum } from './core/constants';
 import { parseTags, parseEffectParams } from './core/utils';
 import type { AiSettings, AiScenario, AiDecision, AiPlayingDecision } from './ai/openAiClient';
 import { hasValidSettings, requestAiDecision } from './ai/openAiClient';
+import type { LocalMoveSuggestion } from './ai';
+import { formatLocalSuggestion, shouldAutoplaySuggestion, suggestLocalMove } from './ai';
 import { aiLog } from './ai/logger';
 import type { GameStatus, Player, RawCard, VisualEffectEvent } from './types';
 import './styles/tailwind.css';
 import { SkillEffect } from './skills/effects';
+
+// 导入智能路由和监控测试 (仅在开发环境)
+if (import.meta.env.DEV) {
+  import('./ai/tests');
+  import('./ai/debug');
+}
 
 interface GameData {
   cards?: { result: Record<string, RawCard> };
@@ -52,7 +62,21 @@ const App: React.FC = () => {
     scenario: null,
     message: ''
   });
+  const [showFinalPanel, setShowFinalPanel] = useState(false);
+  const [winLineLit, setWinLineLit] = useState<Set<string>>(new Set());
+  const [hoveredPosition, setHoveredPosition] = useState<{ row: number; col: number } | null>(null);
+  const [skillTargetPosition, setSkillTargetPosition] = useState<{ row: number; col: number } | null>(null); // 技能目标位置高亮
+  const winAnimTimersRef = useRef<number[]>([]);
+  // AI 互动：头像气泡 & 玩家久未行动跟踪
+  const [aiBubble, setAiBubble] = useState<{ id: string; text: string; tone?: 'prompt' | 'praise' | 'taunt' | 'info' | 'frustrated' } | null>(null);
+  const [playerBubble, setPlayerBubble] = useState<{ id: string; text: string } | null>(null);
+  const [playerInactivityLevel, setPlayerInactivityLevel] = useState<0 | 1 | 2>(0);
+  const lastPlayerActionRef = useRef<number>(Date.now());
+  const inactivityTimersRef = useRef<number[]>([]);
+  const aiVictoryShownRef = useRef(false);
   const visualTracker = useRef<Set<string>>(new Set());
+  // 记录最近一次已处理的可视化事件时间戳，用于严格过滤“真正新增”的视觉事件
+  const lastVisualTsRef = useRef<number>(0);
   const updateAiStatus = useCallback(
     (next: { scenario: AiScenario['kind'] | null; message: string; reason?: string }) => {
       setAiStatus(prev => {
@@ -83,24 +107,123 @@ const App: React.FC = () => {
   }, []);
 
   const engine = useGameEngine(data ?? {});
-  const { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, selectDraftOption } = engine;
+  const { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, cancelPending, selectDraftOption } = engine;
+  const isPlayerTurn = gameState.currentPlayer === PlayerEnum.BLACK;
+  // 记录每回合开始（必须在所有早期 return 之前，保持 hooks 顺序一致）
+  useEffect(() => {
+    lastPlayerActionRef.current = Date.now();
+    // 重置“久未行动”层级
+    try { setPlayerInactivityLevel(0); } catch {}
+  }, [isPlayerTurn, gameState.turnCount]);
+
+  // 玩家久未行动：AI 气泡 + 轻微晃动棋盘
+  useEffect(() => {
+    // 清理历史定时器
+    inactivityTimersRef.current.forEach(id => window.clearTimeout(id));
+    inactivityTimersRef.current = [];
+
+    // 只有在玩家回合、对局进行中且没有其他窗口时才提示
+    const idleEligible =
+      gameState.aiEnabled &&
+      gameState.phase === GamePhaseEnum.PLAYING &&
+      isPlayerTurn &&
+      !gameState.pendingAction && !gameState.targetRequest && !gameState.draft && !gameState.pendingCounter;
+    if (!idleEligible) {
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed = now - lastPlayerActionRef.current;
+    const thresholds = [7000, 14000]; // 7s、14s
+    const messages = ['你掉线了?', '我等的黄花菜都凉了'];
+
+    thresholds.forEach((ms, idx) => {
+      const delay = Math.max(0, ms - elapsed);
+      const timer = window.setTimeout(() => {
+        // 再次校验状态有效
+        const ok =
+          gameState.aiEnabled &&
+          gameState.phase === GamePhaseEnum.PLAYING &&
+          gameState.currentPlayer === PlayerEnum.BLACK &&
+          !gameState.pendingAction && !gameState.targetRequest && !gameState.draft && !gameState.pendingCounter;
+        if (!ok) return;
+        const id = `ai-bubble-${Date.now()}-${idx}`;
+        setAiBubble({ id, text: messages[idx], tone: 'frustrated' });
+        // 轻微晃动棋盘
+        setBoardBlockedFeedback(true);
+        // 自动清除气泡
+        window.setTimeout(() => {
+          setAiBubble(prev => (prev && prev.id === id ? null : prev));
+        }, 1600);
+        // 记录阶段，避免重复
+        try { setPlayerInactivityLevel(prev => Math.min(2, (prev + 1) as 0 | 1 | 2)); } catch {}
+      }, delay);
+      inactivityTimersRef.current.push(timer);
+    });
+
+    return () => {
+      inactivityTimersRef.current.forEach(id => window.clearTimeout(id));
+      inactivityTimersRef.current = [];
+    };
+  }, [gameState.aiEnabled, gameState.phase, isPlayerTurn, gameState.pendingAction, gameState.targetRequest, gameState.draft, gameState.pendingCounter, gameState.currentPlayer]);
 
   useEffect(() => {
     setSelectedCounter(null);
   }, [gameState.pendingAction?.id]);
 
+  // 监听pendingAction的变化，提取并高亮技能目标位置
   useEffect(() => {
-    gameState.visuals.forEach(event => {
-      if (!visualTracker.current.has(event.id)) {
-        visualTracker.current.add(event.id);
-        setActiveVisuals(prev => [...prev, event]);
-        window.setTimeout(() => {
-          visualTracker.current.delete(event.id);
-          setActiveVisuals(prev => prev.filter(item => item.id !== event.id));
-        }, 1600);
+    if (gameState.pendingAction?.selection) {
+      const sel = gameState.pendingAction.selection;
+      if (typeof sel.row === 'number' && typeof sel.col === 'number') {
+        setSkillTargetPosition({ row: sel.row, col: sel.col });
+      } else {
+        setSkillTargetPosition(null);
       }
+    } else {
+      setSkillTargetPosition(null);
+    }
+  }, [gameState.pendingAction]);
+
+
+  // 视觉事件处理：
+  // - 仅处理 createdAt 晚于 lastVisualTsRef 的"新增"事件，避免旧事件在状态变化时重复播放
+  // - 使用 visualTracker 记忆已处理过的事件 id，不在动画结束时从 tracker 中删除
+  useEffect(() => {
+    const visuals = gameState.visuals ?? [];
+    const cutoff = lastVisualTsRef.current;
+    const nextEvents = visuals.filter(e => e.createdAt > cutoff && !visualTracker.current.has(e.id));
+    if (nextEvents.length === 0) return;
+
+    nextEvents.forEach(event => {
+      visualTracker.current.add(event.id);
+      setActiveVisuals(prev => [...prev, event]);
+
+      // 计算清理时间：
+      // - 普通技能：2800ms（动画总时长）+ 200ms（缓冲）= 3000ms
+      // - 反击技能：1200ms（延迟）+ 2800ms（动画）+ 200ms（缓冲）= 4200ms
+      const isCounterSkill = event.effectId?.startsWith('Counter');
+      const cleanupDelay = isCounterSkill ? 4200 : 3000;
+
+      window.setTimeout(() => {
+        // 仅移除展示队列，不移除 tracker 标记，避免重复播放
+        setActiveVisuals(prev => prev.filter(item => item.id !== event.id));
+      }, cleanupDelay);
     });
+
+    // 推进已处理的最高时间戳
+    const maxTs = Math.max(cutoff, ...nextEvents.map(e => e.createdAt));
+    lastVisualTsRef.current = maxTs;
   }, [gameState.visuals]);
+
+  // 新局或完全回溯时，清理本地可视化去重状态
+  useEffect(() => {
+    if (gameState.turnCount === 0 && gameState.board.history.length === 0) {
+      visualTracker.current.clear();
+      lastVisualTsRef.current = 0;
+      setActiveVisuals([]);
+    }
+  }, [gameState.turnCount, gameState.board.history.length]);
 
   useAIActions(gameState, { playCard, placeStone, resolveCard, selectTarget }, aiSettings, updateAiStatus);
 
@@ -119,6 +242,96 @@ const App: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [boardBlockedFeedback]);
 
+  // 胜负面板时机与动画：
+  // - 普通五连胜：依次点亮连线后立即显示面板
+  // - 技能胜（力拔山兮/两极反转）：播放动画约 3.2s 后显示面板
+  useEffect(() => {
+    // 清理任何在途的胜利动画定时器
+    winAnimTimersRef.current.forEach(id => window.clearTimeout(id));
+    winAnimTimersRef.current = [];
+    setWinLineLit(new Set());
+
+    if (gameState.phase !== GamePhaseEnum.GAME_OVER || gameState.winner == null) {
+      setShowFinalPanel(false);
+      return;
+    }
+
+    // 判定是否技能胜：查看最近的可视化效果
+    const recentVisual = (gameState.visuals ?? []).slice(-3).find(v =>
+      v.effectId === SkillEffect.InstantWin || v.effectId === SkillEffect.CounterReverseWin
+    );
+
+    if (recentVisual) {
+      setShowFinalPanel(false);
+      const t = window.setTimeout(() => setShowFinalPanel(true), 3200);
+      winAnimTimersRef.current.push(t);
+      return;
+    }
+
+    // 非技能胜：尝试寻找连成五子的路径并依次点亮
+    const winner = gameState.winner;
+    const line = findWinningLine(gameState.board, winner);
+    if (!line || line.length < 5) {
+      // fallback：若没有检测到明确连线，直接显示
+      setShowFinalPanel(true);
+      return;
+    }
+
+    setShowFinalPanel(false);
+    const keys = line.map(cell => `${cell.row}-${cell.col}`);
+    keys.forEach((k, idx) => {
+      const t = window.setTimeout(() => {
+        setWinLineLit(prev => {
+          const next = new Set(prev);
+          next.add(k);
+          return next;
+        });
+        if (idx === keys.length - 1) {
+          // 最后一个点亮后立即显示面板
+          const nextT = window.setTimeout(() => setShowFinalPanel(true), 150);
+          winAnimTimersRef.current.push(nextT);
+        }
+      }, 180 * idx);
+      winAnimTimersRef.current.push(t);
+    });
+
+    return () => {
+      winAnimTimersRef.current.forEach(id => window.clearTimeout(id));
+      winAnimTimersRef.current = [];
+    };
+  }, [gameState.phase, gameState.winner, gameState.board, gameState.visuals]);
+
+  const findWinningLine = (board: GameStatus['board'], player: Player) => {
+    const size = board.size;
+    const dirs: Array<[number, number]> = [ [0,1], [1,0], [1,1], [1,-1] ];
+    const inBounds = (r: number, c: number) => r >= 0 && r < size && c >= 0 && c < size;
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        if (board.get(r, c) !== player) continue;
+        for (const [dr, dc] of dirs) {
+          const cells: Array<{row:number,col:number}> = [];
+          // forward
+          let rr = r, cc = c;
+          while (inBounds(rr, cc) && board.get(rr, cc) === player) {
+            cells.push({ row: rr, col: cc });
+            rr += dr; cc += dc;
+          }
+          // backward
+          rr = r - dr; cc = c - dc;
+          while (inBounds(rr, cc) && board.get(rr, cc) === player) {
+            cells.unshift({ row: rr, col: cc });
+            rr -= dr; cc -= dc;
+          }
+          if (cells.length >= 5) {
+            // 仅返回连续的前 5 个（或更多也行，这里取前 5 个保证节奏）
+            return cells.slice(0, 5);
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   const responder = gameState.counterWindow?.responder ?? null;
   const availableCounters = useMemo(() => {
     if (!gameState.pendingAction || responder === null) return [];
@@ -136,15 +349,7 @@ const App: React.FC = () => {
   const stonesByPlayer = useMemo(() => countStones(gameState.board), [gameState.board]);
   const shichahaiByPlayer = useMemo(() => partitionShichahai(gameState.shichahai), [gameState.shichahai]);
 
-  useEffect(() => {
-    if (gameState.phase !== GamePhaseEnum.COUNTER_WINDOW) return;
-    if (!gameState.pendingAction) return;
-    if (responder === PlayerEnum.BLACK) return;
-    const timer = window.setTimeout(() => {
-      resolveCard(false, null);
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [gameState.phase, gameState.pendingAction, responder, resolveCard]);
+  // Note: 不再为白方 AI 自动放弃反击；反击逻辑交由 AI 场景（counter_window）决策处理
 
   const renderDraft = () => {
     const draft = gameState.draft;
@@ -182,42 +387,25 @@ const App: React.FC = () => {
     );
   }
 
-  const { phase, board, currentPlayer, hands, logs, pendingAction, targetRequest, aiEnabled, moveCount, statuses } = gameState;
-  const isPlayerTurn = currentPlayer === PlayerEnum.BLACK;
+  const { phase, board, currentPlayer, hands, logs, pendingAction, targetRequest, aiEnabled, moveCount, statuses, winner } = gameState;
+
 
   if (phase === GamePhaseEnum.SETUP) {
     return (
       <>
         <div className="h-screen overflow-auto p-6 flex flex-col items-center justify-center space-y-6">
-          <header className="text-center space-y-2 relative">
-            <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
-            <h1 className="font-display text-6xl text-amber-200 drop-shadow-2xl">技能五子棋</h1>
-          </header>
-          <div className="max-w-2xl text-center bg-white/90 p-8 rounded-3xl shadow-2xl space-y-6 text-stone-900">
-            <h2 className="text-3xl font-bold">游戏规则</h2>
-            <div className="text-left space-y-2 text-gray-700">
-              <p>• 15×15 棋盘连成五子获胜</p>
-              <p>• 开局调度：可换掉唯一手牌（进入墓地）再抽新牌</p>
-              <p>• 每累计 3 次落子为下一位玩家抽牌</p>
-              <p>• 第 {SKILL_UNLOCK_MOVE} 步起解锁技能卡（冻结/跳过会影响回合）</p>
-              <p>• 合体技需张兴朝在场，本回合召唤后需等待一回合</p>
-            </div>
-            <div className="flex gap-4 justify-center">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!hasValidSettings(aiSettings)) {
-                    setIsSettingsOpen(true);
-                    return;
-                  }
-                  startGame(true);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full text-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-              >
-                开始 AI 对战
-              </button>
-            </div>
-          </div>
+          <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
+          <RulesIntroPanel
+            hasConfig={hasValidSettings(aiSettings)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onStartAi={() => {
+              if (!hasValidSettings(aiSettings)) {
+                setIsSettingsOpen(true);
+                return;
+              }
+              startGame(true);
+            }}
+          />
         </div>
         <AiSettingsPanel
           open={isSettingsOpen}
@@ -247,6 +435,8 @@ const App: React.FC = () => {
     if (!canPlayCard) return;
     const sourceIndex = index ?? draggedCardIndex;
     if (sourceIndex === null) return;
+    // 记录玩家动作并出牌
+    try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
     playCard(sourceIndex);
     setDraggedCardIndex(null);
   };
@@ -285,6 +475,8 @@ const App: React.FC = () => {
               characters={gameState.characters}
               statuses={statuses}
               isCurrent={currentPlayer === PlayerEnum.WHITE}
+              animateThinking={aiEnabled && Boolean(aiStatus.scenario)}
+              bubble={aiBubble}
             />
           </div>
           <section className={`game-grid__board ${draggedCardIndex !== null ? 'game-grid__board--dragging' : ''}`}>
@@ -301,7 +493,7 @@ const App: React.FC = () => {
               (targetRequest && targetRequest.type === 'snapshot')
             }
             targetRequest={targetRequest && targetRequest.type === 'cell' ? targetRequest : null}
-            onTargetSelect={selectTarget}
+            onTargetSelect={(sel) => { try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}; selectTarget(sel); }}
             className="board-stage__board"
             style={{ aspectRatio: '1 / 1' }}
             onCardDrop={handleCardDropOnBoard}
@@ -310,12 +502,22 @@ const App: React.FC = () => {
                 setBoardBlockedFeedback(true);
               }
             }}
+            winLineLit={winLineLit}
+            hoveredPosition={hoveredPosition}
+            skillTargetPosition={skillTargetPosition}
+            sealedCells={gameState.statuses.sealedCells}
+            currentTurn={gameState.turnCount}
           />
           <SkillEffectLayer events={activeVisuals} />
         </div>
         {renderDraft()}
         {pendingAction && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4 sm:px-6">
+          <>
+            {/* subtle dim + blur overlay behind confirm panel (non-blocking) */}
+            <div className="fixed inset-0 z-[120] pointer-events-none">
+              <div className="absolute inset-0 bg-slate-900/30" />
+            </div>
+            <div className="pointer-events-auto fixed right-6 bottom-28 z-[130]">
             <PendingCardPanel
               pendingCard={pendingAction}
               responder={responder}
@@ -323,17 +525,36 @@ const App: React.FC = () => {
               selectedCounter={selectedCounter}
               setSelectedCounter={setSelectedCounter}
               onResolve={(countered, card) => {
+                try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
                 resolveCard(countered, card);
                 if (countered) setSelectedCounter(null);
               }}
               aiEnabled={aiEnabled}
+              onReact={(text) => {
+                const id = `pb-${Date.now()}`;
+                setPlayerBubble({ id, text });
+                window.setTimeout(() => {
+                  setPlayerBubble(prev => (prev && prev.id === id ? null : prev));
+                }, 1600);
+              }}
+              onCancel={() => {
+                try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
+                cancelPending();
+              }}
             />
-          </div>
+            </div>
+          </>
         )}
             </div>
           </section>
           <aside className="game-grid__right">
-            <GameLog logs={logs} />
+            <GameLog
+              logs={logs}
+              onPositionHover={setHoveredPosition}
+              turnCount={gameState.turnCount}
+              currentPlayer={gameState.currentPlayer}
+              playerNames={PLAYER_NAMES}
+            />
             <ZonePanel
               title="墓地 / 什刹海"
               graveyard={playerGraveyard}
@@ -360,11 +581,19 @@ const App: React.FC = () => {
             setDraggedCardIndex(null);
           }}
           isCurrent={currentPlayer === PlayerEnum.BLACK}
+          bubble={playerBubble}
         />
       </div>
           </div>
         </div>
       </div>
+      {/* 胜负面板：根据上面的逻辑时机显示 */}
+      {phase === GamePhaseEnum.GAME_OVER && showFinalPanel && (
+        <GameOverPanel
+          winner={winner}
+          onRestart={() => window.location.reload()}
+        />
+      )}
       <AiSettingsPanel
         open={isSettingsOpen}
         settings={aiSettings}
@@ -379,38 +608,40 @@ const App: React.FC = () => {
 const AI_SETTINGS_STORAGE_KEY = 'game07.ai-settings';
 
 const loadAiSettings = (): AiSettings => {
+  const DEFAULT_AI_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+  const DEFAULT_MODEL = 'doubao-seed-1-6-251015';
   if (typeof window === 'undefined') {
     return {
-      endpoint: '',
+      endpoint: DEFAULT_AI_ENDPOINT,
       apiKey: '',
-      reasoningModel: '',
-      fastModel: ''
+      reasoningModel: DEFAULT_MODEL,
+      fastModel: DEFAULT_MODEL
     };
   }
   try {
     const raw = window.localStorage.getItem(AI_SETTINGS_STORAGE_KEY);
     if (!raw) {
       return {
-        endpoint: '',
+        endpoint: DEFAULT_AI_ENDPOINT,
         apiKey: '',
-        reasoningModel: '',
-        fastModel: ''
+        reasoningModel: DEFAULT_MODEL,
+        fastModel: DEFAULT_MODEL
       };
     }
     const parsed = JSON.parse(raw);
     return {
-      endpoint: parsed.endpoint ?? '',
+      endpoint: parsed.endpoint ?? DEFAULT_AI_ENDPOINT,
       apiKey: parsed.apiKey ?? '',
-      reasoningModel: parsed.reasoningModel ?? parsed.model ?? '',
-      fastModel: parsed.fastModel ?? ''
+      reasoningModel: parsed.reasoningModel ?? parsed.model ?? DEFAULT_MODEL,
+      fastModel: parsed.fastModel ?? DEFAULT_MODEL
     };
   } catch (err) {
     console.warn('[game07] failed to load AI settings', err);
     return {
-      endpoint: '',
+      endpoint: DEFAULT_AI_ENDPOINT,
       apiKey: '',
-      reasoningModel: '',
-      fastModel: ''
+      reasoningModel: DEFAULT_MODEL,
+      fastModel: DEFAULT_MODEL
     };
   }
 };
@@ -483,8 +714,29 @@ const useAIActions = (
   const activeKeyRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const progressTimerRef = useRef<number | null>(null);
+  const prevSnapshotRef = useRef<{ len: number; turn: number }>({ len: gameState.board.history.length, turn: gameState.turnCount });
 
   useEffect(() => {
+    // Fast-path: if white is frozen/skip this turn, auto advance without thinking
+    if (
+      gameState.aiEnabled &&
+      gameState.phase === GamePhaseEnum.PLAYING &&
+      gameState.currentPlayer === PlayerEnum.WHITE &&
+      !gameState.pendingAction && !gameState.pendingCounter && !gameState.targetRequest && !gameState.draft
+    ) {
+      const frozen = (gameState.statuses.freeze[PlayerEnum.WHITE] ?? 0) > 0;
+      const skip = (gameState.statuses.skip[PlayerEnum.WHITE] ?? 0) > 0;
+      if (frozen || skip) {
+        const key = `auto-skip:${gameState.turnCount}`;
+        if (!processedRef.current.has(key)) {
+          processedRef.current.add(key);
+          // Use a dummy placement to trigger engine's skip/freeze handling
+          try { placeStone(-1 as any, -1 as any); } catch {}
+          return;
+        }
+      }
+    }
+
     if (gameState.turnCount === 0 && gameState.board.history.length === 0) {
       processedRef.current.clear();
       activeKeyRef.current = null;
@@ -493,6 +745,14 @@ const useAIActions = (
         timerRef.current = null;
       }
     }
+
+    // If history/turn count went backwards (e.g., Time Rewind), clear processed keys to allow re-scheduling
+    const prev = prevSnapshotRef.current;
+    if (gameState.board.history.length < prev.len || gameState.turnCount < prev.turn) {
+      processedRef.current.clear();
+      activeKeyRef.current = null;
+    }
+    prevSnapshotRef.current = { len: gameState.board.history.length, turn: gameState.turnCount };
   }, [gameState.turnCount, gameState.board.history.length]);
 
   useEffect(() => {
@@ -535,13 +795,113 @@ const useAIActions = (
     const startScenario = (scenario: AiScenario, key: string) => {
       if (processedRef.current.has(key)) return;
 
-      const descriptor = getScenarioMeta(scenario.kind);
+      let scenarioPayload: AiScenario = scenario;
+      let cachedLocalSuggestion: LocalMoveSuggestion | null = null;
+
+      // Counter window: fast local policies for critical counters (no LLM)
+      if (scenario.kind === 'counter_window') {
+        const targetEffect = scenario.pendingCard?.effectId ?? '';
+        const targetParams = (scenario.pendingCard?.params ?? {}) as Record<string, any>;
+        const targetTags = parseTags(scenario.pendingCard?.card?.tags);
+        const counters = scenario.availableCounters ?? [];
+
+        const autoResolve = (picked: { handIndex: number; card: RawCard }, reason: string) => {
+          aiLog.info('[counter:auto]', { against: targetEffect, pick: formatCardIdentifier(picked.card), reason });
+          processedRef.current.add(key);
+          // 短暂展示反击窗口的 UI 再结算，保持与交互一致性
+          const AUTO_COUNTER_DELAY = 650;
+          timerRef.current = window.setTimeout(() => {
+            clearRunningTask();
+            actions.resolveCard(true, picked.card);
+          }, AUTO_COUNTER_DELAY);
+        };
+
+        // 1) 对方力拔山兮 => 使用东山再起（恢复棋盘 + 惩罚对手）
+        if (targetEffect === SkillEffect.InstantWin) {
+          const pick = counters.find(opt => opt.card.effectId === SkillEffect.CounterRestoreBoard);
+          if (pick) { autoResolve(pick, 'instant-win -> counter-restore-board'); return; }
+        }
+        // 2) 飞沙走石/棒球：若非棒球（ignoreSeize=true），优先擒拿（保持原位）
+        if (targetEffect === SkillEffect.RemoveToShichahai) {
+          const isBaseballImmune = String(targetParams.ignoreSeize ?? '').toLowerCase() === 'true';
+          if (!isBaseballImmune) {
+            const pick = counters.find(opt => opt.card.effectId === SkillEffect.CounterPreventRemoval);
+            if (pick) { autoResolve(pick, 'remove-to-shichahai -> counter-prevent-removal'); return; }
+          }
+        }
+        // 3) 静如止水：若有解冻，立即解冻
+        if (targetEffect === SkillEffect.FreezeOpponent) {
+          const pick = counters.find(opt => opt.card.effectId === SkillEffect.CounterThaw);
+          if (pick) { autoResolve(pick, 'freeze-opponent -> counter-thaw'); return; }
+        }
+        // 4) 敌方合体技：若可喝止（滚！），直接喝止
+        if (targetTags.has('Fusion')) {
+          const pick = counters.find(opt => opt.card.effectId === SkillEffect.CounterCancelFusion);
+          if (pick) { autoResolve(pick, 'fusion -> counter-cancel-fusion'); return; }
+        }
+      }
+
+      // Stone 场景：
+      // - 若当前无可用技能，则用本地算法（至少等待 1s）
+      // - 若存在可用技能，则仍向远端请求以获得更强策略（保留本地建议供日志/回退）
+      if (scenario.kind === 'stone') {
+        const hasSkills = collectPlayableSkills(gameState, PlayerEnum.WHITE).length > 0;
+        cachedLocalSuggestion = scenario.localSuggestion ?? suggestLocalMove(gameState);
+        if (!hasSkills) {
+          const fallbackCenter = () => {
+            const size = gameState.board.size;
+            const center = Math.floor(size / 2);
+            return { row: center, col: center };
+          };
+          const move = cachedLocalSuggestion
+            ? { row: cachedLocalSuggestion.row, col: cachedLocalSuggestion.col }
+            : fallbackCenter();
+
+          aiLog.info('[local_ai:stone]', {
+            move,
+            summary: cachedLocalSuggestion ? formatLocalSuggestion(cachedLocalSuggestion) : '使用中心/启发式回退'
+          });
+
+          const descriptor = getScenarioMeta('stone');
+          cycleProgressMessage({ kind: 'stone' } as AiScenario, descriptor.message);
+          activeKeyRef.current = key;
+          processedRef.current.add(key);
+          timerRef.current = window.setTimeout(() => {
+            if (activeKeyRef.current !== key) return;
+            clearRunningTask();
+            actions.placeStone(move.row, move.col);
+          }, 1000);
+          return;
+        }
+        // 存在可用技能时：保留远端落子评估路径，但继续保留本地建议供日志/对比
+        if (cachedLocalSuggestion) {
+          aiLog.info('[local_ai:suggest]', {
+            move: { row: cachedLocalSuggestion.row, col: cachedLocalSuggestion.col },
+            confidence: cachedLocalSuggestion.confidence,
+            category: cachedLocalSuggestion.category,
+            summary: formatLocalSuggestion(cachedLocalSuggestion)
+          });
+          if (shouldAutoplaySuggestion(cachedLocalSuggestion)) {
+            aiLog.info('[local_ai:autoplay]', {
+              move: { row: cachedLocalSuggestion.row, col: cachedLocalSuggestion.col },
+              reason: cachedLocalSuggestion.reason
+            });
+            processedRef.current.add(key);
+            clearRunningTask();
+            actions.placeStone(cachedLocalSuggestion.row, cachedLocalSuggestion.col);
+            return;
+          }
+          scenarioPayload = { ...scenario } as AiScenario;
+        }
+      }
+
+      const descriptor = getScenarioMeta(scenarioPayload.kind);
       let attempts = 0;
 
       const schedule = (reason?: string) => {
         if (attempts >= 3) {
           aiLog.warn('多次尝试后仍未得到有效行动，使用保底策略');
-          fallbackDecision(scenario, gameState, actions);
+          fallbackDecision(scenarioPayload, gameState, actions, cachedLocalSuggestion);
           processedRef.current.add(key);
           clearRunningTask();
           return;
@@ -549,7 +909,7 @@ const useAIActions = (
 
         attempts += 1;
         const baseDelay = (() => {
-          switch (scenario.kind) {
+          switch (scenarioPayload.kind) {
             case 'counter_window':
               return 600;
             case 'skill':
@@ -561,9 +921,9 @@ const useAIActions = (
           }
         })();
         const delay = reason ? 600 : baseDelay;
-        cycleProgressMessage(scenario, descriptor.message, reason);
+        cycleProgressMessage(scenarioPayload, descriptor.message, reason);
         aiLog.info(
-          `[${scenario.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`
+          `[${scenarioPayload.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`
         );
 
         activeKeyRef.current = key;
@@ -573,7 +933,7 @@ const useAIActions = (
           const feedbackMessage = reason;
 
           aiLog.info('[request_prepared]', {
-            scenario: scenario.kind,
+            scenario: scenarioPayload.kind,
             attempt: attempts,
             feedback: feedbackMessage
           });
@@ -589,8 +949,8 @@ const useAIActions = (
           };
 
           const runFallback = () => {
-            aiLog.warn(`[${scenario.kind}] ${descriptor.fallbackLog}`);
-            fallbackDecision(scenario, gameState, actions);
+            aiLog.warn(`[${scenarioPayload.kind}] ${descriptor.fallbackLog}`);
+            fallbackDecision(scenarioPayload, gameState, actions, cachedLocalSuggestion);
             finalize();
           };
 
@@ -601,10 +961,10 @@ const useAIActions = (
           }
 
           try {
-            const decision = await requestAiDecision(aiSettings, scenario, { feedback: feedbackMessage });
+            const decision = await requestAiDecision(aiSettings, scenarioPayload, { feedback: feedbackMessage });
             aiLog.info('[response_json]', decision);
             const outcome = decision
-              ? applyDecision(decision, scenario, gameState, actions)
+              ? applyDecision(decision, scenarioPayload, gameState, actions)
               : { success: false, reason: '未提供有效决策' };
             if (!outcome.success) {
               const reasonText = outcome.reason ?? '技能执行失败，需要重新决策';
@@ -720,19 +1080,19 @@ function summariseBoardUrgency(board: GameStatus['board']): string | null {
   const notes: string[] = [];
   if (whitePatterns.winMoves.length > 0) {
     const cell = whitePatterns.winMoves[0];
-    notes.push(`白方在 (${cell.row}, ${cell.col}) 落子即可形成五连。`);
+    notes.push(`白方在 (${cell.row + 1}, ${cell.col + 1}) 落子即可形成五连。`);
   }
   if (blackPatterns.winMoves.length > 0) {
     const cell = blackPatterns.winMoves[0];
-    notes.push(`黑方若在 (${cell.row}, ${cell.col}) 落子将成五，需立即阻挡。`);
+    notes.push(`黑方若在 (${cell.row + 1}, ${cell.col + 1}) 落子将成五，需立即阻挡。`);
   }
   if (blackPatterns.openFours.length > 0) {
     const cell = blackPatterns.openFours[0];
-    notes.push(`黑方存在活四威胁，代表位置 (${cell.row}, ${cell.col})。`);
+    notes.push(`黑方存在活四威胁，代表位置 (${cell.row + 1}, ${cell.col + 1})。`);
   }
   if (notes.length === 0 && whitePatterns.openFours.length > 0) {
     const cell = whitePatterns.openFours[0];
-    notes.push(`白方可在 (${cell.row}, ${cell.col}) 构建活四。`);
+    notes.push(`白方可在 (${cell.row + 1}, ${cell.col + 1}) 构建活四。`);
   }
   return notes.length > 0 ? notes.join(' ') : null;
 }
@@ -777,6 +1137,10 @@ const deriveScenarios = (state: GameStatus): AiScenario[] => {
     const note = summariseBoardUrgency(state.board);
     const skills = collectPlayableSkills(state, PlayerEnum.WHITE);
     const stoneAnalysis = buildStoneAnalysis(state.board);
+    const localSuggestion = suggestLocalMove(state);
+    const analysisParts = [stoneAnalysis, localSuggestion ? `本地分析：${formatLocalSuggestion(localSuggestion)}` : null]
+      .filter(Boolean)
+      .join('\n');
     const scenarios: AiScenario[] = [];
     if (skills.length > 0) {
       scenarios.push({
@@ -792,7 +1156,8 @@ const deriveScenarios = (state: GameStatus): AiScenario[] => {
       player: PlayerEnum.WHITE,
       game: state,
       contextNote: note ?? (skills.length === 0 ? '当前无可发动技能，需选择落子方案。' : undefined),
-      analysis: stoneAnalysis ?? undefined
+      analysis: analysisParts || undefined,
+      localSuggestion: localSuggestion ?? undefined
     });
     return scenarios;
   }
@@ -807,9 +1172,10 @@ const buildScenarioKey = (scenario: AiScenario, state: GameStatus): string => {
     case 'counter_window':
       return `counter:${state.pendingAction?.id ?? 'none'}:${state.counterWindow?.id ?? 'none'}:${scenario.availableCounters.map(item => item.handIndex).join(',')}`;
     case 'skill':
-      return `skill:${state.turnCount}:${state.board.history.length}:${scenario.skills.map(item => item.handIndex).join(',')}`;
+      return `skill:${state.aiTurnId}:${state.currentPlayer}:${scenario.skills.map(item => item.handIndex).join(',')}`;
     case 'stone':
-      return `stone:${state.turnCount}:${state.board.history.length}`;
+      // Use aiTurnId as the authoritative token for actionable turns
+      return `stone:${state.aiTurnId}:${scenario.player ?? state.currentPlayer}`;
     default:
       return `fallback:${Date.now()}`;
   }
@@ -847,7 +1213,7 @@ const applyDecision = (
         const move = resolveMoveFromDecision(decision, state.board, PlayerEnum.WHITE);
         if (move) {
           actions.placeStone(move.row, move.col);
-          return { success: true, detail: `白方 AI 在 (${move.row}, ${move.col}) 落子` };
+          return { success: true, detail: `白方 AI 在 (${move.row + 1}, ${move.col + 1}) 落子` };
         }
         return { success: false, reason: '无法从返回的盘面解析出合法落子' };
       }
@@ -861,16 +1227,29 @@ const applyDecision = (
         const move = resolveMoveFromDecision(decision, state.board, PlayerEnum.WHITE);
         if (move) {
           actions.placeStone(move.row, move.col);
-          return { success: true, detail: `白方 AI 在 (${move.row}, ${move.col}) 落子` };
+          return { success: true, detail: `白方 AI 在 (${move.row + 1}, ${move.col + 1}) 落子` };
         }
         return { success: false, reason: '无法从返回的盘面解析出合法落子' };
       }
       return { success: false, reason: '未识别的行动类型' };
     case 'card_targeting':
       if (scenario.request.type === 'cell') {
-        if (decision.kind === 'target_cell' && isCellAllowed(scenario.request.cells ?? [], decision.row, decision.col)) {
-          actions.selectTarget({ row: decision.row, col: decision.col });
-          return { success: true, detail: `白方 AI 选择目标格 (${decision.row}, ${decision.col})` };
+        if (decision.kind === 'target_cell') {
+          const cells = scenario.request.cells ?? [];
+          const row = Number(decision.row);
+          const col = Number(decision.col);
+          if (isCellAllowed(cells, row, col)) {
+            actions.selectTarget({ row, col });
+            return { success: true, detail: `白方 AI 选择目标格 (${row + 1}, ${col + 1})` };
+          }
+          // 容错：若模型返回 1 基坐标，尝试转换为 0 基
+          const row0 = row - 1;
+          const col0 = col - 1;
+          if (Number.isInteger(row0) && Number.isInteger(col0) && isCellAllowed(cells, row0, col0)) {
+            aiLog.info('[target_correction] 模型使用了 1 基坐标，已自动更正', { from: { row, col }, to: { row: row0, col: col0 } });
+            actions.selectTarget({ row: row0, col: col0 });
+            return { success: true, detail: `白方 AI 选择目标格 (${row0 + 1}, ${col0 + 1})` };
+          }
         }
         return { success: false, reason: '目标格不在可选列表中' };
       }
@@ -1028,7 +1407,7 @@ function formatPatternLine(label: string, cells: EmptyCell[]): string {
 }
 
 function formatCells(cells: EmptyCell[], limit = 5): string {
-  const picks = cells.slice(0, limit).map(cell => `(${cell.row}, ${cell.col})`);
+  const picks = cells.slice(0, limit).map(cell => `(${cell.row + 1}, ${cell.col + 1})`);
   if (cells.length > limit) {
     picks.push(`... 共 ${cells.length} 处`);
   }
@@ -1136,10 +1515,15 @@ function pickBestCandidate(
   return { cell: bestCell, score: bestScore };
 }
 
-const fallbackDecision = (scenario: AiScenario, state: GameStatus, actions: AiActionHandlers) => {
+const fallbackDecision = (
+  scenario: AiScenario,
+  state: GameStatus,
+  actions: AiActionHandlers,
+  localSuggestion?: LocalMoveSuggestion | null
+) => {
   switch (scenario.kind) {
     case 'stone':
-      fallbackPlaceStone(state, actions);
+      fallbackPlaceStone(state, actions, localSuggestion ?? null);
       break;
     case 'skill':
       if (scenario.skills.length > 0) {
@@ -1147,14 +1531,14 @@ const fallbackDecision = (scenario: AiScenario, state: GameStatus, actions: AiAc
         aiLog.info(`默认使用可发动技能 ${formatCardIdentifier(fallbackSkill.card)} (手牌索引 ${fallbackSkill.handIndex})`);
         actions.playCard(fallbackSkill.handIndex);
       } else {
-        fallbackPlaceStone(state, actions);
+        fallbackPlaceStone(state, actions, null);
       }
       break;
     case 'card_targeting':
       if (scenario.request.type === 'cell') {
         const target = scenario.request.cells?.[0];
         if (target) {
-          aiLog.info(`默认选择目标格 (${target.row}, ${target.col})`);
+          aiLog.info(`默认选择目标格 (${target.row + 1}, ${target.col + 1})`);
           actions.selectTarget({ row: target.row, col: target.col });
         }
       } else if (scenario.request.type === 'snapshot') {
@@ -1196,11 +1580,24 @@ const collectCounterOptions = (state: GameStatus, responder: Player): Array<{ ha
   return matches;
 };
 
-const fallbackPlaceStone = (state: GameStatus, actions: AiActionHandlers) => {
+const fallbackPlaceStone = (
+  state: GameStatus,
+  actions: AiActionHandlers,
+  localSuggestion: LocalMoveSuggestion | null = null
+) => {
+  if (localSuggestion) {
+    aiLog.info('[fallback_local_ai]', {
+      move: { row: localSuggestion.row, col: localSuggestion.col },
+      summary: formatLocalSuggestion(localSuggestion)
+    });
+    actions.placeStone(localSuggestion.row, localSuggestion.col);
+    return;
+  }
+
   const size = state.board.size;
   const center = Math.floor(size / 2);
   if (state.board.history.length === 0 && state.board.get(center, center) === null) {
-    aiLog.info(`默认落子在中心 (${center}, ${center})`);
+    aiLog.info(`默认落子在中心 (${center + 1}, ${center + 1})`);
     actions.placeStone(center, center);
     return;
   }
@@ -1216,19 +1613,19 @@ const fallbackPlaceStone = (state: GameStatus, actions: AiActionHandlers) => {
 
   if (selfBest.cell && selfBest.score >= 5) {
     chosen = selfBest.cell;
-    message = `默认策略：完成潜在五连，选择 (${chosen.row}, ${chosen.col})`;
+    message = `默认策略：完成潜在五连，选择 (${chosen.row + 1}, ${chosen.col + 1})`;
   } else if (opponentBest.cell && opponentBest.score >= 4) {
     chosen = opponentBest.cell;
-    message = `默认策略：阻挡黑方 ${opponentBest.score} 连线，选择 (${chosen.row}, ${chosen.col})`;
+    message = `默认策略：阻挡黑方 ${opponentBest.score} 连线，选择 (${chosen.row + 1}, ${chosen.col + 1})`;
   } else if (selfBest.cell && selfBest.score >= Math.max(3, opponentBest.score)) {
     chosen = selfBest.cell;
-    message = `默认策略：扩展白方连线 (${selfBest.score})，选择 (${chosen.row}, ${chosen.col})`;
+    message = `默认策略：扩展白方连线 (${selfBest.score})，选择 (${chosen.row + 1}, ${chosen.col + 1})`;
   } else if (opponentBest.cell) {
     chosen = opponentBest.cell;
-    message = `默认策略：干扰黑方连线 (${opponentBest.score})，选择 (${chosen.row}, ${chosen.col})`;
+    message = `默认策略：干扰黑方连线 (${opponentBest.score})，选择 (${chosen.row + 1}, ${chosen.col + 1})`;
   } else {
     chosen = empties[0];
-    message = `默认策略：使用可用空位 (${chosen.row}, ${chosen.col})`;
+    message = `默认策略：使用可用空位 (${chosen.row + 1}, ${chosen.col + 1})`;
   }
 
   if (!chosen) return;

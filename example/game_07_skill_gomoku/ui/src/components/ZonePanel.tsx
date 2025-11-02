@@ -19,13 +19,13 @@ const variantStyles: Record<'player' | 'opponent', { borderGlow: string; accentC
     borderGlow: 'shadow-[0_0_20px_rgba(59,130,246,0.3)]',
     accentColor: 'rgb(59, 130, 246)',
     bgPattern: 'from-slate-900/98 via-blue-950/90 to-slate-900/98',
-    bgSolid: 'rgba(15, 23, 42, 0.95)' // 深色半透明背景
+    bgSolid: 'linear-gradient(145deg, #1f2937 0%, #374151 8%, #374151 92%, #1f2937 100%)' // 比 GameLog 更暗的灰色渐变
   },
   opponent: {
     borderGlow: 'shadow-[0_0_20px_rgba(239,68,68,0.3)]',
     accentColor: 'rgb(239, 68, 68)',
     bgPattern: 'from-slate-900/98 via-red-950/90 to-slate-900/98',
-    bgSolid: 'rgba(20, 8, 26, 0.95)' // 深色半透明背景
+    bgSolid: 'linear-gradient(145deg, #1f2937 0%, #374151 8%, #374151 92%, #1f2937 100%)' // 比 GameLog 更暗的灰色渐变
   }
 };
 
@@ -68,7 +68,7 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
       />
 
       <header
-        className="relative mb-2 flex items-center justify-between border-b pb-1.5 px-3 pt-2.5"
+        className="relative mb-1.5 flex items-center justify-between border-b pb-1 px-2 pt-2"
         style={{ borderBottomColor: 'rgba(255,255,255,0.1)' }}
       >
         <h3 className="text-xs font-bold text-slate-100 tracking-wide">{title}</h3>
@@ -95,7 +95,7 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
           </div>
         </div>
       </header>
-      <div className="flex-1 flex flex-col gap-2 text-xs overflow-hidden min-h-0 px-3 pb-3">
+      <div className="flex-1 flex flex-col gap-1.5 text-xs overflow-hidden min-h-0 px-2 pb-2">
         {/* 墓地：横向滚动卡片，固定高度 */}
         <div className="flex flex-col h-[110px] min-h-[110px]">
           <div className="flex items-center gap-1 text-[0.6rem] font-medium text-slate-300 mb-1 flex-shrink-0">

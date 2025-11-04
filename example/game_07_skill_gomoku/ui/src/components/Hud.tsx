@@ -266,6 +266,7 @@ export interface PlayerHudProps {
   isCurrent: boolean;
   className?: string;
   bubble?: { text: string } | null;
+  align?: 'center' | 'end';
 }
 
 export const PlayerHUD: React.FC<PlayerHudProps> = ({
@@ -282,7 +283,8 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
   onCardDragEnd,
   isCurrent,
   className,
-  bubble = null
+  bubble = null,
+  align = 'center'
 }) => (
   <div className={cx('flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 紧凑设计 */}
@@ -306,8 +308,8 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
       </div>
     </div>
 
-    {/* 中央手牌区域 - 完全居中 */}
-    <div className="relative flex flex-1 items-end justify-center h-[9.5rem]">
+    {/* 手牌区域 - 可切换对齐（避免遮挡棋盘） */}
+    <div className={`relative flex flex-1 items-end ${align === 'end' ? 'justify-end pr-4 md:pr-8' : 'justify-center'} h-[9.5rem] max-w-[560px] ${align === 'end' ? 'ml-auto' : ''}`}>
       <HandPanel
         className="w-full"
         cards={handCards}

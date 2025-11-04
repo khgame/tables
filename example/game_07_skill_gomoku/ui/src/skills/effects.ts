@@ -9,7 +9,11 @@ import type {
   TargetRequest,
   CounterWindow,
   GraveyardEntry,
-  Player
+  Player,
+  RawCharacter,
+  BoardSnapshot,
+  PreWinSnapshot,
+  TimelineEntry
 } from '../types';
 
 export const SkillEffect = {
@@ -34,7 +38,7 @@ export type SkillEffectId = (typeof SkillEffect)[keyof typeof SkillEffect];
 
 export interface EffectContext {
   cardsByTid: Map<string, RawCard>;
-  charactersByTid: Map<string, any>;
+  charactersByTid: Map<string, RawCharacter>;
   allCards: RawCard[];
 }
 
@@ -47,24 +51,29 @@ export interface EffectPrepareResult {
 
 export interface EffectHelpers {
   log: (message: string, type?: string) => void;
-  addShichahai: (player: Player, card: RawCard, row: number, col: number, snapshot: { turn: number; board: any }) => void;
-  addTimelineEntry: (entry: any) => void;
+  addShichahai: (
+    player: Player,
+    card: RawCard,
+    row: number,
+    col: number,
+    snapshot: { turn: number; board: BoardSnapshot }
+  ) => void;
+  addTimelineEntry: (entry: TimelineEntry) => void;
   setWinner: (player: Player) => void;
   updateStatuses: (
     updater: (statuses: GameStatus['statuses']) => GameStatus['statuses']
   ) => void;
-  setCharacters: (characters: Record<Player, any>) => void;
+  setCharacters: (characters: Record<Player, RawCharacter | null>) => void;
   enqueueVisual: (payload: { effectId?: string; card: RawCard; player: Player; role?: 'attacker' | 'counter' | 'normal' }) => void;
 }
 
-export interface PendingWithMeta extends PendingAction {
-  metadata: Record<string, any>;
-}
-
-const effectHandlers: Record<SkillEffectId, {
-  prepare?: (state: GameStatus, action: PendingAction, context: EffectContext) => EffectPrepareResult | void;
-  resolve?: (state: GameStatus, action: PendingWithMeta, context: EffectContext, helpers: EffectHelpers) => void;
-}> = {
+const effectHandlers: Record<
+  SkillEffectId,
+  {
+    prepare?: (state: GameStatus, action: PendingAction, context: EffectContext) => EffectPrepareResult | void;
+    resolve?: (state: GameStatus, action: PendingAction, context: EffectContext, helpers: EffectHelpers) => void;
+  }
+> = {
   [SkillEffect.RemoveToShichahai]: {
     prepare: (state, action) => {
       const opponent = getOpponent(action.player);
@@ -101,6 +110,8 @@ const effectHandlers: Record<SkillEffectId, {
         return;
       }
       state.board.remove(row, col);
+      // 视觉：在棋盘上对该格触发“飞出”动画
+      helpers.enqueueVisual({ effectId: SkillEffect.RemoveToShichahai, card: action.card, player: action.player, role: 'attacker', cell: { row, col }, owner: occupant });
       helpers.addShichahai(occupant, action.card, row, col, snapshot);
       helpers.log(`${PLAYER_NAMES[action.player]} 将 ${PLAYER_NAMES[occupant]} 的棋子移入什刹海`, 'effect');
       const expiresAtTurn = state.turnCount + 1;
@@ -137,7 +148,7 @@ const effectHandlers: Record<SkillEffectId, {
         moveCount: [...state.moveCount] as [number, number],
         turnCount: state.turnCount,
         currentPlayer: state.currentPlayer
-      };
+      } as PreWinSnapshot;
       return {};
     },
     resolve: (state, action, _context, helpers) => {
@@ -164,7 +175,7 @@ const effectHandlers: Record<SkillEffectId, {
   [SkillEffect.TimeRewind]: {
     resolve: (state, _action, _context, helpers) => {
       // 新规则：悔棋效果 —— 移除双方最近一轮的落子（各移除一手，若某方无落子则忽略）
-      const board = state.board as any;
+      const board = state.board;
       const history = board.history as Array<{ row: number; col: number; player: Player }>;
       if (!Array.isArray(history) || history.length === 0) {
         helpers.log('暂无可回退的落子', 'error');
@@ -371,7 +382,7 @@ const effectHandlers: Record<SkillEffectId, {
   },
   [SkillEffect.CounterRestoreBoard]: {
     resolve: (state, counter, _context, helpers) => {
-      const snapshot = counter.targetAction?.metadata?.preWinSnapshot;
+      const snapshot = counter.targetAction?.metadata?.preWinSnapshot as PreWinSnapshot | undefined;
       if (!snapshot) {
         helpers.log('暂无可恢复的棋盘快照', 'error');
         return;
@@ -383,7 +394,7 @@ const effectHandlers: Record<SkillEffectId, {
       state.turnCount = snapshot.turnCount;
       // 反击成功后，立即将回合权交给反击方，并开始新的可行动回合
       state.currentPlayer = counter.player;
-      (state as any).aiTurnId = ((state as any).aiTurnId ?? 0) + 1;
+      state.aiTurnId = (state.aiTurnId ?? 0) + 1;
       state.phase = 'playing';
       state.winner = null;
       helpers.log('东山再起，棋局恢复如初', 'counter');
@@ -482,12 +493,12 @@ export const prepareCardEffect = (
 ): EffectPrepareResult => {
   const handler = effectHandlers[action.effectId as SkillEffectId];
   if (!handler?.prepare) return {};
-  return handler.prepare(state, action, context) ?? {};
+  return (handler.prepare(state, action, context) ?? {}) as EffectPrepareResult;
 };
 
 export const resolveCardEffect = (
   state: GameStatus,
-  action: PendingWithMeta,
+  action: PendingAction,
   context: EffectContext,
   helpers: EffectHelpers
 ) => {
@@ -503,12 +514,12 @@ export const prepareCounterEffect = (
 ): EffectPrepareResult => {
   const handler = effectHandlers[counter.effectId as SkillEffectId];
   if (!handler?.prepare) return {};
-  return handler.prepare(state, counter, context) ?? {};
+  return (handler.prepare(state, counter, context) ?? {}) as EffectPrepareResult;
 };
 
 export const resolveCounterEffect = (
   state: GameStatus,
-  counter: PendingWithMeta,
+  counter: PendingAction,
   context: EffectContext,
   helpers: EffectHelpers
 ) => {

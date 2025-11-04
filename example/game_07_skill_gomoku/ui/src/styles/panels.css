@@ -1,31 +1,6 @@
 /* === AI Settings === */
-.ai-settings__trigger {
-  position: fixed;
-  right: 2rem;
-  top: 1.5rem;
-  z-index: 20;
-  border-radius: 999px;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(8px);
-  padding: 0.4rem 1rem;
-  font-size: 0.68rem;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: rgba(251, 191, 36, 0.8);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.35);
-  transition: all 200ms ease;
-}
 
-.ai-settings__trigger--ready {
-  border-color: rgba(16, 185, 129, 0.4);
-  color: rgba(16, 185, 129, 0.9);
-}
 
-.ai-settings__trigger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.45);
-}
 
 /* === Overlays === */
 .mulligan-overlay {
@@ -59,106 +34,6 @@
 
 /* === Pending Panel === */
 /* === Mulligan Panel === */
-.mulligan-panel {
-  position: relative;
-  max-width: 540px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 1.25rem 1.5rem;
-  border-radius: 18px;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.94) 100%);
-  color: #1f2937;
-  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.18);
-  overflow: visible;
-}
-
-.mulligan-panel__inner {
-  display: grid;
-  gap: 1rem;
-  text-align: center;
-}
-
-.mulligan-panel__title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #b45309;
-}
-
-.mulligan-panel__hint {
-  font-size: 0.92rem;
-  color: #be185d;
-}
-
-.mulligan-panel__description {
-  font-size: 0.86rem;
-  color: #475569;
-  line-height: 1.5;
-}
-
-.mulligan-panel__card-floating {
-  position: absolute;
-  top: 50%;
-  right: -5.5rem;
-  transform: translate(0, -50%);
-  pointer-events: none;
-  filter: drop-shadow(0 24px 38px rgba(8, 17, 35, 0.3));
-}
-
-.mulligan-panel__empty {
-  font-size: 0.9rem;
-  color: #9ca3af;
-  font-style: italic;
-}
-
-.mulligan-panel__actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.mulligan-panel__button {
-  padding: 0.62rem 1.8rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #fff;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.mulligan-panel__button:hover {
-  transform: translateY(-1px);
-}
-
-.mulligan-panel__button--keep {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.82), rgba(5, 150, 105, 0.86));
-  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.18);
-}
-
-.mulligan-panel__button--replace {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.82), rgba(190, 24, 93, 0.88));
-  box-shadow: 0 12px 24px rgba(244, 63, 94, 0.18);
-}
-
-@media (max-width: 1100px) {
-  .mulligan-panel {
-    padding: 1.1rem 1.25rem;
-  }
-
-  .mulligan-panel__card-floating {
-    position: static;
-    transform: none;
-    margin: 0 auto 0.8rem;
-    pointer-events: none;
-  }
-
-  .mulligan-panel__actions {
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-}
 
 /* === Draft (Card Draw) Modal – Persona-like styling === */
 .draft-modal {
@@ -168,36 +43,8 @@
   pointer-events: auto;
 }
 
-.draft-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(2, 6, 23, 0.56);
-  backdrop-filter: blur(3px);
-}
 
-.draft-banner {
-  position: absolute;
-  top: 1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.45rem 1.1rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(16,185,129,0.95), rgba(5,150,105,0.9));
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  box-shadow: 0 18px 42px rgba(10,12,28,0.45);
-}
 
-.draft-stage {
-  position: fixed;
-  right: 2rem; /* move a bit left */
-  bottom: 2.6rem; /* move a bit up */
-  width: clamp(24rem, 40vw, 40rem);
-  pointer-events: none;
-}
 
 .draft-decor {
   position: absolute;
@@ -335,3 +182,5 @@
   font-size: 0.7rem;
   box-shadow: 0 10px 20px rgba(5,8,14,0.35);
 }
+
+/* layout helpers removed in favor of Tailwind utilities */

@@ -40,3 +40,10 @@ export const parseTags = (raw?: string): Set<string> => {
     .forEach(tag => tags.add(tag));
   return tags;
 };
+
+// Prefer string TID id across data sources (cards/characters may use _tid or tid)
+export const getTidString = (entity: { _tid?: string | number; tid?: string | number } | null | undefined): string => {
+  if (!entity) return '';
+  const raw = entity._tid ?? entity.tid;
+  return raw == null ? '' : String(raw);
+};

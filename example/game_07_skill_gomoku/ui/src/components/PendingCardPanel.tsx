@@ -14,6 +14,10 @@ export interface PendingCardPanelProps {
   aiEnabled: boolean;
   onReact?: (text: string) => void;
   onCancel?: () => void;
+  // UI: 是否瞬发（无需选择目标）→ 显示确认倒计时；否则不显示倒计时
+  isInstant?: boolean;
+  // 瞬发确认时间（毫秒）
+  confirmMs?: number;
 }
 
 export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
@@ -25,7 +29,9 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   onResolve,
   aiEnabled,
   onReact,
-  onCancel
+  onCancel,
+  isInstant = false,
+  confirmMs = 7000
 }) => {
   if (!pendingCard) return null;
   const [appear, setAppear] = useState(false);
@@ -123,11 +129,8 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
           </div>
         ) : (
           <div className="pt-1">
-            {/**
-             * 当白方（AI）发动技能、且黑方（玩家）没有可用反击时，
-             * 用情绪化的反应按钮（等价于“放弃反击/我知道了”），而不是“取消”。
-             */}
             {pendingCard.player === PlayerEnum.WHITE && responder === PlayerEnum.BLACK ? (
+              // 敌方技能，无可反击：给出情绪化按钮等价"放弃反击"
               <div className="flex items-center gap-2">
                 {['可恶', '我知道了', '竟然'].map((label, i) => (
                   <button
@@ -148,7 +151,30 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
                 ))}
               </div>
             ) : pendingCard.player === PlayerEnum.BLACK ? (
-              <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} />
+              // 我方技能：瞬发显示倒计时+"发动"，非瞬发不显示倒计时，仅允许取消
+              isInstant ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onResolve(false, null)}
+                    className="px-4 py-2 bg-fuchsia-600/90 text-white font-bold text-sm rounded-full shadow hover:bg-fuchsia-600"
+                  >
+                    发动
+                  </button>
+                  <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} ms={confirmMs} />
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onCancel?.()}
+                    className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
+                  >
+                    取消
+                  </button>
+                  <span className="text-[0.7rem] text-slate-300">等待对手是否反击…</span>
+                </div>
+              )
             ) : null}
           </div>
         )}
@@ -157,8 +183,8 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   );
 };
 
-const CountdownCancel: React.FC<{ onCancel?: () => void; onTimeout: () => void }> = ({ onCancel, onTimeout }) => {
-  const [remain, setRemain] = useState(3);
+const CountdownCancel: React.FC<{ onCancel?: () => void; onTimeout: () => void; ms?: number }> = ({ onCancel, onTimeout, ms = 3000 }) => {
+  const [remain, setRemain] = useState(Math.max(1, Math.round(ms / 1000)));
   const cancelledRef = React.useRef(false);
   const firedRef = React.useRef(false);
   useEffect(() => {
@@ -176,7 +202,7 @@ const CountdownCancel: React.FC<{ onCancel?: () => void; onTimeout: () => void }
       });
     }, 1000);
     return () => window.clearInterval(t1);
-  }, [onTimeout]);
+  }, [onTimeout, ms]);
 
   return (
     <div className="flex items-center gap-2">

@@ -32,11 +32,82 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   const lastPickedRef = React.useRef<number | null>(null);
   const timersRef = React.useRef<number[]>([]);
   const suspendedRef = React.useRef(false);
+  // 跟踪新卡牌以添加飞入动画
+  const [newCardIds, setNewCardIds] = React.useState<Set<string>>(new Set());
+  const prevCardsLengthRef = React.useRef(cards.length);
+  // 跟踪离开的卡牌以添加飞出动画（白方AI释放技能时）
+  const [leavingCardIds, setLeavingCardIds] = React.useState<Set<string>>(new Set());
+  const prevCardsRef = React.useRef<RawCard[]>(cards);
+  // 跟踪已经存在的卡牌 ID
+  const getCardId = (c: RawCard): string => String(c.instanceId ?? c._tid ?? c.tid ?? '');
+  const knownCardIdsRef = React.useRef<Set<string>>(new Set(cards.map(getCardId)));
 
   const clearTimers = React.useCallback(() => {
     timersRef.current.forEach(id => window.clearTimeout(id));
     timersRef.current = [];
   }, []);
+
+  // 检测新卡牌并添加飞入动画
+  React.useEffect(() => {
+    // 只在玩家手牌增加时检测
+    if (!isOpponent && cards.length > prevCardsLengthRef.current) {
+      const newIds = new Set<string>();
+
+      cards.forEach(card => {
+        const cardId = getCardId(card);
+        if (!knownCardIdsRef.current.has(cardId)) {
+          newIds.add(cardId);
+          knownCardIdsRef.current.add(cardId);
+        }
+      });
+
+      if (newIds.size > 0) {
+        setNewCardIds(newIds);
+
+        // 800ms 后移除动画类
+        const timer = window.setTimeout(() => {
+          setNewCardIds(new Set());
+        }, 800);
+
+        return () => window.clearTimeout(timer);
+      }
+    } else if (isOpponent && cards.length < prevCardsLengthRef.current) {
+      // 白方卡牌减少 - 找出离开的卡牌
+      const currentIds = new Set(cards.map(getCardId));
+      const leaving = new Set<string>();
+
+      prevCardsRef.current.forEach(card => {
+        const cardId = getCardId(card);
+        if (!currentIds.has(cardId)) {
+          leaving.add(cardId);
+          knownCardIdsRef.current.delete(cardId);
+        }
+      });
+
+      if (leaving.size > 0) {
+        setLeavingCardIds(leaving);
+        // 600ms 后清除（动画时长）
+        const timer = window.setTimeout(() => {
+          setLeavingCardIds(new Set());
+        }, 600);
+        return () => window.clearTimeout(timer);
+      }
+    }
+
+    // 当卡牌减少时（玩家出牌），也需要更新已知卡牌集合
+    if (!isOpponent && cards.length < prevCardsLengthRef.current) {
+      const currentIds = new Set(cards.map(getCardId));
+      // 移除不再存在的卡牌ID
+      knownCardIdsRef.current.forEach(id => {
+        if (!currentIds.has(id)) {
+          knownCardIdsRef.current.delete(id);
+        }
+      });
+    }
+
+    prevCardsLengthRef.current = cards.length;
+    prevCardsRef.current = cards;
+  }, [cards.length, isOpponent]);
 
   // Random pick-up scheduler for opponent AI thinking（非固定频率，指数分布 + 随机双重思考）
   React.useEffect(() => {
@@ -163,16 +234,23 @@ export const HandPanel: React.FC<HandPanelProps> = ({
           const translateY = isOpponent ? arcLift : -arcLift;
           const zIndex = 100 + idx;
           const positionClass = isOpponent ? 'top-0' : 'bottom-0';
+          const cardId = getCardId(card);
+          const isNewCard = !isOpponent && newCardIds.has(cardId);
+          const isLeavingCard = isOpponent && leavingCardIds.has(cardId);
 
           return (
             <div
-              key={card.instanceId ?? `${card._tid ?? card.tid}-${idx}`}
-              className={`group absolute left-1/2 ${positionClass} origin-${isOpponent ? 'top' : 'bottom'}`}
+              key={cardId}
+              className={cx(
+                'group absolute left-1/2',
+                positionClass,
+                `origin-${isOpponent ? 'top' : 'bottom'}`
+              )}
               data-base-z-index={100 + idx}
               style={{
                 transform: `translateX(${translateX}px) translateY(${translateY}px) rotate(${isOpponent ? -angle : angle}deg)`,
                 transformOrigin: isOpponent ? 'center top' : 'center bottom',
-                // 当被“拿起”时，提升父容器 z-index，确保位于所有手牌之上
+                // 当被"拿起"时，提升父容器 z-index，确保位于所有手牌之上
                 zIndex: isOpponent && animateThinking && pickedIdx === idx ? 100000 : zIndex
               }}
             >
@@ -185,11 +263,11 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                   width: `${baseWidth}rem`,
                   // raise selected card; rely on CSS transitions inside CardView wrapper
                 }}
-                className={[
-                  isOpponent && animateThinking && pickedIdx === idx
-                    ? `z-[1000] ${pickedStyle}`
-                    : ''
-                ].filter(Boolean).join(' ')}
+                className={cx(
+                  isOpponent && animateThinking && pickedIdx === idx && pickedStyle,
+                  !isOpponent && isNewCard && 'animate-card-fly-in',
+                  isOpponent && isLeavingCard && 'animate-card-fly-out-opponent'
+                )}
                 onClick={() => {
                   if (!disabled && !isOpponent) onCardClick?.(idx);
                 }}

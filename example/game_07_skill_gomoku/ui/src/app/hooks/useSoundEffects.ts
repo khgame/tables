@@ -58,23 +58,25 @@ const ensureCtx = () => {
 
 // Low-level synth helpers use sharedVolume/sharedEnabled
 const synth = {
-  tone: (freq: number, durMs = 140) => {
+  // Basic tone, optionally scheduled with offset and custom waveform/volume
+  tone: (freq: number, durMs = 140, startOffsetMs = 0, opts?: { type?: OscillatorType; vol?: number }) => {
     if (!sharedEnabled) return;
     const ctx = ensureCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'triangle';
+    osc.type = opts?.type ?? 'triangle';
     osc.frequency.value = freq;
-    gain.gain.value = 0.0001;
+    const vol = Math.max(0.0001, Math.min(1, opts?.vol ?? 0.4)) * sharedVolume;
     osc.connect(gain).connect(ctx.destination);
-    const now = ctx.currentTime;
+    const now = ctx.currentTime + startOffsetMs / 1000;
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(sharedVolume * 0.4, now + 0.02);
+    gain.gain.linearRampToValueAtTime(vol, now + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + durMs / 1000);
     osc.start(now);
     osc.stop(now + durMs / 1000 + 0.02);
   },
-  noise: (centerHz: number, q = 4, durMs = 100, peak = 0.6) => {
+  // Bandpassed noise whoosh
+  noise: (centerHz: number, q = 4, durMs = 100, peak = 0.6, startOffsetMs = 0) => {
     if (!sharedEnabled) return;
     const ctx = ensureCtx();
     const seconds = durMs / 1000;
@@ -92,12 +94,20 @@ const synth = {
     biquad.Q.value = q;
     const gain = ctx.createGain();
     src.connect(biquad).connect(gain).connect(ctx.destination);
-    const now = ctx.currentTime;
+    const now = ctx.currentTime + startOffsetMs / 1000;
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.linearRampToValueAtTime(sharedVolume * peak, now + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
     src.start(now);
     src.stop(now + seconds + 0.02);
+  },
+  // Schedule a simple polyphonic chord
+  chord: (freqs: number[], durMs = 180, startOffsetMs = 0, opts?: { type?: OscillatorType; vol?: number }) => {
+    freqs.forEach(f => synth.tone(f, durMs, startOffsetMs, opts));
+  },
+  // Schedule a melody/sequence
+  seq: (steps: Array<{ f: number; d: number; at: number; type?: OscillatorType; vol?: number }>) => {
+    steps.forEach(step => synth.tone(step.f, step.d, step.at, { type: step.type, vol: step.vol }));
   }
 };
 
@@ -145,33 +155,75 @@ export const useSoundEffects = () => {
     if (!sharedEnabled) return;
     try { void ensureCtx().resume(); } catch {}
     switch (effectId) {
-      case 'draw-card':
-        // 轻微“抽卡”感的噪声 + 高频提示
-        synth.noise(1600, 6, 90, 0.35);
-        setTimeout(() => synth.tone(1200, 70), 40);
-        break;
+      case 'draw-card': {
+        // 轻柔抽卡：滤波噪声 + 轻提示，根据 role 稍微区分音高
+        const base = role === 'counter' ? 1080 : 1240;
+        synth.noise(1600, 6, 80, 0.28);
+        synth.tone(base, 70, 30, { type: 'sine', vol: 0.28 });
+        break; }
+      case 'play-card': {
+        // 出牌：卡片刷动 + 轻敲
+        synth.noise(2200, 8, 70, 0.25);
+        synth.tone(1800, 40, 10, { type: 'triangle', vol: 0.22 });
+        synth.tone(900, 60, 25, { type: 'sine', vol: 0.18 });
+        break; }
       case 'remove-to-shichahai': // 力拔山兮
-        synth.noise(800, 4, 120, 0.65); // 拍打
-        synth.tone(300, 120); // 低沉
+        synth.noise(800, 4, 140, 0.65); // 拍打
+        synth.tone(260, 130, 0, { type: 'sawtooth', vol: 0.4 }); // 低沉
+        synth.tone(180, 180, 40, { type: 'sine', vol: 0.28 }); // 回响
         break;
       case 'freeze-opponent':
-        synth.tone(1400, 80);
-        synth.tone(1200, 100);
+        // 冰晶：细碎高频 + 轻和弦
+        synth.tone(1700, 60, 0, { type: 'sine', vol: 0.22 });
+        synth.tone(1400, 80, 30, { type: 'triangle', vol: 0.2 });
+        synth.chord([1200, 1600], 120, 80, { type: 'sine', vol: 0.16 });
         break;
       case 'clean-sweep':
-        synth.noise(1000, 2.5, 160, 0.5);
+        // 大扫除：呼的一下 + 下滑音
+        synth.noise(1000, 2.5, 180, 0.5);
+        synth.tone(1000, 140, 40, { vol: 0.22 });
+        synth.tone(700, 120, 120, { vol: 0.18 });
         break;
       case 'skip-next-turn':
-        synth.noise(600, 2.0, 120, 0.4);
+        synth.noise(600, 2.0, 140, 0.4);
         break;
       case 'summon-character':
-        synth.tone(660, 90);
-        setTimeout(() => synth.tone(880, 110), 80);
+        // 召唤：小型上行分解和弦
+        synth.seq([
+          { f: 523, d: 110, at: 0, type: 'triangle', vol: 0.22 },
+          { f: 659, d: 110, at: 90, type: 'triangle', vol: 0.22 },
+          { f: 784, d: 140, at: 180, type: 'triangle', vol: 0.22 }
+        ]);
+        synth.chord([523, 659, 784], 160, 340, { type: 'sine', vol: 0.2 });
         break;
       case 'force-exit':
         synth.tone(880, 80);
-        setTimeout(() => synth.tone(440, 120), 60);
+        synth.tone(440, 120, 70);
         break;
+      case 'instant-win': {
+        // 胜利：强力和弦 + 光晕
+        synth.chord([523, 659, 783], 220, 0, { type: 'sawtooth', vol: 0.28 });
+        synth.noise(1400, 5, 220, 0.35, 40);
+        break; }
+      case 'counter-restore-board': {
+        // 东山再起：上行恢复式旋律
+        synth.seq([
+          { f: 392, d: 120, at: 0, type: 'sine', vol: 0.2 },
+          { f: 523, d: 120, at: 110, type: 'sine', vol: 0.2 },
+          { f: 659, d: 130, at: 220, type: 'sine', vol: 0.22 },
+          { f: 784, d: 160, at: 350, type: 'triangle', vol: 0.24 }
+        ]);
+        synth.chord([523, 659, 784], 240, 520, { type: 'triangle', vol: 0.22 });
+        break; }
+      case 'counter-reverse-win': {
+        // 两极反转：紧张的上扬+和弦
+        synth.seq([
+          { f: 740, d: 80, at: 0 },
+          { f: 880, d: 90, at: 70 },
+          { f: 988, d: 100, at: 150 }
+        ]);
+        synth.chord([740, 880, 988], 220, 260, { type: 'sawtooth', vol: 0.26 });
+        break; }
       default: {
         // 基础：根据角色选择音高
         const base = role === 'counter' ? 1320 : role === 'attacker' ? 880 : 660;

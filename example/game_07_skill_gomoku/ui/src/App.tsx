@@ -67,6 +67,8 @@ const App: React.FC = () => {
   const sfx = useSoundEffects();
   const playedSfxRef = useRef<Set<string>>(new Set());
   const prevHandCountsRef = useRef<[number, number]>([0, 0]);
+  // 出牌音效：记录最近一次 pendingAction id
+  const lastPendingIdRef = useRef<string | null>(null);
   // 落子音效：检测棋谱长度变化（在 engine 初始化之后挂载）
   const lastHistoryLenRef = useRef(0);
   // AI 互动：头像气泡 & 玩家久未行动跟踪
@@ -146,11 +148,20 @@ const App: React.FC = () => {
       (gameState.hands[PlayerEnum.WHITE] ?? []).length
     ];
     const prev = prevHandCountsRef.current;
-    if (curr[0] > prev[0] || curr[1] > prev[1]) {
-      try { sfx.playEffect('draw-card'); } catch {}
-    }
+    if (curr[0] > prev[0]) { try { sfx.playEffect('draw-card', 'attacker'); } catch {} }
+    if (curr[1] > prev[1]) { try { sfx.playEffect('draw-card', 'counter'); } catch {} }
     prevHandCountsRef.current = curr;
   }, [gameState.hands[PlayerEnum.BLACK]?.length, gameState.hands[PlayerEnum.WHITE]?.length]);
+
+  // 出牌音效：当 pendingAction 创建（进入技能释放流程）时即刻播放
+  useEffect(() => {
+    const id = gameState.pendingAction?.id ?? null;
+    if (id && id !== lastPendingIdRef.current) {
+      const role = gameState.pendingAction?.player === PlayerEnum.BLACK ? 'attacker' : 'counter';
+      try { sfx.playEffect('play-card', role as any); } catch {}
+    }
+    lastPendingIdRef.current = id;
+  }, [gameState.pendingAction?.id]);
   const { showFinalPanel, winLineLit } = useWinPresentation(gameState);
   useAutoResolvePending(gameState, resolveCard);
   // 玩家久未行动提示（气泡 + 棋盘轻晃）

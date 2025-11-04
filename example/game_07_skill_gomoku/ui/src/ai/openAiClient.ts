@@ -20,6 +20,7 @@ export interface AiSettings {
   apiKey: string;
   reasoningModel: string;
   fastModel: string;
+  customPrompt?: string; // 用户自定义白方策略/偏好指令（可选）
 }
 
 export type AiScenario =
@@ -67,7 +68,8 @@ export type AiDecision =
       useCounter: boolean;
       cardId?: string;
       handIndex?: number;
-    };
+    }
+  | { kind: "pass" };
 
 const BOARD_RESPONSE_PROMPT = BOARD_RESPONSE_INSTRUCTIONS.map((line, index) =>
   index === 0 ? `- ${line}` : `  ${line}`,
@@ -133,6 +135,9 @@ export const requestAiDecision = async (
     model,
     messages: [
       { role: "system", content: DEFAULT_SYSTEM_PROMPT },
+      ...(settings.customPrompt && settings.customPrompt.trim()
+        ? [{ role: 'system', content: `Additional directives (user-defined):\n${settings.customPrompt.trim()}` }]
+        : []),
       { role: "user", content: userContent },
     ],
     temperature: 0.1,
@@ -203,12 +208,15 @@ const safeReadText = async (resp: Response): Promise<string> => {
   }
 };
 
-const extractMessageContent = (payload: any): string | null => {
-  if (!payload) return null;
-  const choice =
-    payload.choices?.[0]?.message?.content ?? payload.choices?.[0]?.text;
-  if (typeof choice === "string") return choice;
-  return null;
+const extractMessageContent = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== 'object') return null;
+  const obj = payload as Record<string, unknown>;
+  const choices = obj.choices as unknown;
+  if (!Array.isArray(choices) || choices.length === 0) return null;
+  const first = choices[0] as Record<string, unknown>;
+  const msg = first.message as Record<string, unknown> | undefined;
+  const content = (msg?.content ?? first.text) as unknown;
+  return typeof content === 'string' ? content : null;
 };
 
 const parseDecision = (
@@ -741,7 +749,7 @@ const serializeGraveyards = (graveyards: GameStatus["graveyards"]) => ({
   })),
 });
 
-const normaliseBoardMatrix = (matrix: any): number[][] | null => {
+const normaliseBoardMatrix = (matrix: unknown): number[][] | null => {
   if (typeof matrix === "string") {
     const lines = matrix
       .trim()

@@ -29,10 +29,11 @@ import type {
   PendingAction,
   CounterWindow,
   TargetRequest,
-  EffectContext,
-  EffectHelpers,
-  CardDraftOption
+  TargetSelection,
+  CardDraftOption,
+  BoardSnapshot
 } from '../types';
+import type { EffectContext, EffectHelpers } from '../skills/effects';
 
 interface GameData {
   cards?: { result: Record<string, RawCard> };
@@ -44,10 +45,11 @@ interface UseGameEngineResult {
   startGame: (enableAI?: boolean) => void;
   placeStone: (row: number, col: number) => void;
   playCard: (index: number) => void;
-  selectTarget: (selection: any) => void;
+  selectTarget: (selection: TargetSelection) => void;
   resolveCard: (countered?: boolean, counterCard?: RawCard | null) => void;
   cancelPending: () => void;
   selectDraftOption: (optionId: string) => void;
+  advanceTurnIfBlocked: () => void;
 }
 
 export const useGameEngine = (data: GameData): UseGameEngineResult => {
@@ -74,7 +76,7 @@ export const useGameEngine = (data: GameData): UseGameEngineResult => {
   );
 
   const selectTarget = useCallback(
-    (selection: any) => {
+    (selection: TargetSelection) => {
       setGameState(prev => applyTargetSelection(prev, selection, context));
     },
     [context]
@@ -95,7 +97,11 @@ export const useGameEngine = (data: GameData): UseGameEngineResult => {
     setGameState(prev => applyDraftSelection(prev, optionId));
   }, []);
 
-  return { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, cancelPending, selectDraftOption };
+  const advanceTurnIfBlocked = useCallback(() => {
+    setGameState(prev => applyAdvanceTurnIfBlocked(prev));
+  }, []);
+
+  return { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, cancelPending, selectDraftOption, advanceTurnIfBlocked };
 };
 
 const createInitialState = (): GameStatus => ({
@@ -110,9 +116,9 @@ const createInitialState = (): GameStatus => ({
   graveyards: [[], []],
   shichahai: [],
   characters: {
-    [PlayerEnum.BLACK]: null,
-    [PlayerEnum.WHITE]: null
-  },
+    0: null,
+    1: null
+  } as Record<Player, RawCharacter | null>,
   statuses: {
     freeze: [0, 0],
     skip: [0, 0],
@@ -186,10 +192,7 @@ const createGameStartState = (context: EffectContext, enableAI: boolean): GameSt
   triggerCardDraft(state, PlayerEnum.WHITE, 'initial');
   triggerCardDraft(state, PlayerEnum.BLACK, 'initial');
 
-  if (!state.draft) {
-    beginMulliganPhase(state);
-    advanceMulliganState(state);
-  }
+  // 留作未来：初始调度（目前草案不启用 Mulligan 流程）
 
   return state;
 };
@@ -304,7 +307,12 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   }
 
   if (prev.statuses.freeze[player] > 0) {
-    return appendLog(prev, createLog('被冻结无法使用技能！', 'error'));
+    // 冻结期间仍允许反击卡（Reaction）在反击窗口内使用；其余技能禁止
+    const timingLower = (card.timing ?? '').toLowerCase();
+    const isReactionTiming = timingLower.includes('reaction');
+    if (!isReactionTiming) {
+      return appendLog(prev, createLog('被冻结无法使用技能！', 'error'));
+    }
   }
 
   const tags = parseTags(card.tags);
@@ -362,6 +370,8 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
       ...prepareResult.request
     } as TargetRequest;
     pending.status = 'awaiting-target';
+    // 标记为“非瞬发”（需要选择目标）
+    pending.metadata = { ...(pending.metadata || {}), uiInstant: false, uiSource: 'prepare' };
     return {
       ...prev,
       hands,
@@ -373,6 +383,8 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   }
 
   pending.status = 'ready';
+  // 标记为“瞬发”（无需选择目标）
+  pending.metadata = { ...(pending.metadata || {}), uiInstant: true, uiSource: 'prepare' };
   const counterWindow = createCounterWindow(player);
 
   return {
@@ -385,15 +397,17 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   };
 };
 
-const applyTargetSelection = (prev: GameStatus, selection: any, context: EffectContext): GameStatus => {
+const applyTargetSelection = (prev: GameStatus, selection: TargetSelection, context: EffectContext): GameStatus => {
   const request = prev.targetRequest;
   if (!request) return prev;
   const logs = [...prev.logs];
 
   if (request.source === 'card' && prev.pendingAction) {
-    const pending = { ...prev.pendingAction, selection, status: 'ready' as const };
+    const pending: PendingAction = { ...prev.pendingAction, selection, status: 'ready' } as PendingAction;
+    // 来自目标选择 -> 非瞬发
+    pending.metadata = { ...(pending.metadata || {}), uiInstant: false, uiSource: 'targeting' };
     const counterWindow = createCounterWindow(prev.pendingAction.player);
-    const pos = (selection && typeof selection.row === 'number' && typeof selection.col === 'number')
+    const pos = (selection && 'row' in selection && 'col' in selection && typeof selection.row === 'number' && typeof selection.col === 'number')
       ? ` (${selection.row}, ${selection.col})`
       : '';
     logs.push(createLog(`${PLAYER_NAMES[prev.pendingAction.player]} 选择了技能目标${pos}`, 'effect'));
@@ -412,7 +426,7 @@ const applyTargetSelection = (prev: GameStatus, selection: any, context: EffectC
     nextState.pendingCounter = { ...prev.pendingCounter, selection };
     nextState.targetRequest = null;
     const helpers = createEffectHelpers(nextState);
-    resolveCounterEffect(nextState, nextState.pendingCounter as any, context, helpers);
+    resolveCounterEffect(nextState, nextState.pendingCounter, context, helpers);
     finalizeCounter(nextState, helpers);
     return nextState;
   }
@@ -475,7 +489,7 @@ const applyResolveCard = (
       metadata: {},
       status: 'pending',
       targetAction: pending
-    } as any;
+    };
 
     const prepareResult = prepareCounterEffect(prev, pendingCounter, context);
     if (prepareResult.logs) logs.push(...prepareResult.logs);
@@ -506,18 +520,18 @@ const applyResolveCard = (
     nextState.hands = hands;
     nextState.logs = logs;
     nextState.counterWindow = null;
-    nextState.pendingCounter = pendingCounter as any;
+    nextState.pendingCounter = pendingCounter;
 
     const helpers = createEffectHelpers(nextState);
-    resolveCounterEffect(nextState, nextState.pendingCounter as any, context, helpers);
+    resolveCounterEffect(nextState, nextState.pendingCounter, context, helpers);
     finalizeCounter(nextState, helpers);
     return nextState;
   }
 
   const nextState = cloneStateForEffect(prev);
   const helpers = createEffectHelpers(nextState);
-  resolveCardEffect(nextState, nextState.pendingAction as any, context, helpers);
-  finalizeCardResolution(nextState, nextState.pendingAction as any, helpers);
+  resolveCardEffect(nextState, nextState.pendingAction, context, helpers);
+  finalizeCardResolution(nextState, nextState.pendingAction, helpers);
   return nextState;
 };
 
@@ -546,6 +560,32 @@ const applyCancelPending = (prev: GameStatus): GameStatus => {
   next.counterWindow = null;
   next.phase = GamePhaseEnum.PLAYING;
   return next;
+};
+
+// 仅用于 AI 自动推进：当当前行动方被冻结/跳过时，直接进入对手回合（不落子）
+const applyAdvanceTurnIfBlocked = (prev: GameStatus): GameStatus => {
+  if (prev.phase !== GamePhaseEnum.PLAYING) return prev;
+  if (prev.draft || prev.pendingAction || prev.pendingCounter || prev.targetRequest) return prev;
+
+  const player = prev.currentPlayer;
+  const statuses = cloneStatuses(prev.statuses);
+  const logs = [...prev.logs];
+  let blocked = false;
+
+  if (statuses.freeze[player] > 0) {
+    statuses.freeze[player] -= 1;
+    logs.push(createLog(`${PLAYER_NAMES[player]} 因冻结效果跳过回合`, 'effect'));
+    blocked = true;
+  } else if (statuses.skip[player] > 0) {
+    statuses.skip[player] -= 1;
+    logs.push(createLog(`${PLAYER_NAMES[player]} 因技能效果跳过回合`, 'effect'));
+    blocked = true;
+  }
+
+  if (!blocked) return prev;
+  const opponent = getOpponent(player);
+  const skipped: GameStatus = { ...prev, statuses, logs } as GameStatus;
+  return beginTurnMut(skipped, opponent);
 };
 
 const finalizeCounter = (state: GameStatus, helpers: EffectHelpers) => {
@@ -645,7 +685,7 @@ const createShichahaiEntry = (
   card: RawCard,
   row: number,
   col: number,
-  snapshot: { turn: number; board: any }
+  snapshot: { turn: number; board: BoardSnapshot }
 ) => ({
   id: generateId('sea'),
   owner: player,
@@ -748,8 +788,8 @@ const createEffectHelpers = (state: GameStatus): EffectHelpers => ({
   setCharacters: characters => {
     state.characters = { ...characters };
   },
-  enqueueVisual: ({ effectId, card, player, role = 'normal' }) => {
-    const event = skillPerformanceManager.createVisualEvent(effectId ?? '', card, player, role);
+  enqueueVisual: ({ effectId, card, player, role = 'normal', cell, owner }: { effectId?: string; card: RawCard; player: Player; role?: 'attacker' | 'counter' | 'normal'; cell?: {row:number;col:number}; owner?: Player }) => {
+    const event = skillPerformanceManager.createVisualEvent(effectId ?? '', card, player, role, { cell, owner });
     state.visuals = [...state.visuals, event].slice(-10);
   }
 });
@@ -773,7 +813,7 @@ function triggerCardDraft(state: GameStatus, player: Player, source: DraftSource
 
   const isAI = state.aiEnabled && player === PlayerEnum.WHITE;
   if (isAI) {
-    const choice = chooseOptionForAI(options);
+    const choice = chooseOptionForAI(options, state);
     const card = deck.take(choice.id);
     if (!card) return;
     const updatedHands = cloneHands(state.hands);
@@ -826,10 +866,17 @@ function beginTurnMut(state: GameStatus, player: Player): GameStatus {
   return state;
 }
 
-function chooseOptionForAI(options: CardDraftOption[]): CardDraftOption {
+function chooseOptionForAI(options: CardDraftOption[], state: GameStatus): CardDraftOption {
   if (options.length === 0) {
     throw new Error('No options available for AI draft');
   }
+  // 规则3：若手中没有“解 力拔山兮”的牌（擒拿：counter-prevent-removal），优先选择该类解牌
+  const hasPreventRemoval = (state.hands[PlayerEnum.WHITE] ?? []).some(c => (c.effectId === SkillEffect.CounterPreventRemoval));
+  if (!hasPreventRemoval) {
+    const pick = options.find(opt => (opt.card.effectId === SkillEffect.CounterPreventRemoval));
+    if (pick) return pick;
+  }
+  // 其余情况随机
   const index = Math.floor(Math.random() * options.length);
   return options[index];
 }

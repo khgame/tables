@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import type { RawCard } from '../types';
 import { CardFrame, CARD_TYPE_PALETTES } from './CardFrame';
+import { getTidString } from '../core/utils';
 import { CardArtwork } from './CardArtwork';
 
 export type CardVariant = 'hand' | 'list' | 'showcase';
@@ -150,7 +151,7 @@ export const CardView: React.FC<CardViewProps> = ({
   const typeInfo = TYPE_META[typeKey] || TYPE_META.Support;
   const timingInfo = TIMING_META[timingKey] || TIMING_META.Anytime;
   const palette = CARD_TYPE_PALETTES[typeKey] || CARD_TYPE_PALETTES.Support;
-  const tidStr = String((card as any)._tid ?? (card as any).tid ?? '');
+  const tidStr = getTidString(card);
   const isSkillFive = tidStr === '1015' || (card.nameZh && card.nameZh.includes('技能五'));
   const headerBg = (() => {
     // 橙色：技能五 & See You Again（tid 1015 / 1016 或名称匹配）

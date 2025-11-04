@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { PlayerEnum } from '../core/constants';
-import type { GameStatus, TargetRequest } from '../types';
+import type { GameStatus, TargetRequest, Player } from '../types';
 
 export interface BoardProps {
   board: GameStatus['board'];
@@ -20,6 +20,7 @@ export interface BoardProps {
     { row: number; col: number; expiresAtTurn: number } | null
   ];
   currentTurn?: number;
+  removedCells?: Array<{ row: number; col: number; owner: Player }>; // 动画：被移入什刹海
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
@@ -45,10 +46,25 @@ export const Board: React.FC<BoardProps> = ({
   hoveredPosition = null,
   skillTargetPosition = null,
   sealedCells = [null, null],
-  currentTurn = 0
+  currentTurn = 0,
+  removedCells = []
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [boardPixels, setBoardPixels] = useState<number | null>(null);
+  // 使用 SVG 绘制网格与星位，让交叉点精确位于每个格心
+  const gridPositions = useMemo(() => Array.from({ length: board.size }, (_, i) => i + 0.5), [board.size]);
+  const starPoints = useMemo(() => {
+    const size = board.size;
+    const mid = Math.floor(size / 2) + 0.5; // 天元
+    if (size >= 15) {
+      const k = 3.5; // 3 与 size-4 的半坐标
+      const arr = [k, mid, size - 0.5 - 3]; // (3.5, 7.5, 11.5)
+      const pts: Array<{ x: number; y: number }> = [];
+      arr.forEach(x => arr.forEach(y => pts.push({ x, y })));
+      return pts;
+    }
+    return [{ x: mid, y: mid }];
+  }, [board.size]);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -132,14 +148,41 @@ export const Board: React.FC<BoardProps> = ({
         }
       >
         <div
-          className="grid aspect-square w-full overflow-hidden rounded-[14px] border border-white/20"
-          style={{
-            gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))`,
-            background:
-              'repeating-linear-gradient(0deg, rgba(99, 62, 24, 0.55) 0, rgba(99, 62, 24, 0.55) 1px, transparent 1px, transparent calc(100% / 15)),' +
-              'repeating-linear-gradient(90deg, rgba(99, 62, 24, 0.55) 0, rgba(99, 62, 24, 0.55) 1px, transparent 1px, transparent calc(100% / 15))'
-          }}
+          className="relative grid aspect-square w-full overflow-hidden rounded-[14px] border border-white/20"
+          style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))` }}
         >
+          {/* SVG 网格与星位（交叉点） */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox={`0 0 ${board.size} ${board.size}`}>
+            <defs>
+              <radialGradient id="star-dot" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(0,0,0,0.35)" />
+                <stop offset="100%" stopColor="rgba(0,0,0,0.0)" />
+              </radialGradient>
+              <filter id="sshadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="0.15" stdDeviation="0.25" floodColor="rgba(0,0,0,0.3)"/>
+              </filter>
+            </defs>
+            {/* 网格线（更柔和） */}
+            {gridPositions.map((p) => (
+              <line key={`v-${p}`} x1={p} y1={0.5} x2={p} y2={board.size - 0.5} stroke="rgba(80,52,24,0.38)" strokeWidth={0.06} />
+            ))}
+            {gridPositions.map((p) => (
+              <line key={`h-${p}`} x1={0.5} y1={p} x2={board.size - 0.5} y2={p} stroke="rgba(80,52,24,0.38)" strokeWidth={0.06} />
+            ))}
+            {/* 星位/天元（质感更柔和，位于网格层，棋子会盖住） */}
+            {starPoints.map((pt, idx) => (
+              <circle
+                key={`s-${idx}`}
+                cx={pt.x}
+                cy={pt.y}
+                r={0.16}
+                fill="url(#star-dot)"
+                stroke="rgba(0,0,0,0.28)"
+                strokeWidth={0.04}
+                filter="url(#sshadow)"
+              />
+            ))}
+          </svg>
           {Array.from({ length: board.size }).map((_, rowIdx) =>
             Array.from({ length: board.size }).map((_, colIdx) => {
               const key = `${rowIdx}-${colIdx}`;
@@ -151,6 +194,7 @@ export const Board: React.FC<BoardProps> = ({
                     : null
                 : null;
               const value = board.get(rowIdx, colIdx);
+              const removed = removedCells.find(c => c.row === rowIdx && c.col === colIdx) || null;
               const isLast = Boolean(lastMove && lastMove.row === rowIdx && lastMove.col === colIdx);
               const isWinLit = winLineLit ? winLineLit.has(key) : false;
               const isHovered = Boolean(hoveredPosition && hoveredPosition.row === rowIdx && hoveredPosition.col === colIdx);
@@ -194,7 +238,7 @@ export const Board: React.FC<BoardProps> = ({
                   key={key}
                   type="button"
                   className={cx(
-                    'relative w-full border-0 bg-transparent transition-all duration-150 ease-out',
+                    'relative z-10 w-full border-0 bg-transparent transition-all duration-150 ease-out',
                     !value && !highlight && 'hover:scale-[1.02] hover:bg-white/10'
                   )}
                   style={cellStyle}
@@ -206,25 +250,62 @@ export const Board: React.FC<BoardProps> = ({
                   }}
                   onDrop={handleDrop}
                 >
+                  {/* 被移除棋子的飞出动画 */}
+                  {removed && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible">
+                      <div
+                        className={cx('rounded-full', removed.owner === PlayerEnum.BLACK ? 'bg-slate-800' : 'bg-amber-200')}
+                        style={{
+                          width: '64%',
+                          height: '64%',
+                          boxShadow: removed.owner === PlayerEnum.BLACK
+                            ? 'inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 20px rgba(0,0,0,0.65)'
+                            : 'inset 0 0 0 1px rgba(0,0,0,0.12), 0 10px 16px rgba(0,0,0,0.35)',
+                          animation: 'cell-flyout 0.9s ease-out forwards'
+                        }}
+                      />
+                    </div>
+                  )}
+                  {isLast && (
+                    <div
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                      style={{ zIndex: 0 }}
+                    >
+                      <div className="w-[76%] h-[76%] rounded-full border border-amber-200/30 animate-stone-ripple" />
+                    </div>
+                  )}
                   {value === PlayerEnum.BLACK && (
                     <div
-                      className="absolute inset-[12%] rounded-full shadow-[0_14px_20px_rgba(0,0,0,0.65)]"
+                      className={cx('absolute inset-[12%] rounded-full', isLast && 'animate-stone-pop')}
                       style={{
+                        // 先铺一层不透明底色，再叠加高光渐变，避免网格透出
                         background:
-                          'radial-gradient(circle at 30% 25%, rgba(209, 213, 219, 0.35), rgba(17, 17, 17, 1))',
-                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12), 0 14px 20px rgba(0,0,0,0.65)'
+                          'radial-gradient(circle at 30% 25%, rgba(209,213,219,0.20), rgba(17,17,17,1)), #111111',
+                        // 内描边 + 外投影（收紧）
+                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 10px rgba(0,0,0,0.45)'
                       }}
-                    />
+                    >
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-full"
+                        style={{ background: 'radial-gradient(circle at 30% 25%, rgba(255,255,255,0.45), rgba(255,255,255,0) 60%)' }}
+                      />
+                    </div>
                   )}
                   {value === PlayerEnum.WHITE && (
                     <div
-                      className="absolute inset-[12%] rounded-full"
+                      className={cx('absolute inset-[12%] rounded-full', isLast && 'animate-stone-pop')}
                       style={{
                         background:
-                          'radial-gradient(circle at 30% 25%, rgba(255,255,255,1), rgba(209,213,219,0.5))',
-                        boxShadow: 'inset 0 0 0 1px rgba(148,163,184,0.4), 0 14px 20px rgba(148,163,184,0.45)'
+                          'radial-gradient(circle at 30% 25%, #ffffff, #e5e7eb), #ffffff',
+                        // 内描边 + 外投影（收紧）
+                        boxShadow: 'inset 0 0 0 1px rgba(148,163,184,0.35), 0 6px 10px rgba(148,163,184,0.35)'
                       }}
-                    />
+                    >
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-full"
+                        style={{ background: 'radial-gradient(circle at 30% 25%, rgba(255,255,255,0.55), rgba(255,255,255,0) 60%)' }}
+                      />
+                    </div>
                   )}
                   {isSealed && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -242,7 +323,7 @@ export const Board: React.FC<BoardProps> = ({
 
                         {/* 玩家标识：小棋子 */}
                         <div
-                          className="absolute -top-2 -left-2 w-5 h-5 rounded-full border-2"
+                          className="absolute -top-2 -left-2 w-4 h-4 rounded-full border-1"
                           style={{
                             background: sealedByPlayer === PlayerEnum.BLACK
                               ? 'radial-gradient(circle at 30% 25%, rgba(209, 213, 219, 0.35), rgba(17, 17, 17, 1))'

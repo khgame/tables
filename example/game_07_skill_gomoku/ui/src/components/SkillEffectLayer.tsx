@@ -35,7 +35,7 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
   const sortedEvents = skillPerformanceManager.sortEvents(events);
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-[100]">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-[120000]">
       {sortedEvents.map((event, index) => {
         const isPlayerSkill = event.player === PlayerEnum.BLACK;
         const colors = getEffectColor(event.effectId);

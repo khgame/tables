@@ -13,9 +13,9 @@ export const PlayerEnum = {
 };
 
 export const PLAYER_NAMES: Record<Player, string> = {
-  [PlayerEnum.BLACK]: '黑方',
-  [PlayerEnum.WHITE]: '白方'
-};
+  0: '黑方',
+  1: '白方'
+} as Record<Player, string>;
 
 export const GamePhaseEnum: Record<string, GamePhase> = {
   SETUP: 'setup',
@@ -33,9 +33,9 @@ export const CardTiming = {
 };
 
 export const PlayerColorClasses: Record<Player, string> = {
-  [PlayerEnum.BLACK]: 'bg-gradient-to-br from-slate-900 to-black',
-  [PlayerEnum.WHITE]: 'bg-gradient-to-br from-amber-200 to-amber-100'
-};
+  0: 'bg-gradient-to-br from-slate-900 to-black',
+  1: 'bg-gradient-to-br from-amber-200 to-amber-100'
+} as Record<Player, string>;
 
 export const getOpponent = (player: Player): Player =>
   player === PlayerEnum.BLACK ? PlayerEnum.WHITE : PlayerEnum.BLACK;

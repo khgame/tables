@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import type { GameLogEntry } from '../types';
-import { GameIcon } from './IconLibrary';
+import { GameIcon, type IconName } from './IconLibrary';
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
-const TYPE_STYLES: Record<string, { class: string; icon: string }> = {
+type LogType = 'start' | 'move' | 'card' | 'effect' | 'counter' | 'draw' | 'summon' | 'win' | 'error';
+
+const TYPE_STYLES: Record<LogType, { class: string; icon: IconName }> = {
   start: { class: 'hearthstone-log-item hearthstone-log-item--blue', icon: 'start' },
   move: { class: 'hearthstone-log-item hearthstone-log-item--gray', icon: 'move' },
   card: { class: 'hearthstone-log-item hearthstone-log-item--purple', icon: 'card' },
@@ -21,7 +23,7 @@ export interface GameLogProps {
   onPositionHover?: (position: { row: number; col: number } | null) => void;
   turnCount: number;
   currentPlayer: number;
-  playerNames: readonly string[];
+  playerNames: Record<number, string>;
 }
 
 export const GameLog: React.FC<GameLogProps> = ({ logs, onPositionHover, turnCount, currentPlayer, playerNames }) => {
@@ -52,7 +54,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, onPositionHover, turnCou
       </div>
       <div ref={ref} className="flex-1 space-y-1 overflow-y-auto pr-1 text-xs scrollbar-thin scrollbar-track-slate-700/40 scrollbar-thumb-slate-500/60 hover:scrollbar-thumb-slate-400/80">
         {logs.map((log, idx) => {
-          const typeInfo = TYPE_STYLES[log.type] || TYPE_STYLES.move;
+          const typeInfo = TYPE_STYLES[(log.type as LogType)] || TYPE_STYLES.move;
           const hasPosition = log.position && typeof log.position.row === 'number' && typeof log.position.col === 'number';
 
           return (

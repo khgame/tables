@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type BubbleTone = 'info' | 'praise' | 'taunt' | 'frustrated';
+export type BubbleTone = 'info' | 'praise' | 'taunt' | 'frustrated' | 'prompt';
 
 export interface ComicBubbleProps {
   text: string;
@@ -13,6 +13,7 @@ export interface ComicBubbleProps {
 
 const toneStops: Record<BubbleTone, { from: string; to: string; ring: string; text: string }> = {
   info: { from: '#22d3ee', to: '#60a5fa', ring: 'rgba(255,255,255,0.18)', text: '#0B1220' },
+  prompt: { from: '#22d3ee', to: '#60a5fa', ring: 'rgba(255,255,255,0.18)', text: '#0B1220' },
   praise: { from: '#34d399', to: '#10b981', ring: 'rgba(255,255,255,0.18)', text: '#0B1220' },
   taunt: { from: '#a78bfa', to: '#f472b6', ring: 'rgba(255,255,255,0.18)', text: '#0B1220' },
   frustrated: { from: '#fb7185', to: '#f59e0b', ring: 'rgba(255,255,255,0.18)', text: '#0B1220' }

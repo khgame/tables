@@ -3,7 +3,6 @@ import { SKILL_UNLOCK_MOVE } from '../core/constants';
 
 export interface RulesIntroPanelProps {
   hasConfig: boolean;
-  onOpenSettings: () => void;
   onStartAi: () => void;
 }
 
@@ -12,7 +11,7 @@ export interface RulesIntroPanelProps {
  * - 带有发光装饰、边框描边与微粒动画的卡片式介绍
  * - 底部提供“开始 AI 对战”与“AI 设置”入口
  */
-export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onOpenSettings, onStartAi }) => {
+export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onStartAi }) => {
   return (
     <div className="relative mx-auto w-[min(880px,92vw)]">
       {/* 背后渐变光圈 */}
@@ -30,26 +29,13 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onO
              style={{ background: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 6px, rgba(255,255,255,0.03) 6px 14px)' }} />
 
         {/* 顶部标题区 */}
-        <header className="relative flex items-center justify-between px-6 pt-6">
-          <div>
+        <header className="relative flex items-start px-6 pt-6">
+          <div className="mr-auto">
             <h1 className="font-display text-5xl md:text-6xl font-extrabold tracking-wide text-amber-200 drop-shadow-[0_6px_18px_rgba(245,158,11,0.35)]">
               技能五子棋
             </h1>
             <p className="mt-1 text-sm text-amber-100/80">Gomoku + Skill Cards</p>
           </div>
-
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            className={[
-              'rounded-full border px-3 py-1 text-[11px] font-bold tracking-[0.2em] uppercase transition-all',
-              hasConfig
-                ? 'border-emerald-400/60 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30'
-                : 'border-rose-400/60 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30'
-            ].join(' ')}
-          >
-            AI 设置
-          </button>
         </header>
 
         {/* 规则列表 */}
@@ -74,9 +60,7 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onO
 
           {/* 行动区 */}
           <div className="mt-5 flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <p className="text-sm text-slate-300/90">
-              提示：建议先在右上角完成 AI 设置，再开始对战。
-            </p>
+            <p className="text-sm text-slate-300/90">提示：AI 设置已移至右上角齿轮按钮。</p>
             <button
               type="button"
               onClick={onStartAi}
@@ -92,4 +76,3 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onO
 };
 
 export default RulesIntroPanel;
-

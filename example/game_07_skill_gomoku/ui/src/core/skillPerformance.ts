@@ -27,7 +27,8 @@ class SkillPerformanceManager {
     effectId: string,
     card: RawCard,
     player: Player,
-    role: 'attacker' | 'counter' | 'normal' = 'normal'
+    role: 'attacker' | 'counter' | 'normal' = 'normal',
+    meta?: Partial<Pick<VisualEffectEvent, 'cell' | 'owner'>>
   ): VisualEffectEvent {
     const sequence = this.sequenceCounter++;
     const now = Date.now();
@@ -43,7 +44,8 @@ class SkillPerformanceManager {
       player,
       createdAt: timestamp,
       sequence,
-      role
+      role,
+      ...(meta || {})
     };
   }
 

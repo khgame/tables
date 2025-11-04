@@ -50,3 +50,8 @@ export type { IconName, IconProps, GameIconProps } from './IconLibrary';
 
 export { RulesIntroPanel } from './RulesIntroPanel';
 export type { RulesIntroPanelProps } from './RulesIntroPanel';
+
+export { CardFlyingAnimation } from './CardFlyingAnimation';
+export type { FlyingCardData } from './CardFlyingAnimation';
+
+// (MusicToggle kept, but not exported here to avoid accidental external usage)

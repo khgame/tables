@@ -14,6 +14,7 @@ export interface RawCard {
   effect: string;
   effectId?: string;
   effectParams?: string;
+  triggerCondition?: string;
   counteredBy?: string;
   requiresCharacter?: string | number;
   requiresCards?: string;
@@ -73,6 +74,16 @@ export interface GameLogEntry {
   position?: { row: number; col: number }; // 添加位置信息用于 hover 高亮
 }
 
+export interface TimelineEntry {
+  id: string;
+  turn: number;
+  player: Player | null;
+  move?: { row: number; col: number };
+  board: BoardSnapshot;
+  shichahai: ShichahaiEntry[];
+  characters: Record<Player, RawCharacter | null>;
+}
+
 export interface VisualEffectEvent {
   id: string;
   effectId?: string;
@@ -81,6 +92,25 @@ export interface VisualEffectEvent {
   createdAt: number;
   sequence?: number; // 序列号，用于确保相同时间戳的事件按正确顺序排列
   role?: 'attacker' | 'counter' | 'normal'; // 角色：攻击方、反击方或普通
+  // 可选：用于棋盘定点动画（例如移除棋子飞入什刹海）
+  cell?: { row: number; col: number };
+  owner?: Player;
+}
+
+export type EffectMetadata = {
+  uiInstant?: boolean;
+  uiSource?: 'prepare' | 'targeting';
+  preWinSnapshot?: PreWinSnapshot;
+  original?: { row: number; col: number };
+} & Record<string, unknown>;
+
+export interface PreWinSnapshot {
+  board: BoardSnapshot;
+  shichahai: ShichahaiEntry[];
+  timeline: TimelineEntry[];
+  moveCount: [number, number];
+  turnCount: number;
+  currentPlayer: Player;
 }
 
 export interface PendingAction {
@@ -89,8 +119,8 @@ export interface PendingAction {
   player: Player;
   effectId?: string;
   params: Record<string, string | number>;
-  selection: any;
-  metadata: Record<string, any>;
+  selection: TargetSelection | null;
+  metadata: EffectMetadata;
   status: 'pending' | 'awaiting-target' | 'ready';
   targetAction?: PendingAction;
 }
@@ -108,6 +138,11 @@ export interface TargetRequest {
   actingPlayer: Player;
   cardTid?: string | number;
 }
+
+// Selection payloads the UI/AI can pass back to the engine when fulfilling a TargetRequest
+export type TargetSelection =
+  | { row: number; col: number } // for type === 'cell'
+  | { id: string }; // for type === 'snapshot'
 
 export interface CounterWindow {
   id: string;
@@ -146,7 +181,8 @@ export interface GameStatus {
   targetRequest: TargetRequest | null;
   counterWindow: CounterWindow | null;
   logs: GameLogEntry[];
-  timeline: Array<{ id: string; turn: number; player: Player | null; move?: { row: number; col: number }; board: BoardSnapshot; shichahai: ShichahaiEntry[]; characters: Record<Player, RawCharacter | null> }>;
+  timeline: TimelineEntry[];
+  // prefer using TimelineEntry from now on; keep above for back-compat in code until refactor finishes
   winner: Player | null;
   aiEnabled: boolean;
   visuals: VisualEffectEvent[];

@@ -23,8 +23,11 @@ export function useVisualEffects(gameState: GameStatus): VisualEffectEvent[] {
     next.forEach(ev => {
       trackerRef.current.add(ev.id);
       setActive(prev => [...prev, ev]);
-      const isCounterSkill = ev.effectId?.startsWith('Counter');
-      const cleanupDelay = isCounterSkill ? 4200 : 3000;
+      // 根据角色与具体技能调整动画占用时长
+      const isCounterSkill = ev.role === 'counter';
+      let cleanupDelay = isCounterSkill ? 4200 : 3000;
+      if (ev.effectId === SkillEffect.CounterRestoreBoard) cleanupDelay = 4200; // 东山再起：反击动画更长
+      if (ev.effectId === SkillEffect.InstantWin || ev.effectId === SkillEffect.CounterReverseWin) cleanupDelay = 4200;
       window.setTimeout(() => {
         setActive(prev => prev.filter(x => x.id !== ev.id));
       }, cleanupDelay);

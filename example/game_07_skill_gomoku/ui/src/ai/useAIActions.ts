@@ -205,10 +205,14 @@ export const useAIActions = (
         cachedLocalSuggestion = localSuggestion ?? null;
         if (localSuggestion && shouldAutoplaySuggestion(localSuggestion)) {
           aiLog.info('[local:auto]', formatLocalSuggestion(localSuggestion));
-          processedRef.current.add(key);
+          // 标记当前任务为活跃，真正执行成功后再记为 processed
+          activeKeyRef.current = key;
           const pos = { row: localSuggestion.row, col: localSuggestion.col };
           timerRef.current = window.setTimeout(() => {
+            // 若在等待期间出现动画或任务被取消，则不执行
+            if (activeKeyRef.current !== key) return;
             clearRunningTask();
+            processedRef.current.add(key);
             actions.placeStone(pos.row, pos.col);
           }, 520);
           return;
@@ -250,6 +254,7 @@ export const useAIActions = (
 
         activeKeyRef.current = key;
         timerRef.current = window.setTimeout(async () => {
+          // 若期间出现动画或任务被取消，直接忽略
           if (activeKeyRef.current !== key) return;
 
           const feedbackMessage = reason;
@@ -272,6 +277,8 @@ export const useAIActions = (
 
           const runFallback = () => {
             aiLog.warn(`[${scenarioPayload.kind}] 默认回退策略`);
+            // 若在等待期间出现动画或任务被取消，则不执行
+            if (activeKeyRef.current !== key) return;
             fallbackDecision(scenarioPayload, gameState, actions, cachedLocalSuggestion);
             finalize();
           };
@@ -285,6 +292,8 @@ export const useAIActions = (
           try {
             const decision = await requestAiDecision(aiSettings, scenarioPayload, { feedback: feedbackMessage });
             aiLog.info('[response_json]', decision);
+            // 动画期间可能已取消当前任务
+            if (activeKeyRef.current !== key) return;
             const outcome = decision
               ? applyDecision(decision, scenarioPayload, gameState, actions)
               : { success: false, reason: '未提供有效决策' };
@@ -342,7 +351,7 @@ export const useAIActions = (
     return () => {
       clearRunningTask(false);
     };
-  }, [gameState, aiSettings, playCard, placeStone, resolveCard, selectTarget, updateAiStatus]);
+  }, [gameState, aiSettings, playCard, placeStone, resolveCard, selectTarget, updateAiStatus, visualsActive]);
 
   useEffect(() => () => {
     if (timerRef.current !== null) {

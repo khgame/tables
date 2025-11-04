@@ -170,12 +170,12 @@ const App: React.FC = () => {
 
   useAIActions(gameState, { playCard, placeStone, resolveCard, selectTarget, advanceTurnIfBlocked }, aiSettings, updateAiStatus, visualsActive);
 
-  // 进入 PLAYING 阶段即尝试播放 BGM（兼容非 AI 开局）
+  // 进入 PLAYING 阶段仅在用户开启 BGM 时尝试播放（避免技能结算返回 PLAYING 时误触发）
   useEffect(() => {
-    if (gameState.phase === GamePhaseEnum.PLAYING && !bgm.isPlaying) {
+    if (gameState.phase === GamePhaseEnum.PLAYING && !bgm.isPlaying && bgm.enabled) {
       try { bgm.play(); } catch {}
     }
-  }, [gameState.phase]);
+  }, [gameState.phase, bgm.isPlaying, bgm.enabled]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -268,7 +268,8 @@ const App: React.FC = () => {
                 setAiBubble({ id, text: '未配置云端 AI，将使用本地策略' });
                 window.setTimeout(() => setAiBubble(prev => (prev && prev.id === id ? null : prev)), 1600);
               }
-              try { bgm.play(); } catch {}
+              // 仅在用户偏好开启时开播 BGM
+              try { if (bgm.enabled) bgm.play(); } catch {}
               startGame(true);
             }}
           />

@@ -1,0 +1,512 @@
+/** this file is auto generated */
+import * as TableContext from "./context";
+import { ICards, CardsTID, toCardsTID, CardsRepo } from "./cards";
+        
+const raw = {
+  "tids": [
+    "1001",
+    "1002",
+    "1003",
+    "1004",
+    "1005",
+    "1006",
+    "1007",
+    "1008",
+    "1009",
+    "1010",
+    "1011",
+    "1012",
+    "1013",
+    "1014",
+    "1015",
+    "1016"
+  ],
+  "result": {
+    "1001": {
+      "_tid": "1001",
+      "tid": 1001,
+      "type": "attack",
+      "subtype": "standard",
+      "nameZh": "飞沙走石",
+      "nameEn": "Sandstorm",
+      "rarity": "common",
+      "cost": 1,
+      "speed": "normal",
+      "timing": "pre-move",
+      "effect": "指定敌方棋子移出棋盘，进入什刹海；目标落点下回合被封禁，同时自己放弃本回合落子。",
+      "triggerCondition": "",
+      "effectId": "remove-to-shichahai",
+      "effectParams": "",
+      "counteredBy": "1008|1009",
+      "failCondition": "被擒拿或拾金不昧打断时取消",
+      "tags": "Removal|Shichahai",
+      "notes": "",
+      "quote": "你管这个叫五子棋？",
+      "artwork": ""
+    },
+    "1002": {
+      "_tid": "1002",
+      "tid": 1002,
+      "type": "attack",
+      "subtype": "standard",
+      "nameZh": "静如止水",
+      "nameEn": "Time Freeze",
+      "rarity": "rare",
+      "cost": 2,
+      "speed": "instant",
+      "timing": "pre-move",
+      "effect": "冻结敌方，跳过对方下一轮落子或发动魔法卡 (反击卡不受影响)。",
+      "triggerCondition": "",
+      "effectId": "freeze-opponent",
+      "effectParams": "turns=1",
+      "counteredBy": 1010,
+      "failCondition": "冻结期间仍可使用反击卡",
+      "tags": "Attack|Freeze",
+      "notes": "",
+      "quote": "嗯嗯，嗯",
+      "artwork": ""
+    },
+    "1003": {
+      "_tid": "1003",
+      "tid": 1003,
+      "type": "attack",
+      "subtype": "legendary",
+      "nameZh": "力拔山兮",
+      "nameEn": "Instant Win",
+      "rarity": "legendary",
+      "cost": 3,
+      "speed": "instant",
+      "timing": "pre-move",
+      "effect": "直接摔坏棋盘并宣布胜利。",
+      "triggerCondition": "",
+      "effectId": "instant-win",
+      "effectParams": "",
+      "counteredBy": "1011|1012",
+      "failCondition": "若被反制则视作发动失败",
+      "tags": "DirectWin|Legendary",
+      "notes": "",
+      "quote": "这可是我的最终奥义",
+      "artwork": ""
+    },
+    "1004": {
+      "_tid": "1004",
+      "tid": 1004,
+      "type": "attack",
+      "subtype": "fusion",
+      "nameZh": "我是保洁",
+      "nameEn": "Cleaner Service",
+      "rarity": "rare",
+      "cost": 1,
+      "speed": "instant",
+      "timing": "pre-move",
+      "effect": "同时随机扫走敌我各一枚棋子，移入什刹海。",
+      "triggerCondition": "己方张兴朝在场",
+      "effectId": "clean-sweep",
+      "effectParams": "",
+      "counteredBy": 1013,
+      "requiresCharacter": 3001,
+      "failCondition": "张兴朝离场或被滚！打断",
+      "tags": "Fusion|Removal|Random|Shichahai",
+      "notes": "",
+      "quote": "我这招叫做保洁上门",
+      "artwork": ""
+    },
+    "1005": {
+      "_tid": "1005",
+      "tid": 1005,
+      "type": "attack",
+      "subtype": "standard",
+      "nameZh": "这是棒球",
+      "nameEn": "Baseball Strike",
+      "rarity": "rare",
+      "cost": 1,
+      "speed": "normal",
+      "timing": "pre-move",
+      "effect": "效果等同于飞沙走石（含封禁落点与自我跳过落子），但视为合体技，无法被擒拿或“滚！”阻断；拾金不昧仍可事后挽回棋子。",
+      "triggerCondition": "",
+      "effectId": "remove-to-shichahai",
+      "effectParams": "ignoreSeize=true,immuneShout=true",
+      "counteredBy": 1008,
+      "requiresCharacter": 3001,
+      "failCondition": "只能被拾金不昧挽回",
+      "tags": "Attack|Fusion|Removal|Shichahai|Unseizeable",
+      "notes": "",
+      "quote": "呀咧呀咧",
+      "artwork": ""
+    },
+    "1006": {
+      "_tid": "1006",
+      "tid": 1006,
+      "type": "attack",
+      "subtype": "legendary",
+      "nameZh": "时光倒流",
+      "nameEn": "Time Rewind",
+      "rarity": "legendary",
+      "cost": 3,
+      "speed": "instant",
+      "timing": "pre-move",
+      "effect": "移除双方最近一轮的落子（各移除一手；若某方无落子则忽略），不还原已使用的卡牌。",
+      "triggerCondition": "",
+      "effectId": "time-rewind",
+      "effectParams": "",
+      "counteredBy": 1013,
+      "failCondition": "悔棋效果：不恢复手牌/墓地/牌堆",
+      "tags": "Attack|Reset|Rewind",
+      "notes": "",
+      "quote": "这一招好",
+      "artwork": ""
+    },
+    "1007": {
+      "_tid": "1007",
+      "tid": 1007,
+      "type": "attack",
+      "subtype": "fusion",
+      "nameZh": "调呈离山·东",
+      "nameEn": "Distract",
+      "rarity": "rare",
+      "cost": 2,
+      "speed": "instant",
+      "timing": "pre-move",
+      "effect": "跳过对手 1 回合，张兴朝仍然留场助战。",
+      "triggerCondition": "",
+      "effectId": "skip-next-turn",
+      "effectParams": "turns=1",
+      "counteredBy": 1013,
+      "requiresCharacter": 3001,
+      "failCondition": "张兴朝离场或被滚！打断",
+      "tags": "Fusion|Attack|SkipTurn",
+      "notes": "",
+      "quote": "就是调走张呈，离开山东！",
+      "artwork": ""
+    },
+    "1008": {
+      "_tid": "1008",
+      "tid": 1008,
+      "type": "counter",
+      "subtype": "reactive",
+      "nameZh": "拾金不昧",
+      "nameEn": "Item Retrieval",
+      "rarity": "common",
+      "cost": 1,
+      "speed": "normal",
+      "timing": "reaction",
+      "effect": "当己方棋子被移除时，改为放回任意空位。",
+      "triggerCondition": "敌方使用移除类技能时",
+      "effectId": "counter-retrieve",
+      "effectParams": "",
+      "failCondition": "Counter|Recovery|Shichahai",
+      "tags": "",
+      "notes": "嘿，拾金不昧",
+      "quote": "",
+      "artwork": ""
+    },
+    "1009": {
+      "_tid": "1009",
+      "tid": 1009,
+      "type": "counter",
+      "subtype": "reactive",
+      "nameZh": "擒拿",
+      "nameEn": "Seize",
+      "rarity": "common",
+      "cost": 1,
+      "speed": "instant",
+      "timing": "reaction",
+      "effect": "阻止飞沙走石发动，使目标棋子保留原位。",
+      "triggerCondition": "敌方使用飞沙走石时",
+      "effectId": "counter-prevent-removal",
+      "effectParams": "blocks=1001",
+      "failCondition": "Counter|Prevention",
+      "tags": "",
+      "notes": "我只是受过九年制义务教育",
+      "quote": "",
+      "artwork": ""
+    },
+    "1010": {
+      "_tid": "1010",
+      "tid": 1010,
+      "type": "counter",
+      "subtype": "reactive",
+      "nameZh": "水滴石穿",
+      "nameEn": "Break Free",
+      "rarity": "common",
+      "cost": 1,
+      "speed": "instant",
+      "timing": "reaction",
+      "effect": "解除静如止水效果，立即恢复行动权。",
+      "triggerCondition": "己方被冻结时",
+      "effectId": "counter-thaw",
+      "effectParams": "",
+      "failCondition": "Counter|Recovery|Freeze",
+      "tags": "",
+      "notes": "水滴石穿",
+      "quote": "",
+      "artwork": ""
+    },
+    "1011": {
+      "_tid": "1011",
+      "tid": 1011,
+      "type": "counter",
+      "subtype": "legendary",
+      "nameZh": "两极反转",
+      "nameEn": "Reverse Trap",
+      "rarity": "legendary",
+      "cost": 2,
+      "speed": "instant",
+      "timing": "reaction",
+      "effect": "敌方发动力拔山兮时发动，直接反夺胜利。",
+      "triggerCondition": "敌方发动力拔山兮时",
+      "effectId": "counter-reverse-win",
+      "effectParams": "",
+      "requiresCharacter": 3001,
+      "failCondition": "需要张兴朝见证",
+      "tags": "Fusion|Counter|Legendary|DirectWin|Reflect",
+      "notes": "",
+      "quote": "哈哈哈哈哈哈，两极反转",
+      "artwork": ""
+    },
+    "1012": {
+      "_tid": "1012",
+      "tid": 1012,
+      "type": "counter",
+      "subtype": "reactive",
+      "nameZh": "东山再起",
+      "nameEn": "Resurgence",
+      "rarity": "rare",
+      "cost": 2,
+      "speed": "instant",
+      "timing": "reaction",
+      "effect": "力拔山兮生效后恢复棋盘至破坏前状态并继续对局，同时令对手跳过下一个回合。",
+      "triggerCondition": "力拔山兮结算后",
+      "effectId": "counter-restore-board",
+      "effectParams": "",
+      "failCondition": "Counter|Recovery|Reset",
+      "tags": "",
+      "notes": "那我就，东山再起",
+      "quote": "",
+      "artwork": ""
+    },
+    "1013": {
+      "_tid": "1013",
+      "tid": 1013,
+      "type": "counter",
+      "subtype": "fusion",
+      "nameZh": "滚！",
+      "nameEn": "Shout",
+      "rarity": "rare",
+      "cost": 1,
+      "speed": "instant",
+      "timing": "reaction",
+      "effect": "对手发动任意合体技时阻止其效果。",
+      "triggerCondition": "敌方发动合体技时",
+      "effectId": "counter-cancel-fusion",
+      "effectParams": "",
+      "counteredBy": 1014,
+      "requiresCharacter": 3001,
+      "failCondition": "需保持士气以阻断合体技",
+      "tags": "Fusion|Counter|AntiFusion",
+      "notes": "",
+      "quote": "诶",
+      "artwork": " 怎么又走了"
+    },
+    "1014": {
+      "_tid": "1014",
+      "tid": 1014,
+      "type": "counter",
+      "subtype": "legendary",
+      "nameZh": "你骂老人",
+      "nameEn": "Moral Pressure",
+      "rarity": "legendary",
+      "cost": 2,
+      "speed": "instant",
+      "timing": "reaction",
+      "effect": "当己方合体技被滚！打断时触发，对手下回合无法行动。",
+      "triggerCondition": "敌方使用滚！阻断己方合体技时",
+      "effectId": "counter-punish",
+      "effectParams": "",
+      "failCondition": "Counter|Punish",
+      "tags": "",
+      "notes": "你骂老人！",
+      "quote": "",
+      "artwork": ""
+    },
+    "1015": {
+      "_tid": "1015",
+      "tid": 1015,
+      "type": "support",
+      "subtype": "support",
+      "nameZh": "技能五",
+      "nameEn": "Summon Skill Five",
+      "rarity": "common",
+      "cost": 1,
+      "speed": "instant",
+      "timing": "anytime",
+      "effect": "召唤张兴朝入场，使合体技可以发动。",
+      "triggerCondition": "",
+      "effectId": "summon-character",
+      "effectParams": "character=3001",
+      "requiresCards": "召唤当回合无法立刻发动合体技",
+      "failCondition": "Support|Summon|Fusion",
+      "tags": "",
+      "notes": "技能五子·张技能五",
+      "quote": "",
+      "artwork": ""
+    },
+    "1016": {
+      "_tid": "1016",
+      "tid": 1016,
+      "type": "support",
+      "subtype": "support",
+      "nameZh": "See You Again",
+      "nameEn": "Force Exit",
+      "rarity": "common",
+      "cost": 1,
+      "speed": "instant",
+      "timing": "pre-move",
+      "effect": "强制让对方张兴朝退场；若无目标则作废。",
+      "triggerCondition": "",
+      "effectId": "force-exit",
+      "effectParams": "target=3001",
+      "failCondition": "Support|AntiFusion",
+      "tags": "",
+      "notes": "胜天半子·王金宝",
+      "quote": "",
+      "artwork": ""
+    }
+  },
+  "collisions": [],
+  "indexes": {
+    "byNameEn": {
+      "Sandstorm": "1001",
+      "Time Freeze": "1002",
+      "Instant Win": "1003",
+      "Cleaner Service": "1004",
+      "Baseball Strike": "1005",
+      "Time Rewind": "1006",
+      "Distract": "1007",
+      "Item Retrieval": "1008",
+      "Seize": "1009",
+      "Break Free": "1010",
+      "Reverse Trap": "1011",
+      "Resurgence": "1012",
+      "Shout": "1013",
+      "Moral Pressure": "1014",
+      "Summon Skill Five": "1015",
+      "Force Exit": "1016"
+    },
+    "byType": {
+      "attack": "1001",
+      "counter": "1008",
+      "support": "1015"
+    },
+    "bySubtype": {
+      "standard": "1001",
+      "legendary": "1003",
+      "fusion": "1004",
+      "reactive": "1008",
+      "support": "1015"
+    },
+    "byRarity": {
+      "common": "1001",
+      "rare": "1002",
+      "legendary": "1003"
+    },
+    "byTiming": {
+      "pre-move": "1001",
+      "reaction": "1008",
+      "anytime": "1015"
+    },
+    "byEffect": {
+      "remove-to-shichahai": "1001",
+      "freeze-opponent": "1002",
+      "instant-win": "1003",
+      "clean-sweep": "1004",
+      "time-rewind": "1006",
+      "skip-next-turn": "1007",
+      "counter-retrieve": "1008",
+      "counter-prevent-removal": "1009",
+      "counter-thaw": "1010",
+      "counter-reverse-win": "1011",
+      "counter-restore-board": "1012",
+      "counter-cancel-fusion": "1013",
+      "counter-punish": "1014",
+      "summon-character": "1015",
+      "force-exit": "1016"
+    },
+    "byRequiresCharacter": {
+      "3001": "1004"
+    },
+    "byRequiresCards": {
+      "召唤当回合无法立刻发动合体技": [
+        "1015"
+      ]
+    },
+    "byCounteredBy": {
+      "1008": [
+        "1005"
+      ],
+      "1010": [
+        "1002"
+      ],
+      "1013": [
+        "1004",
+        "1006",
+        "1007"
+      ],
+      "1014": [
+        "1013"
+      ],
+      "1008|1009": [
+        "1001"
+      ],
+      "1011|1012": [
+        "1003"
+      ]
+    },
+    "byTags": {
+      "Removal|Shichahai": [
+        "1001"
+      ],
+      "Attack|Freeze": [
+        "1002"
+      ],
+      "DirectWin|Legendary": [
+        "1003"
+      ],
+      "Fusion|Removal|Random|Shichahai": [
+        "1004"
+      ],
+      "Attack|Fusion|Removal|Shichahai|Unseizeable": [
+        "1005"
+      ],
+      "Attack|Reset|Rewind": [
+        "1006"
+      ],
+      "Fusion|Attack|SkipTurn": [
+        "1007"
+      ],
+      "": [
+        "1008",
+        "1009",
+        "1010",
+        "1012",
+        "1014",
+        "1015",
+        "1016"
+      ],
+      "Fusion|Counter|Legendary|DirectWin|Reflect": [
+        "1011"
+      ],
+      "Fusion|Counter|AntiFusion": [
+        "1013"
+      ]
+    }
+  }
+}
+
+export const cardsRaw = raw;
+export const cardsTids: CardsTID[] = raw.tids.map(toCardsTID);
+export const cardsRecords: Record<CardsTID, ICards> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toCardsTID(tid), value as ICards])
+);
+export const cards = cardsRecords;
+export const cardsRepo = CardsRepo.fromRaw(raw);

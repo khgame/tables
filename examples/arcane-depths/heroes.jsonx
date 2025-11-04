@@ -1,0 +1,143 @@
+{
+  "protocol": {
+    "name": "khgame.tables",
+    "version": 1
+  },
+  "source": {
+    "fileName": "heroes",
+    "sheetName": "__data"
+  },
+  "convert": {
+    "tids": [
+      "20010100",
+      "20020100",
+      "20030100",
+      "20040100"
+    ],
+    "result": {
+      "20010100": {
+        "_tid": "20010100",
+        "familyCode": 20,
+        "classCode": 1,
+        "heroCode": 1,
+        "variantCode": 0,
+        "sequence": 1,
+        "name": "Lyra Emberguard",
+        "classTid": 21010000,
+        "role": "Tank",
+        "rarity": 4,
+        "baseHp": 1320,
+        "baseAtk": 96,
+        "baseDef": 178,
+        "baseSpd": 101,
+        "signatureSkill": 30010100,
+        "supportSkill": 30010200,
+        "ultimateSkill": 30990100,
+        "unlockChapter": 10010100,
+        "primaryTrait": "Resolve",
+        "secondaryTrait": "Synergy",
+        "portrait": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=600&q=80"
+      },
+      "20020100": {
+        "_tid": "20020100",
+        "familyCode": 20,
+        "classCode": 2,
+        "heroCode": 1,
+        "variantCode": 0,
+        "sequence": 1,
+        "name": "Eiden Starcaller",
+        "classTid": 21020000,
+        "role": "Burst",
+        "rarity": 5,
+        "baseHp": 880,
+        "baseAtk": 148,
+        "baseDef": 102,
+        "baseSpd": 108,
+        "signatureSkill": 30020100,
+        "supportSkill": 30030100,
+        "ultimateSkill": 30990100,
+        "unlockChapter": 10020100,
+        "primaryTrait": "Resonance",
+        "secondaryTrait": "Instinct",
+        "portrait": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80"
+      },
+      "20030100": {
+        "_tid": "20030100",
+        "familyCode": 20,
+        "classCode": 3,
+        "heroCode": 1,
+        "variantCode": 0,
+        "sequence": 1,
+        "name": "Rhea Longshot",
+        "classTid": 21030000,
+        "role": "Specialist",
+        "rarity": 4,
+        "baseHp": 1040,
+        "baseAtk": 142,
+        "baseDef": 92,
+        "baseSpd": 116,
+        "signatureSkill": 30040100,
+        "supportSkill": 30030100,
+        "ultimateSkill": 30990100,
+        "unlockChapter": 10020100,
+        "primaryTrait": "Instinct",
+        "secondaryTrait": "Resolve",
+        "portrait": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80"
+      },
+      "20040100": {
+        "_tid": "20040100",
+        "familyCode": 20,
+        "classCode": 4,
+        "heroCode": 1,
+        "variantCode": 0,
+        "sequence": 1,
+        "name": "Kael Mosswarden",
+        "classTid": 21040000,
+        "role": "Support",
+        "rarity": 3,
+        "baseHp": 1085,
+        "baseAtk": 112,
+        "baseDef": 140,
+        "baseSpd": 99,
+        "signatureSkill": 30050100,
+        "supportSkill": 30010100,
+        "ultimateSkill": 30990100,
+        "unlockChapter": 10030100,
+        "primaryTrait": "Synergy",
+        "secondaryTrait": "Resonance",
+        "portrait": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80"
+      }
+    },
+    "collisions": [],
+    "meta": {
+      "idSegments": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "markCols": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T"
+      ]
+    }
+  }
+}

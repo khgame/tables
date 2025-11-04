@@ -1,0 +1,132 @@
+{
+  "tids": [
+    "62010000",
+    "62020000",
+    "62030000",
+    "62040000",
+    "62050000",
+    "62060000"
+  ],
+  "result": {
+    "62010000": {
+      "_tid": "62010000",
+      "familyCode": 62,
+      "itemCode": 1,
+      "variantCode": 0,
+      "subCode": 0,
+      "sequence": 1,
+      "name": "熔铸壁盾",
+      "slot": "Armor",
+      "rarity": 3,
+      "craftCost": 140,
+      "craftResource": "Crystal",
+      "upgradeLevel": 3,
+      "upgradeBonus": "+60 DEF 每级并提供灼烧反击",
+      "linkedRelic": 60010000
+    },
+    "62020000": {
+      "_tid": "62020000",
+      "familyCode": 62,
+      "itemCode": 2,
+      "variantCode": 0,
+      "subCode": 0,
+      "sequence": 1,
+      "name": "星织法杖",
+      "slot": "Weapon",
+      "rarity": 4,
+      "craftCost": 180,
+      "craftResource": "Arcane",
+      "upgradeLevel": 4,
+      "upgradeBonus": "+70 ATK 每级并提升极限技倍率",
+      "linkedRelic": 60030000
+    },
+    "62030000": {
+      "_tid": "62030000",
+      "familyCode": 62,
+      "itemCode": 3,
+      "variantCode": 0,
+      "subCode": 0,
+      "sequence": 1,
+      "name": "追猎者护弓",
+      "slot": "Weapon",
+      "rarity": 3,
+      "craftCost": 150,
+      "craftResource": "Crystal",
+      "upgradeLevel": 3,
+      "upgradeBonus": "+8% 暴击率每级",
+      "linkedRelic": 60040000
+    },
+    "62040000": {
+      "_tid": "62040000",
+      "familyCode": 62,
+      "itemCode": 4,
+      "variantCode": 0,
+      "subCode": 0,
+      "sequence": 1,
+      "name": "翠息护符",
+      "slot": "Accessory",
+      "rarity": 2,
+      "craftCost": 90,
+      "craftResource": "Provision",
+      "upgradeLevel": 2,
+      "upgradeBonus": "+12% 治疗量每级",
+      "linkedRelic": 60020000
+    },
+    "62050000": {
+      "_tid": "62050000",
+      "familyCode": 62,
+      "itemCode": 5,
+      "variantCode": 0,
+      "subCode": 0,
+      "sequence": 1,
+      "name": "熔炉余辉指环",
+      "slot": "Accessory",
+      "rarity": 4,
+      "craftCost": 160,
+      "craftResource": "Arcane",
+      "upgradeLevel": 3,
+      "upgradeBonus": "技能命中追加星火标记",
+      "linkedRelic": 60030000
+    },
+    "62060000": {
+      "_tid": "62060000",
+      "familyCode": 62,
+      "itemCode": 6,
+      "variantCode": 0,
+      "subCode": 0,
+      "sequence": 1,
+      "name": "守望藤蔓披风",
+      "slot": "Armor",
+      "rarity": 2,
+      "craftCost": 110,
+      "craftResource": "Provision",
+      "upgradeLevel": 2,
+      "upgradeBonus": "+50 护盾提供量每级",
+      "linkedRelic": 60050000
+    }
+  },
+  "collisions": [],
+  "meta": {
+    "idSegments": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "markCols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M"
+    ]
+  }
+}

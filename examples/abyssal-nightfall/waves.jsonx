@@ -1,0 +1,134 @@
+{
+  "protocol": {
+    "name": "khgame.tables",
+    "version": 1
+  },
+  "source": {
+    "fileName": "waves",
+    "sheetName": "__data"
+  },
+  "convert": {
+    "tids": [
+      "60080001",
+      "60080002",
+      "60080003",
+      "60080004",
+      "60080005",
+      "60080006",
+      "60080007"
+    ],
+    "result": {
+      "60080001": {
+        "_tid": "60080001",
+        "sector": 60,
+        "category": 8,
+        "serial": 1,
+        "timestamp": 3,
+        "duration": 20,
+        "enemyId": 40060007,
+        "count": 8,
+        "spawnRadius": 12,
+        "formation": "ring",
+        "notes": "虚潮行者只会缠斗，练习走位与护盾。"
+      },
+      "60080002": {
+        "_tid": "60080002",
+        "sector": 60,
+        "category": 8,
+        "serial": 2,
+        "timestamp": 28,
+        "duration": 22,
+        "enemyId": 40060006,
+        "count": 10,
+        "spawnRadius": 8.5,
+        "formation": "swarm",
+        "notes": "碎影涌入，速度快但血量低。"
+      },
+      "60080003": {
+        "_tid": "60080003",
+        "sector": 60,
+        "category": 8,
+        "serial": 3,
+        "timestamp": 54,
+        "duration": 26,
+        "enemyId": 40060001,
+        "count": 12,
+        "spawnRadius": 10.5,
+        "formation": "ring",
+        "notes": "餍爬者投掷腐质胆汁，学会绕开溅射区。"
+      },
+      "60080004": {
+        "_tid": "60080004",
+        "sector": 60,
+        "category": 8,
+        "serial": 4,
+        "timestamp": 86,
+        "duration": 30,
+        "enemyId": 40060002,
+        "count": 10,
+        "spawnRadius": 9,
+        "formation": "arc",
+        "notes": "歌祭徒三连音袭击，持续走位或击杀增幅者。"
+      },
+      "60080005": {
+        "_tid": "60080005",
+        "sector": 60,
+        "category": 8,
+        "serial": 5,
+        "timestamp": 124,
+        "duration": 32,
+        "enemyId": 40060003,
+        "count": 8,
+        "spawnRadius": 8.5,
+        "formation": "cone",
+        "notes": "呼嚎者扇形震荡波附理智流失，利用空挡反击。"
+      },
+      "60080006": {
+        "_tid": "60080006",
+        "sector": 60,
+        "category": 8,
+        "serial": 6,
+        "timestamp": 164,
+        "duration": 34,
+        "enemyId": 40060004,
+        "count": 6,
+        "spawnRadius": 13.5,
+        "formation": "cross",
+        "notes": "虚壳哨兵有 0.6 秒警示后扫射光束，注意走位。"
+      },
+      "60080007": {
+        "_tid": "60080007",
+        "sector": 60,
+        "category": 8,
+        "serial": 7,
+        "timestamp": 206,
+        "duration": 40,
+        "enemyId": 40060005,
+        "count": 8,
+        "spawnRadius": 10.5,
+        "formation": "line",
+        "notes": "掘锚者冲撞灯塔并引发震波，及时打断或闪避。"
+      }
+    },
+    "collisions": [],
+    "meta": {
+      "idSegments": [
+        0,
+        1,
+        2
+      ],
+      "markCols": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J"
+      ]
+    }
+  }
+}

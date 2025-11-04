@@ -1,0 +1,129 @@
+/** this file is auto generated */
+import * as TableContext from "./context";
+import { IGlobalConfig, GlobalConfigTID, toGlobalConfigTID, GlobalConfigRepo } from "./global_config";
+        
+const raw = {
+  "tids": [
+    "90000001",
+    "90000002",
+    "90000003",
+    "90000004",
+    "90000005",
+    "90000006",
+    "90000007",
+    "90000008",
+    "90000009",
+    "90000010",
+    "90000011"
+  ],
+  "result": {
+    "90000001": {
+      "_tid": "90000001",
+      "tid": 90000001,
+      "sequence": 1,
+      "key": "baseTickSeconds",
+      "valueType": "Float",
+      "value": "1",
+      "description": "主循环每秒运行一次。"
+    },
+    "90000002": {
+      "_tid": "90000002",
+      "tid": 90000002,
+      "sequence": 2,
+      "key": "offlineCapSeconds",
+      "valueType": "UInt",
+      "value": "21600",
+      "description": "离线结算上限（秒）。"
+    },
+    "90000003": {
+      "_tid": "90000003",
+      "tid": 90000003,
+      "sequence": 3,
+      "key": "autosaveInterval",
+      "valueType": "UInt",
+      "value": "30",
+      "description": "自动保存间隔（秒）。"
+    },
+    "90000004": {
+      "_tid": "90000004",
+      "tid": 90000004,
+      "sequence": 4,
+      "key": "initialWarmth",
+      "valueType": "Float",
+      "value": "42",
+      "description": "初始炉火值。"
+    },
+    "90000005": {
+      "_tid": "90000005",
+      "tid": 90000005,
+      "sequence": 5,
+      "key": "initialWood",
+      "valueType": "Float",
+      "value": "12",
+      "description": "初始木材。"
+    },
+    "90000006": {
+      "_tid": "90000006",
+      "tid": 90000006,
+      "sequence": 6,
+      "key": "initialVillagers",
+      "valueType": "UInt",
+      "value": "1",
+      "description": "初始村民数量。"
+    },
+    "90000007": {
+      "_tid": "90000007",
+      "tid": 90000007,
+      "sequence": 7,
+      "key": "logLimit",
+      "valueType": "UInt",
+      "value": "120",
+      "description": "日志保留数量。"
+    },
+    "90000008": {
+      "_tid": "90000008",
+      "tid": 90000008,
+      "sequence": 8,
+      "key": "maxJobRatio",
+      "valueType": "Float",
+      "value": "0.95",
+      "description": "可分配的村民上限比例。"
+    },
+    "90000009": {
+      "_tid": "90000009",
+      "tid": 90000009,
+      "sequence": 9,
+      "key": "fireCriticalThreshold",
+      "valueType": "Float",
+      "value": "25",
+      "description": "炉火警告阈值。"
+    },
+    "90000010": {
+      "_tid": "90000010",
+      "tid": 90000010,
+      "sequence": 10,
+      "key": "gatherWoodGain",
+      "valueType": "Float",
+      "value": "7",
+      "description": "手动拾荒获得的木材。"
+    },
+    "90000011": {
+      "_tid": "90000011",
+      "tid": 90000011,
+      "sequence": 11,
+      "key": "stokeFireGain",
+      "valueType": "Float",
+      "value": "30",
+      "description": "添柴获得的炉火。"
+    }
+  },
+  "collisions": []
+}
+
+export const globalConfigRaw = raw;
+export const globalConfigTids: GlobalConfigTID[] = raw.tids.map(toGlobalConfigTID);
+export const globalConfigRecords: Record<GlobalConfigTID, IGlobalConfig> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toGlobalConfigTID(tid), value as IGlobalConfig])
+);
+export const globalConfig = globalConfigRecords;
+export const globalConfigRepo = GlobalConfigRepo.fromRaw(raw);

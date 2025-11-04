@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arcane Depths – tables 示例</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Space Grotesk"', 'system-ui'],
+              body: ['"Prompt"', 'system-ui']
+            },
+            colors: {
+              abyss: '#0b132b',
+              ember: '#ef8354',
+              aurora: '#4ecdc4',
+              starlight: '#b084f7',
+              moss: '#7bd389',
+              slate: '#1c2541',
+              veil: '#3a506b'
+            },
+            dropShadow: {
+              brand: '0 8px 20px rgba(176, 132, 247, 0.35)'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        font-family: 'Prompt', system-ui;
+        background: radial-gradient(circle at 0% -10%, rgba(78, 205, 196, 0.18), transparent 45%),
+                    radial-gradient(circle at 100% 0%, rgba(176, 132, 247, 0.22), transparent 52%),
+                    radial-gradient(circle at 50% 100%, rgba(239, 131, 84, 0.16), transparent 50%),
+                    #05070f;
+        color: white;
+        min-height: 100vh;
+      }
+      .glass-panel {
+        backdrop-filter: blur(20px) saturate(130%);
+        background: linear-gradient(130deg, rgba(42, 54, 90, 0.96), rgba(26, 30, 55, 0.92));
+        border: 1px solid rgba(115, 148, 255, 0.12);
+        box-shadow: 0 20px 38px rgba(10, 13, 28, 0.32);
+      }
+      .glass-soft {
+        backdrop-filter: blur(18px) saturate(125%);
+        background: rgba(33, 41, 70, 0.9);
+        border: 1px solid rgba(142, 173, 255, 0.1);
+        box-shadow: 0 16px 32px rgba(9, 12, 26, 0.28);
+      }
+      .bg-grid {
+        background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 60px 60px;
+      }
+      .scroll-shadow {
+        mask-image: linear-gradient(180deg, transparent 0, black 32px, black calc(100% - 32px), transparent 100%);
+      }
+      .clamp-2 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+      .clamp-3 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body class="bg-grid">
+    <div class="min-h-screen max-w-[1320px] mx-auto px-5 md:px-8 lg:px-10 py-10">
+      <header class="glass-panel rounded-4xl p-8 md:p-10 drop-shadow-brand">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="space-y-4">
+            <p class="uppercase tracking-[0.5em] text-sm text-starlight/70 font-semibold">@khgame/tables showcase</p>
+            <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-semibold text-white">
+              Arcane Depths
+            </h1>
+            <p class="text-white/80 max-w-2xl">
+              一个由 Excel 配置驱动的“战术 Roguelike + 基地经营”示例。通过 tables 插件流水线生成 schema、转换结果与 jsonx 协议，快速搭建可体验的游戏 MVP。
+            </p>
+            <div class="flex flex-wrap gap-3">
+              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-starlight/80 shadow-[0_12px_24px_rgba(176,132,247,0.25)]">
+                <span class="text-starlight">●</span> 多层地牢 & 章节被动
+              </span>
+              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-aurora/80 shadow-[0_12px_24px_rgba(78,205,196,0.25)]">
+                <span class="text-aurora">●</span> Excel → tables → React
+              </span>
+              <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold bg-veil/70 text-ember/80 shadow-[0_12px_24px_rgba(239,131,84,0.25)]">
+                <span class="text-ember">●</span> jsonx 协议头输出
+              </span>
+            </div>
+          </div>
+          <div class="glass-soft rounded-3xl p-6 md:p-7 w-full lg:w-80">
+            <p class="text-sm text-white/60 uppercase tracking-[0.4em] mb-2">Quick Start</p>
+            <ol class="space-y-2 text-sm text-white/80">
+              <li>1. 运行 <code class="bg-black/40 px-2 py-0.5 rounded text-aurora">node _rebuild_data.js</code></li>
+              <li>2. 运行 <code class="bg-black/40 px-2 py-0.5 rounded text-aurora">node serialize.js</code></li>
+              <li>3. 使用静态服务器打开 <code>ui/index.html</code></li>
+              <li>4. 借助 Chrome Dev MCP 调试，扩展玩法</li>
+            </ol>
+            <p class="text-xs text-white/40 mt-4">
+              当前页面直接消费 <code>/out</code> 下的 JSON / JSONX 产物。
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <main class="mt-10">
+        <div id="app"></div>
+      </main>
+    </div>
+
+    <script type="text/babel">
+      const { useEffect, useState, useMemo } = React;
+
+      const SECTIONS = [
+        { id: 'run', label: '运行面板', emoji: '🎲' },
+        { id: 'overview', label: '基地概览', emoji: '🏕️' },
+        { id: 'squad', label: '小队配置', emoji: '⚔️' },
+        { id: 'map', label: '地牢线路', emoji: '🗺️' },
+        { id: 'battle', label: '战斗预览', emoji: '🔥' },
+        { id: 'events', label: '事件簿', emoji: '📜' }
+      ];
+
+      const DATA_BASE = '..';
+      const DATA_FILES = [
+        { key: 'chapters', file: `${DATA_BASE}/chapters.json` },
+        { key: 'mapTemplates', file: `${DATA_BASE}/map_templates.json` },
+        { key: 'classes', file: `${DATA_BASE}/classes.json` },
+        { key: 'heroes', file: `${DATA_BASE}/heroes.json` },
+        { key: 'skills', file: `${DATA_BASE}/skills.json` },
+        { key: 'skillLinks', file: `${DATA_BASE}/skill_links.json` },
+        { key: 'enemies', file: `${DATA_BASE}/enemies.json` },
+        { key: 'enemyAI', file: `${DATA_BASE}/enemy_ai.json` },
+        { key: 'rooms', file: `${DATA_BASE}/rooms.json` },
+        { key: 'events', file: `${DATA_BASE}/events.json` },
+        { key: 'relics', file: `${DATA_BASE}/relics.json` },
+        { key: 'equipment', file: `${DATA_BASE}/equipment.json` },
+        { key: 'facilities', file: `${DATA_BASE}/facilities.json` },
+        { key: 'research', file: `${DATA_BASE}/research.json` },
+        { key: 'economy', file: `${DATA_BASE}/economy.json` },
+        { key: 'tasks', file: `${DATA_BASE}/tasks.json` },
+        { key: 'achievements', file: `${DATA_BASE}/achievements.json` }
+      ];
+
+      const fetchJSON = async (file) => {
+        const res = await fetch(file);
+        if (!res.ok) throw new Error(`${file} ${res.status}`);
+        return res.json();
+      };
+
+      const toEntries = (convert) => {
+        const result = convert?.result || {};
+        return Object.entries(result).map(([id, value]) => ({ id: Number(id), ...value }));
+      };
+
+      const useArcaneData = () => {
+        const [state, setState] = useState({ loading: true, error: null, data: {} });
+        useEffect(() => {
+          let cancelled = false;
+          (async () => {
+            try {
+              const entries = await Promise.all(DATA_FILES.map(async ({ key, file }) => {
+                const json = await fetchJSON(file);
+                return [key, { raw: json, list: toEntries(json) }];
+              }));
+              if (cancelled) return;
+              const data = Object.fromEntries(entries);
+              setState({ loading: false, error: null, data });
+            } catch (err) {
+              console.error('[arcane-depths] load error', err);
+              if (!cancelled) setState({ loading: false, error: err, data: {} });
+            }
+          })();
+          return () => { cancelled = true; };
+        }, []);
+        return state;
+      };
+
+      const formatNumber = (value) => {
+        if (value == null) return '--';
+        const n = Number(value);
+        if (Number.isNaN(n)) return value;
+        if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+        return n.toString();
+      };
+
+      const accentClassMap = {
+        starlight: 'text-starlight',
+        aurora: 'text-aurora',
+        ember: 'text-ember',
+        moss: 'text-moss',
+        white: 'text-white'
+      };
+
+      const tagToneMap = {
+        veil: 'bg-[rgba(68,86,130,0.6)] text-white/75',
+        aurora: 'bg-[rgba(78,205,196,0.22)] text-aurora/80',
+        ember: 'bg-[rgba(239,131,84,0.22)] text-ember/85',
+        starlight: 'bg-[rgba(176,132,247,0.22)] text-starlight/85'
+      };
+
+      const createLog = (type, message) => ({
+        id: `${type}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        type,
+        message
+      });
+
+      const trimLogs = logs => logs.slice(-160);
+
+      const lowerResourceKey = value => (value ? String(value).toLowerCase() : '');
+
+      const createDerivedMaps = data => {
+        const roomsList = data.rooms?.list || [];
+        const roomsById = new Map();
+        const roomsByChapterType = new Map();
+        roomsList.forEach(room => {
+          const id = Number(room.id);
+          if (!Number.isNaN(id)) roomsById.set(id, room);
+          const chapterKey = room.chapterId ?? 'any';
+          const key = `${chapterKey}::${room.roomType}`;
+          if (!roomsByChapterType.has(key)) roomsByChapterType.set(key, []);
+          roomsByChapterType.get(key).push(room);
+        });
+
+        const eventsList = data.events?.list || [];
+        const eventsById = new Map();
+        const eventsByChapter = new Map();
+        eventsList.forEach(evt => {
+          const id = Number(evt.id);
+          if (!Number.isNaN(id)) eventsById.set(id, evt);
+          const chapterKey = evt.chapterId ? Number(evt.chapterId) : 'any';
+          if (!eventsByChapter.has(chapterKey)) eventsByChapter.set(chapterKey, []);
+          eventsByChapter.get(chapterKey).push(evt);
+        });
+
+        const enemiesById = new Map((data.enemies?.list || []).map(enemy => [Number(enemy.id), enemy]));
+        const relicList = data.relics?.list || [];
+        const relicsById = new Map(relicList.map(relic => [Number(relic.id), relic]));
+        const equipmentList = data.equipment?.list || [];
+        const equipmentById = new Map(equipmentList.map(item => [Number(item.id), item]));
+        const skillsById = new Map((data.skills?.list || []).map(skill => [Number(skill.id), skill]));
+
+        return {
+          roomsById,
+          roomsByChapterType,
+          eventsById,
+          eventsByChapter,
+          enemiesById,
+          relicsById,
+          relicList,
+          equipmentById,
+          equipmentList,
+          skillsById
+        };
+      };
+
+      const buildNodesByLayer = (mapTemplates, chapterId) => {
+        const filtered = (mapTemplates || []).filter(node => Number(node.chapterId) === Number(chapterId));
+        const grouped = new Map();
+        filtered.forEach(node => {
+          const layer = Number(node.layer) || 0;
+          if (!grouped.has(layer)) grouped.set(layer, []);
+          grouped.get(layer).push(node);
+        });
+        return Array.from(grouped.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([layer, nodes]) => ({
+            layer,
+            nodes: nodes.sort((a, b) => (a.order || 0) - (b.order || 0))
+          }));
+      };
+
+      const resolveRoomForNode = (node, derived, chapterId) => {
+        if (!node) return null;
+        const id = Number(node.destinationRoomId || node.nodeCode);
+        if (!Number.isNaN(id) && derived.roomsById.has(id)) {
+          return derived.roomsById.get(id);
+        }
+        const chapterKey = `${chapterId}::${node.roomType}`;
+        const fallback = derived.roomsByChapterType.get(chapterKey);
+        if (fallback?.length) return fallback[0];
+        const generic = derived.roomsByChapterType.get(`any::${node.roomType}`);
+        return generic?.[0] || null;
+      };
+
+      const resolveEnemyForNode = (room, derived) => {
+        if (!room) return null;
+        const enemyId = Number(room.enemyId);
+        if (!Number.isNaN(enemyId) && derived.enemiesById.has(enemyId)) {
+          return derived.enemiesById.get(enemyId);
+        }
+        const rarity = room.roomType === 'Boss' ? 'Boss' : room.roomType === 'Elite' ? 'Elite' : 'Normal';
+        const candidates = Array.from(derived.enemiesById.values());
+        return candidates.find(enemy => enemy.rarity === rarity) || candidates[0] || null;
+      };
+
+      const createHeroState = (hero, derived) => {
+        const skills = [hero.signatureSkill, hero.supportSkill, hero.ultimateSkill]
+          .map(id => derived.skillsById.get(Number(id)))
+          .filter(Boolean);
+        const skillTags = Array.from(new Set(skills.map(skill => skill.tag).filter(Boolean)));
+        return {
+          id: Number(hero.id),
+          name: hero.name,
+          role: hero.role,
+          traits: [hero.primaryTrait, hero.secondaryTrait].filter(Boolean),
+          maxHp: Number(hero.baseHp) || 0,
+          hp: Number(hero.baseHp) || 0,
+          baseAtk: Number(hero.baseAtk) || 0,
+          baseDef: Number(hero.baseDef) || 0,
+          baseSpd: Number(hero.baseSpd) || 0,
+          skills,
+          skillTags,
+          portrait: hero.portrait
+        };
+      };
+
+      const cloneHeroes = heroes => heroes.map(hero => ({ ...hero }));
+
+      const getCurrentNode = runState => {
+        const layer = runState.nodesByLayer[runState.layerIndex];
+        if (!layer) return null;
+        return layer.nodes[runState.nodeIndex] || null;
+      };
+
+      const applyRewards = (runState, rewardType, rewardValue, derived) => {
+        let resources = { ...runState.resources };
+        let relics = [...runState.relics];
+        const logs = [];
+
+        if (!rewardType) return { resources, relics, logs };
+
+        const entries = (rewardValue || '').split(',').map(entry => entry.trim()).filter(Boolean);
+
+        if (rewardType === 'Resource') {
+          entries.forEach(entry => {
+            const [res, amountText] = entry.split(':');
+            const key = lowerResourceKey(res);
+            const amount = Number(amountText) || 0;
+            if (key && Object.prototype.hasOwnProperty.call(resources, key)) {
+              resources[key] = Math.max(0, (resources[key] || 0) + amount);
+              logs.push(createLog('reward', `获得 ${res} ${amount}`));
+            }
+          });
+        } else if (rewardType === 'Relic') {
+          const id = Number(entries[0] || rewardValue);
+          if (!Number.isNaN(id)) {
+            const relic = derived.relicsById.get(id);
+            if (relic && !relics.some(r => r.id === id)) {
+              relics = [...relics, { id, name: relic.name, rarity: relic.rarity }];
+              logs.push(createLog('reward', `获得遗物《${relic.name}》`));
+            } else if (relic) {
+              logs.push(createLog('reward', `重复遗物《${relic.name}》转化为 Arcane 6`));
+              resources.arcane = (resources.arcane || 0) + 6;
+            }
+          }
+        } else if (rewardType === 'Item') {
+          const id = Number(entries[0] || rewardValue);
+          const item = derived.equipmentById.get(id);
+          logs.push(createLog('reward', `获得装备蓝图：${item ? item.name : rewardValue}`));
+        } else {
+          logs.push(createLog('reward', `获得奖励：${rewardType} ${rewardValue || ''}`));
+        }
+
+        return { resources, relics, logs };
+      };
+
+      const applyPenalties = (runState, penaltyType, penaltyValue) => {
+        let resources = { ...runState.resources };
+        let heroes = cloneHeroes(runState.heroes);
+        const logs = [];
+
+        if (!penaltyType) return { resources, heroes, logs };
+
+        if (penaltyType === 'LoseResource') {
+          const [res, amountText] = (penaltyValue || '').split(':');
+          const key = lowerResourceKey(res);
+          const amount = Number(amountText) || 0;
+          if (key && Object.prototype.hasOwnProperty.call(resources, key)) {
+            resources[key] = Math.max(0, (resources[key] || 0) - amount);
+            logs.push(createLog('event', `损失 ${res} ${amount}`));
+          }
+        } else if (penaltyType === 'Damage') {
+          const [target, amountText] = (penaltyValue || '').split(':');
+          const amount = Number(amountText) || 0;
+          if (target === 'team') {
+            heroes = heroes.map(hero => ({ ...hero, hp: Math.max(0, hero.hp - amount) }));
+            logs.push(createLog('event', `队伍受到 ${amount} 点群体伤害`));
+          }
+        } else if (penaltyType === 'Debuff') {
+          logs.push(createLog('event', `遭遇异常状态：${penaltyValue}`));
+        }
+
+        return { resources, heroes, logs };
+      };
+
+      const calculateHeroDamage = (hero, skill, enemy, nodeType) => {
+        const baseAtk = hero.baseAtk || 0;
+        const power = skill ? Number(skill.power) || 1 : 1;
+        const scaling = skill ? Number(skill.scaling) || 1 : 1;
+        const traitBonus = hero.traits.includes('Resonance') ? 1.08 : hero.traits.includes('Resolve') ? 1.05 : 1;
+        const typeBonus = nodeType === 'Boss' ? 1.25 : nodeType === 'Elite' ? 1.1 : 1;
+        const random = 0.9 + Math.random() * 0.3;
+        const damage = (baseAtk * 0.6 * power + hero.maxHp * 0.02 * scaling) * traitBonus * typeBonus * random;
+        return Math.max(5, Math.round(damage));
+      };
+
+      const calculateEnemyDamage = (enemy, hero, nodeType) => {
+        const baseAtk = Number(enemy.atk) || 80;
+        const typeBonus = nodeType === 'Boss' ? 1.25 : nodeType === 'Elite' ? 1.15 : 1;
+        const mitigation = 1 - Math.min(0.6, (hero.baseDef || 0) / 600);
+        const random = 0.9 + Math.random() * 0.2;
+        const damage = baseAtk * typeBonus * mitigation * random;
+        return Math.max(4, Math.round(damage));
+      };
+
+      const simulateBattle = (runState, room, enemy) => {
+        const heroes = cloneHeroes(runState.heroes);
+        const logs = [createLog('battle', `遭遇 ${enemy.name || '未知敌人'}`)];
+        const nodeType = room?.roomType || 'Combat';
+        let enemyHp = Number(enemy.hp) || 2000;
+        let round = 1;
+
+        while (round <= 8 && enemyHp > 0 && heroes.some(hero => hero.hp > 0)) {
+          const attackers = heroes.filter(hero => hero.hp > 0);
+          for (const hero of attackers) {
+            const skill = hero.skills[round % hero.skills.length] || hero.skills[0];
+            const damage = calculateHeroDamage(hero, skill, enemy, nodeType);
+            enemyHp -= damage;
+            logs.push(createLog('battle', `${hero.name} 使用 ${skill ? skill.name : '普通攻击'} 造成 ${damage} 伤害`));
+            if (enemyHp <= 0) break;
+          }
+          if (enemyHp <= 0) break;
+
+          const defenders = heroes.filter(hero => hero.hp > 0);
+          if (!defenders.length) break;
+          const target = defenders[Math.floor(Math.random() * defenders.length)];
+          const enemyDamage = calculateEnemyDamage(enemy, target, nodeType);
+          target.hp = Math.max(0, target.hp - enemyDamage);
+          logs.push(createLog('battle', `${enemy.name || '敌人'} 反击 ${target.name}，造成 ${enemyDamage} 伤害`));
+          round += 1;
+        }
+
+        const victory = enemyHp <= 0;
+        logs.push(createLog('battle', victory ? `${enemy.name || '敌人'} 被击败！` : '队伍被迫撤退。'));
+
+        return { victory, heroes, logs };
+      };
+
+      const advanceAfterNode = (prev, payload = {}) => {
+        const nextResources = payload.resources || prev.resources;
+        const nextRelics = payload.relics || prev.relics;
+        const nextHeroes = payload.heroes || prev.heroes;
+        let log = payload.log ? trimLogs(payload.log) : prev.log;
+        let layerIndex = prev.layerIndex;
+        let nodeIndex = prev.nodeIndex + 1;
+        let stage = payload.stage || prev.stage;
+        let summary = payload.summary || prev.summary;
+
+        const layers = prev.nodesByLayer;
+        const currentLayer = layers[layerIndex] || { nodes: [] };
+
+        if (nodeIndex >= currentLayer.nodes.length) {
+          layerIndex += 1;
+          nodeIndex = 0;
+          if (layerIndex >= layers.length) {
+            stage = 'completed';
+            summary = {
+              chapterId: prev.chapterId,
+              resources: nextResources,
+              relics: nextRelics,
+              heroes: nextHeroes
+            };
+            log = trimLogs([...log, createLog('system', '周目完成，成功返回基地。')]);
+          } else {
+            const layerLabel = layers[layerIndex]?.layer ?? layerIndex + 1;
+            log = trimLogs([...log, createLog('system', `前进到第 ${layerLabel} 层。`)]);
+          }
+        }
+
+        return {
+          ...prev,
+          ...payload,
+          resources: nextResources,
+          relics: nextRelics,
+          heroes: nextHeroes,
+          log,
+          layerIndex,
+          nodeIndex,
+          stage,
+          pending: null,
+          summary
+        };
+      };
+
+      const createEventOptions = event => {
+        if (!event) return [];
+        const options = [];
+        if (event.option1Text) {
+          options.push({
+            key: 'option1',
+            label: event.option1Text,
+            requirement: event.option1Requirement,
+            rewardType: event.option1RewardType,
+            rewardValue: event.option1RewardValue,
+            penaltyType: event.option1PenaltyType,
+            penaltyValue: event.option1PenaltyValue
+          });
+        }
+        if (event.option2Text) {
+          options.push({
+            key: 'option2',
+            label: event.option2Text,
+            requirement: event.option2Requirement,
+            rewardType: event.option2RewardType,
+            rewardValue: event.option2RewardValue,
+            penaltyType: event.option2PenaltyType,
+            penaltyValue: event.option2PenaltyValue
+          });
+        }
+        return options;
+      };
+
+      const createMerchantOffers = derived => {
+        const offers = [];
+        if (derived.relicList.length) {
+          const relic = derived.relicList[Math.floor(Math.random() * derived.relicList.length)];
+          offers.push({
+            key: `relic-${relic.id}`,
+            label: relic.name,
+            description: relic.effectSummary || '提供战斗增益',
+            cost: { resource: 'Provision', amount: 18 },
+            reward: { type: 'Relic', value: relic.id }
+          });
+        }
+        if (derived.equipmentList.length) {
+          const item = derived.equipmentList[Math.floor(Math.random() * derived.equipmentList.length)];
+          offers.push({
+            key: `equip-${item.id}`,
+            label: item.name,
+            description: item.upgradeBonus || '强化装备词缀',
+            cost: { resource: 'Crystal', amount: 20 },
+            reward: { type: 'Item', value: item.id }
+          });
+        }
+        return offers;
+      };
+
+      const createRestOptions = () => ([
+        { key: 'restore', label: '冥想回生', description: '恢复全队 35% 生命，获得 5 Arcane', healRatio: 0.35, arcaneGain: 5 },
+        { key: 'supply', label: '整备补给', description: '补充 10 点 Provision', provisionGain: 10 }
+      ]);
+
+      const createIdleRunState = () => ({
+        stage: 'idle',
+        chapterId: null,
+        passive: null,
+        featureRooms: null,
+        layerIndex: 0,
+        nodeIndex: 0,
+        nodesByLayer: [],
+        heroes: [],
+        relics: [],
+        resources: { arcane: 0, crystal: 0, provision: 0 },
+        log: [],
+        pending: null,
+        summary: null
+      });
+
+
+      const StatCard = ({ label, value, accent = 'starlight' }) => (
+        <div className={`rounded-2xl px-4 py-3 flex flex-col gap-1 ${accent === 'starlight' ? 'bg-[rgba(176,132,247,0.18)]' : accent === 'aurora' ? 'bg-[rgba(78,205,196,0.18)]' : accent === 'ember' ? 'bg-[rgba(239,131,84,0.18)]' : accent === 'moss' ? 'bg-[rgba(123,211,137,0.18)]' : 'bg-white/12'}`}>
+          <span className="text-xs uppercase tracking-[0.4em] text-white/50">{label}</span>
+          <span className={`text-2xl font-semibold ${accentClassMap[accent] || 'text-white'}`}>{value}</span>
+        </div>
+      );
+
+      const Tag = ({ label, tone = 'veil' }) => (
+        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${tagToneMap[tone] || tagToneMap.veil}`}>{label}</span>
+      );
+
+      const SectionTitle = ({ title, subtitle }) => (
+        <div className="flex flex-col gap-2 mb-6">
+          <h2 className="text-2xl font-display font-semibold">{title}</h2>
+          {subtitle ? <p className="text-sm text-white/60 max-w-2xl">{subtitle}</p> : null}
+        </div>
+      );
+
+      const HeroStatusList = ({ heroes }) => (
+        <div className="grid md:grid-cols-2 gap-3.5">
+          {heroes.map(hero => {
+            const hpRatio = hero.maxHp ? Math.max(0, hero.hp) / hero.maxHp : 0;
+            return (
+              <div key={hero.id} className="rounded-2xl p-4 space-y-2 bg-[rgba(45,57,92,0.88)]">
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-semibold">{hero.name}</p>
+                  <span className="text-xs text-white/50">{hero.role}</span>
+                </div>
+                <div className="w-full h-2 rounded bg-white/10 overflow-hidden">
+                  <div className="h-full bg-aurora transition-all" style={{ width: `${Math.max(4, hpRatio * 100)}%` }}></div>
+                </div>
+                <p className="text-xs text-white/50">{Math.round(hero.hp)}/{hero.maxHp} HP</p>
+                <div className="flex flex-wrap gap-2">
+                  {hero.traits.map(trait => <Tag key={`${hero.id}-trait-${trait}`} label={trait} tone="veil" />)}
+                  {hero.skillTags.map(tag => <Tag key={`${hero.id}-tag-${tag}`} label={tag} tone="veil" />)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+
+      const LogPanel = ({ logs }) => (
+        <div className="rounded-3xl p-4 max-h-64 overflow-auto scroll-shadow space-y-2 bg-[rgba(33,42,70,0.88)]">
+          {logs.length === 0 ? <p className="text-sm text-white/40">等待行动...</p> : null}
+          {logs.slice().reverse().map(entry => (
+            <div key={entry.id} className="text-sm text-white/70 leading-relaxed clamp-3">
+              <span className="text-xs uppercase tracking-[0.35em] text-white/30 mr-2">{entry.type}</span>
+              {entry.message}
+            </div>
+          ))}
+        </div>
+      );
+
+      const EventOverlay = ({ pending, onSelect, onSkip }) => (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur" />
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">{pending.event.title}</h3>
+              <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">放弃</button>
+            </div>
+            <p className="text-sm text-white/70 leading-relaxed clamp-3">{pending.event.summary}</p>
+            <div className="space-y-3">
+              {pending.options.map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => onSelect(option)}
+                  className="w-full text-left rounded-2xl p-4 bg-[rgba(47,60,98,0.9)] hover:bg-[rgba(78,205,196,0.16)] transition"
+                >
+                  <p className="text-white font-semibold text-base">{option.label}</p>
+                  <div className="flex flex-wrap gap-2 mt-2 text-xs text-white/50">
+                    {option.requirement ? <Tag label={`需求: ${option.requirement}`} tone="veil" /> : <Tag label="无额外需求" tone="veil" />}
+                    {option.rewardType ? <Tag label={`奖励: ${option.rewardType} ${option.rewardValue || ''}`} tone="aurora" /> : null}
+                    {option.penaltyType ? <Tag label={`风险: ${option.penaltyType} ${option.penaltyValue || ''}`} tone="ember" /> : null}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      const MerchantOverlay = ({ pending, onChoose, onSkip }) => (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur" />
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(540px,90vw)] space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">漂泊商人</h3>
+              <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">离开</button>
+            </div>
+            <p className="text-sm text-white/70">挑选一件心仪的物品，或空手离开。</p>
+            <div className="space-y-3">
+              {pending.offers.map((offer, index) => (
+                <div key={offer.key} className="rounded-2xl p-4 space-y-2 bg-[rgba(47,60,98,0.9)]">
+                  <div className="flex items-center justify-between">
+                    <p className="text-white font-semibold text-lg clamp-2">{offer.label}</p>
+                    <Tag label={`价格: ${offer.cost.amount} ${offer.cost.resource}`} tone="veil" />
+                  </div>
+                  <p className="text-sm text-white/70">{offer.description}</p>
+                  <button
+                    onClick={() => onChoose(index)}
+                    className="rounded-full px-4 py-2 bg-aurora/80 text-abyss font-semibold hover:brightness-110"
+                  >
+                    购买
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      const RestOverlay = ({ pending, onChoose, onSkip }) => (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur" />
+          <div className="glass-panel relative rounded-3xl p-6 w-[min(520px,90vw)] space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">休整选择</h3>
+              <button onClick={onSkip} className="text-sm text-white/60 hover:text-white">继续前进</button>
+            </div>
+            <p className="text-sm text-white/70">短暂的喘息能帮助队伍调整状态，选择合适的行动。</p>
+            <div className="space-y-3">
+              {pending.options.map(option => (
+                <button
+                  key={option.key}
+                  onClick={() => onChoose(option)}
+                  className="w-full rounded-2xl p-4 text-left bg-[rgba(47,60,98,0.9)] hover:bg-[rgba(78,205,196,0.16)] transition"
+                >
+                  <p className="text-white font-semibold text-lg clamp-2">{option.label}</p>
+                  <p className="text-sm text-white/70 mt-1">{option.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+      const RunPanel = ({ data, derived, runState, onStartRun, onResolveNode, onEventChoice, onMerchantChoice, onRestChoice, onSkipInteraction, onReset }) => {
+        const chapters = data.chapters?.list || [];
+        const heroCatalog = data.heroes?.list || [];
+
+        const [selectedChapterId, setSelectedChapterId] = useState(() => chapters[0]?.id);
+        const [selectedHeroIds, setSelectedHeroIds] = useState(() => heroCatalog.slice(0, 4).map(hero => hero.id));
+
+        useEffect(() => {
+          if (chapters.length && !selectedChapterId) setSelectedChapterId(chapters[0].id);
+        }, [chapters, selectedChapterId]);
+
+        useEffect(() => {
+          if (heroCatalog.length && selectedHeroIds.length === 0) {
+            setSelectedHeroIds(heroCatalog.slice(0, 4).map(hero => hero.id));
+          }
+        }, [heroCatalog, selectedHeroIds]);
+
+        const currentNode = runState.stage === 'running' ? getCurrentNode(runState) : null;
+        const currentRoom = currentNode ? resolveRoomForNode(currentNode, derived, runState.chapterId) : null;
+
+        const toggleHero = id => {
+          setSelectedHeroIds(prev => {
+            const exists = prev.includes(id);
+            if (exists) return prev.filter(item => item !== id);
+            if (prev.length >= 4) return prev;
+            return [...prev, id];
+          });
+        };
+
+        const canStart = selectedChapterId && selectedHeroIds.length === 4;
+        const resolveLabelMap = {
+          Event: '处理事件',
+          Merchant: '与商人交谈',
+          Rest: '进行休整',
+          Boss: '发起 Boss 战',
+          Elite: '发起精英战',
+          Combat: '发起战斗'
+        };
+        const resolveLabel = resolveLabelMap[currentRoom?.roomType || currentNode?.roomType] || '处理节点';
+
+        return (
+          <div className="space-y-5">
+            <SectionTitle
+              title="周目运行"
+              subtitle="选择章节与队伍，在浏览器内体验由 Excel 配置驱动的地牢之旅。"
+            />
+            <div className="grid lg:grid-cols-[320px,1fr] gap-5">
+              <div className="space-y-3.5">
+                <div className="glass-soft rounded-3xl p-4 space-y-2.5">
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/40">章节选择</p>
+                  <select
+                    className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
+                    value={selectedChapterId || ''}
+                    onChange={e => setSelectedChapterId(e.target.value)}
+                    disabled={runState.stage === 'running'}
+                  >
+                    {chapters.map(chapter => (
+                      <option key={chapter.id} value={chapter.id}>{chapter.name}</option>
+                    ))}
+                  </select>
+                  {runState.passive ? <p className="text-xs text-white/50">当前被动：{runState.passive}</p> : null}
+                </div>
+
+                <div className="glass-soft rounded-3xl p-4 space-y-2.5">
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/40">英雄编制 (4/4)</p>
+                  <div className="grid gap-2">
+                    {heroCatalog.map(hero => {
+                      const active = selectedHeroIds.includes(hero.id);
+                      return (
+                        <button
+                          key={hero.id}
+                          onClick={() => toggleHero(hero.id)}
+                          disabled={runState.stage === 'running' && !active}
+                          className={`text-left rounded-2xl px-4 py-3 transition ${active ? 'bg-[rgba(176,132,247,0.26)] text-white' : 'bg-white/10 text-white/70 hover:bg-white/14'}`}
+                        >
+                          <p className="text-sm font-semibold clamp-2">{hero.name}</p>
+                          <p className="text-xs text-white/60">{hero.role} · HP {hero.baseHp}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {(runState.stage === 'running' || runState.stage === 'completed') && (
+                  <div className="glass-soft rounded-3xl p-4 space-y-3.5">
+                    <p className="text-xs uppercase tracking-[0.4em] text-white/40">资源概览</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <StatCard label="Arcane" value={formatNumber(runState.resources.arcane)} accent="aurora" />
+                      <StatCard label="Crystal" value={formatNumber(runState.resources.crystal)} accent="starlight" />
+                      <StatCard label="Provision" value={formatNumber(runState.resources.provision)} accent="ember" />
+                    </div>
+                    {runState.relics.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {runState.relics.map(relic => (
+                          <Tag key={relic.id} label={relic.name} tone="starlight" />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                <LogPanel logs={runState.log} />
+              </div>
+
+              <div className="space-y-3.5">
+                {runState.stage === 'idle' && (
+                  <div className="glass-soft rounded-3xl p-5 space-y-3">
+                    <p className="text-sm text-white/70">挑选章节与 4 名英雄后点击「开始周目」即可自动读取 Excel 数据并进入地牢。</p>
+                    <button
+                      onClick={() => onStartRun(Number(selectedChapterId), selectedHeroIds.map(Number))}
+                      disabled={!canStart}
+                      className={`rounded-full px-6 py-3 text-sm font-semibold transition ${canStart ? 'bg-aurora/80 text-abyss hover:brightness-110' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
+                    >
+                      开始周目
+                    </button>
+                  </div>
+                )}
+
+                {runState.stage === 'running' && currentNode && (
+                  <div className="glass-soft rounded-3xl p-5 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.4em] text-white/40">当前节点</p>
+                        <h3 className="text-xl font-semibold text-white">{currentRoom?.name || currentNode.roomType}</h3>
+                      </div>
+                      <Tag label={currentRoom?.roomType || currentNode.roomType || '未知'} tone="veil" />
+                    </div>
+                    {currentRoom?.description ? <p className="text-sm text-white/70 leading-relaxed clamp-3">{currentRoom.description}</p> : null}
+                    {currentRoom?.specialRule ? <p className="text-xs text-white/50">特殊规则：{currentRoom.specialRule}</p> : null}
+                    {currentRoom?.rewardType ? <p className="text-xs text-white/50">奖励：{currentRoom.rewardType} {currentRoom.rewardValue || ''}</p> : null}
+                    <button
+                      onClick={onResolveNode}
+                      disabled={!!runState.pending}
+                      className={`rounded-full px-5 py-3 text-sm font-semibold transition ${runState.pending ? 'bg-white/15 text-white/40 cursor-not-allowed' : 'bg-aurora/80 text-abyss hover:brightness-110'}`}
+                    >
+                      {resolveLabel}
+                    </button>
+                    <HeroStatusList heroes={runState.heroes} />
+                  </div>
+                )}
+
+                {runState.stage === 'completed' && runState.summary && (
+                  <div className="glass-soft rounded-3xl p-5 space-y-3.5">
+                    <h3 className="text-xl font-semibold text-white">周目完成</h3>
+                    <p className="text-sm text-white/70">资源结算：</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <StatCard label="Arcane" value={formatNumber(runState.summary.resources.arcane)} accent="aurora" />
+                      <StatCard label="Crystal" value={formatNumber(runState.summary.resources.crystal)} accent="starlight" />
+                      <StatCard label="Provision" value={formatNumber(runState.summary.resources.provision)} accent="ember" />
+                    </div>
+                    {runState.summary.relics?.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {runState.summary.relics.map(relic => <Tag key={relic.id} label={relic.name} tone="starlight" />)}
+                      </div>
+                    ) : null}
+                    <button
+                      onClick={onReset}
+                      className="rounded-full px-5 py-3 text-sm font-semibold bg-aurora/80 text-abyss hover:brightness-110"
+                    >
+                      返回编队
+                    </button>
+                  </div>
+                )}
+
+                {runState.stage === 'failed' && (
+                  <div className="glass-soft rounded-3xl p-5 space-y-3.5">
+                    <h3 className="text-xl font-semibold text-white">周目失败</h3>
+                    <p className="text-sm text-white/70">队伍全灭或战斗未能取胜，携带少量资源返程。</p>
+                    <button
+                      onClick={onReset}
+                      className="rounded-full px-5 py-3 text-sm font-semibold bg-aurora/80 text-abyss hover:brightness-110"
+                    >
+                      重新编队
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {runState.pending?.type === 'event' && (
+              <EventOverlay pending={runState.pending} onSelect={onEventChoice} onSkip={onSkipInteraction} />
+            )}
+            {runState.pending?.type === 'merchant' && (
+              <MerchantOverlay pending={runState.pending} onChoose={onMerchantChoice} onSkip={onSkipInteraction} />
+            )}
+            {runState.pending?.type === 'rest' && (
+              <RestOverlay pending={runState.pending} onChoose={onRestChoice} onSkip={onSkipInteraction} />
+            )}
+          </div>
+        );
+      };
+
+      const OverviewPanel = ({ data }) => {
+        const facilities = data.facilities?.list || [];
+        const research = data.research?.list || [];
+        const tasks = data.tasks?.list || [];
+        const achievements = data.achievements?.list || [];
+        const economy = data.economy?.list || [];
+
+        const campFacilities = facilities.filter(f => f.type === 'Camp');
+        const workshopFacilities = facilities.filter(f => f.type === 'Workshop');
+
+        const incomeByResource = useMemo(() => {
+          const map = new Map();
+          economy.forEach(entry => {
+            const key = entry.resource;
+            const prev = map.get(key) || { reward: 0, consumption: 0 };
+            map.set(key, {
+              reward: prev.reward + (Number(entry.rewardAmount) || 0),
+              consumption: prev.consumption + (Number(entry.consumption) || 0)
+            });
+          });
+          return Array.from(map.entries()).map(([resource, value]) => ({ resource, ...value }));
+        }, [economy]);
+
+        return (
+          <div className="space-y-8">
+            <SectionTitle title="营地状态" subtitle="快速浏览基地设施、研究路径与资源流向。" />
+            <div className="grid md:grid-cols-4 gap-4">
+              <StatCard label="设施总数" value={facilities.length} accent="starlight" />
+              <StatCard label="研究节点" value={research.length} accent="aurora" />
+              <StatCard label="章节任务" value={tasks.length} accent="moss" />
+              <StatCard label="账号成就" value={achievements.length} accent="ember" />
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <span className="text-aurora">◈</span> 营地核心设施
+                </h3>
+                <div className="space-y-3 max-h-72 overflow-auto scroll-shadow pr-2">
+                  {campFacilities.map(fac => (
+                    <div key={fac.id} className="glass-soft rounded-2xl p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-white text-base font-semibold">{fac.name}</p>
+                          <p className="text-xs uppercase tracking-[0.4em] text-white/40">Lv.{fac.level} · {fac.type}</p>
+                        </div>
+                        <Tag label={`${fac.unlockResource} ${fac.unlockAmount}`} tone="veil" />
+                      </div>
+                      <p className="text-sm text-white/70 mt-2">{fac.effectSummary}</p>
+                      {fac.unlockRequirement ? <p className="text-xs text-white/40 mt-2">解锁条件：{fac.unlockRequirement}</p> : null}
+                    </div>
+                  ))}
+                  {campFacilities.length === 0 ? <p className="text-sm text-white/40">暂无营地设施数据。</p> : null}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <span className="text-starlight">◈</span> 工坊与研究路线
+                </h3>
+                <div className="space-y-3 max-h-72 overflow-auto scroll-shadow pr-2">
+                  {research.map(node => (
+                    <div key={node.id} className="glass-soft rounded-2xl p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-white text-base font-semibold">{node.name}</p>
+                          <p className="text-xs text-white/40">消耗 {node.costResource} {node.costAmount}</p>
+                        </div>
+                        <Tag label={node.rewardType} tone="veil" />
+                      </div>
+                      <p className="text-sm text-white/70 mt-2">奖励：{node.rewardValue}</p>
+                      {node.parent ? <p className="text-xs text-white/40 mt-2">前置研究：#{node.parent}</p> : null}
+                    </div>
+                  ))}
+                  {research.length === 0 ? <p className="text-sm text-white/40">暂无研究节点。</p> : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span className="text-ember">◈</span> 资源流向概览
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                {incomeByResource.map(item => (
+                  <div key={item.resource} className="glass-soft rounded-2xl p-4">
+                    <p className="text-sm text-white/60 uppercase tracking-[0.3em]">{item.resource}</p>
+                    <p className="text-2xl font-semibold text-white mt-2">+{formatNumber(item.reward)}</p>
+                    <p className="text-xs text-white/40">消耗 {formatNumber(item.consumption)}</p>
+                  </div>
+                ))}
+                {incomeByResource.length === 0 ? (
+                  <p className="text-sm text-white/40">经济数据尚未配置。</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const SquadPanel = ({ data }) => {
+        const heroes = data.heroes?.list || [];
+        const classes = data.classes?.list || [];
+        const skills = data.skills?.list || [];
+        const relics = data.relics?.list || [];
+        const skillMap = useMemo(() => new Map(skills.map(skill => [skill.id, skill])), [skills]);
+        const classMap = useMemo(() => new Map(classes.map(cls => [cls.id, cls])), [classes]);
+
+        const [activeHeroId, setActiveHeroId] = useState(() => heroes[0]?.id);
+        useEffect(() => {
+          if (!heroes.some(h => h.id === activeHeroId)) {
+            setActiveHeroId(heroes[0]?.id);
+          }
+        }, [heroes, activeHeroId]);
+
+        const activeHero = heroes.find(hero => hero.id === activeHeroId);
+        const heroClass = classMap.get(activeHero?.classTid);
+        const heroSkills = [activeHero?.signatureSkill, activeHero?.supportSkill, activeHero?.ultimateSkill]
+          .map(id => skillMap.get(Number(id)))
+          .filter(Boolean);
+        const synergyRelics = relics.filter(relic => relic.synergyTrait === activeHero?.primaryTrait || relic.synergyTrait === activeHero?.secondaryTrait);
+
+        return (
+          <div className="space-y-6">
+            <SectionTitle title="小队阵容" subtitle="来自 Excel 的英雄、职业、技能与协同关系。点击左侧卡片查看详细信息。" />
+            <div className="grid lg:grid-cols-[280px,1fr] gap-6">
+              <div className="space-y-3 overflow-auto max-h-[520px] pr-2 scroll-shadow">
+                {heroes.map(hero => (
+                  <button
+                    key={hero.id}
+                    onClick={() => setActiveHeroId(hero.id)}
+                    className={`w-full text-left rounded-2xl px-4 py-3 transition ${activeHeroId === hero.id ? 'bg-starlight/18 text-white shadow-[0_12px_28px_rgba(176,132,247,0.35)]' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(12,18,38,0.35)]'}`}
+                  >
+                    <p className="text-sm uppercase tracking-[0.3em] text-white/50">{hero.role}</p>
+                    <p className="text-lg font-semibold text-white">{hero.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Tag label={`R${hero.rarity}`} tone="veil" />
+                      <Tag label={hero.primaryTrait} tone="veil" />
+                      {hero.secondaryTrait ? <Tag label={hero.secondaryTrait} tone="veil" /> : null}
+                    </div>
+                  </button>
+                ))}
+                {heroes.length === 0 ? <p className="text-sm text-white/40">暂无英雄数据。</p> : null}
+              </div>
+
+              <div className="space-y-6">
+                {activeHero ? (
+                  <div className="glass-soft rounded-3xl p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.4em] text-white/40">Hero #{activeHero.id}</p>
+                        <h3 className="text-3xl font-display font-semibold text-white">{activeHero.name}</h3>
+                        <p className="text-sm text-white/70 max-w-xl">解锁章节：{activeHero.unlockChapter}</p>
+                        {heroClass ? (
+                          <p className="text-sm text-white/60">职业：{heroClass.name} · 能量回复 {heroClass.energyRegen}</p>
+                        ) : null}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
+                          <StatCard label="HP" value={activeHero.baseHp} accent="aurora" />
+                          <StatCard label="ATK" value={activeHero.baseAtk} accent="ember" />
+                          <StatCard label="DEF" value={activeHero.baseDef} accent="starlight" />
+                          <StatCard label="SPD" value={activeHero.baseSpd} accent="moss" />
+                        </div>
+                      </div>
+                      <div className="w-full lg:w-56">
+                        <div className="relative rounded-3xl overflow-hidden aspect-[3/4]">
+                          <img src={activeHero.portrait} alt={activeHero.name} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      <h4 className="text-lg font-semibold flex items-center gap-2"><span className="text-starlight">◈</span> 技能组合</h4>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        {heroSkills.map(skill => (
+                          <div key={skill.id} className="glass-soft rounded-2xl p-4">
+                            <p className="text-xs uppercase tracking-[0.3em] text-white/40">{skill.tag}</p>
+                            <p className="text-lg font-semibold text-white">{skill.name}</p>
+                            <p className="text-xs text-white/50 mt-1">目标：{skill.target} · 冷却 {skill.cooldown} · 能量 {skill.energyCost}</p>
+                            <p className="text-sm text-white/70 mt-3 clamp-3">{skill.description}</p>
+                          </div>
+                        ))}
+                        {heroSkills.length === 0 ? <p className="text-sm text-white/40">技能未配置。</p> : null}
+                      </div>
+
+                      {synergyRelics.length ? (
+                        <div className="space-y-3">
+                          <h4 className="text-lg font-semibold flex items-center gap-2"><span className="text-aurora">◈</span> 协同遗物</h4>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {synergyRelics.map(relic => (
+                              <div key={relic.id} className="glass-soft rounded-2xl p-4">
+                                <p className="text-sm text-white font-semibold">{relic.name}</p>
+                                <p className="text-xs text-white/40">稀有度 {relic.rarity} · 触发 {relic.triggerCondition}</p>
+                                <p className="text-sm text-white/70 mt-1">{relic.effectSummary}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : <p className="text-sm text-white/40">请选择一个英雄查看详情。</p>}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const MapPanel = ({ data }) => {
+        const chapters = data.chapters?.list || [];
+        const mapTemplates = data.mapTemplates?.list || [];
+        const rooms = data.rooms?.list || [];
+        const roomById = useMemo(() => new Map(rooms.map(room => [room.id, room])), [rooms]);
+        const [activeChapterId, setActiveChapterId] = useState(() => chapters[0]?.id);
+
+        const layers = useMemo(() => {
+          const filtered = mapTemplates.filter(node => (activeChapterId ? Number(node.chapterId) === Number(activeChapterId) : true));
+          const group = new Map();
+          filtered.forEach(node => {
+            const key = node.layer || 0;
+            const arr = group.get(key) || [];
+            arr.push(node);
+            group.set(key, arr);
+          });
+          return Array.from(group.entries())
+            .sort((a, b) => a[0] - b[0])
+            .map(([layer, nodes]) => ({ layer, nodes: nodes.sort((a, b) => (a.order || 0) - (b.order || 0)) }));
+        }, [mapTemplates, activeChapterId]);
+
+        const activeChapter = chapters.find(ch => Number(ch.id) === Number(activeChapterId));
+
+        return (
+          <div className="space-y-6">
+            <SectionTitle
+              title="地牢线路"
+              subtitle="根据章节模板生成的层级地图，节点类型、权重与特性均来源于 Excel。"
+            />
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <label className="text-sm text-white/60">选择章节：</label>
+              <select
+                className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
+                value={activeChapterId || ''}
+                onChange={e => setActiveChapterId(Number(e.target.value))}
+              >
+                {chapters.map(ch => (
+                  <option key={ch.id} value={ch.id}>{ch.name}</option>
+                ))}
+              </select>
+              {activeChapter ? <Tag label={activeChapter.tagline} tone="veil" /> : null}
+            </div>
+
+            {activeChapter ? (
+              <div className="glass-soft rounded-3xl p-5">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.4em] text-white/40">章节被动</p>
+                    <p className="text-lg font-semibold text-white mt-1">{activeChapter.passiveEffect}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(activeChapter.featureRooms || '').split('|').filter(Boolean).map(label => (
+                      <Tag key={label} label={label} tone="veil" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="overflow-x-auto pb-4">
+              <div className="flex items-stretch gap-6 min-w-max">
+                {layers.map(layer => (
+                  <div key={layer.layer} className="min-w-[220px] space-y-3">
+                    <div className="glass-soft rounded-2xl px-4 py-2 flex items-center justify-between">
+                      <span className="text-sm text-white/70">第 {layer.layer} 层</span>
+                      <span className="text-white/40 text-xs">节点 {layer.nodes.length}</span>
+                    </div>
+                    <div className="space-y-3">
+                      {layer.nodes.map(node => {
+                        const linkedRoom = roomById.get(Number(node.destinationRoomId || node.nodeCode))
+                          || rooms.find(room => room.roomType === node.roomType && Number(room.chapterId) === Number(activeChapterId));
+                        return (
+                          <div key={`${layer.layer}-${node.order}-${node.nodeCode}`} className="glass-soft rounded-2xl p-4">
+                            <p className="text-xs uppercase tracking-[0.3em] text-white/40">{node.roomType}</p>
+                            <p className="text-base text-white font-semibold">
+                              {linkedRoom?.name || `节点 ${node.nodeCode}`}
+                            </p>
+                            {linkedRoom?.description ? (
+                              <p className="text-xs text-white/60 mt-2 clamp-2">{linkedRoom.description}</p>
+                            ) : null}
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {node.rewardHint ? <Tag label={`奖励：${node.rewardHint}`} /> : null}
+                              {node.weightMod ? <Tag label={`权重 x${node.weightMod}`} tone="veil" /> : null}
+                              {node.specialRule ? <Tag label={node.specialRule} tone="veil" /> : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {layers.length === 0 ? <p className="text-sm text-white/40">该章节尚未配置地图模板。</p> : null}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const BattlePanel = ({ data }) => {
+        const heroes = data.heroes?.list || [];
+        const skills = data.skills?.list || [];
+        const enemies = data.enemies?.list || [];
+        const enemyAI = data.enemyAI?.list || [];
+        const rooms = data.rooms?.list || [];
+        const [activeRoom, setActiveRoom] = useState(() => rooms.find(room => room.roomType === 'Boss'));
+
+        const heroLineup = heroes.slice(0, 4);
+        const skillMap = useMemo(() => new Map(skills.map(skill => [skill.id, skill])), [skills]);
+        const bossEnemy = useMemo(() => {
+          if (!activeRoom?.enemyId) return enemies.find(enemy => enemy.family === 'Aberrant' && enemy.rarity === 'Boss');
+          return enemies.find(enemy => Number(enemy.id) === Number(activeRoom.enemyId));
+        }, [activeRoom, enemies]);
+        const bossAI = useMemo(() => enemyAI.filter(ai => Number(ai.enemyId) === Number(bossEnemy?.id)), [enemyAI, bossEnemy]);
+
+        return (
+          <div className="space-y-6">
+            <SectionTitle title="战斗预览" subtitle="演示导表数据如何驱动战斗信息：队伍属性、技能组合、Boss 行为脚本等。" />
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <label className="text-sm text-white/60">演示房间：</label>
+              <select
+                className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
+                value={activeRoom?.id || ''}
+                onChange={e => setActiveRoom(rooms.find(room => Number(room.id) === Number(e.target.value)))}
+              >
+                {rooms.filter(room => room.roomType === 'Boss' || room.roomType === 'Elite').map(room => (
+                  <option key={room.id} value={room.id}>{room.name} · {room.roomType}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid lg:grid-cols-[1.2fr,1fr] gap-6">
+              <div className="glass-soft rounded-3xl p-6 space-y-5">
+                <h3 className="text-lg font-semibold flex items-center gap-3">
+                  <span className="text-aurora text-xl">玩家阵容</span>
+                  <span className="text-xs text-white/40">示例：首发 4 名英雄</span>
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {heroLineup.map(hero => {
+                    const heroSkills = [hero.signatureSkill, hero.supportSkill, hero.ultimateSkill]
+                      .map(id => skillMap.get(Number(id)))
+                      .filter(Boolean);
+                    return (
+                      <div key={hero.id} className="glass-soft rounded-2xl p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm text-white font-semibold">{hero.name}</p>
+                            <p className="text-xs text-white/40">R{hero.rarity} · {hero.role}</p>
+                          </div>
+                          <Tag label={`SPD ${hero.baseSpd}`} />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mt-3">
+                          <StatCard label="HP" value={hero.baseHp} accent="aurora" />
+                          <StatCard label="ATK" value={hero.baseAtk} accent="ember" />
+                          <StatCard label="DEF" value={hero.baseDef} accent="starlight" />
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {heroSkills.map(skill => (
+                            <div key={skill.id} className="text-xs text-white/60">
+                              <p className="font-semibold text-white/80">{skill.name}</p>
+                              <p>目标 {skill.target} · 能量 {skill.energyCost} · {skill.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {bossEnemy ? (
+                <div className="glass-soft rounded-3xl p-6 space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-3">
+                    <span className="text-ember text-xl">Boss 情报</span>
+                    <Tag label={bossEnemy.family} />
+                    <Tag label={`Lv.${bossEnemy.level}`} />
+                  </h3>
+                  <p className="text-xl font-display text-white">{bossEnemy.name}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <StatCard label="HP" value={bossEnemy.hp} accent="aurora" />
+                    <StatCard label="ATK" value={bossEnemy.atk} accent="ember" />
+                    <StatCard label="DEF" value={bossEnemy.def} accent="starlight" />
+                    <StatCard label="SPD" value={bossEnemy.spd} accent="moss" />
+                  </div>
+                  <p className="text-sm text-white/60">掉落表：{bossEnemy.lootTable}</p>
+                  <div className="space-y-2">
+                    <h4 className="text-sm text-white/60 uppercase tracking-[0.3em]">行为序列</h4>
+                    <div className="space-y-2 max-h-48 overflow-auto pr-1 scroll-shadow">
+                      {bossAI.map(action => (
+                        <div key={`${action.enemyId}-${action.sequence}`} className="glass-soft rounded-2xl p-3">
+                          <p className="text-xs text-white/50">优先级 {action.priority} · 条件 {action.condition}</p>
+                          <p className="text-sm text-white/80">动作：{action.action} {action.param ? `(${action.param})` : ''}</p>
+                        </div>
+                      ))}
+                      {bossAI.length === 0 ? <p className="text-xs text-white/40">暂无行为脚本。</p> : null}
+                    </div>
+                  </div>
+                </div>
+              ) : <p className="text-sm text-white/40">未找到 Boss 数据。</p>}
+            </div>
+          </div>
+        );
+      };
+
+      const EventsPanel = ({ data }) => {
+        const chapters = data.chapters?.list || [];
+        const events = data.events?.list || [];
+        const [activeChapterId, setActiveChapterId] = useState(() => chapters[0]?.id);
+        const filteredEvents = useMemo(() => events.filter(evt => !activeChapterId || Number(evt.chapterId) === Number(activeChapterId)), [events, activeChapterId]);
+        const [activeEventId, setActiveEventId] = useState(() => filteredEvents[0]?.id);
+
+        useEffect(() => {
+          const first = filteredEvents[0]?.id;
+          if (first && !filteredEvents.some(evt => evt.id === activeEventId)) {
+            setActiveEventId(first);
+          }
+        }, [filteredEvents, activeEventId]);
+
+        const activeEvent = filteredEvents.find(evt => evt.id === activeEventId);
+
+        const renderOption = (label, requirement, rewardType, rewardValue, penaltyType, penaltyValue) => (
+          <div className="glass-soft rounded-2xl p-4">
+            <p className="text-sm text-white font-semibold">{label}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {requirement ? <Tag label={`需求: ${requirement}`} /> : <Tag label="无需求" />}
+              {rewardType ? <Tag label={`奖励: ${rewardType} ${rewardValue || ''}`} tone="veil" /> : null}
+              {penaltyType ? <Tag label={`风险: ${penaltyType} ${penaltyValue || ''}`} tone="veil" /> : null}
+            </div>
+          </div>
+        );
+
+        return (
+          <div className="space-y-6">
+            <SectionTitle title="事件簿" subtitle="事件在 Excel 中定义文本、选项与分支，导出后可直接驱动交互。" />
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <label className="text-sm text-white/60">章节：</label>
+              <select
+                className="rounded-xl px-4 py-2 text-sm text-white/80 bg-white/10 backdrop-blur focus:outline-none focus:ring-2 focus:ring-aurora/60"
+                value={activeChapterId || ''}
+                onChange={e => setActiveChapterId(Number(e.target.value))}
+              >
+                {chapters.map(ch => (
+                  <option key={ch.id} value={ch.id}>{ch.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid lg:grid-cols-[260px,1fr] gap-5">
+              <div className="space-y-2 max-h-[420px] overflow-auto pr-2 scroll-shadow">
+                {filteredEvents.map(evt => (
+                  <button
+                    key={evt.id}
+                    onClick={() => setActiveEventId(evt.id)}
+                    className={`w-full text-left rounded-2xl px-4 py-3 transition ${activeEventId === evt.id ? 'bg-aurora/18 text-white shadow-[0_14px_32px_rgba(78,205,196,0.35)]' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(12,18,38,0.35)]'}`}
+                  >
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/40">#{evt.id}</p>
+                    <p className="text-sm text-white font-semibold">{evt.title}</p>
+                    <p className="text-xs text-white/50 mt-1 line-clamp-2">{evt.summary}</p>
+                  </button>
+                ))}
+                {filteredEvents.length === 0 ? <p className="text-sm text-white/40">该章节暂未配置事件。</p> : null}
+              </div>
+
+              <div className="glass-soft rounded-3xl p-6 space-y-4">
+                {activeEvent ? (
+                  <>
+                    <p className="text-xs uppercase tracking-[0.4em] text-white/40">事件详情</p>
+                    <h3 className="text-2xl font-display text-white">{activeEvent.title}</h3>
+                    <p className="text-sm text-white/70 max-w-2xl clamp-3">{activeEvent.summary}</p>
+                    <div className="grid md:grid-cols-2 gap-3 pt-4">
+                      {renderOption(activeEvent.option1Text || '选项 A', activeEvent.option1Requirement, activeEvent.option1RewardType, activeEvent.option1RewardValue, activeEvent.option1PenaltyType, activeEvent.option1PenaltyValue)}
+                      {renderOption(activeEvent.option2Text || '选项 B', activeEvent.option2Requirement, activeEvent.option2RewardType, activeEvent.option2RewardValue, activeEvent.option2PenaltyType, activeEvent.option2PenaltyValue)}
+                    </div>
+                    {activeEvent.followUp ? <p className="text-xs text-white/50">后续事件：#{activeEvent.followUp}</p> : null}
+                  </>
+                ) : <p className="text-sm text-white/40">请选择一个事件。</p>}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const App = () => {
+        const { loading, error, data } = useArcaneData();
+        const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
+        const [runState, setRunState] = useState(createIdleRunState());
+
+        const derived = useMemo(() => createDerivedMaps(data), [data]);
+
+        const startRun = (chapterId, heroIds) => {
+          const chapters = data.chapters?.list || [];
+          const heroes = data.heroes?.list || [];
+          const chapter = chapters.find(ch => Number(ch.id) === Number(chapterId));
+          if (!chapter) return;
+          const nodesByLayer = buildNodesByLayer(data.mapTemplates?.list || [], chapter.id);
+          const heroStates = heroIds
+            .map(id => heroes.find(hero => Number(hero.id) === Number(id)))
+            .filter(Boolean)
+            .map(hero => createHeroState(hero, derived));
+          if (heroStates.length !== 4) return;
+          setRunState({
+            ...createIdleRunState(),
+            stage: 'running',
+            chapterId: chapter.id,
+            passive: chapter.passiveEffect,
+            featureRooms: chapter.featureRooms,
+            nodesByLayer,
+            heroes: heroStates,
+            resources: {
+              arcane: Number(chapter.startArcane) || 0,
+              crystal: Number(chapter.startCrystal) || 0,
+              provision: Number(chapter.startProvision) || 0
+            },
+            log: [createLog('system', `周目开始：${chapter.name}`)]
+          });
+        };
+
+        const resolveCurrentNode = () => {
+          setRunState(prev => {
+            if (prev.stage !== 'running' || prev.pending) return prev;
+            const node = getCurrentNode(prev);
+            if (!node) return prev;
+            const room = resolveRoomForNode(node, derived, prev.chapterId);
+            if (!room) {
+              const log = trimLogs([...prev.log, createLog('system', '节点数据缺失，视为安全通过。')]);
+              return advanceAfterNode(prev, { log });
+            }
+            const nodeType = room.roomType || node.roomType;
+            if (nodeType === 'Event') {
+              const event = derived.eventsById.get(Number(room.eventId || node.eventId))
+                || (derived.eventsByChapter.get(Number(prev.chapterId)) || derived.eventsByChapter.get('any') || [])[0];
+              if (!event) {
+                const log = trimLogs([...prev.log, createLog('event', '未发现事件，队伍整理装备后继续前进。')]);
+                return advanceAfterNode(prev, { log });
+              }
+              return { ...prev, pending: { type: 'event', event, options: createEventOptions(event) } };
+            }
+            if (nodeType === 'Merchant') {
+              return { ...prev, pending: { type: 'merchant', offers: createMerchantOffers(derived) } };
+            }
+            if (nodeType === 'Rest') {
+              return { ...prev, pending: { type: 'rest', options: createRestOptions() } };
+            }
+            const enemy = resolveEnemyForNode(room, derived);
+            if (!enemy) {
+              const log = trimLogs([...prev.log, createLog('battle', '找不到敌人配置，队伍安然通过。')]);
+              return advanceAfterNode(prev, { log });
+            }
+            const battle = simulateBattle(prev, room, enemy);
+            const baseLog = trimLogs([...prev.log, ...battle.logs]);
+            if (!battle.victory) {
+              return {
+                ...prev,
+                heroes: battle.heroes,
+                log: trimLogs([...baseLog, createLog('system', '队伍被迫撤退，周目失败。')]),
+                stage: 'failed',
+                pending: null
+              };
+            }
+            const reward = applyRewards({ ...prev, heroes: battle.heroes }, room.rewardType, room.rewardValue, derived);
+            const logsAfterReward = trimLogs([...baseLog, ...reward.logs]);
+            return advanceAfterNode(prev, {
+              heroes: battle.heroes,
+              resources: reward.resources,
+              relics: reward.relics,
+              log: logsAfterReward
+            });
+          });
+        };
+
+        const handleEventChoice = option => {
+          setRunState(prev => {
+            if (prev.pending?.type !== 'event') return prev;
+            const reward = applyRewards(prev, option.rewardType, option.rewardValue, derived);
+            const penalty = applyPenalties({ ...prev, resources: reward.resources, heroes: prev.heroes }, option.penaltyType, option.penaltyValue);
+            const combinedResources = penalty.resources || reward.resources;
+            const combinedHeroes = penalty.heroes || prev.heroes;
+            const combinedLogs = trimLogs([...prev.log, ...reward.logs, ...penalty.logs]);
+            return advanceAfterNode(prev, {
+              resources: combinedResources,
+              relics: reward.relics,
+              heroes: combinedHeroes,
+              log: combinedLogs
+            });
+          });
+        };
+
+        const handleMerchantChoice = choice => {
+          setRunState(prev => {
+            if (prev.pending?.type !== 'merchant') return prev;
+            const offer = prev.pending.offers[choice];
+            if (!offer) return prev;
+            const resourceKey = lowerResourceKey(offer.cost.resource);
+            if (!Object.prototype.hasOwnProperty.call(prev.resources, resourceKey)) {
+              const log = trimLogs([...prev.log, createLog('event', '价格无法识别，商人摊手离开。')]);
+              return advanceAfterNode(prev, { log });
+            }
+            if ((prev.resources[resourceKey] || 0) < offer.cost.amount) {
+              const log = trimLogs([...prev.log, createLog('event', `资源不足：需要 ${offer.cost.amount} ${offer.cost.resource}`)]);
+              return { ...prev, log };
+            }
+            const deducted = { ...prev.resources, [resourceKey]: Math.max(0, prev.resources[resourceKey] - offer.cost.amount) };
+            const reward = applyRewards({ ...prev, resources: deducted }, offer.reward.type, offer.reward.value, derived);
+            const logs = trimLogs([...prev.log, createLog('event', `购入 ${offer.label}`), ...reward.logs]);
+            return advanceAfterNode(prev, {
+              resources: reward.resources,
+              relics: reward.relics,
+              log: logs
+            });
+          });
+        };
+
+        const handleRestChoice = option => {
+          setRunState(prev => {
+            if (prev.pending?.type !== 'rest') return prev;
+            let heroes = cloneHeroes(prev.heroes);
+            let resources = { ...prev.resources };
+            const logs = [];
+            if (option.key === 'restore') {
+              heroes = heroes.map(hero => ({
+                ...hero,
+                hp: Math.min(hero.maxHp, hero.hp + hero.maxHp * option.healRatio)
+              }));
+              resources.arcane = (resources.arcane || 0) + option.arcaneGain;
+              logs.push(createLog('event', `队伍恢复 ${Math.round(option.healRatio * 100)}% 生命，获得 Arcane ${option.arcaneGain}`));
+            } else if (option.key === 'supply') {
+              resources.provision = (resources.provision || 0) + option.provisionGain;
+              logs.push(createLog('event', `补充 Provision ${option.provisionGain}`));
+            } else {
+              logs.push(createLog('event', '简单整顿后继续前进。'));
+            }
+            return advanceAfterNode(prev, {
+              heroes,
+              resources,
+              log: trimLogs([...prev.log, ...logs])
+            });
+          });
+        };
+
+        const skipInteraction = () => {
+          setRunState(prev => {
+            if (!prev.pending) return prev;
+            const message = prev.pending.type === 'event' ? '放弃事件机会。' : prev.pending.type === 'merchant' ? '离开商人摊位。' : '离开休整点。';
+            const log = trimLogs([...prev.log, createLog('event', message)]);
+            return advanceAfterNode(prev, { log });
+          });
+        };
+
+        const resetRun = () => setRunState(createIdleRunState());
+
+        let content = null;
+        if (loading) {
+          content = (
+            <div className="h-full flex flex-col items-center justify-center text-white/60 gap-3">
+              <span className="animate-pulse text-2xl">加载中…</span>
+              <p className="text-sm text-white/40">请确保已执行 <code>node serialize.js</code> 并通过静态服务器访问。</p>
+            </div>
+          );
+        } else if (error) {
+          content = (
+            <div className="h-full flex flex-col items-center justify-center text-red-300 gap-3">
+              <p>数据加载失败：{String(error.message || error)}</p>
+              <p className="text-sm text-white/40">若使用 file:// 打开，请改用 <code>npx serve</code> 等本地服务器。</p>
+            </div>
+          );
+        } else {
+          if (activeSection === 'run') content = (
+            <RunPanel
+              data={data}
+              derived={derived}
+              runState={runState}
+              onStartRun={startRun}
+              onResolveNode={resolveCurrentNode}
+              onEventChoice={handleEventChoice}
+              onMerchantChoice={index => handleMerchantChoice(index)}
+              onRestChoice={handleRestChoice}
+              onSkipInteraction={skipInteraction}
+              onReset={resetRun}
+            />
+          );
+          if (activeSection === 'overview') content = <OverviewPanel data={data} />;
+          if (activeSection === 'squad') content = <SquadPanel data={data} />;
+          if (activeSection === 'map') content = <MapPanel data={data} />;
+          if (activeSection === 'battle') content = <BattlePanel data={data} />;
+          if (activeSection === 'events') content = <EventsPanel data={data} />;
+        }
+
+        return (
+          <div className="grid lg:grid-cols-[260px,1fr] gap-6 lg:gap-8">
+            <aside className="glass-panel rounded-3xl p-5 lg:p-6 h-full">
+              <Nav active={activeSection} onChange={setActiveSection} />
+            </aside>
+            <section className="glass-panel rounded-3xl p-6 lg:p-8 overflow-hidden">
+              <div className="h-full overflow-auto pr-2 scroll-shadow">
+                {content}
+              </div>
+            </section>
+          </div>
+        );
+      };
+
+      const Nav = ({ active, onChange }) => (
+        <div className="flex flex-col gap-2">
+          {SECTIONS.map(section => (
+            <button
+              key={section.id}
+              onClick={() => onChange(section.id)}
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition text-sm ${active === section.id ? 'bg-starlight/18 text-white shadow-[0_16px_36px_rgba(176,132,247,0.35)]' : 'bg-white/6 text-white/60 hover:bg-white/10 hover:shadow-[0_12px_28px_rgba(12,18,38,0.35)]'}`}
+            >
+              <span className="text-lg">{section.emoji}</span>
+              <span className="font-semibold">{section.label}</span>
+            </button>
+          ))}
+        </div>
+      );
+
+      const root = ReactDOM.createRoot(document.getElementById('app'));
+      root.render(<App />);
+    </script>
+  </body>
+</html>

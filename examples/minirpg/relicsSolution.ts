@@ -1,0 +1,132 @@
+/** this file is auto generated */
+import * as TableContext from "./context";
+import { IRelics, RelicsTID, toRelicsTID, RelicsProtocol, RelicsRepo } from "./relics";
+        
+const raw = {
+  "tids": [
+    "70000001",
+    "70000002",
+    "70000003",
+    "70000004",
+    "70000005",
+    "70000006"
+  ],
+  "result": {
+    "70000001": {
+      "_tid": "70000001",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 1,
+      "sequence": 1,
+      "key": "everburningEmber",
+      "name": "Everburning Ember",
+      "effectType": "attackMultiplier",
+      "effectValue": 1.2,
+      "desc": "灼热火种让全体英雄攻击提高 20%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png"
+    },
+    "70000002": {
+      "_tid": "70000002",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 2,
+      "sequence": 2,
+      "key": "aegisMirror",
+      "name": "Aegis Mirror",
+      "effectType": "defenseMultiplier",
+      "effectValue": 1.15,
+      "unlockStage": 40000001,
+      "desc": "远古护盾折射伤害，使防御提升 15%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6e1.png"
+    },
+    "70000003": {
+      "_tid": "70000003",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 3,
+      "sequence": 3,
+      "key": "crystalPrism",
+      "name": "Crystal Prism",
+      "effectType": "enemyDefenseReduction",
+      "effectValue": 0.18,
+      "unlockStage": 40000002,
+      "desc": "棱光削弱敌人护甲，战斗开始时破甲 18%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48e.png"
+    },
+    "70000004": {
+      "_tid": "70000004",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 4,
+      "sequence": 4,
+      "key": "scholarChronicle",
+      "name": "Scholar Chronicle",
+      "effectType": "expBonus",
+      "effectValue": 0.25,
+      "unlockStage": 40000002,
+      "desc": "编年史记录战术心得，额外获得 25% 经验。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4d6.png"
+    },
+    "70000005": {
+      "_tid": "70000005",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 5,
+      "sequence": 5,
+      "key": "frostbrandSigil",
+      "name": "Frostbrand Sigil",
+      "effectType": "environmentBonus:Tundra",
+      "effectValue": 1.25,
+      "unlockStage": 40000001,
+      "desc": "寒霜纹章在冰原作战时提升 25% 伤害。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2744.png"
+    },
+    "70000006": {
+      "_tid": "70000006",
+      "categoryCode": 70,
+      "subtypeCode": 0,
+      "sequenceCode": 6,
+      "sequence": 6,
+      "key": "moonlitCompass",
+      "name": "Moonlit Compass",
+      "effectType": "elementBonus:Lunar",
+      "effectValue": 1.3,
+      "unlockStage": 40000004,
+      "desc": "月辉罗盘唤醒月属性英雄力量，伤害提升 30%。",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f319.png"
+    }
+  },
+  "collisions": [],
+  "aliases": {
+    "key": {
+      "field": "key",
+      "map": {
+        "everburningEmber": "70000001",
+        "aegisMirror": "70000002",
+        "crystalPrism": "70000003",
+        "scholarChronicle": "70000004",
+        "frostbrandSigil": "70000005",
+        "moonlitCompass": "70000006"
+      }
+    }
+  },
+  "indexes": {
+    "key": {
+      "everburningEmber": "70000001",
+      "aegisMirror": "70000002",
+      "crystalPrism": "70000003",
+      "scholarChronicle": "70000004",
+      "frostbrandSigil": "70000005",
+      "moonlitCompass": "70000006"
+    }
+  }
+}
+
+export const relicsRaw = raw;
+export const relicsTids: RelicsTID[] = raw.tids.map(toRelicsTID);
+export const relicsRecords: Record<RelicsTID, IRelics> = Object.fromEntries(
+  Object.entries(raw.result).map(([tid, value]) => [toRelicsTID(tid), value as IRelics])
+);
+export const relics = relicsRecords;
+export { RelicsProtocol } from "./relics";
+export const relicsRepo = RelicsRepo.fromRaw(raw);

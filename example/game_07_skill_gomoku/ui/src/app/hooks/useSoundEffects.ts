@@ -9,6 +9,7 @@ const STORAGE_KEY = 'game07.sfx';
 let sharedEnabled = true;
 let sharedVolume = 0.5;
 let sharedCtx: AudioContext | null = null;
+let unlockAttached = false;
 const listeners = new Set<(s: { enabled: boolean; volume: number }) => void>();
 
 const notify = () => { listeners.forEach(fn => fn({ enabled: sharedEnabled, volume: sharedVolume })); };
@@ -34,6 +35,23 @@ const writePrefs = (prefs: SfxPrefs) => {
 const ensureCtx = () => {
   if (!sharedCtx) {
     sharedCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  // Try auto-resume and set up a one-time unlock on user gesture
+  try { if (sharedCtx.state === 'suspended') void sharedCtx.resume(); } catch {}
+  if (!unlockAttached) {
+    unlockAttached = true;
+    const unlock = async () => {
+      if (!sharedCtx) return;
+      try { await sharedCtx.resume(); } catch {}
+      if (sharedCtx.state === 'running') {
+        window.removeEventListener('pointerdown', unlock);
+        window.removeEventListener('keydown', unlock);
+        window.removeEventListener('touchstart', unlock, { capture: true } as any);
+      }
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    window.addEventListener('touchstart', unlock, { once: true, capture: true } as any);
   }
   return sharedCtx;
 };
@@ -108,6 +126,7 @@ export const useSoundEffects = () => {
 
   const setEnabled = useCallback((v: boolean) => {
     sharedEnabled = v;
+    try { void ensureCtx().resume(); } catch {}
     writePrefs({ enabled: sharedEnabled, volume: sharedVolume });
     notify();
   }, []);
@@ -124,7 +143,13 @@ export const useSoundEffects = () => {
 
   const playEffect = useCallback((effectId?: string, role?: 'attacker' | 'counter' | 'normal') => {
     if (!sharedEnabled) return;
+    try { void ensureCtx().resume(); } catch {}
     switch (effectId) {
+      case 'draw-card':
+        // 轻微“抽卡”感的噪声 + 高频提示
+        synth.noise(1600, 6, 90, 0.35);
+        setTimeout(() => synth.tone(1200, 70), 40);
+        break;
       case 'remove-to-shichahai': // 力拔山兮
         synth.noise(800, 4, 120, 0.65); // 拍打
         synth.tone(300, 120); // 低沉

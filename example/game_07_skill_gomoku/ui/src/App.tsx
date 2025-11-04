@@ -66,6 +66,7 @@ const App: React.FC = () => {
   const bgm = useBackgroundMusic();
   const sfx = useSoundEffects();
   const playedSfxRef = useRef<Set<string>>(new Set());
+  const prevHandCountsRef = useRef<[number, number]>([0, 0]);
   // 落子音效：检测棋谱长度变化（在 engine 初始化之后挂载）
   const lastHistoryLenRef = useRef(0);
   // AI 互动：头像气泡 & 玩家久未行动跟踪
@@ -137,6 +138,19 @@ const App: React.FC = () => {
       }
     });
   }, [activeVisuals, sfx]);
+
+  // 抽卡音效：当任意一方手牌数量增加时播一次提示音
+  useEffect(() => {
+    const curr: [number, number] = [
+      (gameState.hands[PlayerEnum.BLACK] ?? []).length,
+      (gameState.hands[PlayerEnum.WHITE] ?? []).length
+    ];
+    const prev = prevHandCountsRef.current;
+    if (curr[0] > prev[0] || curr[1] > prev[1]) {
+      try { sfx.playEffect('draw-card'); } catch {}
+    }
+    prevHandCountsRef.current = curr;
+  }, [gameState.hands[PlayerEnum.BLACK]?.length, gameState.hands[PlayerEnum.WHITE]?.length]);
   const { showFinalPanel, winLineLit } = useWinPresentation(gameState);
   useAutoResolvePending(gameState, resolveCard);
   // 玩家久未行动提示（气泡 + 棋盘轻晃）

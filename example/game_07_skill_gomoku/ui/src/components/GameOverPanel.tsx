@@ -1,6 +1,8 @@
 import React from 'react';
 import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
 import type { Player } from '../types';
+import standKara from '../assets/stand_kara.png';
+import standPanda from '../assets/stand.png';
 
 export interface GameOverPanelProps {
   winner: Player | null;
@@ -12,23 +14,25 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({ winner, onRestart 
   const isAIWin = winner === PlayerEnum.WHITE;
   const isDraw = winner === null;
 
+  const panelBorder = isPlayerWin ? 'border-emerald-300/70' : isAIWin ? 'border-indigo-300/60' : 'border-gray-300/50';
+  const haloA = isPlayerWin
+    ? 'from-yellow-400/30 via-orange-500/20'
+    : isAIWin
+    ? 'from-purple-500/30 via-blue-600/20'
+    : 'from-gray-400/25 via-gray-500/15';
+  const haloB = isPlayerWin
+    ? 'from-green-400/25 via-emerald-500/15'
+    : isAIWin
+    ? 'from-red-500/25 via-pink-500/15'
+    : 'from-gray-400/25 via-gray-500/15';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       {/* 涂鸦风格背景层 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* 胜利/失败的色彩爆炸效果 */}
-        {isPlayerWin && (
-          <>
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-radial from-yellow-400/30 via-orange-500/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-radial from-green-400/25 via-emerald-500/15 to-transparent rounded-full blur-3xl animate-pulse delay-200"></div>
-          </>
-        )}
-        {isAIWin && (
-          <>
-            <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-radial from-purple-500/30 via-blue-600/20 to-transparent rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-gradient-radial from-red-500/25 via-pink-500/15 to-transparent rounded-full blur-3xl animate-pulse delay-200"></div>
-          </>
-        )}
+        <div className={`absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-radial ${haloA} to-transparent rounded-full blur-3xl animate-pulse`} />
+        <div className={`absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-radial ${haloB} to-transparent rounded-full blur-3xl animate-pulse delay-200`} />
       </div>
 
       {/* 主面板 */}
@@ -42,15 +46,26 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({ winner, onRestart 
         </div>
 
         {/* 内容区 */}
-        <div className="relative bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border-4 border-yellow-400/70">
+        <div className={`relative bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border-4 ${panelBorder}`}>
           {/* 装饰元素 */}
           <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full transform rotate-12 shadow-lg"></div>
           <div className="absolute -bottom-3 -right-3 w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full transform -rotate-12 shadow-lg"></div>
           <div className="absolute top-1/4 -right-2 w-6 h-6 bg-cyan-400 rounded-full transform rotate-45 opacity-80"></div>
           <div className="absolute bottom-1/3 -left-2 w-5 h-5 bg-green-400 rounded-full transform -rotate-45 opacity-70"></div>
 
-          {/* 标题区域 */}
+          {/* 头像 + 标题区域 */}
           <div className="text-center space-y-4 mb-8">
+            {/* 顶部头像：玩家胜利显示 stand_kara；AI 胜利显示 stand */}
+            {(isPlayerWin || isAIWin) && (
+              <div className="flex items-center justify-center">
+                <img
+                  src={isPlayerWin ? standKara : standPanda}
+                  alt={isPlayerWin ? 'Player' : 'AI'}
+                  className="h-24 md:h-32 w-auto rounded-xl object-cover object-top shadow-[0_12px_28px_rgba(0,0,0,0.45)] select-none pointer-events-none"
+                  style={{ transform: 'scale(1.08)' }}
+                />
+              </div>
+            )}
             {isPlayerWin && (
               <>
                 <div className="relative inline-block">

@@ -405,7 +405,7 @@ const App: React.FC = () => {
           maxHeight: '100vh',
           padding: 'clamp(0.4rem, 1vw, 1rem)'
         }}>
-          <div className="h-full grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(300px,360px)', gap: 'clamp(0.6rem,1.2vw,1.6rem)', padding: 'clamp(0.4rem, 1vw, 1rem)' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(300px,360px)', gap: 'clamp(0.6rem,1.2vw,1.6rem)', padding: 'clamp(0.4rem, 1vw, 1rem)' }}>
             {/* 左列：改为覆盖式布局，棋盘独立垂直居中，HUD 不影响棋盘位置 */}
             <div className="relative h-full min-w-0">
               {/* 棋盘舞台：上下预留 HUD 空间，并略微向上偏移中心 */}

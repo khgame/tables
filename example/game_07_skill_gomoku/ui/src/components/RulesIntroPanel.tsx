@@ -35,7 +35,7 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
             <img
               src={standKara}
               alt="player"
-              className="h-28 md:h-36 w-auto rounded-xl object-cover object-top shadow-[0_12px_28px_rgba(0,0,0,0.45)] select-none pointer-events-none"
+              className="h-28 md:h-36 w-auto rounded-xl object-cover object-top select-none pointer-events-none"
               style={{ transform: 'scale(1.1)' }}
             />
             <h1 className="font-display text-5xl md:text-6xl font-extrabold tracking-wide text-amber-200 drop-shadow-[0_6px_18px_rgba(245,158,11,0.35)]">

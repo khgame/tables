@@ -514,7 +514,7 @@ const App: React.FC = () => {
 
               {/* 底部覆盖：我方 HUD，不影响棋盘几何位置 */}
               <div className="absolute left-0 right-0 bottom-0 pointer-events-none">
-                <div className="pointer-events-auto -mb-2 md:-mb-4">
+                <div className="pointer-events-auto mb-0 pb-2 md:pb-3">
                   <PlayerHUD
                     handCards={playerHandCards}
                     disabled={!canPlayCard}

@@ -64,7 +64,14 @@ export const CardDraftPanel: React.FC<CardDraftPanelProps> = ({ options, source,
       )}
 
       {/* Persona-like side stage */}
-      <aside className="fixed right-8 bottom-10 w-[clamp(24rem,40vw,40rem)] pointer-events-none">
+      <aside
+        className="fixed pointer-events-none"
+        style={{
+          right: 'clamp(0.5rem, 2vw, 2rem)',
+          bottom: 'clamp(0.5rem, 3vh, 2.5rem)',
+          width: 'min(40rem, 92vw)'
+        }}
+      >
         {/* Decorative stripes & panda illustration */}
         <div className="draft-decor">
           <div className="draft-decor__stripes" />

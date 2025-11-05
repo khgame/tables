@@ -98,6 +98,7 @@ export interface CardViewProps {
   onDragStart?: (event: React.DragEvent<HTMLButtonElement>) => void;
   onDragEnd?: () => void;
   compact?: boolean;
+  enableHandClick?: boolean;
 }
 
 export const CardView: React.FC<CardViewProps> = ({
@@ -112,7 +113,8 @@ export const CardView: React.FC<CardViewProps> = ({
   onHoverEnd,
   onDragStart,
   onDragEnd,
-  compact = false
+  compact = false,
+  enableHandClick = false
 }) => {
   // Debug: 检查卡牌数据
   console.log('CardView render:', {
@@ -185,7 +187,7 @@ export const CardView: React.FC<CardViewProps> = ({
     if (nameZhLength >= 7) return 'text-[1.08rem]';
     return 'text-[1.2rem]';
   }, [nameZhLength]);
-  const enableClick = !disabled && variant !== 'hand' && typeof onClick === 'function';
+  const enableClick = !disabled && ((variant !== 'hand' && typeof onClick === 'function') || (variant === 'hand' && enableHandClick));
   const baseWidth = (() => {
     if (style?.width) return undefined;
     if (variant === 'list') return '11rem';

@@ -348,6 +348,15 @@ const App: React.FC = () => {
         backgroundPosition: 'center center',
         backgroundSize: '100% auto'
       }}>
+        {isPhone && (
+          <div className="absolute inset-0 z-[200000] pointer-events-auto">
+            {/* 阻挡层（手机不支持） */}
+            {(() => {
+              const MobileBlocker = require('./app/components/MobileBlocker').MobileBlocker as React.FC;
+              return <MobileBlocker />;
+            })()}
+          </div>
+        )}
         <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
 
         {/* Backdrop decorative layers */}
@@ -497,6 +506,11 @@ const App: React.FC = () => {
                     graveyardCount={playerGraveyard.length}
                     shichahaiCount={shichahaiByPlayer[PlayerEnum.BLACK].length}
                     onCardHover={handlePlayerCardHover}
+                    onCardClick={(idx) => {
+                      if (!canPlayCard) return;
+                      try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}
+                      playCard(idx);
+                    }}
                     onCardDragStart={index => {
                       if (!canPlayCard) return;
                       setDraggedCardIndex(index);
@@ -507,6 +521,7 @@ const App: React.FC = () => {
                     isCurrent={currentPlayer === PlayerEnum.BLACK}
                     bubble={playerBubble}
                     align="end"
+                    allowTapPlay={isPad}
                     className="pr-4 md:pr-8"
                   />
                 </div>
@@ -630,3 +645,17 @@ const partitionShichahai = (entries: GameStatus['shichahai']): Record<Player, ty
 
 
 export default App;
+  // 设备类型：阻挡手机，仅在触控平板上允许点击释放
+  const [isPhone, setIsPhone] = useState(false);
+  const [isPad, setIsPad] = useState(false);
+  useEffect(() => {
+    const calc = () => {
+      const coarse = typeof window !== 'undefined' && matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      setIsPhone(coarse && width < 768);
+      setIsPad(coarse && width >= 768);
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);

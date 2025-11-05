@@ -261,12 +261,14 @@ export interface PlayerHudProps {
   graveyardCount: number;
   shichahaiCount: number;
   onCardHover?: (card: RawCard | null) => void;
+  onCardClick?: (index: number) => void;
   onCardDragStart?: (index: number) => void;
   onCardDragEnd?: () => void;
   isCurrent: boolean;
   className?: string;
   bubble?: { text: string } | null;
   align?: 'center' | 'end';
+  allowTapPlay?: boolean;
 }
 
 export const PlayerHUD: React.FC<PlayerHudProps> = ({
@@ -279,12 +281,14 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
   graveyardCount,
   shichahaiCount,
   onCardHover,
+  onCardClick,
   onCardDragStart,
   onCardDragEnd,
   isCurrent,
   className,
   bubble = null,
-  align = 'center'
+  align = 'center',
+  allowTapPlay = false
 }) => (
   <div className={cx('flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 紧凑设计 */}
@@ -315,8 +319,10 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
         cards={handCards}
         disabled={disabled}
         onCardHover={onCardHover}
+        onCardClick={onCardClick}
         onCardDragStart={onCardDragStart}
         onCardDragEnd={onCardDragEnd}
+        allowTapPlay={allowTapPlay}
       />
     </div>
   </div>

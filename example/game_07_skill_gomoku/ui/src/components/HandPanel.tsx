@@ -14,6 +14,7 @@ export interface HandPanelProps {
   className?: string;
   isOpponent?: boolean;
   animateThinking?: boolean;
+  allowTapPlay?: boolean;
 }
 
 export const HandPanel: React.FC<HandPanelProps> = ({
@@ -25,7 +26,8 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   onCardDragEnd,
   className,
   isOpponent = false,
-  animateThinking = false
+  animateThinking = false,
+  allowTapPlay = false
 }) => {
   const [pickedIdx, setPickedIdx] = React.useState<number | null>(null);
   const [pickedStyle, setPickedStyle] = React.useState<string>('');
@@ -259,6 +261,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                 variant="hand"
                 disabled={disabled}
                 revealBack={isOpponent}
+                enableHandClick={allowTapPlay && !isOpponent && !disabled && typeof onCardClick === 'function'}
                 style={{
                   width: `${baseWidth}rem`,
                   // raise selected card; rely on CSS transitions inside CardView wrapper
@@ -269,7 +272,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                   isOpponent && isLeavingCard && 'animate-card-fly-out-opponent'
                 )}
                 onClick={() => {
-                  if (!disabled && !isOpponent) onCardClick?.(idx);
+                  if (!disabled && !isOpponent && allowTapPlay) onCardClick?.(idx);
                 }}
                 onHover={hoverCard => {
                   if (!disabled && !isOpponent) onCardHover?.(hoverCard);

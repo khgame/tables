@@ -67,7 +67,7 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
 
           {/* 行动区 */}
           <div className="mt-5 flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <p className="text-sm text-slate-300/90">提示：AI 设置已移至右上角齿轮按钮。</p>
+            <p className="text-sm text-slate-300/90">提示：齿轮按钮打开设置, 可以调节音量大小和自定义大模型 AI</p>
             <button
               type="button"
               onClick={onStartAi}

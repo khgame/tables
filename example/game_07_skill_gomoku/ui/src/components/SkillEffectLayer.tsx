@@ -183,10 +183,13 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))'
               }}
             >
-              <div className="flex items-center justify-center gap-3">
-                {isSkillFive && (
+              {/* 图与文字分行：避免并排导致阴影错位 */}
+              {isSkillFive && (
+                <div className="flex items-center justify-center mb-2">
                   <img src={skill5Img} alt="技能五" className="h-16 md:h-20 w-auto drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]" />
-                )}
+                </div>
+              )}
+              <div className="flex items-center justify-center">
                 <span>{skillText}</span>
               </div>
               {quote && (

@@ -34,6 +34,7 @@ import { useVisualEffects } from './app/hooks/useVisualEffects';
 import { useAutoResolvePending } from './app/hooks/useAutoResolvePending';
 import { useWinPresentation } from './app/hooks/useWinPresentation';
 import { useInactivityPrompt } from './app/hooks/useInactivityPrompt';
+import { MobileBlocker } from './app/components/MobileBlocker';
 
 // Utility for conditional classnames
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
@@ -80,6 +81,20 @@ const App: React.FC = () => {
   const aiVictoryShownRef = useRef(false);
   // 飞行卡牌动画状态
   const [flyingCards, setFlyingCards] = useState<FlyingCardData[]>([]);
+  // 设备类型：阻挡手机，仅在触控平板上允许点击释放
+  const [isPhone, setIsPhone] = useState(false);
+  const [isPad, setIsPad] = useState(false);
+  useEffect(() => {
+    const calc = () => {
+      const coarse = typeof window !== 'undefined' && typeof matchMedia !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+      const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      setIsPhone(!!coarse && width < 768);
+      setIsPad(!!coarse && width >= 768);
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
   const opponentHandRef = useRef<HTMLDivElement>(null);
   const playerHandRef = useRef<HTMLDivElement>(null);
   const draftPanelRef = useRef<HTMLDivElement>(null);
@@ -348,15 +363,7 @@ const App: React.FC = () => {
         backgroundPosition: 'center center',
         backgroundSize: '100% auto'
       }}>
-        {isPhone && (
-          <div className="absolute inset-0 z-[200000] pointer-events-auto">
-            {/* 阻挡层（手机不支持） */}
-            {(() => {
-              const MobileBlocker = require('./app/components/MobileBlocker').MobileBlocker as React.FC;
-              return <MobileBlocker />;
-            })()}
-          </div>
-        )}
+        {isPhone && <MobileBlocker />}
         <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
 
         {/* Backdrop decorative layers */}
@@ -645,17 +652,3 @@ const partitionShichahai = (entries: GameStatus['shichahai']): Record<Player, ty
 
 
 export default App;
-  // 设备类型：阻挡手机，仅在触控平板上允许点击释放
-  const [isPhone, setIsPhone] = useState(false);
-  const [isPad, setIsPad] = useState(false);
-  useEffect(() => {
-    const calc = () => {
-      const coarse = typeof window !== 'undefined' && matchMedia && window.matchMedia('(pointer: coarse)').matches;
-      const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
-      setIsPhone(coarse && width < 768);
-      setIsPad(coarse && width >= 768);
-    };
-    calc();
-    window.addEventListener('resize', calc);
-    return () => window.removeEventListener('resize', calc);
-  }, []);

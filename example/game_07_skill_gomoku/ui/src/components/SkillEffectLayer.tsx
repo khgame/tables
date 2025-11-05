@@ -183,11 +183,13 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))'
               }}
             >
-              {/* 图与文字分行：避免并排导致阴影错位 */}
+              {/* 图像改为绝对定位浮在文字上方，不影响文字排版 */}
               {isSkillFive && (
-                <div className="flex items-center justify-center mb-2">
-                  <img src={skill5Img} alt="技能五" className="h-16 md:h-20 w-auto drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]" />
-                </div>
+                <img
+                  src={skill5Img}
+                  alt="技能五"
+                  className="absolute left-1/2 -translate-x-1/2 -top-8 md:-top-10 h-16 md:h-20 w-auto pointer-events-none drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]"
+                />
               )}
               <div className="flex items-center justify-center">
                 <span>{skillText}</span>

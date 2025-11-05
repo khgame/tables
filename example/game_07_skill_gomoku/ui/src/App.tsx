@@ -95,6 +95,15 @@ const App: React.FC = () => {
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
   }, []);
+
+  // When blocking on phone, prevent page scroll behind overlay
+  useEffect(() => {
+    if (isPhone) {
+      const prevOverflow = document.documentElement.style.overflow;
+      document.documentElement.style.overflow = 'hidden';
+      return () => { document.documentElement.style.overflow = prevOverflow; };
+    }
+  }, [isPhone]);
   const opponentHandRef = useRef<HTMLDivElement>(null);
   const playerHandRef = useRef<HTMLDivElement>(null);
   const draftPanelRef = useRef<HTMLDivElement>(null);
@@ -266,6 +275,7 @@ const App: React.FC = () => {
     return (
       <>
         <div className="flex items-center justify-center min-h-screen text-amber-100 text-xl">加载配置中…</div>
+        {isPhone && <MobileBlocker />}
         <AiSettingsPanel
           open={isSettingsOpen}
           settings={aiSettings}
@@ -280,6 +290,7 @@ const App: React.FC = () => {
     return (
       <>
         <div className="flex items-center justify-center min-h-screen text-red-200 text-lg">{error}</div>
+        {isPhone && <MobileBlocker />}
         <AiSettingsPanel
           open={isSettingsOpen}
           settings={aiSettings}

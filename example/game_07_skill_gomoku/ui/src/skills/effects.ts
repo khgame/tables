@@ -345,6 +345,13 @@ const effectHandlers: Record<
       state.board.remove(original.row, original.col);
       state.board.place(dest.row, dest.col, owner);
       helpers.log(`${PLAYER_NAMES[counter.player]} 将棋子安置在 (${dest.row + 1}, ${dest.col + 1})`, 'counter');
+      // 若拾回后形成五连，立即判定胜利
+      try {
+        if (state.board.checkWin(owner)) {
+          helpers.setWinner(owner);
+          helpers.log(`${PLAYER_NAMES[owner]} 形成五连，获胜！`, 'win');
+        }
+      } catch {}
       state.pendingAction = null;
     }
   },

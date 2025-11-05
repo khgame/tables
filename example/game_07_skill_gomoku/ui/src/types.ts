@@ -88,6 +88,8 @@ export interface VisualEffectEvent {
   id: string;
   effectId?: string;
   cardName: string;
+  cardTid?: string | number;
+  cardQuote?: string;
   player: Player;
   createdAt: number;
   sequence?: number; // 序列号，用于确保相同时间戳的事件按正确顺序排列

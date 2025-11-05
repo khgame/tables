@@ -1,4 +1,5 @@
 import React from 'react';
+import skill5Img from '../assets/skill5.png';
 import type { VisualEffectEvent } from '../types';
 import { PlayerEnum } from '../core/constants';
 import { SkillEffect } from '../skills/effects';
@@ -41,6 +42,8 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
         const colors = getEffectColor(event.effectId);
         const playerPrefix = isPlayerSkill ? '黑方发动' : '白方发动';
         const skillText = `${playerPrefix} ${event.cardName}!!`;
+        const quote = (event.cardQuote || '').trim();
+        const isSkillFive = String(event.cardTid ?? '') === '1015' || (event.cardName?.includes('技能五'));
 
         // 判断是否为反击技能（基于 role 字段）
         const isCounterSkill = event.role === 'counter';
@@ -162,7 +165,7 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
               {skillText}
             </div>
 
-            {/* 主文字 - 白色高亮 */}
+            {/* 主文字 - 白色高亮 + 引用（卡牌宣言） */}
             <div
               className="relative text-6xl font-black select-none"
               style={{
@@ -176,7 +179,17 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))'
               }}
             >
-              {skillText}
+              <div className="flex items-center justify-center gap-3">
+                {isSkillFive && (
+                  <img src={skill5Img} alt="技能五" className="h-10 w-auto drop-shadow-[0_6px_14px_rgba(255,255,255,0.25)]" />
+                )}
+                <span>{skillText}</span>
+              </div>
+              {quote && (
+                <div className="mt-2 text-[1.2rem] font-extrabold tracking-wider text-amber-200 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                  {quote}
+                </div>
+              )}
             </div>
 
             {/* 装饰性元素 - 星花四溅，位置稍微错开 */}

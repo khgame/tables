@@ -1,4 +1,5 @@
 import React from 'react';
+import standKara from '../assets/stand_kara.png';
 import { SKILL_UNLOCK_MOVE } from '../core/constants';
 
 export interface RulesIntroPanelProps {
@@ -30,7 +31,13 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
 
         {/* 顶部标题区 */}
         <header className="relative flex items-start px-6 pt-6">
-          <div className="mr-auto">
+          <div className="mr-auto flex items-center gap-4">
+            <img
+              src={standKara}
+              alt="player"
+              className="hidden md:block h-20 w-auto rounded-xl object-cover object-top shadow-md select-none pointer-events-none"
+              style={{ transform: 'scale(1.12)' }}
+            />
             <h1 className="font-display text-5xl md:text-6xl font-extrabold tracking-wide text-amber-200 drop-shadow-[0_6px_18px_rgba(245,158,11,0.35)]">
               技能五子棋
             </h1>

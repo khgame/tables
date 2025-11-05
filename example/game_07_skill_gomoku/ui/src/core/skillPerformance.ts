@@ -41,6 +41,8 @@ class SkillPerformanceManager {
       id: generateId('visual'),
       effectId,
       cardName: card.nameZh,
+      cardTid: (card._tid ?? card.tid) as any,
+      cardQuote: card.quote,
       player,
       createdAt: timestamp,
       sequence,

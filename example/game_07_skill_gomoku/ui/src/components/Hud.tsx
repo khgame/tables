@@ -7,6 +7,8 @@ import { CardView } from './CardView';
 import { GameIcon, FreezeIcon, SkipIcon, CurrentTurnIcon } from './IconLibrary';
 import { ComicBubble } from './ComicBubble';
 import standPng from '../assets/stand.png';
+import standKaraPng from '../assets/stand_kara.png';
+import skill5Png from '../assets/skill5.png';
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
@@ -139,18 +141,21 @@ export const AvatarBadge: React.FC<AvatarBadgeProps> = ({ player, characters, st
 
       {/* 头像 */}
       <div className={`relative h-14 w-14 shrink-0 rounded-xl shadow-sm overflow-hidden ${isBlack ? 'bg-blue-500' : 'bg-pink-500'}`}>
-        {isBlack ? (
-          <div className="flex h-full w-full items-center justify-center">
-            {AVATAR_GLYPHS[player]}
-          </div>
-        ) : (
-          <img
-            src={standPng}
-            alt="White avatar"
-            className="h-full w-full object-cover object-top select-none pointer-events-none origin-top"
-            style={{ transform: 'scale(1.35)' }}
-          />
-        )}
+        {(() => {
+          const ch = character?.name ?? '';
+          // 若张兴朝在场，使用技能五头像
+          const asSkill5 = /张兴朝/.test(ch);
+          const src = isBlack ? (asSkill5 ? skill5Png : standKaraPng) : standPng;
+          const pos = isBlack ? 'top' : 'top';
+          return (
+            <img
+              src={src}
+              alt={isBlack ? 'Player avatar' : 'White avatar'}
+              className="h-full w-full object-cover select-none pointer-events-none origin-top"
+              style={{ objectPosition: `${pos} center`, transform: isBlack ? 'scale(1.2)' : 'scale(1.35)' }}
+            />
+          );
+        })()}
       </div>
 
       {/* 玩家信息 */}

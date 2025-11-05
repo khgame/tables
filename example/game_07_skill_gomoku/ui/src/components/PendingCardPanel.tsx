@@ -184,34 +184,43 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
 };
 
 const CountdownCancel: React.FC<{ onCancel?: () => void; onTimeout: () => void; ms?: number }> = ({ onCancel, onTimeout, ms = 3000 }) => {
-  const [remain, setRemain] = useState(Math.max(1, Math.round(ms / 1000)));
-  const cancelledRef = React.useRef(false);
-  const firedRef = React.useRef(false);
+  // Display remaining seconds, computed against a fixed end time to avoid off-by-one
+  const [remain, setRemain] = useState(() => Math.max(1, Math.ceil(ms / 1000)));
+  const endRef = React.useRef<number>(Date.now() + ms);
+  const cancelRef = React.useRef(false);
+  const timeoutRef = React.useRef<number | null>(null);
+  const tickRef = React.useRef<number | null>(null);
+
   useEffect(() => {
-    const t1 = window.setInterval(() => {
-      setRemain(prev => {
-        if (prev <= 1) {
-          window.clearInterval(t1);
-          if (!cancelledRef.current && !firedRef.current) {
-            firedRef.current = true;
-            onTimeout();
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(t1);
-  }, [onTimeout, ms]);
+    // reset timers when ms changes
+    endRef.current = Date.now() + ms;
+    setRemain(Math.max(1, Math.ceil(ms / 1000)));
+    cancelRef.current = false;
+    if (timeoutRef.current !== null) { window.clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (tickRef.current !== null) { window.clearInterval(tickRef.current); tickRef.current = null; }
+
+    timeoutRef.current = window.setTimeout(() => {
+      if (!cancelRef.current) onTimeout();
+    }, ms) as unknown as number;
+
+    const update = () => {
+      const leftMs = Math.max(0, endRef.current - Date.now());
+      setRemain(Math.max(0, Math.ceil(leftMs / 1000)));
+    };
+    update();
+    tickRef.current = window.setInterval(update, 250) as unknown as number;
+
+    return () => {
+      if (timeoutRef.current !== null) { window.clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+      if (tickRef.current !== null) { window.clearInterval(tickRef.current); tickRef.current = null; }
+    };
+  }, [ms, onTimeout]);
 
   return (
     <div className="flex items-center gap-2">
       <button
         type="button"
-        onClick={() => {
-          cancelledRef.current = true;
-          onCancel?.();
-        }}
+        onClick={() => { cancelRef.current = true; onCancel?.(); }}
         className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
       >
         取消

@@ -296,7 +296,8 @@ const App: React.FC = () => {
   if (phase === GamePhaseEnum.SETUP) {
     return (
       <>
-        <div className="h-screen overflow-auto p-6 flex flex-col items-center justify-center space-y-6">
+        <div className="h-screen overflow-auto p-6 flex flex-col items-center justify-center space-y-6 relative">
+          {isPhone && <MobileBlocker />}
           <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
           <RulesIntroPanel
             hasConfig={hasValidSettings(aiSettings)}
@@ -363,7 +364,6 @@ const App: React.FC = () => {
         backgroundPosition: 'center center',
         backgroundSize: '100% auto'
       }}>
-        {isPhone && <MobileBlocker />}
         <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
 
         {/* Backdrop decorative layers */}

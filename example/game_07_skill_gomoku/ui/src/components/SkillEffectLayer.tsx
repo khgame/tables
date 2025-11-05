@@ -188,14 +188,15 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
                 <img
                   src={skill5Img}
                   alt="技能五"
-                  className="absolute left-1/2 -translate-x-1/2 -top-8 md:-top-10 h-16 md:h-20 w-auto pointer-events-none drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]"
+                  className="absolute left-1/2 z-0 pointer-events-none drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]"
+                  style={{ top: isPlayerSkill ? '-3.5rem' : '-3.5rem', height: '5rem', ...(typeof window !== 'undefined' ? {} : {}), animation: `skill5-float 2.2s ease-in-out ${delayOffset + 0.1}s infinite`, transform: 'translate(-50%, 0)' }}
                 />
               )}
-              <div className="flex items-center justify-center">
+              <div className="relative z-10 flex items-center justify-center">
                 <span>{skillText}</span>
               </div>
               {quote && (
-                <div className="mt-2 text-[1.2rem] font-extrabold tracking-wider text-amber-200 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                <div className="relative z-10 mt-2 text-[1.2rem] font-extrabold tracking-wider text-amber-200 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                   {quote}
                 </div>
               )}
@@ -237,6 +238,12 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
         </div>
       );
     })}
+      <style>{`
+        @keyframes skill5-float {
+          0%, 100% { transform: translate(-50%, 0); }
+          50% { transform: translate(-50%, -6px); }
+        }
+      `}</style>
   </div>
   );
 };

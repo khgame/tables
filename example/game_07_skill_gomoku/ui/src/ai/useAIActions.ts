@@ -208,13 +208,16 @@ export const useAIActions = (
           // 标记当前任务为活跃，真正执行成功后再记为 processed
           activeKeyRef.current = key;
           const pos = { row: localSuggestion.row, col: localSuggestion.col };
+          const localDelay = !hasValidSettings(aiSettings)
+            ? Math.floor(500 + Math.random() * 2500) // 0.5~3s
+            : 520;
           timerRef.current = window.setTimeout(() => {
             // 若在等待期间出现动画或任务被取消，则不执行
             if (activeKeyRef.current !== key) return;
             clearRunningTask();
             processedRef.current.add(key);
             actions.placeStone(pos.row, pos.col);
-          }, 520);
+          }, localDelay);
           return;
         }
       }
@@ -234,19 +237,37 @@ export const useAIActions = (
 
         attempts += 1;
         attemptsPerKeyRef.current.set(key, attempts);
+        const rand = (min: number, max: number) => Math.floor(min + Math.random() * (max - min));
         const baseDelay = (() => {
+          const local = !hasValidSettings(aiSettings);
+          if (local) {
+            switch (scenarioPayload.kind) {
+              case 'stone':
+                return rand(500, 3000); // 0.5~3s
+              case 'skill':
+                return rand(1000, 5000); // 1~5s（模拟犹豫）
+              case 'card_targeting':
+                return rand(800, 2000);
+              case 'counter_window':
+                return rand(600, 1800);
+              case 'mulligan':
+              default:
+                return rand(300, 1200);
+            }
+          }
+          // 云端：轻量延迟，避免与网络耗时叠加
           switch (scenarioPayload.kind) {
             case 'counter_window':
               return 600;
             case 'skill':
-              return 680;
+              return 650;
             case 'stone':
-              return 520;
+              return 500;
             default:
-              return 750;
+              return 700;
           }
         })();
-        const delay = reason ? 600 : baseDelay;
+        const delay = baseDelay;
         cycleProgressMessage(scenarioPayload, descriptor.message, reason);
         aiLog.info(
           `[${scenarioPayload.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`

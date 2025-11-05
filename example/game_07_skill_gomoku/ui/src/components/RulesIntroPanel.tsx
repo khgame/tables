@@ -51,7 +51,7 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
             {[
               '棋盘 15×15，连成五子即获胜。',
               '黑先白后，白方由 AI 控制（开启对战后）。',
-              `第 ${SKILL_UNLOCK_MOVE} 步起解锁技能卡（冻结/跳过会影响回合）。`,
+              '第二轮抽卡后可以释放技能（冻结/跳过会影响回合）。',
               '什刹海记录被移除的棋子，墓地记录使用过的卡。',
               '合体技需“张兴朝”在场，召唤当回合不可立刻使用合体技。'
             ].map((line, idx) => (

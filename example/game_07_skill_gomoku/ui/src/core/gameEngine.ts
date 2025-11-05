@@ -316,6 +316,15 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   }
 
   const tags = parseTags(card.tags);
+  // 合体技需要张兴朝（tid=3001）在场
+  if (tags.has('Fusion')) {
+    const ch = prev.characters[player];
+    const hasZhang = !!ch && (String((ch as any)._tid ?? (ch as any).tid) === '3001' || /张兴朝/.test((ch as any).name ?? ''));
+    if (!hasZhang) {
+      const name = context.charactersByTid.get('3001')?.name ?? '张兴朝';
+      return appendLog(prev, createLog(`需要 ${name} 在场才能发动`, 'error'));
+    }
+  }
   if (tags.has('Fusion') && prev.statuses.fusionLock[player] > prev.turnCount) {
     return appendLog(prev, createLog('刚召唤完成，本回合无法发动合体技', 'error'));
   }
@@ -323,8 +332,9 @@ const applyPlayCard = (prev: GameStatus, index: number, context: EffectContext):
   if (card.requiresCharacter) {
     const character = prev.characters[player];
     const required = String(card.requiresCharacter);
+    const reqName = context.charactersByTid.get(required)?.name ?? required;
     if (!character || String(character._tid ?? character.tid) !== required) {
-      return appendLog(prev, createLog(`需要 ${required} 在场才能发动`, 'error'));
+      return appendLog(prev, createLog(`需要 ${reqName} 在场才能发动`, 'error'));
     }
   }
 

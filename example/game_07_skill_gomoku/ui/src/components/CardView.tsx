@@ -310,8 +310,8 @@ export const CardView: React.FC<CardViewProps> = ({
   })();
 
   const effectPanelClass = variant === 'hand'
-    ? 'relative z-[2] mt-[0.12rem] bg-[rgba(6,10,18,0.76)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 shadow-[0_8px_18px_rgba(5,8,14,0.35)] overflow-hidden'
-    : 'relative z-[2] mt-[0.12rem] bg-[rgba(12,18,30,0.55)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 overflow-hidden';
+    ? 'relative z-[2] mt-0 bg-[rgba(6,10,18,0.76)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 shadow-[0_8px_18px_rgba(5,8,14,0.35)] overflow-hidden'
+    : 'relative z-[2] mt-0 bg-[rgba(12,18,30,0.55)] border border-white/10 rounded-[0.6rem] px-2 py-1.5 overflow-hidden';
 
   const wrapperClasses = [
     'relative block rounded-xl overflow-hidden outline-none',
@@ -368,7 +368,7 @@ export const CardView: React.FC<CardViewProps> = ({
               className={[
                 'card-header relative z-[10] flex items-center gap-1 rounded-md uppercase tracking-[0.16em] pointer-events-auto w-full',
                 // unify header height across variants for consistency
-                'px-1 text-[0.58rem] h-[28px] min-h-[28px] leading-[1]'
+                'px-1 text-[0.52rem] h-[22px] min-h-[22px] leading-[1]'
               ].join(' ')}
               style={{ background: headerBg, color: '#0f172a' }}
             >
@@ -416,14 +416,14 @@ export const CardView: React.FC<CardViewProps> = ({
                   {card.nameZh}
                 </span>
                 {card.nameEn && (
-                  <span className="text-[0.55rem] uppercase tracking-[0.35em] text-amber-200/85 whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
+                  <span className="text-[0.4rem] uppercase tracking-[0.35em] text-amber-200/85 whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">
                     {card.nameEn}
                   </span>
                 )}
               </div>
 
               <div
-                className={['relative rounded-[12px] overflow-hidden shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),0_16px_32px_rgba(8,15,35,0.38)]'].join(' ')}
+                className={['relative rounded-[10px] overflow-hidden shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12),0_16px_32px_rgba(8,15,35,0.38)]'].join(' ')}
                 style={{ height: fixedHeights.art }}
               >
                 <CardArtwork card={card} />
@@ -435,7 +435,7 @@ export const CardView: React.FC<CardViewProps> = ({
                   style={{ height: fixedHeights.desc }}
                 >
                   <p className={[
-                    'text-left text-[0.78rem] leading-[1.36] text-white whitespace-pre-line pb-1',
+                    'text-left text-[0.70rem] leading-[1.26] text-white whitespace-pre-line pb-1',
                     'overflow-hidden text-ellipsis break-words', // 确保文字不溢出
                     variant === 'hand' ? 'line-clamp-4' : (variant === 'list' ? 'line-clamp-5' : 'line-clamp-6')
                   ].join(' ')}>

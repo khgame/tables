@@ -90,7 +90,7 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({ winner, onRestart 
                 <p className="text-2xl font-bold text-blue-300 transform -rotate-1">
                   {PLAYER_NAMES[PlayerEnum.WHITE]} 获胜
                 </p>
-                <p className="text-lg text-gray-400 italic">再接再厉，下次一定能赢！</p>
+                <p className="text-lg text-gray-400 italic">打得不错，再接再厉，下次一定能赢！</p>
               </>
             )}
             {isDraw && (

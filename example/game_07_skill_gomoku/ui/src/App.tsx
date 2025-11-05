@@ -14,7 +14,7 @@ import {
   GameOverPanel,
   RulesIntroPanel,
   CardFlyingAnimation,
-  MusicToggle
+  
 } from './components';
 import type { FlyingCardData } from './components';
 import { useGameEngine } from './core/gameEngine';
@@ -34,7 +34,9 @@ import { useVisualEffects } from './app/hooks/useVisualEffects';
 import { useAutoResolvePending } from './app/hooks/useAutoResolvePending';
 import { useWinPresentation } from './app/hooks/useWinPresentation';
 import { useInactivityPrompt } from './app/hooks/useInactivityPrompt';
+import { ToastContainer } from './components/Toast';
 import { MobileBlocker } from './app/components/MobileBlocker';
+import { MusicToggle } from './app/components/MusicToggle';
 
 // Utility for conditional classnames
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
@@ -46,6 +48,12 @@ if (import.meta.env.DEV) {
 }
 
 // 数据加载已抽离到 app/utils/data.ts，并做了基本的类型守卫
+
+// ===== Board Size Tuning =====
+// 直接通过常量调整棋盘相对大小，而不是去改 tailwind 类名。
+// 说明：棋盘容器的最大宽度为 min(BOARD_MAX_VH vh, BOARD_MAX_VW vw)。若想让棋盘“更小一些”，可以把这两个数值下调（例如 62/66 -> 60/64）。
+export const BOARD_MAX_VH = 64; // 以视口高度为基准的上限（vh）
+export const BOARD_MAX_VW = 68; // 以视口宽度为基准的上限（vw）
 
 const App: React.FC = () => {
   const [data, setData] = useState<GameData | null>(null);
@@ -81,6 +89,14 @@ const App: React.FC = () => {
   const aiVictoryShownRef = useRef(false);
   // 飞行卡牌动画状态
   const [flyingCards, setFlyingCards] = useState<FlyingCardData[]>([]);
+  // Center toasts for error/info
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; kind?: 'info' | 'error' | 'warn' }>>([]);
+  const pushToast = useCallback((message: string, kind: 'info' | 'error' | 'warn' = 'info') => {
+    setToasts(prev => [...prev, { id: `toast-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, message, kind }].slice(-4));
+  }, []);
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
   // 设备类型：阻挡手机，仅在触控平板上允许点击释放
   const [isPhone, setIsPhone] = useState(false);
   const [isPad, setIsPad] = useState(false);
@@ -164,6 +180,21 @@ const App: React.FC = () => {
       }
     });
   }, [activeVisuals, sfx]);
+
+  // 将关键 error 日志以 center toast 的形式显著提示
+  const lastLogLenRef = useRef(0);
+  useEffect(() => {
+    const len = gameState.logs.length;
+    if (len > lastLogLenRef.current) {
+      const recent = gameState.logs.slice(lastLogLenRef.current);
+      recent.forEach(entry => {
+        if (entry.type === 'error') {
+          pushToast(entry.message, 'error');
+        }
+      });
+      lastLogLenRef.current = len;
+    }
+  }, [gameState.logs, pushToast]);
 
   // 抽卡音效：当任意一方手牌数量增加时播一次提示音
   useEffect(() => {
@@ -368,6 +399,7 @@ const App: React.FC = () => {
   return (
     <>
       <AiStatusBanner status={aiStatus} />
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className="flex items-center justify-center min-h-screen max-h-screen h-screen relative bg-[#05070d] overflow-hidden" style={{
         padding: 'clamp(0.8rem, 1.5vw, 1.6rem)',
         backgroundImage: "url('/gom_page_bg.png')",
@@ -405,13 +437,14 @@ const App: React.FC = () => {
           maxHeight: '100vh',
           padding: 'clamp(0.4rem, 1vw, 1rem)'
         }}>
-          <div className="grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(300px,360px)', gap: 'clamp(0.6rem,1.2vw,1.6rem)', padding: 'clamp(0.4rem, 1vw, 1rem)' }}>
+          <div className="h-full grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(300px,360px)', gap: 'clamp(0.6rem,1.2vw,1.6rem)', padding: 'clamp(0.4rem, 1vw, 1rem)' }}>
             {/* 左列：改为覆盖式布局，棋盘独立垂直居中，HUD 不影响棋盘位置 */}
             <div className="relative h-full min-w-0">
               {/* 棋盘舞台：上下预留 HUD 空间，并略微向上偏移中心 */}
               <div className={cx('absolute inset-0 flex items-center justify-center', boardBlockedFeedback && 'animate-board-shudder')} style={{
-                paddingTop: 'clamp(2rem, 8vh, 6rem)',
-                paddingBottom: 'clamp(3rem, 12vh, 9rem)'
+                paddingTop: 'clamp(0.8rem, 5vh, 5rem)',
+                paddingBottom: 'clamp(0.8rem, 6vh, 6.5rem)',
+                paddingRight: 'clamp(0.8rem, 6vh, 2rem)'
               }}>
                 {/* Ambient glow behind board */}
                 <div className="absolute inset-[8%] rounded-full opacity-60" style={{
@@ -420,7 +453,11 @@ const App: React.FC = () => {
                 }} />
 
                 {/* Board container */}
-                <div className="relative w-full flex items-center justify-center max-w-[min(80vh,80vw)] aspect-square">
+                <div
+                  className="relative w-full flex items-center justify-center aspect-square"
+                  // 使用可调常量来控制棋盘最大尺寸，便于后续微调
+                  style={{ maxWidth: `min(${BOARD_MAX_VH}vh, ${BOARD_MAX_VW}vw)` }}
+                >
                   <Board
                     board={board}
                     onCellClick={(r,c) => { if (!visualsActive) placeStone(r,c); }}
@@ -496,7 +533,7 @@ const App: React.FC = () => {
 
               {/* 顶部覆盖：对手 HUD，不影响棋盘几何位置 */}
               <div className="absolute left-0 right-0 top-0 pointer-events-none">
-                <div className="pointer-events-auto">
+                <div className="pointer-events-auto pr-4 md:pr-8">
                   <OpponentHUD
                     handCards={enemyHandCards}
                     graveyardCount={enemyGraveyard.length}
@@ -508,6 +545,7 @@ const App: React.FC = () => {
                     isCurrent={currentPlayer === PlayerEnum.WHITE}
                     animateThinking={aiEnabled && Boolean(aiStatus.scenario)}
                     bubble={aiBubble}
+                    className="pr-4 md:pr-8"
                   />
                 </div>
               </div>
@@ -541,7 +579,7 @@ const App: React.FC = () => {
                     bubble={playerBubble}
                     align="end"
                     allowTapPlay={isPad}
-                    className="pr-4 md:pr-8"
+                    className="pr-6 md:pr-12"
                   />
                 </div>
               </div>

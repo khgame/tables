@@ -1,6 +1,6 @@
 import React from 'react';
 import type { GraveyardEntry, ShichahaiEntry } from '../types';
-import { PLAYER_NAMES } from '../core/constants';
+import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
 import { CardFrame } from './CardFrame';
 import { GraveIcon, SeaIcon } from './IconLibrary';
 
@@ -36,10 +36,12 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
     <div
       className={cx(
         'relative z-[40] flex flex-col rounded-xl overflow-hidden',
-        'h-[320px] min-h-[320px] max-h-[320px]', // 固定高度，确保面板大小稳定
         palette.borderGlow
       )}
       style={{
+        height: 'clamp(220px, 28vh, 320px)',
+        minHeight: '220px',
+        maxHeight: 'clamp(240px, 32vh, 340px)',
         background: palette.bgSolid, // 使用纯色半透明背景，不使用毛玻璃
         border: `1px solid rgba(255,255,255,0.15)`, // 增强边框可见度
         boxShadow: `
@@ -97,7 +99,7 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
       </header>
       <div className="flex-1 flex flex-col gap-1.5 text-xs overflow-hidden min-h-0 px-2 pb-2">
         {/* 墓地：横向滚动卡片，固定高度 */}
-        <div className="flex flex-col h-[110px] min-h-[110px]">
+        <div className="flex flex-col" style={{ height: 'clamp(80px, 10vh, 120px)', minHeight: '80px' }}>
           <div className="flex items-center gap-1 text-[0.6rem] font-medium text-slate-300 mb-1 flex-shrink-0">
             <GraveIcon size="xs" />
             <span>墓地</span>
@@ -168,7 +170,7 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
         </div>
 
         {/* 什刹海：横向滚动卡片，固定高度 */}
-        <div className="flex flex-col h-[110px] min-h-[110px]">
+        <div className="flex flex-col" style={{ height: 'clamp(80px, 10vh, 120px)', minHeight: '80px' }}>
           <div className="flex items-center gap-1 text-[0.6rem] font-medium text-slate-300 mb-1 flex-shrink-0">
             <SeaIcon size="xs" />
             <span>什刹海</span>
@@ -191,43 +193,50 @@ export const ZonePanel: React.FC<ZonePanelProps> = ({ title, graveyard, shichaha
             />
             <div className="absolute inset-y-0 left-0 w-6 pointer-events-none bg-gradient-to-r from-slate-900/60 to-transparent z-10" />
             <div className="absolute inset-y-0 right-0 w-6 pointer-events-none bg-gradient-to-l from-slate-900/60 to-transparent z-10" />
-            <div className="relative overflow-x-auto overflow-y-hidden h-full scrollbar-thin scrollbar-track-slate-800/40 scrollbar-thumb-slate-600/60 hover:scrollbar-thumb-slate-500/80 py-1 px-2">
-              <div className="flex items-start gap-2 pr-2 h-full">
-                {shichahai.length > 0 ? (
-                  shichahai.map(entry => (
-                    <div
-                      key={entry.id}
-                      className="shrink-0 flex flex-col min-w-[100px] max-w-[120px] h-[80px] items-center gap-1 rounded-lg px-2 py-1.5 shadow-sm hover:ring-1 hover:ring-cyan-400/50 transition-all duration-200 cursor-pointer group"
-                      style={{
-                        background: 'rgba(8, 47, 73, 0.95)', // 深青色不透明背景
-                        border: '1px solid rgba(6, 182, 212, 0.3)', // 青色边框
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-                      }}
-                      onMouseEnter={() => {
-                        // 在棋盘上高亮这个位置
-                        if (onPositionHover) {
-                          onPositionHover({ row: entry.row, col: entry.col });
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        // 清除高亮
-                        if (onPositionHover) {
-                          onPositionHover(null);
-                        }
-                      }}
-                    >
+              <div className="relative overflow-x-auto overflow-y-hidden h-full scrollbar-thin scrollbar-track-slate-800/40 scrollbar-thumb-slate-600/60 hover:scrollbar-thumb-slate-500/80 py-1 px-2">
+                <div className="flex items-start gap-2 pr-2 h-full">
+                  {shichahai.length > 0 ? (
+                    shichahai.map(entry => (
                       <div
-                        className="flex h-6 w-6 items-center justify-center rounded-md text-[0.5rem] font-bold text-cyan-200 flex-shrink-0"
+                        key={entry.id}
+                        className="shrink-0 flex flex-col min-w-[100px] max-w-[120px] h-[80px] items-center gap-1 rounded-lg px-2 py-1.5 shadow-sm hover:ring-1 hover:ring-cyan-400/50 transition-all duration-200 cursor-pointer group"
                         style={{
-                          background: 'rgba(6, 182, 212, 0.2)',
-                          border: '1px solid rgba(6, 182, 212, 0.3)'
+                          background: 'rgba(8, 47, 73, 0.95)', // 深青色不透明背景
+                          border: '1px solid rgba(6, 182, 212, 0.3)', // 青色边框
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                         }}
+                        onMouseEnter={() => {
+                          // 在棋盘上高亮这个位置
+                          if (onPositionHover) {
+                            onPositionHover({ row: entry.row, col: entry.col });
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          // 清除高亮
+                          if (onPositionHover) {
+                            onPositionHover(null);
+                          }
+                        }}
+                        title={`${PLAYER_NAMES[entry.owner]}: (${entry.row + 1}, ${entry.col + 1})`}
                       >
-                        {entry.row + 1},{entry.col + 1}
+                      {/* 用棋子表示 */}
+                      <div className="flex items-center justify-center h-6 w-6 md:h-7 md:w-7 flex-shrink-0">
+                        <div
+                          className="rounded-full w-full h-full"
+                          style={entry.owner === (PlayerEnum.BLACK as any)
+                            ? {
+                                background: 'radial-gradient(circle at 30% 30%, #4b5563 0%, #1f2937 60%, #0b0f17 100%)',
+                                boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.6)'
+                              }
+                            : {
+                                background: 'radial-gradient(circle at 30% 30%, #ffffff 0%, #f3f4f6 60%, #e5e7eb 100%)',
+                                boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.9), 0 2px 4px rgba(0,0,0,0.6)'
+                              }}
+                        />
                       </div>
                       <div className="min-w-0 flex-1 text-center">
                         <div className="truncate text-[0.62rem] font-semibold text-slate-100 leading-tight">{PLAYER_NAMES[entry.owner]}</div>
-                        <div className="text-[0.5rem] text-slate-400 leading-tight mt-0.5">T{entry.turn}</div>
+                        <div className="text-[0.5rem] text-slate-400 leading-tight mt-0.5">({entry.row + 1},{entry.col + 1}) · T{entry.turn}</div>
                       </div>
                     </div>
                   ))

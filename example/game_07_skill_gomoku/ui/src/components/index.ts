@@ -54,4 +54,7 @@ export type { RulesIntroPanelProps } from './RulesIntroPanel';
 export { CardFlyingAnimation } from './CardFlyingAnimation';
 export type { FlyingCardData } from './CardFlyingAnimation';
 
+export { GameStageLayout } from './GameStageLayout';
+export type { GameStageLayoutProps } from './GameStageLayout';
+
 // (MusicToggle kept, but not exported here to avoid accidental external usage)

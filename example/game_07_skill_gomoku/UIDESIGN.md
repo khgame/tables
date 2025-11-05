@@ -93,87 +93,38 @@
 
 ### 3. 卡牌一览（以表为准）
 
-以下条目与 example/game_07_skill_gomoku/cards.csv 保持一致，仅做 UI 呈现与交互侧的补充：
+以下基于 example/game_07_skill_gomoku/cards.csv，同步为表格显示（无“费用/cost”概念）。
 
-- 飞沙走石（1001，Attack/Standard，Normal/PreMove，Common，cost 1）
-  - 效果：移除敌方棋子到什刹海；目标落点下回合封禁；自身放弃本回合落子
-  - 可被反击：拾金不昧(1008)、擒拿(1009)
-  - 台词：你管这个叫五子棋？
+- 攻击类（Attack）
 
-- 静如止水（1002，Attack，Instant/PreMove，Rare，cost 2）
-  - 效果：冻结对手，跳过对方下一回合（仍可使用反击卡）
-  - 可被反击：水滴石穿(1010)
-  - 台词：嗯嗯，嗯
+| tid | 名称 | 类型 | 速度/时机 | 依赖 | 主要效果 | 反制/免疫 | 备注/失败条件 | 台词 |
+|---|---|---|---|---|---|---|---|---|
+| 1001 | 飞沙走石 | Attack/Standard | Normal/PreMove | - | 移除敌方棋子至什刹海；目标落点下回合封禁；自身放弃本回合落子 | 可被 拾金不昧(1008)、擒拿(1009) | 被擒拿或拾金不昧打断时取消 | 你管这个叫五子棋？ |
+| 1002 | 静如止水 | Attack | Instant/PreMove | - | 冻结敌方，跳过对方下一回合（仍可用反击卡） | 可被 水滴石穿(1010) |  | 嗯嗯，嗯 |
+| 1003 | 力拔山兮 | Attack/Legendary | Instant/PreMove | - | 直接胜利 | 可被 两极反转(1011)、东山再起(1012) |  | 这可是我的最终奥义 |
+| 1004 | 我是保洁 | Attack/Fusion | Instant/PreMove | 需张兴朝在场 | 随机扫走敌我各一枚棋子至什刹海；目标落点下回合封禁 | 可被 滚！(1013) | 张兴朝离场或被“滚！”打断 | 我这招叫做保洁上门 |
+| 1005 | 这是棒球 | Attack/Standard | Normal/PreMove | 需张兴朝在场 | 等同“飞沙走石” | 免疫：擒拿/滚！；可被拾金不昧挽回 | 只能被拾金不昧挽回 | 呀咧呀咧 |
+| 1006 | 时光倒流 | Attack/Legendary | Instant/PreMove | - | 撤回双方最近一手（不恢复手牌/墓地/牌堆） |  |  | 这一招好 |
+| 1007 | 调呈离山·东 | Attack/Fusion | Instant/PreMove | 需张兴朝在场 | 跳过对方下一回合 | 可被 滚！(1013) | 张兴朝离场或被“滚！”打断 | 就是调走张呈，离开山东！ |
 
-- 力拔山兮（1003，Attack，Instant/PreMove，Legendary，cost 3）
-  - 效果：直接胜利；可被“两极反转”“东山再起”破解
-  - 可被反击：两极反转(1011)、东山再起(1012)
-  - 台词：这可是我的最终奥义
+- 反击类（Counter）
 
-- 我是保洁（1004，Attack/Fusion，Instant/PreMove，Rare，cost 1，需张兴朝在场）
-  - 效果：随机扫走敌我各一枚棋子至什刹海；目标落点下回合封禁
-  - 可被反击：滚！(1013)
-  - 失败条件：张兴朝离场或被“滚！”打断
-  - 台词：我这招叫做保洁上门
+| tid | 名称 | 类型 | 速度/时机 | 触发 | 主要效果 | 备注/依赖 | 台词 |
+|---|---|---|---|---|---|---|---|
+| 1008 | 拾金不昧 | Counter/Reactive | Normal/Reaction | 己方棋子被移除 | 将该棋子放回任意空位（先手不转移） |  | 嘿，拾金不昧 |
+| 1009 | 擒拿 | Counter/Reactive | Instant/Reaction | 敌方使用“飞沙走石” | 阻止移除（blocks=1001） |  | 我只是受过九年制义务教育 |
+| 1010 | 水滴石穿 | Counter/Reactive | Instant/Reaction | 己方被冻结 | 解除冻结，不失去行动权 |  | 水滴石穿 |
+| 1011 | 两极反转 | Counter/Legendary | Instant/Reaction | 敌方发动力拔山兮 | 直接反夺胜利 | 需张兴朝在场 | 哈哈哈哈哈哈，两极反转 |
+| 1012 | 东山再起 | Counter/Reactive | Instant/Reaction | 力拔山兮结算后 | 强制恢复继续对局，并立刻进入我方回合 |  | 那我就，东山再起 |
+| 1013 | 滚！ | Counter/Fusion | Instant/Reaction | 敌方发动合体技 | 阻止其效果 | 可能被“你骂老人”反击；需张兴朝在场 | 诶, 怎么又走了 |
+| 1014 | 你骂老人 | Counter/Legendary | Instant/Reaction | 己方合体技被“滚！”阻断时 | 令对手下回合无法行动 |  | 你骂老人！ |
 
-- 这是棒球（1005，Attack/Standard，Normal/PreMove，Rare，cost 1，需张兴朝在场）
-  - 效果：等同“飞沙走石”
-  - 免疫：擒拿(1009)、滚！(1013)；可被拾金不昧(1008)在生效后挽回
-  - 台词：呀咧呀咧
+- 辅助类（Support）
 
-- 时光倒流（1006，Attack，Instant/PreMove，Legendary，cost 3）
-  - 效果：双方最近一手撤回（不恢复手牌/墓地/牌堆）
-  - 台词：这一招好
-
-- 调呈离山·东（1007，Attack/Fusion，Instant/PreMove，Rare，cost 2，需张兴朝在场）
-  - 效果：跳过对方下一回合
-  - 可被反击：滚！(1013)
-  - 失败条件：张兴朝离场或被“滚！”打断
-  - 台词：就是调走张呈，离开山东！
-
-- 拾金不昧（1008，Counter/Reactive，Normal/Reaction，Common，cost 1）
-  - 触发：己方棋子被移除时
-  - 效果：将该棋子放回任意空位（先手不转移）
-  - 台词：嘿，拾金不昧
-
-- 擒拿（1009，Counter/Reactive，Instant/Reaction，Common，cost 1）
-  - 触发：对方发动“飞沙走石”时
-  - 效果：阻止移除（blocks=1001）
-  - 台词：我只是受过九年制义务教育
-
-- 水滴石穿（1010，Counter/Reactive，Instant/Reaction，Common，cost 1）
-  - 触发：己方被冻结时
-  - 效果：解除冻结，不失去行动权
-  - 台词：水滴石穿
-
-- 两极反转（1011，Counter/Legendary，Instant/Reaction，Legendary，cost 2，需张兴朝在场）
-  - 触发：对方发动力拔山兮时
-  - 效果：直接反夺胜利
-  - 台词：哈哈哈哈哈哈，两极反转
-
-- 东山再起（1012，Counter/Reactive，Instant/Reaction，Rare，cost 2）
-  - 触发：力拔山兮结算后
-  - 效果：强制恢复继续对局，并立刻进入我方回合
-  - 台词：那我就，东山再起
-
-- 滚！（1013，Counter/Fusion，Instant/Reaction，Rare，cost 1，需张兴朝在场）
-  - 触发：对方发动合体技时
-  - 效果：阻止其效果（可能被“你骂老人”反击）
-  - 台词：诶, 怎么又走了
-
-- 你骂老人（1014，Counter/Legendary，Instant/Reaction，Legendary，cost 2）
-  - 触发：己方合体技被“滚！”阻断时
-  - 效果：令对手下回合无法行动
-  - 台词：你骂老人！
-
-- 技能五（1015，Support，Instant/Anytime，Common，cost 1）
-  - 效果：召唤“张兴朝”入场，使合体技可发动；召唤当回合无法立刻发动合体技
-  - 台词：技能五子·张技能五
-
-- See You Again（1016，Support，Instant/PreMove，Common，cost 1）
-  - 效果：强制让对方“张兴朝”退场（target=3001）
-  - 台词：胜天半子·王金宝
-- 右键：查看关联的“反制卡”提示（显示哪些卡能反制当前技能）。
+| tid | 名称 | 类型 | 速度/时机 | 主要效果 | 备注 | 台词 |
+|---|---|---|---|---|---|---|
+| 1015 | 技能五 | Support | Instant/Anytime | 召唤“张兴朝”入场，使合体技可发动 | 召唤当回合无法立刻发动合体技 | 技能五子·张技能五 |
+| 1016 | See You Again | Support | Instant/PreMove | 强制让对方“张兴朝”退场（target=3001） |  | 胜天半子·王金宝 |
 
 ## 四、弹窗系统
 

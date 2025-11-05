@@ -60,7 +60,7 @@ export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings
 
   return (
     <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur flex items-center justify-center p-[clamp(1rem,5vw,2.5rem)]" role="dialog" aria-modal="true">
-      <div className="w-[min(840px,100%)] rounded-3xl border border-slate-900/10 shadow-[0_24px_60px_rgba(15,23,42,0.35)] bg-gradient-to-b from-slate-50/95 to-slate-200/90 text-slate-900 overflow-hidden">
+      <div className="w-[min(840px,100%)] rounded-3xl border border-slate-900/10 shadow-[0_24px_60px_rgba(15,23,42,0.35)] bg-gradient-to-b from-slate-50/95 to-slate-200/90 text-slate-900 overflow-visible">
         {/* Header with standing portraits */}
         <header className="relative px-6 pt-5 pb-3 border-b border-slate-300/40">
           <h2 className="text-lg font-bold tracking-[0.08em] uppercase text-slate-800">AI 配置</h2>

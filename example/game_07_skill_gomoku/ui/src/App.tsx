@@ -343,7 +343,7 @@ const App: React.FC = () => {
       <>
         <div className="h-screen overflow-auto p-6 flex flex-col items-center justify-center space-y-6 relative">
           {isPhone && <MobileBlocker />}
-          <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
+          <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} onOpenCardCollection={() => setIsCardCollectionOpen(true)} />
           <RulesIntroPanel
             hasConfig={hasValidSettings(aiSettings)}
             onStartAi={() => {
@@ -366,6 +366,7 @@ const App: React.FC = () => {
           onClose={() => setIsSettingsOpen(false)}
           onSave={setAiSettings}
         />
+        <CardCollectionPanel cards={Object.values(data?.cards?.result ?? {}) as any} open={isCardCollectionOpen} onClose={() => setIsCardCollectionOpen(false)} />
       </>
     );
   }

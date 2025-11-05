@@ -10,7 +10,7 @@ export interface CardCollectionPanelProps {
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
-type CardType = 'Attack' | 'Counter' | 'Support';
+type CardType = 'Attack' | 'Counter' | 'Support' | 'Fusion';
 
 // 类型映射：将JSON中的小写类型映射到组件使用的大写类型
 const normalizeCardType = (type: string): CardType => {
@@ -22,27 +22,60 @@ const normalizeCardType = (type: string): CardType => {
   return 'Support';
 };
 
+// 检查是否为合体进攻技卡牌
+// 只有进攻类卡牌中明确标记为合体技的才归入此分类
+const isFusionCard = (card: RawCard): boolean => {
+  const cardType = card.type?.toLowerCase();
+  // 只有进攻卡可能是合体进攻技
+  if (cardType !== 'attack') return false;
+
+  const subtype = card.subtype?.toLowerCase();
+  const tags = card.tags?.toLowerCase() || '';
+  const effect = card.effect?.toLowerCase() || '';
+
+  // 检查是否有合体技标记
+  return (subtype === 'fusion' || tags.includes('fusion') || effect.includes('合体技'));
+};
+
 const TYPE_LABELS: Record<CardType, string> = {
   Attack: '进攻卡',
   Counter: '反击卡',
-  Support: '辅助卡'
+  Support: '辅助卡',
+  Fusion: '合体进攻技'
 };
 
+const TYPE_DESCRIPTIONS: Record<CardType, string> = {
+  Attack: '强力的进攻技能，用于压制对手、移除棋子或封禁格子。主动出击，把握战局主动权。',
+  Counter: '防御与反击卡牌，在对手发动技能时触发。以守为攻，逆转危机。',
+  Support: '辅助类技能，提供额外资源、恢复能力或特殊效果。运筹帷幄，积蓄优势。',
+  Fusion: '需要张兴朝在场才能发动的强大进攻技。威力巨大，扭转乾坤。'
+};
+
+// 颜色遵循卡面顶部“标签条”风格（见 CardView.headerBg）：
+// - Attack：绿色渐变（合体进攻技在卡面叠加橙色，但图鉴分类以绿色代表进攻）
+// - Counter：紫色渐变
+// - Support：蓝色渐变
+// - Fusion：橙色渐变（代表进攻类中的合体技）
 const TYPE_COLORS: Record<CardType, { bg: string; border: string; text: string }> = {
   Attack: {
-    bg: 'rgba(220, 38, 38, 0.15)',
-    border: 'rgba(220, 38, 38, 0.4)',
-    text: 'rgb(252, 165, 165)'
+    bg: 'linear-gradient(135deg, rgba(16,185,129,0.22), rgba(5,150,105,0.22))',
+    border: 'rgba(16,185,129,0.85)',
+    text: 'rgb(209, 250, 229)'
   },
   Counter: {
-    bg: 'rgba(59, 130, 246, 0.15)',
-    border: 'rgba(59, 130, 246, 0.4)',
-    text: 'rgb(147, 197, 253)'
+    bg: 'linear-gradient(135deg, rgba(168,85,247,0.22), rgba(124,58,237,0.22))',
+    border: 'rgba(168,85,247,0.85)',
+    text: 'rgb(237, 233, 254)'
   },
   Support: {
-    bg: 'rgba(34, 197, 94, 0.15)',
-    border: 'rgba(34, 197, 94, 0.4)',
-    text: 'rgb(134, 239, 172)'
+    bg: 'linear-gradient(135deg, rgba(37,99,235,0.22), rgba(96,165,250,0.22))',
+    border: 'rgba(96,165,250,0.85)',
+    text: 'rgb(219, 234, 254)'
+  },
+  Fusion: {
+    bg: 'linear-gradient(135deg, rgba(249,115,22,0.22), rgba(245,158,11,0.22))',
+    border: 'rgba(245,158,11,0.9)',
+    text: 'rgb(254, 243, 199)'
   }
 };
 
@@ -54,12 +87,18 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
     const result: Record<CardType, RawCard[]> = {
       Attack: [],
       Counter: [],
-      Support: []
+      Support: [],
+      Fusion: []
     };
 
     cards.forEach(card => {
-      const normalizedType = normalizeCardType(card.type);
-      result[normalizedType].push(card);
+      // 优先检查是否为合体技
+      if (isFusionCard(card)) {
+        result.Fusion.push(card);
+      } else {
+        const normalizedType = normalizeCardType(card.type);
+        result[normalizedType].push(card);
+      }
     });
 
     // 按稀有度和ID排序
@@ -85,7 +124,8 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
 
   const displayCards = useMemo(() => {
     if (selectedType === 'all') {
-      return [...cardsByType.Attack, ...cardsByType.Counter, ...cardsByType.Support];
+      // 按顺序：进攻卡 -> 合体进攻技 -> 反击卡 -> 辅助卡
+      return [...cardsByType.Attack, ...cardsByType.Fusion, ...cardsByType.Counter, ...cardsByType.Support];
     }
     return cardsByType[selectedType];
   }, [selectedType, cardsByType]);
@@ -144,7 +184,7 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
             </div>
 
             {/* 分类标签 */}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 flex-wrap">
               <button
                 onClick={() => setSelectedType('all')}
                 className={cx(
@@ -156,7 +196,7 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
               >
                 全部 ({cards.length})
               </button>
-              {(['Attack', 'Counter', 'Support'] as CardType[]).map(type => (
+              {(['Attack', 'Fusion', 'Counter', 'Support'] as CardType[]).map(type => (
                 <button
                   key={type}
                   onClick={() => setSelectedType(type)}
@@ -192,6 +232,45 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
 
           {/* 卡牌网格 */}
           <div className="relative h-[calc(100%-140px)] overflow-y-auto p-6 scrollbar-thin scrollbar-track-slate-800/40 scrollbar-thumb-slate-600/60 hover:scrollbar-thumb-slate-500/80">
+            {/* 分类介绍 Banner */}
+            {selectedType !== 'all' && (
+              <div
+                className="mb-4 rounded-xl p-4 border-2"
+                style={{
+                  background: `linear-gradient(135deg, ${TYPE_COLORS[selectedType].bg}, rgba(15, 23, 42, 0.3))`,
+                  borderColor: TYPE_COLORS[selectedType].border
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: TYPE_COLORS[selectedType].bg,
+                      border: `1px solid ${TYPE_COLORS[selectedType].border}`
+                    }}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ background: TYPE_COLORS[selectedType].border }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-bold" style={{ color: TYPE_COLORS[selectedType].text }}>
+                        {TYPE_LABELS[selectedType]}
+                      </h3>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-900/50 text-slate-300 border border-slate-700/50">
+                        {cardsByType[selectedType].length} 张
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      {TYPE_DESCRIPTIONS[selectedType]}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {displayCards.map(card => {
                 const tid = card._tid ?? card.tid;
@@ -202,11 +281,7 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
                     onClick={() => setSelectedCard(card)}
                   >
                     <div className="relative">
-                      <CardView
-                        card={card}
-                        variant="compact"
-                        className="w-full"
-                      />
+                      <CardView card={card} variant="list" className="w-full" />
                       {/* 悬浮提示 */}
                       <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
                         <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/80 via-transparent to-transparent" />

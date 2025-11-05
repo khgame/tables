@@ -21,23 +21,30 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
   const ready = 'border-emerald-300/50 bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30';
   const idle  = 'border-amber-300/50 bg-slate-900/80 text-amber-300/80';
 
+  const labelStyle: React.CSSProperties = { fontSize: '10px', lineHeight: '10px', textShadow: '0 1px 2px rgba(0,0,0,0.9), 0 -1px 2px rgba(0,0,0,0.6)' };
+  const Caption: React.FC<{ text: string }> = ({ text }) => (
+    <span className="mt-0.5 text-white/95 tracking-[0.2em]" style={labelStyle}>{text}</span>
+  );
+
   return (
     <div className="fixed right-6 top-6 z-20 flex flex-col items-end gap-2 select-none">
-      {/* Settings button: swap to sliders icon for better affordance */}
-      <button
-        type="button"
-        onClick={() => onOpen(true)}
-        className={[btnBase, hasConfig ? ready : idle].join(' ')}
-        title="AI 设置"
-        aria-label="AI 设置"
-      >
-        <IconAdjustmentsHorizontal size={20} stroke={2.0} />
-      </button>
+      {/* Settings */}
+      <div className="flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => onOpen(true)}
+          className={[btnBase, hasConfig ? ready : idle].join(' ')}
+          title="AI 设置"
+          aria-label="AI 设置"
+        >
+          <IconAdjustmentsHorizontal size={20} stroke={2.0} />
+        </button>
+        <Caption text="设置" />
+      </div>
 
-      {/* Quick audio toggles */}
-      <div className="flex flex-col items-end gap-2">
-        {/* Card Collection button */}
-        {onOpenCardCollection && (
+      {/* Card Collection */}
+      {onOpenCardCollection && (
+        <div className="flex flex-col items-center">
           <button
             type="button"
             onClick={onOpenCardCollection}
@@ -46,12 +53,15 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
             aria-label="卡牌图鉴"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6m16 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </button>
-        )}
+          <Caption text="图鉴" />
+        </div>
+      )}
 
-        {/* Music toggle */}
+      {/* Music toggle */}
+      <div className="flex flex-col items-center">
         <button
           type="button"
           onClick={() => (bgm.isPlaying ? bgm.pause() : bgm.play())}
@@ -65,8 +75,11 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
             <IconMusicOff size={20} stroke={2.0} />
           )}
         </button>
+        <Caption text={bgm.isPlaying ? '音乐开' : '音乐关'} />
+      </div>
 
-        {/* SFX toggle */}
+      {/* SFX toggle */}
+      <div className="flex flex-col items-center">
         <button
           type="button"
           onClick={() => sfx.setEnabled(!sfx.enabled)}
@@ -80,6 +93,7 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
             <IconVolumeOff size={20} stroke={2.0} />
           )}
         </button>
+        <Caption text={sfx.enabled ? '音效开' : '音效关'} />
       </div>
     </div>
   );

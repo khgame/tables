@@ -51,7 +51,7 @@
       "cost": 2,
       "speed": "instant",
       "timing": "pre-move",
-      "effect": "冻结敌方，跳过对方下一回合 (无法落子和释放技能)",
+      "effect": "冻结敌方，跳过对方下一回合 (无法落子和释放技能)，可以被「水滴石穿」破解",
       "triggerCondition": "",
       "effectId": "freeze-opponent",
       "effectParams": "turns=1",

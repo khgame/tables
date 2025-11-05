@@ -304,7 +304,7 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
           'text-xs font-medium text-slate-300',
           disabled && 'opacity-60'
         )}>
-          拖拽发动技能卡
+          {allowTapPlay ? '轻点发动技能卡' : '拖拽发动技能卡'}
         </span>
         <StatsPills
           stats={buildStats({ hand: handCards.length, move: moveCount, stones: stonesCount })}

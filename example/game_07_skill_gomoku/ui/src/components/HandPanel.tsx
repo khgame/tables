@@ -282,19 +282,15 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                     onCardHover?.(null);
                   }
                 }}
-                onDragStart={event => {
-                  if (!isOpponent) {
-                    event.dataTransfer.setData('application/x-card-index', String(idx));
-                    event.dataTransfer.setData('text/plain', String(idx));
-                    onCardDragStart?.(idx);
-                  }
-                }}
-                onDragEnd={() => {
-                  if (!isOpponent) {
-                    onCardDragEnd?.();
-                    onCardHover?.(null);
-                  }
-                }}
+                onDragStart={(!isOpponent && !allowTapPlay) ? (event => {
+                  event.dataTransfer.setData('application/x-card-index', String(idx));
+                  event.dataTransfer.setData('text/plain', String(idx));
+                  onCardDragStart?.(idx);
+                }) : undefined}
+                onDragEnd={(!isOpponent && !allowTapPlay) ? (() => {
+                  onCardDragEnd?.();
+                  onCardHover?.(null);
+                }) : undefined}
               />
             </div>
           );

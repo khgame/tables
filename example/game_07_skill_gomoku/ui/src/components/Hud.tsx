@@ -229,7 +229,7 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
 }) => (
   <div className={cx('relative z-[50] flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 固定宽度 */}
-    <div className="relative flex items-center gap-4 rounded-xl p-4 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm overflow-visible">
+    <div className="relative flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[min(320px,28vw)] bg-slate-800/70 backdrop-blur-sm overflow-visible">
       <AvatarBadge player={PlayerEnum.WHITE} characters={characters} statuses={statuses} isCurrent={isCurrent} />
       {bubble && (
         <div className="pointer-events-none absolute top-[calc(100%+8px)] right-1">
@@ -244,7 +244,7 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
     </div>
 
     {/* 中央手牌区域 - 靠右对齐，避免与棋盘重叠 */}
-    <div className="relative flex flex-1 items-start justify-end pr-2 h-[7.5rem] overflow-visible max-w-[560px] ml-auto">
+    <div className="relative flex flex-1 items-start justify-end pr-2 h-[7.2rem] overflow-visible max-w-[560px] ml-auto">
       <HandPanel
         className="w-full"
         cards={handCards}
@@ -297,7 +297,7 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
 }) => (
   <div className={cx('flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 紧凑设计 */}
-    <div className="relative overflow-visible flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
+    <div className="relative overflow-visible flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[min(320px,28vw)] bg-slate-800/70 backdrop-blur-sm">
       {bubble && (
         <div className="pointer-events-none absolute -top-16 left-2">
           <ComicBubble text={bubble.text} tone={'info'} align="left" direction="down" size="lg" />
@@ -318,7 +318,7 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
     </div>
 
     {/* 手牌区域 - 可切换对齐（避免遮挡棋盘） */}
-    <div className={`relative flex flex-1 items-end ${align === 'end' ? 'justify-end pr-4 md:pr-8' : 'justify-center'} h-[9.5rem] max-w-[560px] ${align === 'end' ? 'ml-auto' : ''}`}>
+    <div className={`relative flex flex-1 items-end ${align === 'end' ? 'justify-end pr-4 md:pr-8' : 'justify-center'} h-[9rem] max-w-[560px] ${align === 'end' ? 'ml-auto' : ''}`}>
       <HandPanel
         className="w-full"
         cards={handCards}

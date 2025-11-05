@@ -403,14 +403,15 @@ const App: React.FC = () => {
           width: 'min(1600px, 98vw)',
           height: '100vh',
           maxHeight: '100vh',
-          padding: 'clamp(0.6rem, 1vw, 1rem)'
+          padding: 'clamp(0.4rem, 1vw, 1rem)'
         }}>
-          <div className="h-full grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(320px,380px)', gap: 'clamp(1rem,1.5vw,2rem)', padding: 'clamp(0.6rem, 1vw, 1.2rem)' }}>
+          <div className="h-full grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(300px,360px)', gap: 'clamp(0.6rem,1.2vw,1.6rem)', padding: 'clamp(0.4rem, 1vw, 1rem)' }}>
             {/* 左列：改为覆盖式布局，棋盘独立垂直居中，HUD 不影响棋盘位置 */}
             <div className="relative h-full min-w-0">
               {/* 棋盘舞台：上下预留 HUD 空间，并略微向上偏移中心 */}
               <div className={cx('absolute inset-0 flex items-center justify-center', boardBlockedFeedback && 'animate-board-shudder')} style={{
-                paddingTop: '6rem', paddingBottom: '9rem'
+                paddingTop: 'clamp(2rem, 8vh, 6rem)',
+                paddingBottom: 'clamp(3rem, 12vh, 9rem)'
               }}>
                 {/* Ambient glow behind board */}
                 <div className="absolute inset-[8%] rounded-full opacity-60" style={{
@@ -419,7 +420,7 @@ const App: React.FC = () => {
                 }} />
 
                 {/* Board container */}
-                <div className="relative w-full flex items-center justify-center max-w-[min(72vh,70vw)] aspect-square">
+                <div className="relative w-full flex items-center justify-center max-w-[min(80vh,80vw)] aspect-square">
                   <Board
                     board={board}
                     onCellClick={(r,c) => { if (!visualsActive) placeStone(r,c); }}

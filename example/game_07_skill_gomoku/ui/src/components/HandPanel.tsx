@@ -199,7 +199,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   }, [isOpponent, animateThinking, cards.length, clearTimers]);
   if (cards.length === 0) {
     return (
-      <div className={cx('relative flex h-[8.8rem] w-full items-end justify-start', className)}>
+      <div className={cx('relative flex h-[8rem] w-full items-end justify-start', className)}>
         <div className="flex h-full w-full items-center justify-start pl-4 text-sm italic text-amber-200/70">
           {isOpponent ? '白方无手牌' : '暂无手牌'}
         </div>
@@ -214,7 +214,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   const angleStep = total > 1 ? angleRange / (total - 1) : 0;
   // 增加卡牌间距，确保能看清所有卡面
   const spacingBase = total > 1 ? Math.min(65, 50 + total * 1.8) : 0;
-  const baseWidth = total >= 5 ? 9.8 : 10.8;
+  const baseWidth = total >= 5 ? 9.4 : 10.2;
 
   return (
     <div

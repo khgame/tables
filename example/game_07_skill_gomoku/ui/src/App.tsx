@@ -5,6 +5,7 @@ import {
   PendingCardPanel,
   SnapshotSelector,
   ZonePanel,
+  CombinedShichahaiPanel,
   OpponentHUD,
   PlayerHUD,
   SkillEffectLayer,
@@ -14,7 +15,8 @@ import {
   GameOverPanel,
   RulesIntroPanel,
   CardFlyingAnimation,
-  
+  CardCollectionPanel,
+
 } from './components';
 import type { FlyingCardData } from './components';
 import { useGameEngine } from './core/gameEngine';
@@ -69,7 +71,8 @@ const App: React.FC = () => {
     message: ''
   });
   const [hoveredPosition, setHoveredPosition] = useState<{ row: number; col: number } | null>(null);
-  const [skillTargetPosition, setSkillTargetPosition] = useState<{ row: number; col: number } | null>(null); // 技能目标位置高亮
+  const [skillTargetPosition, setSkillTargetPosition] = useState<{ row: number; col: number } | null>(null);
+  const [isCardCollectionOpen, setIsCardCollectionOpen] = useState(false);
   const winAnimTimersRef = useRef<number[]>([]);
   // 背景音乐（默认开启，浏览器如拦截则在用户交互后恢复）
   const bgm = useBackgroundMusic();
@@ -407,7 +410,11 @@ const App: React.FC = () => {
         backgroundPosition: 'center center',
         backgroundSize: '100% auto'
       }}>
-        <AiSettingsTrigger onOpen={setIsSettingsOpen} hasConfig={hasValidSettings(aiSettings)} />
+        <AiSettingsTrigger
+          onOpen={setIsSettingsOpen}
+          hasConfig={hasValidSettings(aiSettings)}
+          onOpenCardCollection={() => setIsCardCollectionOpen(true)}
+        />
 
         {/* Backdrop decorative layers */}
         <div className="absolute inset-0" style={{
@@ -585,14 +592,14 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* 右列：对手面板 / 日志 / 玩家面板 */}
-            <div className="grid h-full w-[360px] max-w-[380px] min-w-[320px]" style={{ gridTemplateRows: 'auto minmax(0,1fr) auto', rowGap: 'clamp(0.6rem,1vw,1.2rem)' }}>
+            {/* 右列：上-对手墓地（矮） / 中-棋谱纪要（高） / 下-什刹海（合并） / 下下-我方墓地（矮） */}
+            <div className="grid h-full w-[360px] max-w-[380px] min-w-[320px]" style={{ gridTemplateRows: 'auto minmax(0,1fr) auto auto', rowGap: 'clamp(0.4rem,0.7vw,0.9rem)' }}>
               <div>
                 <ZonePanel
-                  title="墓地 / 什刹海"
+                  title="墓地"
                   graveyard={enemyGraveyard}
-                  shichahai={shichahaiByPlayer[PlayerEnum.WHITE]}
                   variant="opponent"
+                  mode="graveyard-only"
                 />
               </div>
               <div className="min-h-0">
@@ -605,11 +612,17 @@ const App: React.FC = () => {
                 />
               </div>
               <div>
+                <CombinedShichahaiPanel
+                  shichahai={gameState.shichahai}
+                  onPositionHover={setHoveredPosition}
+                />
+              </div>
+              <div>
                 <ZonePanel
-                  title="墓地 / 什刹海"
+                  title="墓地"
                   graveyard={playerGraveyard}
-                  shichahai={shichahaiByPlayer[PlayerEnum.BLACK]}
                   variant="player"
+                  mode="graveyard-only"
                 />
               </div>
             </div>
@@ -628,6 +641,11 @@ const App: React.FC = () => {
         settings={aiSettings}
         onClose={() => setIsSettingsOpen(false)}
         onSave={setAiSettings}
+      />
+      <CardCollectionPanel
+        cards={data?.cards ? Object.values(data.cards.result) : []}
+        open={isCardCollectionOpen}
+        onClose={() => setIsCardCollectionOpen(false)}
       />
     </>
   );

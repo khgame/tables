@@ -186,7 +186,7 @@
       "cost": 1,
       "speed": "normal",
       "timing": "reaction",
-      "effect": "当己方棋子被移除时可以触发，棋子不会被移走，并可以指定放回场上任意空位",
+      "effect": "当己方棋子被移除时可以触发，棋子可以放回场上任意指定空位；但先手不会转移",
       "triggerCondition": "敌方使用移除类技能时",
       "effectId": "counter-retrieve",
       "effectParams": "",

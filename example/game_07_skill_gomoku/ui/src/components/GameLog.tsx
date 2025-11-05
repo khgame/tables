@@ -45,11 +45,10 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, onPositionHover, turnCou
 
   return (
     <div
-      className={cx('flex flex-col rounded-xl p-3 shadow-xl mb-3 transition-shadow', highlight && 'ring-2 ring-amber-400/70 shadow-amber-400/20')}
+      className={cx('flex flex-col rounded-xl p-3 shadow-xl mb-0 transition-shadow', highlight && 'ring-2 ring-amber-400/70 shadow-amber-400/20')}
       style={{
-        height: 'clamp(160px, 22vh, 300px)',
-        minHeight: '160px',
-        maxHeight: 'clamp(180px, 28vh, 320px)',
+        minHeight: '36vh',
+        maxHeight: '48vh',
         background: 'linear-gradient(145deg, #374151 0%, #4b5563 8%, #6b7280 92%, #4b5563 100%)',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
       }}

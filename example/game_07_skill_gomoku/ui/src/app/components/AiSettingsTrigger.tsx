@@ -6,13 +6,14 @@ import { IconAdjustmentsHorizontal, IconMusic, IconMusicOff, IconVolume, IconVol
 export interface AiSettingsTriggerProps {
   onOpen: (open: boolean) => void;
   hasConfig: boolean;
+  onOpenCardCollection?: () => void;
 }
 
 /**
  * Fixed top-right trigger button for opening AI settings dialog.
  * Replaces previous CSS (.ai-settings__trigger) with Tailwind utilities.
  */
-export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, hasConfig }) => {
+export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, hasConfig, onOpenCardCollection }) => {
   const bgm = useBackgroundMusic();
   const sfx = useSoundEffects();
 
@@ -35,6 +36,21 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
 
       {/* Quick audio toggles */}
       <div className="flex flex-col items-end gap-2">
+        {/* Card Collection button */}
+        {onOpenCardCollection && (
+          <button
+            type="button"
+            onClick={onOpenCardCollection}
+            className={[btnBase, 'border-amber-300/50 bg-amber-400/20 text-amber-200 hover:bg-amber-400/30'].join(' ')}
+            title="查看卡牌图鉴"
+            aria-label="卡牌图鉴"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </button>
+        )}
+
         {/* Music toggle */}
         <button
           type="button"

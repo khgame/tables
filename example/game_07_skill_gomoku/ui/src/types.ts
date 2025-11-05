@@ -95,6 +95,9 @@ export interface VisualEffectEvent {
   // 可选：用于棋盘定点动画（例如移除棋子飞入什刹海）
   cell?: { row: number; col: number };
   owner?: Player;
+  // 可选：卡牌的标签/子类型（用于音效与表演的细粒度映射）
+  cardTags?: string;
+  cardSubtype?: string;
 }
 
 export type EffectMetadata = {

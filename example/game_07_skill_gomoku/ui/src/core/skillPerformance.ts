@@ -45,6 +45,8 @@ class SkillPerformanceManager {
       createdAt: timestamp,
       sequence,
       role,
+      cardTags: card.tags,
+      cardSubtype: card.subtype,
       ...(meta || {})
     };
   }

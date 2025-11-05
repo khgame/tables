@@ -44,6 +44,10 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
         const skillText = `${playerPrefix} ${event.cardName}!!`;
         const quote = (event.cardQuote || '').trim();
         const isSkillFive = String(event.cardTid ?? '') === '1015' || (event.cardName?.includes('技能五'));
+        const isSeeYouAgain = String(event.cardTid ?? '') === '1016' || (event.cardName?.toLowerCase().includes('see you again')) || event.effectId === SkillEffect.ForceExit;
+        const extraNote = isSkillFive
+          ? '下一个回合开始合体技可以生效了'
+          : (isSeeYouAgain ? '合体技失效了' : '');
 
         // 判断是否为反击技能（基于 role 字段）
         const isCounterSkill = event.role === 'counter';
@@ -181,13 +185,18 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
             >
               <div className="flex items-center justify-center gap-3">
                 {isSkillFive && (
-                  <img src={skill5Img} alt="技能五" className="h-10 w-auto drop-shadow-[0_6px_14px_rgba(255,255,255,0.25)]" />
+                  <img src={skill5Img} alt="技能五" className="h-16 md:h-20 w-auto drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]" />
                 )}
                 <span>{skillText}</span>
               </div>
               {quote && (
                 <div className="mt-2 text-[1.2rem] font-extrabold tracking-wider text-amber-200 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                   {quote}
+                </div>
+              )}
+              {extraNote && (
+                <div className={`mt-1 text-[1rem] font-bold ${isSkillFive ? 'text-emerald-200' : 'text-rose-200'}`}>
+                  {extraNote}
                 </div>
               )}
             </div>

@@ -18,6 +18,16 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({ winner, onRestart,
   const isDraw = winner === null;
   const [name, setName] = useState('');
   const [copied, setCopied] = useState(false);
+  // Debug-gated sharing UI: only show when localStorage.__DEBUG__ === 'true'
+  const debugShareEnabled = useMemo(() => {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return false;
+      const v = window.localStorage.getItem('__DEBUG__');
+      return v === 'true' || v === '1';
+    } catch {
+      return false;
+    }
+  }, []);
   const shareUrl = useMemo(() => {
     if (!gameForShare) return '';
     if (!name || !name.trim()) return '';
@@ -243,7 +253,7 @@ export const GameOverPanel: React.FC<GameOverPanelProps> = ({ winner, onRestart,
             </button>
           </div>
 
-          {gameForShare && (
+          {gameForShare && debugShareEnabled && (
             <div className="mt-5 flex flex-col items-center">
               <div className="w-full max-w-xl rounded-xl bg-black/40 border border-white/10 p-4">
                 <div className="text-sm text-amber-200 mb-2">分享你的战局</div>

@@ -71,6 +71,9 @@ export interface GameLogEntry {
   message: string;
   type: string;
   time: number;
+  // 结构化载荷（用于回放/统计）；保持与 UI 文本并行
+  code?: string;
+  data?: any;
   position?: { row: number; col: number }; // 添加位置信息用于 hover 高亮
 }
 

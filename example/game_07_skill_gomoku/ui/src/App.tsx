@@ -39,6 +39,8 @@ import { useInactivityPrompt } from './app/hooks/useInactivityPrompt';
 import { ToastContainer } from './components/Toast';
 import { MobileBlocker } from './app/components/MobileBlocker';
 import { MusicToggle } from './app/components/MusicToggle';
+import { findReplayParam, decodeReplay } from './app/utils/replay';
+import { ReplayPlayer } from './replay/ReplayPlayer';
 
 // Utility for conditional classnames
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
@@ -74,6 +76,9 @@ const App: React.FC = () => {
   const [skillTargetPosition, setSkillTargetPosition] = useState<{ row: number; col: number } | null>(null);
   const [isCardCollectionOpen, setIsCardCollectionOpen] = useState(false);
   const winAnimTimersRef = useRef<number[]>([]);
+  const recordedEventsRef = useRef<any[]>([]);
+  const recordedVisualIdsRef = useRef<Set<string>>(new Set());
+  const [replayFrames, setReplayFrames] = useState<any[] | null>(null);
   // 背景音乐（默认开启，浏览器如拦截则在用户交互后恢复）
   const bgm = useBackgroundMusic();
   const sfx = useSoundEffects();
@@ -156,21 +161,46 @@ const App: React.FC = () => {
       });
   }, []);
 
+  // 解析回放链接，进入回放播放器（支持帧和事件）
+  useEffect(() => {
+    const raw = findReplayParam();
+    if (!raw) return;
+    const decoded = decodeReplay(raw);
+    if (!decoded) return;
+    try {
+      const frames = (decoded.timeline ?? []).map((t: any) => t.board).filter(Boolean);
+      const events = (decoded as any).events;
+      if ((Array.isArray(frames) && frames.length > 0) || (Array.isArray(events) && events.length > 0)) {
+        // 为兼容旧播放器保留 replayFrames，但优先在渲染处传事件
+        if (Array.isArray(frames) && frames.length > 0) setReplayFrames(frames);
+        // 临时把事件挂到 window 以便 ReplayPlayer 读取（简单兼容处理）
+        (window as any).__REPLAY_EVENTS__ = Array.isArray(events) ? events : undefined;
+        (window as any).__REPLAY_PLAYERS__ = (decoded as any).players || undefined;
+      }
+    } catch {}
+  }, []);
+
   const engine = useGameEngine(data ?? {});
   const { gameState, startGame, placeStone, playCard, selectTarget, resolveCard, cancelPending, selectDraftOption, advanceTurnIfBlocked } = engine;
   const isPlayerTurn = gameState.currentPlayer === PlayerEnum.BLACK;
   // 基于 gameState 的副作用 hooks（必须在 engine 初始化之后调用）
   const activeVisuals = useVisualEffects(gameState);
   const visualsActive = activeVisuals.length > 0;
-  // 落子音效：检测棋谱长度变化
+  // 落子音效：检测棋谱长度变化 + 录制落子事件
   useEffect(() => {
     const len = gameState.board.history.length;
     if (len > lastHistoryLenRef.current) {
       try { sfx.playPlace(); } catch {}
+      try {
+        const last = (gameState.board as any).history?.[len - 1];
+        if (last && typeof last.row === 'number' && typeof last.col === 'number' && typeof last.player !== 'undefined') {
+          recordedEventsRef.current.push({ t: 'p', r: last.row, c: last.col, pl: last.player, at: Date.now() });
+        }
+      } catch {}
     }
     lastHistoryLenRef.current = len;
   }, [gameState.board.history.length]);
-  // 在视觉事件发生时播放简单效果音（可在设置里关闭/调节）
+  // 在视觉事件发生时播放简单效果音（可在设置里关闭/调节）+ 录制视觉事件
   useEffect(() => {
     activeVisuals.forEach(ev => {
       if (!playedSfxRef.current.has(ev.id)) {
@@ -179,6 +209,11 @@ const App: React.FC = () => {
         if (playedSfxRef.current.size > 64) {
           const first = playedSfxRef.current.values().next().value as string | undefined;
           if (first) playedSfxRef.current.delete(first);
+        }
+        if (!recordedVisualIdsRef.current.has(ev.id)) {
+          recordedVisualIdsRef.current.add(ev.id);
+          const keep = (({ id, effectId, cardName, cardTid, cardQuote, player, role, cell, owner }) => ({ id, effectId, cardName, cardTid, cardQuote, player, role, cell, owner }))(ev as any);
+          recordedEventsRef.current.push({ t: 'v', ev: keep, at: Date.now() });
         }
       }
     });
@@ -217,6 +252,11 @@ const App: React.FC = () => {
     if (id && id !== lastPendingIdRef.current) {
       const role = gameState.pendingAction?.player === PlayerEnum.BLACK ? 'attacker' : 'counter';
       try { sfx.playEffect('play-card', role as any); } catch {}
+      try {
+        const pa = gameState.pendingAction!;
+        const card = pa.card;
+        recordedEventsRef.current.push({ t: 'play', pl: pa.player, card: { tid: (card as any)._tid ?? (card as any).tid, name: card.nameZh ?? card.nameEn }, at: Date.now() });
+      } catch {}
     }
     lastPendingIdRef.current = id;
   }, [gameState.pendingAction?.id]);
@@ -305,6 +345,13 @@ const App: React.FC = () => {
     return <CardDraftPanel options={draft.options} source={draft.source} onSelect={selectDraftOption} />;
   };
 
+  // 回放播放器优先显示（即使资源还在加载时）
+  if (replayFrames || (window as any).__REPLAY_EVENTS__) {
+    return (
+      <ReplayPlayer frames={replayFrames as any} events={(window as any).__REPLAY_EVENTS__ as any} onExit={() => { setReplayFrames(null); (window as any).__REPLAY_EVENTS__ = null; }} />
+    );
+  }
+
   if (isLoading) {
     return (
       <>
@@ -336,6 +383,13 @@ const App: React.FC = () => {
   }
 
   const { phase, board, currentPlayer, hands, logs, pendingAction, targetRequest, aiEnabled, moveCount, statuses, winner } = gameState;
+
+  // 回放播放器优先显示（常规分支）
+  if (replayFrames || (window as any).__REPLAY_EVENTS__) {
+    return (
+      <ReplayPlayer frames={replayFrames as any} events={(window as any).__REPLAY_EVENTS__ as any} onExit={() => { setReplayFrames(null); (window as any).__REPLAY_EVENTS__ = null; }} />
+    );
+  }
 
 
   if (phase === GamePhaseEnum.SETUP) {
@@ -522,6 +576,7 @@ const App: React.FC = () => {
                         aiEnabled={aiEnabled}
                         isInstant={Boolean(pendingAction.metadata?.uiInstant)}
                         confirmMs={7000}
+                        phase={phase}
                         onReact={(text) => {
                           const id = `pb-${Date.now()}`;
                           setPlayerBubble({ id, text });
@@ -635,6 +690,8 @@ const App: React.FC = () => {
         <GameOverPanel
           winner={winner}
           onRestart={() => window.location.reload()}
+          gameForShare={{ turnCount: gameState.turnCount, timeline: gameState.timeline, shichahai: gameState.shichahai, winner: gameState.winner, events: recordedEventsRef.current }}
+          playersForShare={{ ai: hasValidSettings(aiSettings) ? 'cloud' : 'local' }}
         />
       )}
       <AiSettingsPanel

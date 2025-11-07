@@ -67,7 +67,7 @@ export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings
           <button type="button" onClick={onClose} className="absolute right-4 top-3 text-2xl leading-none text-slate-600 hover:text-slate-800">×</button>
           {/* portraits */}
           <div className="pointer-events-none absolute inset-0">
-            <img src={standKaraPng} alt="black stand" className="absolute -left-3 -bottom-2 w-[100px] opacity-80" style={{ filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }} />
+            {/* <img src={standKaraPng} alt="black stand" className="absolute -left-3 -bottom-2 w-[100px] opacity-80" style={{ filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }} /> */}
             <img src={standPng} alt="white stand" className="absolute -right-3 -bottom-4 w-[120px] opacity-80" style={{ filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.35))' }} />
           </div>
         </header>
@@ -77,12 +77,6 @@ export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings
             <legend className="px-2 text-sm font-semibold text-slate-700">音频设置</legend>
             <AudioSettings />
           </fieldset>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-600">推荐默认：火山方舟 Doubao</span>
-            <button type="button" onClick={applyDefaults} className="rounded-full border border-slate-300 bg-slate-200/60 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-200">
-              使用默认
-            </button>
-          </div>
           {/* Prompt 更大 + 示例片段 */}
           <fieldset className="rounded-2xl border border-slate-300/60 bg-white/75 p-4">
             <legend className="px-2 text-sm font-semibold text-slate-700">白方策略提示词（可选）</legend>
@@ -107,6 +101,12 @@ export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings
             </label>
           </fieldset>
 
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-600"></span>
+            <button type="button" onClick={applyDefaults} className="rounded-full border border-slate-300 bg-slate-200/60 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-200">
+              使用默认配置: Doubao 1.6
+            </button>
+          </div>
           {/* 紧凑设置区：模型 & 端点 & Key */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-sm">

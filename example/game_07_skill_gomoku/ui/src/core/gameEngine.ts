@@ -671,12 +671,14 @@ const appendLog = (state: GameStatus, logEntry: { message: string; type: string;
   logs: [...state.logs, logEntry]
 });
 
-const createLog = (message: string, type = 'info', position?: { row: number; col: number }) => ({
-  message,
-  type,
-  time: Date.now(),
-  ...(position && { position })
-});
+// 第三个参数兼容旧用法：既可以是 {row,col} 作为 position，也可以是任意 data 作为结构化载荷
+const createLog = (message: string, type = 'info', payload?: any) => {
+  const time = Date.now();
+  if (payload && typeof payload === 'object' && typeof payload.row === 'number' && typeof payload.col === 'number') {
+    return { message, type, time, position: { row: payload.row, col: payload.col } };
+  }
+  return { message, type, time, ...(payload ? { data: payload } : {}) };
+};
 
 const createGraveyardEntry = (card: RawCard, player: Player, reason: string, turn: number) => ({
   id: generateId('grave'),

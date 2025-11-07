@@ -1,6 +1,6 @@
 import React from 'react';
 import skill5Img from '../assets/skill5.png';
-import type { VisualEffectEvent } from '../types';
+import type { VisualEffectEvent, Player } from '../types';
 import { PlayerEnum } from '../core/constants';
 import { SkillEffect } from '../skills/effects';
 import { skillPerformanceManager } from '../core/skillPerformance';
@@ -29,18 +29,22 @@ const getEffectColor = (effectId?: string) => {
 
 export interface SkillEffectLayerProps {
   events: VisualEffectEvent[];
+  // 可选：覆盖玩家显示名称（用于回放时显示“{用户名}/启发者”）
+  playerNames?: Record<Player, string>;
 }
 
-export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) => {
+export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events, playerNames }) => {
   // 使用技能表演管理器进行排序，确保攻击方技能先播放，反击方技能后播放
   const sortedEvents = skillPerformanceManager.sortEvents(events);
+  const labels: Record<Player, string> = playerNames ?? ({ [PlayerEnum.BLACK]: '黑方', [PlayerEnum.WHITE]: '白方' } as any);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-[120000]">
       {sortedEvents.map((event, index) => {
         const isPlayerSkill = event.player === PlayerEnum.BLACK;
         const colors = getEffectColor(event.effectId);
-        const playerPrefix = isPlayerSkill ? '黑方发动' : '白方发动';
+        const who = labels[isPlayerSkill ? PlayerEnum.BLACK : PlayerEnum.WHITE] || (isPlayerSkill ? '黑方' : '白方');
+        const playerPrefix = `${who}发动`;
         const skillText = `${playerPrefix} ${event.cardName}!!`;
         const quote = (event.cardQuote || '').trim();
         const isSkillFive = String(event.cardTid ?? '') === '1015' || (event.cardName?.includes('技能五'));

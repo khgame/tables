@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import standPng from '../assets/stand.png';
-import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
+import { PLAYER_NAMES, PlayerEnum, GamePhaseEnum } from '../core/constants';
 import type { GameStatus, Player, RawCard } from '../types';
 import { CardView } from './CardView';
 
@@ -18,6 +18,8 @@ export interface PendingCardPanelProps {
   isInstant?: boolean;
   // 瞬发确认时间（毫秒）
   confirmMs?: number;
+  // 当前阶段（用于控制提示文案/按钮显示）
+  phase?: GameStatus['phase'];
 }
 
 export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
@@ -31,7 +33,8 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   onReact,
   onCancel,
   isInstant = false,
-  confirmMs = 7000
+  confirmMs = 7000,
+  phase
 }) => {
   if (!pendingCard) return null;
   const [appear, setAppear] = useState(false);
@@ -42,6 +45,8 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   const actingPlayer = pendingCard.player;
   const isResponderAI = aiEnabled && responder === PlayerEnum.WHITE;
   const canCounter = responder === PlayerEnum.BLACK && availableCounters.length > 0;
+  const inCounterWindow = phase === GamePhaseEnum.COUNTER_WINDOW;
+  const inTargeting = phase === GamePhaseEnum.CARD_TARGETING;
 
   return (
     <div className="pointer-events-auto relative">
@@ -129,7 +134,7 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
           </div>
         ) : (
           <div className="pt-1">
-            {pendingCard.player === PlayerEnum.WHITE && responder === PlayerEnum.BLACK ? (
+            {pendingCard.player === PlayerEnum.WHITE && responder === PlayerEnum.BLACK && inCounterWindow ? (
               // 敌方技能，无可反击：给出情绪化按钮等价"放弃反击"
               <div className="flex items-center gap-2">
                 {['可恶', '我知道了', '竟然'].map((label, i) => (
@@ -151,30 +156,38 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
                 ))}
               </div>
             ) : pendingCard.player === PlayerEnum.BLACK ? (
-              // 我方技能：瞬发显示倒计时+"发动"，非瞬发不显示倒计时，仅允许取消
-              isInstant ? (
+              // 我方技能：根据阶段调整 UI
+              inCounterWindow ? (
+                // 反击窗口
+                isInstant ? (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onResolve(false, null)}
+                      className="px-4 py-2 bg-fuchsia-600/90 text-white font-bold text-sm rounded-full shadow hover:bg-fuchsia-600"
+                    >
+                      发动
+                    </button>
+                    <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} ms={confirmMs} />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onCancel?.()}
+                      className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
+                    >
+                      取消
+                    </button>
+                    <span className="text-[0.7rem] text-slate-300">等待对手是否反击…</span>
+                  </div>
+                )
+              ) : inTargeting ? (
+                // 目标选择阶段：仅提示“请选择目标”（取消按钮在该阶段隐藏，以免引擎不支持）
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onResolve(false, null)}
-                    className="px-4 py-2 bg-fuchsia-600/90 text-white font-bold text-sm rounded-full shadow hover:bg-fuchsia-600"
-                  >
-                    发动
-                  </button>
-                  <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} ms={confirmMs} />
+                  <span className="text-[0.75rem] text-amber-100 font-semibold">请选择技能目标</span>
                 </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onCancel?.()}
-                    className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
-                  >
-                    取消
-                  </button>
-                  <span className="text-[0.7rem] text-slate-300">等待对手是否反击…</span>
-                </div>
-              )
+              ) : null
             ) : null}
           </div>
         )}

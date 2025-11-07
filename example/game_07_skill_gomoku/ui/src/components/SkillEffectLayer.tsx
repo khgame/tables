@@ -51,7 +51,7 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events, play
         const isSeeYouAgain = String(event.cardTid ?? '') === '1016' || (event.cardName?.toLowerCase().includes('see you again')) || event.effectId === SkillEffect.ForceExit;
         const extraNote = isSkillFive
           ? '下一个回合开始合体技可以生效了'
-          : (isSeeYouAgain ? '合体技失效了' : '');
+          : (isSeeYouAgain ? '对受的合体技被封印了, 哈哈哈嘻哈哈哈' : '');
 
         // 判断是否为反击技能（基于 role 字段）
         const isCounterSkill = event.role === 'counter';

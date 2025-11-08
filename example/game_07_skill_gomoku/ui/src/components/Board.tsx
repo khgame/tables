@@ -8,6 +8,8 @@ export interface BoardProps {
   disabled: boolean;
   targetRequest: TargetRequest | null;
   onTargetSelect: (selection: { row: number; col: number }) => void;
+  // 白方（AI）目标选择时仅展示高亮，不允许交互
+  targetInteractive?: boolean;
   className?: string;
   style?: React.CSSProperties;
   onCardDrop?: (index: number | null) => void;
@@ -38,6 +40,7 @@ export const Board: React.FC<BoardProps> = ({
   disabled,
   targetRequest,
   onTargetSelect,
+  targetInteractive = true,
   className,
   style,
   onCardDrop,
@@ -86,14 +89,15 @@ export const Board: React.FC<BoardProps> = ({
   }, []);
 
   const lastMove = board.history[board.history.length - 1];
-  const inTargetMode = Boolean(targetRequest && targetRequest.type === 'cell');
+  const showTargets = Boolean(targetRequest && targetRequest.type === 'cell');
+  const inTargetMode = targetInteractive && showTargets;
   const targetCells = useMemo(() => {
     const set = new Set<string>();
-    if (inTargetMode && targetRequest?.cells) {
+    if (showTargets && targetRequest?.cells) {
       targetRequest.cells.forEach(cell => set.add(`${cell.row}-${cell.col}`));
     }
     return set;
-  }, [inTargetMode, targetRequest]);
+  }, [showTargets, targetRequest]);
   const originKey = targetRequest?.origin ? `${targetRequest.origin.row}-${targetRequest.origin.col}` : null;
 
   const handleClick = (row: number, col: number) => {
@@ -186,7 +190,7 @@ export const Board: React.FC<BoardProps> = ({
           {Array.from({ length: board.size }).map((_, rowIdx) =>
             Array.from({ length: board.size }).map((_, colIdx) => {
               const key = `${rowIdx}-${colIdx}`;
-              const highlight = inTargetMode
+              const highlight = showTargets
                 ? targetCells.has(key)
                   ? 'target'
                   : originKey === key
@@ -281,6 +285,11 @@ export const Board: React.FC<BoardProps> = ({
                       <div className="w-[76%] h-[76%] rounded-full border border-amber-200/30 animate-stone-ripple" />
                     </div>
                   )}
+                  {isSkillTarget && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
+                      <div className="w-[82%] h-[82%] rounded-full border-2 border-rose-400/90 animate-pulse" />
+                    </div>
+                  )}
                   {value === PlayerEnum.BLACK && (
                     <div
                       className={cx('absolute inset-[12%] rounded-full', isLast && 'animate-stone-pop')}
@@ -361,8 +370,8 @@ export const Board: React.FC<BoardProps> = ({
             })
           )}
         </div>
-        {/* 内层遮罩：仅在目标选择阶段显示，压暗棋盘。棋子所在格子被提到更高层（z-40），视觉上只看到棋子“浮在”遮罩之上。 */}
-        {inTargetMode && (
+        {/* 内层遮罩：目标阶段显示（AI 或玩家），压暗棋盘。棋子所在格子被提到更高层（z-40），视觉上只看到棋子“浮在”遮罩之上。 */}
+        {showTargets && (
           <div className="pointer-events-none absolute inset-0 z-30 rounded-[14px]" style={{ background: 'rgba(2,6,23,0.42)' }} />
         )}
         <div

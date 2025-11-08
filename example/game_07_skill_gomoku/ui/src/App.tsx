@@ -535,6 +535,9 @@ const App: React.FC = () => {
                       (targetRequest && targetRequest.type === 'snapshot')
                     }
                     targetRequest={targetRequest && targetRequest.type === 'cell' ? targetRequest : null}
+                    targetInteractive={!(
+                      targetRequest && targetRequest.type === 'cell' && targetRequest.actingPlayer === PlayerEnum.WHITE
+                    )}
                     onTargetSelect={(sel) => { try { lastPlayerActionRef.current = Date.now(); setPlayerInactivityLevel(0); } catch {}; selectTarget(sel); }}
                     className="w-full h-full"
                     style={{ aspectRatio: '1 / 1' }}

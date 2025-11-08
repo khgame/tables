@@ -25,6 +25,14 @@ export const fallbackDecision = (
       fallbackPlaceStone(state, actions, localSuggestion ?? null);
       break;
     case 'skill':
+      // 仅在白方回合且处于 PLAYING 阶段时才允许回退技能
+      if (
+        state.phase !== 'playing' ||
+        state.currentPlayer !== PlayerEnum.WHITE ||
+        state.pendingAction || state.pendingCounter || state.targetRequest || state.draft
+      ) {
+        break;
+      }
       if (scenario.skills.length === 0) { fallbackPlaceStone(state, actions, null); break; }
 
       const mySkills = scenario.skills;
@@ -77,6 +85,7 @@ export const fallbackDecision = (
         // 交由 useAutoResolvePending 在 7s 后自动结算
         break;
       }
+      if (state.phase !== 'counter_window') { break; }
       actions.resolveCard(false, null);
       break;
     }

@@ -20,6 +20,14 @@ export function applyDecision(
   if (!('kind' in decision)) return { success: false, reason: '非法决策格式' };
 
   if (scenario.kind === 'stone') {
+    // 防抖：若状态已切到选目标/反击或不在白方回合，拒绝执行
+    if (
+      state.phase !== 'playing' ||
+      state.currentPlayer !== PlayerEnum.WHITE ||
+      state.pendingAction || state.pendingCounter || state.targetRequest || state.draft
+    ) {
+      return { success: false, reason: '状态已变化，忽略落子决策' };
+    }
     const move = resolveMoveFromDecision(decision as Extract<AiDecision, { kind: 'place_stone' }>, state.board, PlayerEnum.WHITE);
     if (!move) return { success: false, reason: '未提供有效落子' };
     actions.placeStone(move.row, move.col);
@@ -27,6 +35,14 @@ export function applyDecision(
   }
 
   if (scenario.kind === 'skill') {
+    // 防抖：若状态已切到选目标/反击或不在白方回合，拒绝执行
+    if (
+      state.phase !== 'playing' ||
+      state.currentPlayer !== PlayerEnum.WHITE ||
+      state.pendingAction || state.pendingCounter || state.targetRequest || state.draft
+    ) {
+      return { success: false, reason: '状态已变化，忽略技能决策' };
+    }
     const idx = resolveHandIndexForDecision(
       decision as { handIndex?: number; cardId?: string },
       scenario.skills.map((s) => s.card)

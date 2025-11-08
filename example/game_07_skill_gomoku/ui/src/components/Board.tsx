@@ -214,6 +214,12 @@ export const Board: React.FC<BoardProps> = ({
               const cellStyle: React.CSSProperties = {
                 background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), rgba(0,0,0,0) 70%)'
               };
+              // 目标选择阶段：仅让“有棋子”的格子提升层级，并移除其格子背景/描边，让棋子本体凸显
+              const cellZClass = inTargetMode ? (value !== null ? 'z-40' : 'z-0') : 'z-10';
+              if (inTargetMode && value !== null) {
+                cellStyle.background = 'transparent';
+                delete (cellStyle as any).boxShadow;
+              }
 
               if (isWinLit) {
                 cellStyle.boxShadow = 'inset 0 0 0 2px rgba(250,204,21,0.95), 0 0 24px rgba(250,204,21,0.55)';
@@ -238,7 +244,8 @@ export const Board: React.FC<BoardProps> = ({
                   key={key}
                   type="button"
                   className={cx(
-                    'relative z-10 w-full border-0 bg-transparent transition-all duration-150 ease-out',
+                    'relative w-full border-0 bg-transparent transition-all duration-150 ease-out',
+                    cellZClass,
                     !value && !highlight && 'hover:scale-[1.02] hover:bg-white/10'
                   )}
                   style={cellStyle}
@@ -354,6 +361,10 @@ export const Board: React.FC<BoardProps> = ({
             })
           )}
         </div>
+        {/* 内层遮罩：仅在目标选择阶段显示，压暗棋盘。棋子所在格子被提到更高层（z-40），视觉上只看到棋子“浮在”遮罩之上。 */}
+        {inTargetMode && (
+          <div className="pointer-events-none absolute inset-0 z-30 rounded-[14px]" style={{ background: 'rgba(2,6,23,0.42)' }} />
+        )}
         <div
           className="pointer-events-none absolute left-[8%] right-[8%] top-[10%] h-6 rounded-full blur-[12px] opacity-40"
           style={{

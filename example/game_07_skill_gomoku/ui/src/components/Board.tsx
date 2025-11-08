@@ -391,6 +391,54 @@ export const Board: React.FC<BoardProps> = ({
           }}
         />
       </div>
+      {/* 目标集合的全局高亮：在目标选择阶段（玩家或AI）把所有可选目标棋子克隆到遮罩之上，仅做视觉提示，不可交互 */}
+      {(() => {
+        if (!showTargets || !targetRequest?.cells) return null;
+        const gridEl = (containerRef.current as any)?._grid as HTMLElement | undefined;
+        const rect = gridEl?.getBoundingClientRect();
+        if (!rect) return null;
+        const cell = Math.min(rect.width, rect.height) / board.size;
+        const R = Math.max(16, Math.min(44, cell * 0.86));
+        const nodes = targetRequest.cells.map((c, i) => {
+          const owner = board.get(c.row, c.col);
+          if (owner === null) return null;
+          const cx = rect.left + ((c.col + 0.5) / board.size) * rect.width;
+          const cy = rect.top + ((c.row + 0.5) / board.size) * rect.height;
+          const style: React.CSSProperties = {
+            position: 'fixed',
+            left: `${cx - R / 2}px`,
+            top: `${cy - R / 2}px`,
+            width: `${R}px`,
+            height: `${R}px`,
+            pointerEvents: 'none',
+            zIndex: 128
+          };
+          const isSel = Boolean(skillTargetPosition && skillTargetPosition.row === c.row && skillTargetPosition.col === c.col);
+          return (
+            <div key={`tg-${i}`} style={style} aria-hidden>
+              {/* 简化棋子复制体 */}
+              <div
+                className="absolute inset-[14%] rounded-full"
+                style={{
+                  background: owner === 0
+                    ? 'radial-gradient(circle at 30% 25%, rgba(209,213,219,0.20), rgba(17,17,17,1)), #111111'
+                    : 'radial-gradient(circle at 30% 25%, #ffffff, #e5e7eb), #ffffff',
+                  boxShadow: owner === 0
+                    ? 'inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 10px rgba(0,0,0,0.45)'
+                    : 'inset 0 0 0 1px rgba(148,163,184,0.35), 0 6px 10px rgba(148,163,184,0.35)'
+                }}
+              />
+              {/* 外环提示：候选用青色，已选用红色并更粗 */}
+              <div
+                className={`absolute inset-0 rounded-full ${isSel ? 'border-[3px] border-rose-400/95' : 'border-2 border-cyan-300/90'} animate-pulse`}
+                style={{ boxShadow: isSel ? '0 0 28px rgba(244,63,94,0.65), 0 0 44px rgba(251,113,133,0.45)' : '0 0 20px rgba(125,211,252,0.55)' }}
+              />
+            </div>
+          );
+        }).filter(Boolean);
+        if (!nodes.length) return null;
+        return createPortal(<>{nodes}</>, document.body);
+      })()}
       {/* 选中目标（已确定）的全局高亮：在非目标选择阶段（如反击窗口）也将被选中的棋子浮到全屏遮罩之上 */}
       {(() => {
         if (!skillTargetPosition) return null;

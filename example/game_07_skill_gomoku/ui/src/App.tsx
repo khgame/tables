@@ -516,11 +516,7 @@ const App: React.FC = () => {
 
                 {/* Board container */}
                 <div
-                  className={cx(
-                    'relative w-full flex items-center justify-center aspect-square',
-                    // 目标选择阶段：让棋盘显示在反击/技能遮罩之上（但低于确认面板）
-                    (targetRequest && targetRequest.type === 'cell') && 'z-[126]'
-                  )}
+                  className={cx('relative w-full flex items-center justify-center aspect-square')}
                   // 使用可调常量来控制棋盘最大尺寸，便于后续微调
                   style={{ maxWidth: `min(${BOARD_MAX_VH}vh, ${BOARD_MAX_VW}vw)` }}
                 >

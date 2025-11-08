@@ -1,4 +1,5 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PlayerEnum } from '../core/constants';
 import type { GameStatus, TargetRequest, Player } from '../types';
 
@@ -152,6 +153,7 @@ export const Board: React.FC<BoardProps> = ({
         }
       >
         <div
+          ref={(el) => { (containerRef as any)._grid = el; }}
           className="relative grid aspect-square w-full overflow-hidden rounded-[14px] border border-white/20"
           style={{ gridTemplateColumns: `repeat(${board.size}, minmax(0, 1fr))` }}
         >
@@ -218,9 +220,11 @@ export const Board: React.FC<BoardProps> = ({
               const cellStyle: React.CSSProperties = {
                 background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), rgba(0,0,0,0) 70%)'
               };
-              // 目标选择阶段：仅让“有棋子”的格子提升层级，并移除其格子背景/描边，让棋子本体凸显
-              const cellZClass = inTargetMode ? (value !== null ? 'z-40' : 'z-0') : 'z-10';
-              if (inTargetMode && value !== null) {
+              // 目标阶段（无论是否可交互）：仅让“有棋子”的格子提升层级；选中目标更高一层
+              const cellZClass = showTargets
+                ? (value !== null ? (isSkillTarget ? 'z-50' : 'z-40') : 'z-0')
+                : (isSkillTarget ? 'z-20' : 'z-10');
+              if (showTargets && value !== null) {
                 cellStyle.background = 'transparent';
                 delete (cellStyle as any).boxShadow;
               }
@@ -387,6 +391,64 @@ export const Board: React.FC<BoardProps> = ({
           }}
         />
       </div>
+      {/* 选中目标（已确定）的全局高亮：在非目标选择阶段（如反击窗口）也将被选中的棋子浮到全屏遮罩之上 */}
+      {(() => {
+        if (!skillTargetPosition) return null;
+        // 处于目标选择阶段时，板内高亮已足够；此处仅在非目标阶段提供额外的浮层高亮
+        if (inTargetMode) return null;
+        const gridEl = (containerRef.current as any)?._grid as HTMLElement | undefined;
+        const rect = gridEl?.getBoundingClientRect();
+        if (!rect) return null;
+        const { row, col } = skillTargetPosition as { row: number; col: number };
+        if (
+          typeof row !== 'number' || typeof col !== 'number' ||
+          row < 0 || row >= board.size || col < 0 || col >= board.size
+        ) return null;
+        const cx = rect.left + ((col + 0.5) / board.size) * rect.width;
+        const cy = rect.top + ((row + 0.5) / board.size) * rect.height;
+        const cell = Math.min(rect.width, rect.height) / board.size;
+        const R = Math.max(18, Math.min(54, cell * 0.95));
+        const owner = board.get(row, col);
+        const style: React.CSSProperties = {
+          position: 'fixed',
+          left: `${cx - R / 2}px`,
+          top: `${cy - R / 2}px`,
+          width: `${R}px`,
+          height: `${R}px`,
+          pointerEvents: 'none',
+          zIndex: 128
+        };
+        return createPortal(
+          <div style={style} aria-hidden>
+            {/* 复制一个简化的棋子外观，浮在遮罩上方 */}
+            {owner !== null && (
+              <div
+                className="absolute inset-[14%] rounded-full"
+                style={{
+                  background: owner === 0
+                    ? 'radial-gradient(circle at 30% 25%, rgba(209,213,219,0.20), rgba(17,17,17,1)), #111111'
+                    : 'radial-gradient(circle at 30% 25%, #ffffff, #e5e7eb), #ffffff',
+                  boxShadow: owner === 0
+                    ? 'inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 10px rgba(0,0,0,0.45)'
+                    : 'inset 0 0 0 1px rgba(148,163,184,0.35), 0 6px 10px rgba(148,163,184,0.35)'
+                }}
+              />
+            )}
+            <div
+              className="absolute inset-0 rounded-full border-[3px] border-rose-400/95 shadow-[0_0_24px_rgba(244,63,94,0.65)] animate-pulse"
+              style={{ boxShadow: '0 0 28px rgba(244,63,94,0.65), 0 0 44px rgba(251,113,133,0.45)' }}
+            />
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 50% 50%, rgba(244,63,94,0.28), rgba(244,63,94,0) 70%)',
+                filter: 'blur(2px)'
+              }}
+            />
+          </div>,
+          document.body
+        );
+      })()}
     </div>
   );
 };

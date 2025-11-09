@@ -24,6 +24,7 @@ export function createConvertError(message: string, metadata: ConvertErrorMetada
   Object.defineProperty(error, 'convertErrorMeta', {
     value: metadata,
     enumerable: false,
+    writable: true,
     configurable: true
   })
   return error

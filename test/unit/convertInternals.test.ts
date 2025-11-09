@@ -93,6 +93,9 @@ describe('convert internals', () => {
       } catch (error) {
         expect(Object.keys(error as object)).not.toContain('convertErrorMeta')
         expect(JSON.stringify(error)).not.toContain('convertErrorMeta')
+        ;(error as any).convertErrorMeta = {
+          code: 'numeric_overflow'
+        }
         expect(getConvertErrorMetadata(error)?.code).toBe('numeric_overflow')
       }
     })

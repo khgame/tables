@@ -276,7 +276,7 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
                 const tid = card._tid ?? card.tid;
                 return (
                   <div
-                    key={`${tid}-${card.name}`}
+                    key={`${tid}-${card.nameZh || card.nameEn || 'card'}`}
                     className="cursor-pointer transform transition-all duration-200 hover:scale-105 hover:z-10"
                     onClick={() => setSelectedCard(card)}
                   >
@@ -339,7 +339,7 @@ export const CardCollectionPanel: React.FC<CardCollectionPanelProps> = ({ cards,
                 </div>
                 <CardView
                   card={selectedCard}
-                  variant="normal"
+                  variant="showcase"
                   className="w-full"
                 />
               </div>

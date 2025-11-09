@@ -72,7 +72,7 @@ export function debugAiDecision(gameState: GameStatus) {
   const whiteHand = gameState.hands?.[PlayerEnum.WHITE] || [];
   console.log(`\n2. 白方手牌检查 (${whiteHand.length}张):`);
   whiteHand.forEach((card, index) => {
-    console.log(`   [${index}] ${card.nameZh || card.name} - ${card.effect || '无效果描述'}`);
+    console.log(`   [${index}] ${card.nameZh || card.nameEn || String(card._tid ?? card.tid ?? '未知卡牌')} - ${card.effect || '无效果描述'}`);
     console.log(`       - requiresCharacter: ${card.requiresCharacter || '无'}`);
     console.log(`       - timing: ${card.timing || '无'}`);
     console.log(`       - tags: ${card.tags || '无'}`);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
 import { useSoundEffects } from '../hooks/useSoundEffects';
-import { IconAdjustmentsHorizontal, IconMusic, IconMusicOff, IconVolume, IconVolumeOff } from '@tabler/icons-react';
+import { IconAdjustmentsHorizontal, IconBook, IconMusic, IconMusicOff, IconVolume, IconVolumeOff } from '@tabler/icons-react';
 
 export interface AiSettingsTriggerProps {
   onOpen: (open: boolean) => void;
@@ -17,6 +17,7 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
   const bgm = useBackgroundMusic();
   const sfx = useSoundEffects();
 
+  const gameRulesUrl = 'https://khgame.github.io/tables/demos/skill-gomoku';
   const btnBase = 'rounded-full border p-2 backdrop-blur transition shadow-[0_8px_18px_rgba(15,23,42,0.35)] hover:-translate-y-px hover:shadow-[0_12px_24px_rgba(15,23,42,0.45)]';
   const ready = 'border-emerald-300/50 bg-emerald-400/20 text-emerald-200 hover:bg-emerald-400/30';
   const idle  = 'border-amber-300/50 bg-slate-900/80 text-amber-300/80';
@@ -94,6 +95,19 @@ export const AiSettingsTrigger: React.FC<AiSettingsTriggerProps> = ({ onOpen, ha
           )}
         </button>
         <Caption text={sfx.enabled ? '音效开' : '音效关'} />
+      </div>
+
+      <div className="flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => window.open(gameRulesUrl, '_blank', 'noopener,noreferrer')}
+          className={[btnBase, 'border-sky-200/60 bg-sky-300/20 text-sky-50 hover:bg-sky-300/30'].join(' ')}
+          title="玩法说明"
+          aria-label="玩法说明"
+        >
+          <IconBook size={20} stroke={2.0} />
+        </button>
+        <Caption text="玩法" />
       </div>
     </div>
   );

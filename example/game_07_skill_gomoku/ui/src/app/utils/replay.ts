@@ -6,8 +6,23 @@ export type ShareReplayPayload = {
   turnCount: number;
   timeline: GameStatus['timeline'];
   shichahai: GameStatus['shichahai'];
-  players?: { me?: string; opp?: string };
+  players?: { me?: string; opp?: string; ai?: 'cloud' | 'local' };
   createdAt: number;
+};
+
+const encodeUtf8Base64 = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+};
+
+const decodeUtf8Base64 = (value: string): string => {
+  const binary = atob(value);
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
 };
 
 export const buildReplayPayload = (game: GameStatus, me?: string): ShareReplayPayload => ({
@@ -23,17 +38,12 @@ export const buildReplayPayload = (game: GameStatus, me?: string): ShareReplayPa
 // 简单 base64 编码（不压缩）。如需缩短可换用 LZ-string。
 export const encodeReplay = (payload: ShareReplayPayload): string => {
   const json = JSON.stringify(payload);
-  const b64 = typeof window !== 'undefined'
-    ? window.btoa(unescape(encodeURIComponent(json)))
-    : Buffer.from(json, 'utf8').toString('base64');
-  return b64;
+  return encodeUtf8Base64(json);
 };
 
 export const decodeReplay = (raw: string): ShareReplayPayload | null => {
   try {
-    const json = typeof window !== 'undefined'
-      ? decodeURIComponent(escape(window.atob(raw)))
-      : Buffer.from(raw, 'base64').toString('utf8');
+    const json = decodeUtf8Base64(raw);
     const obj = JSON.parse(json);
     if (!obj || typeof obj !== 'object') return null;
     if (obj.v !== 1) return null;

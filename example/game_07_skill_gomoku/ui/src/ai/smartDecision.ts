@@ -54,7 +54,14 @@ export async function makeSmartAiDecision(
   const traceId = performanceMonitor.startTrace(scenario.kind);
 
   let localSuggestion: LocalMoveSuggestion | null = null;
-  let routing: RoutingDecision;
+  let routing: RoutingDecision = {
+    strategy: 'smart-fallback',
+    reason: '路由前默认回退策略',
+    confidence: 0,
+    expectedLatency: 0,
+    fallbackStrategy: 'local-only'
+  };
+  let routingTime = 0;
   let decision: AiDecision | null = null;
   let source: SmartAiDecisionResult['source'] = 'remote';
   let error: string | undefined;
@@ -108,7 +115,7 @@ export async function makeSmartAiDecision(
         }
       : await smartRouter.makeRoutingDecision(scenario, aiSettings, localSuggestion);
 
-    const routingTime = performance.now() - routingStart;
+    routingTime = performance.now() - routingStart;
 
     // 记录路由决策
     performanceMonitor.recordRoutingDecision(traceId, routing);
@@ -172,7 +179,7 @@ export async function makeSmartAiDecision(
     routing: routing!,
     performance: {
       totalTime,
-      routingTime: routingTime!
+      routingTime
     },
     localSuggestion,
     error

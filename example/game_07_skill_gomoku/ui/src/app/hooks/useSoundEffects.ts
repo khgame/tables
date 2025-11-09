@@ -218,7 +218,7 @@ export const useSoundEffects = () => {
       case 'summon-character':
         // 召唤：小型上行分解和弦
         const up = ['aura', 'blessing', 'guardian'].includes(subtype);
-        const seq = up
+        const seq: Array<{ f: number; d: number; at: number; type: OscillatorType; vol: number; pan: number }> = up
           ? [
               { f: 523, d: 110, at: 0, type: 'triangle', vol: 0.22, pan },
               { f: 659, d: 110, at: 90, type: 'triangle', vol: 0.22, pan },

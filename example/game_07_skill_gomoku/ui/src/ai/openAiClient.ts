@@ -114,6 +114,18 @@ export const hasValidSettings = (
   return Boolean(settings.endpoint && settings.reasoningModel && settings.apiKey);
 };
 
+// Fail fast when offline or missing apiKey; caller can fall back to local strategy.
+const ensureOnlineAndApiKey = (settings: AiSettings) => {
+  try {
+    if (typeof navigator !== 'undefined' && (navigator as any).onLine === false) {
+      throw new Error('offline');
+    }
+  } catch {}
+  if (!settings.apiKey || !settings.apiKey.trim()) {
+    throw new Error('missing_api_key');
+  }
+};
+
 const selectModelForScenario = (
   settings: AiSettings,
   scenario: AiScenario["kind"],
@@ -129,6 +141,8 @@ export const requestAiDecision = async (
   scenario: AiScenario,
   options?: { feedback?: string },
 ): Promise<AiDecision | null> => {
+  ensureOnlineAndApiKey(settings);
+
   const userContent = buildUserPrompt(scenario, options);
   const model = selectModelForScenario(settings, scenario.kind);
   const modelSelectionInfo = { scenario: scenario.kind, model }
@@ -838,12 +852,3 @@ const serializeTimelineNarrative = (
   });
   return sentences.join(" ");
 };
-  // 离线或未提供 apiKey：直接抛错，外层将转入 fallback 本地策略
-  try {
-    if (typeof navigator !== 'undefined' && (navigator as any).onLine === false) {
-      throw new Error('offline');
-    }
-  } catch {}
-  if (!settings.apiKey || !settings.apiKey.trim()) {
-    throw new Error('missing_api_key');
-  }

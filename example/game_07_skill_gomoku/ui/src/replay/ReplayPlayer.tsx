@@ -6,7 +6,7 @@ export interface ReplayPlayerProps {
   frames?: BoardSnapshot[];
   // 结构化事件：p=place, v=visual
   events?: Array<{ t: 'p'; r: number; c: number; pl: Player; at?: number } | { t: 'v'; ev: Partial<VisualEffectEvent>; at?: number }>;
-  players?: { me?: string; opp?: string };
+  players?: { me?: string; opp?: string; ai?: 'cloud' | 'local' };
   speedMs?: number;
   onExit?: () => void;
 }

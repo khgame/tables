@@ -64,7 +64,14 @@ export interface EffectHelpers {
     updater: (statuses: GameStatus['statuses']) => GameStatus['statuses']
   ) => void;
   setCharacters: (characters: Record<Player, RawCharacter | null>) => void;
-  enqueueVisual: (payload: { effectId?: string; card: RawCard; player: Player; role?: 'attacker' | 'counter' | 'normal' }) => void;
+  enqueueVisual: (payload: {
+    effectId?: string;
+    card: RawCard;
+    player: Player;
+    role?: 'attacker' | 'counter' | 'normal';
+    cell?: { row: number; col: number };
+    owner?: Player;
+  }) => void;
 }
 
 const effectHandlers: Record<

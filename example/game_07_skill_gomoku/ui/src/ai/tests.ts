@@ -35,10 +35,7 @@ const mockGameState: Partial<GameStatus> = {
       }
     }
   } as any,
-  players: {
-    WHITE: { hand: [] },
-    BLACK: { hand: [] }
-  } as any,
+  hands: [[], []],
   statuses: {
     sealedCells: { [PlayerEnum.WHITE]: null, [PlayerEnum.BLACK]: null }
   } as any,

@@ -10,7 +10,7 @@
 
 import type { AiScenario, AiSettings } from './openAiClient';
 import type { LocalMoveSuggestion } from './local';
-import type { GameStatus } from '../types';
+import { PlayerEnum } from '../core/constants';
 import { performanceMonitor } from './performance';
 import { aiLog } from './logger';
 
@@ -175,14 +175,15 @@ class SmartRouter {
         }
 
         // 技能卡影响
-        const activeSkills = scenario.game?.players?.WHITE?.hand?.length || 0;
+        const activeSkills = scenario.game?.hands?.[PlayerEnum.WHITE]?.length || 0;
         if (activeSkills > 3) {
           factors.push('多技能卡环境');
           score += 20;
         }
 
         // 禁手情况
-        const hasBans = scenario.game?.players?.WHITE?.bannedCells?.length > 0;
+        const sealed = scenario.game?.statuses?.sealedCells?.[PlayerEnum.WHITE];
+        const hasBans = Boolean(sealed && scenario.game.turnCount < sealed.expiresAtTurn);
         if (hasBans) {
           factors.push('存在禁手限制');
           score += 15;

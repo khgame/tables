@@ -40,7 +40,7 @@ Options:
   --format, -f  export format (defaults to "json").
                  Available values are resolved from the serializer registry at
                  runtime (json, js, ts, ts-interface, jsonx, go, csharp by default).
-  --context, -c context directory or context.*.json file
+  --context, -c context directory, context.*.json file, or full context JSON file
   --inspect     print machine-readable diagnostics for a single input file
   --validate    validate a single input file and print machine-readable result
   --json        suppress incidental logs for inspect/validate machine output
@@ -48,7 +48,7 @@ Options:
   --version     Show version number                                    [boolean]
 ```
 
-默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。目录输入会默认加载同目录下的 `context.*.json`；单文件输入需要上下文时可使用 `--context ./dir` 或 `--context ./context.enums.json`。
+默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。目录输入会默认加载同目录下的 `context.*.json`；单文件输入需要上下文时可使用 `--context ./dir`、`--context ./context.enums.json` 或 `--context ./context.json`。
 
 > 提示：选择 `-f ts` 时会生成两份文件：`<Table>Solution.ts`（含数据 + 仓库实例）以及 `<Table>.ts`（纯类型与仓库定义）。`-f ts-interface` 仅输出类型文件。
 
@@ -320,7 +320,7 @@ const specific = enemiesRepo.get(toEnemiesTID('50010001'));
    }
    ```
    其中 `"enums"` 对应上一步 JSON 的键名；可写成数组导出多个命名空间。
-3. **在脚本中加载上下文**：CLI 默认不会读取上下文，推荐在自定义脚本中调用 `loadContextPath`：
+3. **在脚本中加载上下文**：目录输入时 CLI 会自动读取同目录下的 `context.*.json`；自定义脚本或单文件输入推荐显式调用 `loadContextPath`：
    ```ts
    const { loadContextPath, serialize, tsInterfaceSerializer } = require('@khgame/tables');
    const ctx = loadContextPath('./example');

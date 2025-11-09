@@ -205,7 +205,7 @@ function loadCliValidationContext(stat: fs.Stats, validateContextRefs: boolean):
 function sanitizeValidationMessage(error: ValidationMessage): ValidationMessage {
   return {
     ...error,
-    message: sanitizeCliMessage(error.message),
+    message: sanitizeCliPathsInText(error.message),
     details: sanitizeDetails(error.details)
   }
 }
@@ -223,7 +223,21 @@ function sanitizeDetails(details?: Record<string, unknown>): Record<string, unkn
 function sanitizeCliValue(value: string): string {
   const sanitized = sanitizeCliMessage(value)
   if (!sanitized.includes('/') && !sanitized.includes('\\')) return sanitized
-  return Path.basename(sanitized)
+  return basenameForCliValue(sanitized)
+}
+
+function sanitizeCliPathsInText(value: string): string {
+  return sanitizeCliMessage(value)
+    .replace(new RegExp("(['\"])([^'\"]*[\\\\/][^'\"]*)\\1", 'g'), (_match, quote: string, rawPath: string) => {
+      return `${quote}${basenameForCliValue(rawPath)}${quote}`
+    })
+    .replace(new RegExp("(?:[A-Za-z]:[\\\\/]|/)[^'\"\\s]+", 'g'), rawPath => basenameForCliValue(rawPath))
+}
+
+function basenameForCliValue(value: string): string {
+  const withoutTrailingSeparator = value.replace(new RegExp('[\\\\/]+$', 'g'), '')
+  const parts = withoutTrailingSeparator.split(new RegExp('[\\\\/]'))
+  return parts[parts.length - 1] || value
 }
 
 if (inspectMode || validateMode) {

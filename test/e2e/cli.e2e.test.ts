@@ -437,6 +437,46 @@ describe('CLI (tables)', () => {
     })
   })
 
+  it('sanitizes absolute table refs outside the context directory in validation JSON messages', () => {
+    const input = Path.resolve(tmp, 'validate-outside-absolute-ref-input')
+    const ctx = Path.resolve(tmp, 'validate-outside-absolute-ref-ctx')
+    const outside = Path.resolve(tmp, 'outside-secret-dir', 'hidden_abs.csv')
+    fs.removeSync(input)
+    fs.removeSync(ctx)
+    fs.removeSync(Path.dirname(outside))
+    fs.ensureDirSync(input)
+    fs.ensureDirSync(ctx)
+    writeCsv(Path.join(input, 'items.csv'), [
+      ['@', 'enum<Rarity>'],
+      ['id', 'rarity'],
+      ['item_001', 'Rare']
+    ])
+    fs.writeJsonSync(Path.join(ctx, 'context.enums.json'), {
+      Rarity: [
+        { ref: { table: outside, field: 'alias' } }
+      ]
+    })
+
+    const res = runCli(['-i', Path.join(input, 'items.csv'), '--validate', '--json', '--context', ctx], repoRoot)
+    expect(res.code).not.toBe(0)
+    expect(res.stderr).toBe('')
+    expect(res.stdout).not.toContain(repoRoot)
+    expect(res.stdout).not.toContain(ctx)
+    expect(res.stdout).not.toContain(Path.dirname(outside))
+    expect(res.stdout).not.toContain(outside)
+    const result = JSON.parse(res.stdout)
+    expect(result.errors[0]).toMatchObject({
+      severity: 'error',
+      code: 'context_ref_error',
+      message: "context enum 'Rarity' references missing table 'hidden_abs.csv'",
+      details: {
+        enumName: 'Rarity',
+        table: 'hidden_abs.csv',
+        field: 'alias'
+      }
+    })
+  })
+
   it('suppresses verbose console warnings in validation JSON mode', () => {
     const input = Path.resolve(tmp, 'validate-json-warn-input')
     const ctx = Path.resolve(tmp, 'validate-json-warn-ctx')

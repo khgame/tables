@@ -45,8 +45,10 @@ console.log(diagnostics.convert.tidCount)
 
 - 返回 `{ success, fileName, sheetName?, diagnostics, errors, warnings }`
 - `errors[]` / `warnings[]` 使用 `{ severity, code, message, location?, diagnosticPath?, details? }`
+- `location` 面向编辑器和 agent 定位，当前会尽量包含 `sheetName`、`row`、`column`、`fieldPath`
+- `details` 面向自动修复和 CI 展示，当前会尽量包含 `tableName`、`tid`、`sourceAlias`、`rawValue`、`suggestedType`、`duplicateAliases`
 - 当前错误码包括 `schema_error`、`convert_error`、`tid_collision`、`inspect_error`
-- 不写文件、不打印日志，方便测试和 AI agent 直接调用
+- 自身不写文件；CLI machine mode 会隔离底层偶发日志，方便测试和 AI agent 直接调用
 - `diagnostics` 保留完整 `inspectTableFile` 结果，便于定位 sheet、mark/desc、schema 和 convert 信息
 
 调用方式：

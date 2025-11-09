@@ -95,7 +95,6 @@ function loadCliContext(inputPath: string, inputStat: fs.Stats): any {
   return inputStat.isDirectory() ? loadContext(inputPath) : {}
 }
 
-const stat = fs.statSync(iPath)
 const inspectMode = !!(argv as any).inspect
 const validateMode = !!(argv as any).validate
 const jsonMode = !!(argv as any).json
@@ -108,6 +107,23 @@ type CliMachineResult = {
   warnings: any[];
 }
 
+function displayCliPath(pathIn: string): string {
+  const relativePath = Path.relative(EXECUTE_PATH, pathIn)
+  if (relativePath && !relativePath.startsWith('..') && !Path.isAbsolute(relativePath)) {
+    return relativePath
+  }
+  return Path.basename(pathIn)
+}
+
+function sanitizeCliMessage(message: string): string {
+  let ret = message
+  ret = ret.split(iPath).join(displayCliPath(iPath))
+  if (cPath) {
+    ret = ret.split(cPath).join(displayCliPath(cPath))
+  }
+  return ret
+}
+
 function buildCliError(code: string, message: string): CliMachineResult {
   return {
     success: false,
@@ -115,7 +131,7 @@ function buildCliError(code: string, message: string): CliMachineResult {
     errors: [{
       severity: 'error',
       code,
-      message
+      message: sanitizeCliMessage(message)
     }],
     warnings: []
   }
@@ -124,18 +140,21 @@ function buildCliError(code: string, message: string): CliMachineResult {
 function withCapturedConsole<T>(action: () => T): { result: T; incidentalLogs: string[] } {
   const originalLog = console.log
   const originalError = console.error
+  const originalWarn = console.warn
   const incidentalLogs: string[] = []
   try {
     console.log = (...args: any[]) => { incidentalLogs.push(args.map(arg => String(arg)).join(' ')) }
     console.error = (...args: any[]) => { incidentalLogs.push(args.map(arg => String(arg)).join(' ')) }
+    console.warn = (...args: any[]) => { incidentalLogs.push(args.map(arg => String(arg)).join(' ')) }
     return { result: action(), incidentalLogs }
   } finally {
     console.log = originalLog
     console.error = originalError
+    console.warn = originalWarn
   }
 }
 
-function loadCliValidationContext(): any {
+function loadCliValidationContext(stat: fs.Stats): any {
   const context: any = loadCliContext(iPath, stat)
   if (!context.policy) {
     context.policy = {}
@@ -147,19 +166,26 @@ function loadCliValidationContext(): any {
 }
 
 if (inspectMode || validateMode) {
+  let stat: fs.Stats
+  try {
+    stat = fs.statSync(iPath)
+  } catch (error: any) {
+    console.log(JSON.stringify(buildCliError('invalid_input', `input path is not accessible: ${displayCliPath(iPath)}`), null, 2))
+    process.exit(1)
+  }
   if (stat.isDirectory()) {
     console.log(JSON.stringify(buildCliError('invalid_input', `${inspectMode ? '--inspect' : '--validate'} requires a single input file`), null, 2))
     process.exit(1)
   }
   if (!pathAvailable(iPath)) {
-    console.log(JSON.stringify(buildCliError('unsupported_file', `file format error: ${iPath}`), null, 2))
+    console.log(JSON.stringify(buildCliError('unsupported_file', `file format error: ${displayCliPath(iPath)}`), null, 2))
     process.exit(1)
   }
   const originalLog = console.log
   const originalError = console.error
   const captured = withCapturedConsole(() => {
     try {
-      const context = loadCliValidationContext()
+      const context = loadCliValidationContext(stat)
       return validateMode ? validateTableFile(iPath, {}, context) : inspectTableFile(iPath, {}, context)
     } catch (error: any) {
       return buildCliError('preflight_error', error && error.message ? error.message : String(error))
@@ -174,6 +200,7 @@ if (inspectMode || validateMode) {
   }
   process.exit(0)
 }
+const stat = fs.statSync(iPath)
 const context: any = loadCliContext(iPath, stat)
 if (!context.policy) {
   context.policy = {}

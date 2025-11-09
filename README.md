@@ -85,15 +85,16 @@ tables -i ./example/items.csv --validate
       "severity": "error",
       "code": "convert_error",
       "message": "required value is empty",
-      "location": { "sheetName": "Sheet1" },
-      "diagnosticPath": "convert.error"
+      "location": { "sheetName": "Sheet1", "row": 4, "column": "A" },
+      "diagnosticPath": "convert.error",
+      "details": { "tableName": "items" }
     }
   ],
   "warnings": []
 }
 ```
 
-测试设计应覆盖：合法表返回 `success: true` 且退出码为 0；转换错误返回 `success: false` 且退出码非 0；TID 冲突生成 `tid_collision`；`--verbose` 或上下文加载日志不污染 stdout JSON。
+测试设计应覆盖：合法表返回 `success: true` 且退出码为 0；转换错误返回 `success: false` 且退出码非 0，并尽量携带 `row`、`column`、`fieldPath` 或 `details`；TID 冲突生成 `tid_collision`；`--verbose` 或上下文加载日志不污染 stdout JSON。
 
 ### API
 

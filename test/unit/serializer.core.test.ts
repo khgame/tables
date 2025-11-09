@@ -10,7 +10,7 @@ jest.mock('../../src/utils/read', () => ({
   }))
 }))
 
-import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, serializeContext } from '../../src/serializer'
+import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, serializeContext, parseValidationErrorContext } from '../../src/serializer'
 import type { Serializer } from '../../src/types'
 
 const { readAndTranslate } = require('../../src/utils/read') as { readAndTranslate: jest.Mock }
@@ -294,8 +294,118 @@ describe('serializer core helpers', () => {
       severity: 'error',
       code: 'tid_collision',
       diagnosticPath: 'convert.error',
-      location: { sheetName: '__data' }
+      location: { sheetName: '__data' },
+      details: expect.objectContaining({
+        tid: 'hero',
+        policyPath: 'context.policy.tidConflict',
+        allowedPolicies: ['overwrite', 'ignore', 'merge']
+      })
     })])
+  })
+
+  it('validateTableFile adds row and column context for missing TID segments', () => {
+    const tableStub = {
+      cols: ['A', 'B'],
+      data: {
+        3: {
+          B: { v: 'Potion', w: 'Potion' }
+        }
+      },
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A', 'B'],
+      descLine: { A: 'id', B: 'name' },
+      markLine: { A: '@', B: 'string' },
+      erows: [1, 2, 3],
+      markList: ['@', 'string'],
+      aliasColumns: [],
+      schema: {},
+      getValue: (table: any, row: number, col: string) => table.data[row]?.[col]?.v
+    }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+
+    const result = validateTableFile(Path.join(tmpDir, 'blank_tid.xlsx'))
+
+    expect(result.success).toBe(false)
+    expect(result.errors).toEqual([expect.objectContaining({
+      severity: 'error',
+      code: 'convert_error',
+      diagnosticPath: 'convert.error',
+      location: {
+        sheetName: '__data',
+        row: 4,
+        column: 'A'
+      },
+      details: {
+        tableName: 'blank_tid'
+      }
+    })])
+  })
+
+  it('parseValidationErrorContext extracts structured numeric and alias details', () => {
+    expect(parseValidationErrorContext(
+      '[tables] numeric value 9007199254740993 at Game[row 7].stats[0].power (alias: int64) exceeds Number.MAX_SAFE_INTEGER(9007199254740991). Consider using BigNum.',
+      { sheetName: '__data', descLine: { A: 'id', B: 'stats' } }
+    )).toEqual({
+      location: {
+        sheetName: '__data',
+        row: 7,
+        column: 'B',
+        fieldPath: 'stats[0].power'
+      },
+      details: {
+        rawValue: '9007199254740993',
+        convertPath: 'Game[row 7].stats[0].power',
+        maxSafeInteger: 9007199254740991,
+        suggestedType: 'BigNum',
+        sourceAlias: 'int64',
+        tableName: 'Game'
+      }
+    })
+
+    expect(parseValidationErrorContext(
+      '[tables] expected Game[row 8].payload.value (alias: int64) to be a numeric string for BigInt preservation, received object',
+      { sheetName: '__data', descLine: { C: 'payload' } }
+    )).toEqual({
+      location: {
+        sheetName: '__data',
+        row: 8,
+        column: 'C',
+        fieldPath: 'payload.value'
+      },
+      details: {
+        convertPath: 'Game[row 8].payload.value',
+        expected: 'numeric_string',
+        receivedType: 'object',
+        sourceAlias: 'int64',
+        tableName: 'Game'
+      }
+    })
+
+    expect(parseValidationErrorContext(
+      'alias 列对应的描述行为空，请为列 B 设置字段名',
+      { sheetName: '__data' }
+    )).toEqual({
+      location: {
+        sheetName: '__data',
+        column: 'B'
+      }
+    })
+
+    expect(parseValidationErrorContext(
+      "[tables] 表 Game 的 alias 列 'name' 存在重复别名：Foo, Bar",
+      { sheetName: '__data', descLine: { B: 'name' } }
+    )).toEqual({
+      location: {
+        sheetName: '__data',
+        column: 'B',
+        fieldPath: 'name'
+      },
+      details: {
+        tableName: 'Game',
+        duplicateAliases: ['Foo', 'Bar']
+      }
+    })
   })
 
   it('validateTableFile converts inspect failures into errors', () => {

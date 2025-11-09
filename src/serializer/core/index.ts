@@ -8,8 +8,10 @@ import { resolveContextEnums } from '../../context/enumResolver'
 import { tableSchema } from '../../plugin/schema'
 import { tableConvert } from '../../plugin/convert'
 import { buildSchemaModel } from './schemaModel'
+import { parseValidationErrorContext } from './validationErrorContext'
 
 export { buildStableConvertPayload } from './convertPayload'
+export { parseValidationErrorContext } from './validationErrorContext'
 
 export type InspectDiagnostics = {
   fileName: string;
@@ -99,34 +101,24 @@ export function validateTableFile(pathIn: string, options: { sheetName?: string 
     const warnings: ValidationMessage[] = []
 
     if (diagnostics.schema.error) {
-      errors.push({
-        severity: 'error',
-        code: 'schema_error',
-        message: diagnostics.schema.error,
-        location: { sheetName: diagnostics.sheetName },
-        diagnosticPath: 'schema.error'
-      })
+      errors.push(makeValidationMessage(diagnostics, 'schema_error', diagnostics.schema.error, 'schema.error'))
     }
     if (diagnostics.convert.error) {
-      errors.push({
-        severity: 'error',
-        code: getConvertErrorCode(diagnostics.convert.error),
-        message: diagnostics.convert.error,
-        location: { sheetName: diagnostics.sheetName },
-        diagnosticPath: 'convert.error'
-      })
+      errors.push(makeValidationMessage(
+        diagnostics,
+        getConvertErrorCode(diagnostics.convert.error),
+        diagnostics.convert.error,
+        'convert.error'
+      ))
     }
     if (diagnostics.convert.collisionCount > 0) {
-      errors.push({
-        severity: 'error',
-        code: 'tid_collision',
-        message: `Detected ${diagnostics.convert.collisionCount} TID collision(s).`,
-        location: { sheetName: diagnostics.sheetName },
-        diagnosticPath: 'convert.collisionCount',
-        details: {
-          collisionCount: diagnostics.convert.collisionCount
-        }
-      })
+      errors.push(makeValidationMessage(
+        diagnostics,
+        'tid_collision',
+        `Detected ${diagnostics.convert.collisionCount} TID collision(s).`,
+        'convert.collisionCount',
+        { collisionCount: diagnostics.convert.collisionCount }
+      ))
     }
 
     return {
@@ -155,6 +147,34 @@ function getConvertErrorCode(message: string): string {
   return message.toLowerCase().includes('tid collision') ? 'tid_collision' : 'convert_error'
 }
 
+function makeValidationMessage(
+  diagnostics: InspectDiagnostics,
+  code: string,
+  message: string,
+  diagnosticPath: string,
+  details?: Record<string, unknown>
+): ValidationMessage {
+  const parsed = parseValidationErrorContext(message, diagnostics)
+  const ret: ValidationMessage = {
+    severity: 'error',
+    code,
+    message,
+    diagnosticPath
+  }
+  if (parsed.location) ret.location = parsed.location
+  const mergedDetails = mergeDetails(parsed.details, details)
+  if (mergedDetails) ret.details = mergedDetails
+  return ret
+}
+
+function mergeDetails(...entries: Array<Record<string, unknown> | undefined>): Record<string, unknown> | undefined {
+  const merged: Record<string, unknown> = {}
+  entries.forEach(entry => {
+    if (entry) Object.assign(merged, entry)
+  })
+  return Object.keys(merged).length > 0 ? merged : undefined
+}
+
 export function inspectTableFile(pathIn: string, options: { sheetName?: string } = {}, context?: Context): InspectDiagnostics {
   const fileName = Path.parse(pathIn).name
   const scopedContext: any = context || {}
@@ -166,16 +186,27 @@ export function inspectTableFile(pathIn: string, options: { sheetName?: string }
   }
 
   try {
+    let schemaError: string | undefined
+    const schemaPlugin = (tableForSchema: any, pluginContext: any) => {
+      try {
+        return tableSchema(tableForSchema, pluginContext)
+      } catch (error: any) {
+        schemaError = error && error.message ? error.message : String(error)
+        return tableForSchema
+      }
+    }
     let table = readAndTranslate(pathIn, {
       sheetName: options.sheetName,
-      plugins: [tableSchema]
+      plugins: [schemaPlugin]
     }, scopedContext)
     let convertError: string | undefined
 
-    try {
-      table = tableConvert(table, scopedContext)
-    } catch (error: any) {
-      convertError = error && error.message ? error.message : String(error)
+    if (!schemaError) {
+      try {
+        table = tableConvert(table, scopedContext)
+      } catch (error: any) {
+        convertError = error && error.message ? error.message : String(error)
+      }
     }
 
     const convert = (table as any).convert || {}
@@ -185,6 +216,9 @@ export function inspectTableFile(pathIn: string, options: { sheetName?: string }
       present: !!(table as any).schema
     }
 
+    if (schemaError) {
+      schemaInfo.error = schemaError
+    }
     if (schemaInfo.present) {
       try {
         schemaInfo.model = buildSchemaModel((table as any).schema, (table as any).descLine || {}, (table as any).markCols || [], scopedContext)

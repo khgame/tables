@@ -255,8 +255,86 @@ describe('CLI (tables)', () => {
     expect(result.errors).toEqual([expect.objectContaining({
       code: 'tid_collision',
       diagnosticPath: 'convert.error',
-      location: { sheetName: '__data' }
+      location: { sheetName: '__data' },
+      details: expect.objectContaining({
+        tid: '001',
+        policyPath: 'context.policy.tidConflict',
+        allowedPolicies: ['overwrite', 'ignore', 'merge']
+      })
     })])
+  })
+
+  it('prints validation JSON when the input path is missing', () => {
+    const missing = Path.resolve(tmp, 'missing.csv')
+    fs.removeSync(missing)
+
+    const res = runCli(['-i', missing, '--validate', '--json'], repoRoot)
+    expect(res.code).not.toBe(0)
+    expect(res.stderr).toBe('')
+    expect(res.stdout).not.toContain(repoRoot)
+    const result = JSON.parse(res.stdout)
+    expect(result).toMatchObject({
+      success: false,
+      fileName: 'missing',
+      errors: [{
+        severity: 'error',
+        code: 'invalid_input'
+      }],
+      warnings: []
+    })
+  })
+
+  it('suppresses verbose console warnings in validation JSON mode', () => {
+    const input = Path.resolve(tmp, 'validate-json-warn-input')
+    const ctx = Path.resolve(tmp, 'validate-json-warn-ctx')
+    fs.removeSync(input)
+    fs.removeSync(ctx)
+    fs.ensureDirSync(input)
+    fs.ensureDirSync(ctx)
+    const csv = Path.join(input, 'items.csv')
+    writeCsv(csv, [
+      ['@', 'string'],
+      ['id', 'name'],
+      ['001', 'first'],
+      ['001', 'second']
+    ])
+    fs.writeJsonSync(Path.join(ctx, 'context.policy.json'), {
+      tidConflict: 'ignore'
+    })
+
+    const res = runCli(['-i', csv, '--validate', '--json', '--verbose', '--context', ctx], repoRoot)
+    expect(res.code).not.toBe(0)
+    expect(res.stderr).toBe('')
+    const result = JSON.parse(res.stdout)
+    expect(result.success).toBe(false)
+    expect(result.diagnostics.convert.collisionCount).toBe(1)
+  })
+
+  it('classifies schema parse failures as validation schema_error', () => {
+    const input = Path.resolve(tmp, 'validate-schema-error-input')
+    fs.removeSync(input)
+    fs.ensureDirSync(input)
+    const csv = Path.join(input, 'broken.csv')
+    writeCsv(csv, [
+      ['@', 'bad<bad'],
+      ['id', 'value'],
+      ['001', 'x']
+    ])
+
+    const res = runCli(['-i', csv, '--validate', '--json'], repoRoot)
+    expect(res.code).not.toBe(0)
+    const result = JSON.parse(res.stdout)
+    expect(result).toMatchObject({
+      success: false,
+      fileName: 'broken',
+      sheetName: 'Sheet1',
+      errors: [expect.objectContaining({
+        severity: 'error',
+        code: 'schema_error',
+        diagnosticPath: 'schema.error',
+        location: { sheetName: 'Sheet1' }
+      })]
+    })
   })
 
   it('exits non-zero and prints validation JSON for invalid input', () => {
@@ -274,7 +352,7 @@ describe('CLI (tables)', () => {
       fileName: 'broken',
       errors: [{
         severity: 'error',
-        code: 'inspect_error'
+        code: 'schema_error'
       }],
       warnings: []
     })

@@ -26,6 +26,41 @@ serialize('example/example.xlsx', 'out', {
 })
 ```
 
+## inspectTableFile(pathIn, options?, context?)
+
+- 读取单个 Excel/CSV 并返回机器可读诊断对象
+- 诊断包含实际 sheet 名、mark/desc 信息、schema model、convert 计数、索引与 alias 计数与转换错误
+- 适合调试表头、生成 AI 修复上下文，或在导出前做轻量检查
+
+```js
+const { inspectTableFile, loadContext } = require('@khgame/tables')
+const ctx = loadContext('example')
+const diagnostics = inspectTableFile('example/items.csv', {}, ctx)
+console.log(diagnostics.convert.tidCount)
+```
+
+## validateTableFile(pathIn, options?, context?)
+
+`validateTableFile` 是 `inspectTableFile` 之上的稳定校验摘要，适合 AI agent、CI 和编辑器集成直接调用：
+
+- 返回 `{ success, fileName, sheetName?, diagnostics, errors, warnings }`
+- `errors[]` / `warnings[]` 使用 `{ severity, code, message, location?, diagnosticPath?, details? }`
+- 当前错误码包括 `schema_error`、`convert_error`、`tid_collision`、`inspect_error`
+- 不写文件、不打印日志，方便测试和 AI agent 直接调用
+- `diagnostics` 保留完整 `inspectTableFile` 结果，便于定位 sheet、mark/desc、schema 和 convert 信息
+
+调用方式：
+
+```js
+const { validateTableFile, loadContext } = require('@khgame/tables')
+const ctx = loadContext('example')
+const report = validateTableFile('example/items.csv', {}, ctx)
+
+if (!report.success) {
+  console.error(JSON.stringify(report.errors, null, 2))
+}
+```
+
 ## 上下文（Context）与枚举
 
 - `loadContext(dir)` 会将 `dir` 下符合 `context.*.json` 的文件聚合为上下文对象

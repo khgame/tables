@@ -39,6 +39,7 @@ export type Table = {
   cols: string[];
   data: Record<string, Record<string, Cell> | any>;
   getValue: (table: Table, row: number | string, col: string) => any;
+  sheetName?: string;
   rows?: number[];
   erows?: number[];
   colMap?: Record<string, number>;

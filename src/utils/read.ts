@@ -90,6 +90,7 @@ export function translateWorkBook(workbook: any, sheetName?: string): Table {
   const table: Table = {
     cols,
     data,
+    sheetName: targetSheetName,
     getValue: (table_, row_, col_) => (!table_.data[row_]) || (!table_.data[row_][col_]) ? undefined : table_.data[row_][col_].v
   }
   return table

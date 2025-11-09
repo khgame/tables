@@ -10,7 +10,7 @@ jest.mock('../../src/utils/read', () => ({
   }))
 }))
 
-import { serialize, loadContext, serializeContext } from '../../src/serializer'
+import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, serializeContext } from '../../src/serializer'
 import type { Serializer } from '../../src/types'
 
 const { readAndTranslate } = require('../../src/utils/read') as { readAndTranslate: jest.Mock }
@@ -96,6 +96,281 @@ describe('serializer core helpers', () => {
 
     serializeContext(ctxOut, serializers, { flag: 1 })
     expect(dealer).toHaveBeenCalledTimes(1)
+  })
+
+  it('serialize deduplicates shared serializer plugins', () => {
+    const tableStub = { cols: [], data: {}, getValue: () => undefined }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+    const plugin = jest.fn((table: any) => table)
+    const firstSerializer: Serializer = {
+      plugins: [plugin],
+      file: jest.fn(() => 'first')
+    }
+    const secondSerializer: Serializer = {
+      plugins: [plugin],
+      file: jest.fn(() => 'second')
+    }
+
+    serialize(Path.join(tmpDir, 'dummy.xlsx'), Path.join(tmpDir, 'out'), {
+      'first.json': firstSerializer,
+      'second.json': secondSerializer
+    })
+
+    const [, optionsArg] = readAndTranslate.mock.calls[0]
+    expect(optionsArg.plugins).toEqual([plugin])
+  })
+
+  it('serialize restores table metadata on serializer failure', () => {
+    const tableStub = { cols: [], data: {}, getValue: () => undefined }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+    const context: any = {
+      __table: {
+        fileName: 'previous',
+        camelName: 'Previous',
+        interfaceName: 'IPrevious'
+      }
+    }
+    const serializer: Serializer = {
+      file: jest.fn(() => {
+        throw new Error('writer failed')
+      })
+    }
+
+    expect(() => {
+      serialize(Path.join(tmpDir, 'dummy.xlsx'), Path.join(tmpDir, 'out'), { 'broken.json': serializer }, context)
+    }).toThrow('writer failed')
+    expect(context.__table).toEqual({
+      fileName: 'previous',
+      camelName: 'Previous',
+      interfaceName: 'IPrevious'
+    })
+  })
+
+  it('inspectTableFile summarizes parse and convert diagnostics', () => {
+    const tableStub = {
+      cols: ['A', 'B'],
+      data: {},
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A', 'B'],
+      descLine: { A: 'id', B: 'name' },
+      schema: {},
+      convert: {
+        tids: ['hero'],
+        result: { hero: { _tid: 'hero', name: 'Hero' } },
+        collisions: [],
+        indexes: { byName: { Hero: 'hero' } },
+        aliases: { nameAlias: { field: 'name', map: { Hero: 'hero' } } },
+        meta: { idSegments: [0], markCols: ['A', 'B'] }
+      },
+      getValue: () => undefined
+    }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+
+    const diagnostics = inspectTableFile(Path.join(tmpDir, 'dummy.xlsx'), { sheetName: '__data' }, { ctx: true } as any)
+
+    expect(readAndTranslate).toHaveBeenCalledTimes(1)
+    const [, optionsArg] = readAndTranslate.mock.calls[0]
+    expect(optionsArg.sheetName).toBe('__data')
+    expect(optionsArg.plugins).toHaveLength(1)
+    expect(diagnostics).toMatchObject({
+      fileName: 'dummy',
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A', 'B'],
+      descLine: { A: 'id', B: 'name' },
+      schema: { present: true },
+      convert: {
+        present: true,
+        tidCount: 1,
+        resultCount: 1,
+        collisionCount: 0,
+        indexCount: 1,
+        aliasCount: 1,
+        meta: { idSegments: [0], markCols: ['A', 'B'] }
+      }
+    })
+    expect(diagnostics.schema.model).toBeDefined()
+  })
+
+  it('inspectTableFile returns schema diagnostics when convert fails', () => {
+    const tableStub = {
+      cols: ['A'],
+      data: {},
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A'],
+      descLine: { A: 'id' },
+      schema: {},
+      getValue: () => undefined
+    }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+
+    const diagnostics = inspectTableFile(Path.join(tmpDir, 'broken.xlsx'))
+
+    expect(diagnostics.schema.present).toBe(true)
+    expect(diagnostics.convert).toMatchObject({
+      present: false,
+      tidCount: 0,
+      resultCount: 0,
+      error: expect.any(String)
+    })
+  })
+
+  it('validateTableFile returns success with inspect diagnostics', () => {
+    const tableStub = {
+      cols: ['A'],
+      data: {
+        3: {
+          A: { v: 'hero', w: 'hero' }
+        }
+      },
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A'],
+      descLine: { A: 'id' },
+      markLine: { A: '@' },
+      erows: [1, 2, 3],
+      markList: ['@'],
+      aliasColumns: [],
+      schema: {},
+      convert: {
+        tids: ['hero'],
+        result: { hero: { _tid: 'hero' } },
+        collisions: [],
+        indexes: {},
+        aliases: {}
+      },
+      getValue: (table: any, row: number, col: string) => table.data[row]?.[col]?.v
+    }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+
+    const result = validateTableFile(Path.join(tmpDir, 'valid.xlsx'))
+
+    expect(result).toMatchObject({
+      success: true,
+      fileName: 'valid',
+      sheetName: '__data',
+      errors: [],
+      warnings: [],
+      diagnostics: {
+        convert: {
+          present: true,
+          tidCount: 1,
+          collisionCount: 0
+        }
+      }
+    })
+  })
+
+  it('validateTableFile maps TID collision convert errors to tid_collision', () => {
+    const tableStub = {
+      cols: ['A'],
+      data: {
+        3: {
+          A: { v: 'hero', w: 'hero' }
+        },
+        4: {
+          A: { v: 'hero', w: 'hero' }
+        }
+      },
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A'],
+      descLine: { A: 'id' },
+      markLine: { A: '@' },
+      erows: [1, 2, 3, 4],
+      markList: ['@'],
+      aliasColumns: [],
+      schema: {},
+      getValue: (table: any, row: number, col: string) => table.data[row]?.[col]?.v
+    }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+
+    const result = validateTableFile(Path.join(tmpDir, 'dupe.xlsx'))
+
+    expect(result.success).toBe(false)
+    expect(result.errors).toEqual([expect.objectContaining({
+      severity: 'error',
+      code: 'tid_collision',
+      diagnosticPath: 'convert.error',
+      location: { sheetName: '__data' }
+    })])
+  })
+
+  it('validateTableFile converts inspect failures into errors', () => {
+    readAndTranslate.mockImplementationOnce(() => {
+      throw new Error('cannot read workbook')
+    })
+
+    const result = validateTableFile(Path.join(tmpDir, 'broken.xlsx'))
+
+    expect(result).toEqual({
+      success: false,
+      fileName: 'broken',
+      errors: [{
+        severity: 'error',
+        code: 'inspect_error',
+        message: 'cannot read workbook'
+      }],
+      warnings: []
+    })
+  })
+
+  it('buildStableConvertPayload sorts result keys and preserves convert metadata by default', () => {
+    const stable = buildStableConvertPayload({
+      tids: ['b', 'a'],
+      result: { b: { id: 2 }, a: { id: 1 } },
+      meta: { idSegments: [0] },
+      aliases: {},
+      indexes: {}
+    })
+
+    expect(Object.keys(stable.result)).toEqual(['a', 'b'])
+    expect(stable.meta).toEqual({ idSegments: [0] })
+    expect(stable.aliases).toEqual({})
+    expect(stable.indexes).toEqual({})
+  })
+
+  it('buildStableConvertPayload supports ts raw payload policy', () => {
+    const stable = buildStableConvertPayload({
+      tids: ['b', 'a'],
+      result: { b: { id: 2 }, a: { id: 1 } },
+      meta: { idSegments: [0] },
+      aliases: {},
+      indexes: { byGroup: { alpha: ['a'] } }
+    }, {
+      includeMeta: false,
+      omitEmptyAliases: true,
+      omitEmptyIndexes: true
+    })
+
+    expect(stable.meta).toBeUndefined()
+    expect(stable.aliases).toBeUndefined()
+    expect(stable.indexes).toEqual({ byGroup: { alpha: ['a'] } })
+    expect(Object.keys(stable.result)).toEqual(['a', 'b'])
+  })
+
+  it('buildStableConvertPayload omits empty ts aliases and indexes from original payload', () => {
+    const stable = buildStableConvertPayload({
+      tids: ['a'],
+      result: { a: { id: 1 } },
+      meta: { idSegments: [0] },
+      aliases: {},
+      indexes: {}
+    }, {
+      includeMeta: false,
+      omitEmptyAliases: true,
+      omitEmptyIndexes: true
+    })
+
+    expect(stable).not.toHaveProperty('meta')
+    expect(stable).not.toHaveProperty('aliases')
+    expect(stable).not.toHaveProperty('indexes')
+    expect(stable).toMatchObject({
+      tids: ['a'],
+      result: { a: { id: 1 } }
+    })
   })
 
   it('loadContext reports malformed names, duplicate keys, and verbose summary', () => {

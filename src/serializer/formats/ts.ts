@@ -2,12 +2,7 @@ import { tableConvert, tableSchema } from '../../plugin'
 import { dealContext } from './tsInterface'
 import { makeInterfaceName } from '../../utils/names'
 import type { Serializer } from '../../types'
-
-function sortByKeys<T extends Record<string, any>>(obj: T): T {
-  const ret: any = {}
-  Object.keys(obj).sort().forEach(k => { ret[k] = obj[k] })
-  return ret
-}
+import { buildStableConvertPayload } from '../core/convertPayload'
 
 type AliasReexportInput = {
   baseName: string;
@@ -28,14 +23,12 @@ export const tsSerializer: Serializer = {
   file: (data, fileName, imports, context) => {
     const interfaceName = makeInterfaceName(fileName)
     const convert = (data as any).convert || {}
-    const { meta, aliases = {}, indexes = {}, ...rest } = convert
-    const stable = { ...rest, result: sortByKeys((rest as any).result || {}) }
-    if (aliases && Object.keys(aliases).length > 0) {
-      (stable as any).aliases = aliases
-    }
-    if (indexes && Object.keys(indexes).length > 0) {
-      (stable as any).indexes = indexes
-    }
+    const { meta } = convert
+    const stable = buildStableConvertPayload(convert, {
+      includeMeta: false,
+      omitEmptyAliases: true,
+      omitEmptyIndexes: true
+    })
     const baseName = interfaceName.startsWith('I') && interfaceName.length > 1 ? interfaceName.slice(1) : interfaceName
     const camel = interfaceName.substr(1, 1).toLowerCase() + interfaceName.substr(2)
     const tidTypeName = `${baseName}TID`

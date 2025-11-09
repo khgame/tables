@@ -5,12 +5,65 @@ import { FileWalker } from 'kht'
 import type { Context, Serializer } from '../../types'
 import { makeCamelName, makeInterfaceName } from '../../utils/names'
 import { resolveContextEnums } from '../../context/enumResolver'
+import { tableSchema } from '../../plugin/schema'
+import { tableConvert } from '../../plugin/convert'
+import { buildSchemaModel } from './schemaModel'
+
+export { buildStableConvertPayload } from './convertPayload'
+
+export type InspectDiagnostics = {
+  fileName: string;
+  sheetName?: string;
+  marks?: any;
+  markCols: string[];
+  descLine: Record<string, string>;
+  schema: {
+    present: boolean;
+    model?: any;
+    error?: string;
+  };
+  convert: {
+    present: boolean;
+    tidCount: number;
+    resultCount: number;
+    collisionCount: number;
+    indexCount: number;
+    aliasCount: number;
+    meta?: any;
+    error?: string;
+  };
+}
+
+export type ValidationMessage = {
+  severity: 'error' | 'warning';
+  code: string;
+  message: string;
+  location?: {
+    sheetName?: string;
+    row?: number;
+    column?: string;
+    fieldPath?: string;
+  };
+  diagnosticPath?: string;
+  details?: Record<string, unknown>;
+}
+
+export type ValidationResult = {
+  success: boolean;
+  fileName: string;
+  sheetName?: string;
+  diagnostics?: InspectDiagnostics;
+  errors: ValidationMessage[];
+  warnings: ValidationMessage[];
+}
 
 /**
  * serialize files with selected serializers
  */
 export function serialize(pathIn: string, dirOut: string, serializers: Record<string, Serializer>, context?: Context) {
-  const plugins = Object.values(serializers).reduce((prev: any[], cur) => (cur.plugins ? prev.concat(cur.plugins) : prev), [])
+  const plugins = Array.from(new Set(
+    Object.values(serializers).reduce((prev: any[], cur) => (cur.plugins ? prev.concat(cur.plugins) : prev), [])
+  ))
 
   const fileName = Path.parse(pathIn).name
   const scopedContext: any = context || {}
@@ -21,17 +74,149 @@ export function serialize(pathIn: string, dirOut: string, serializers: Record<st
     interfaceName: makeInterfaceName(fileName)
   }
 
-  const ret = readAndTranslate(pathIn, { plugins }, scopedContext)
+  try {
+    const ret = readAndTranslate(pathIn, { plugins }, scopedContext)
 
-  for (const outName in serializers) {
-    const fileContent = serializers[outName].file(ret as any, fileName, 'import * as TableContext from "./context";', scopedContext)
-    fs.outputFileSync(Path.resolve(dirOut, outName), fileContent)
+    for (const outName in serializers) {
+      const fileContent = serializers[outName].file(ret as any, fileName, 'import * as TableContext from "./context";', scopedContext)
+      fs.outputFileSync(Path.resolve(dirOut, outName), fileContent)
+    }
+  } finally {
+    if (previousTableMeta === undefined) {
+      delete scopedContext.__table
+    } else {
+      scopedContext.__table = previousTableMeta
+    }
+  }
+}
+
+export function validateTableFile(pathIn: string, options: { sheetName?: string } = {}, context?: Context): ValidationResult {
+  const fileName = Path.parse(pathIn).name
+
+  try {
+    const diagnostics = inspectTableFile(pathIn, options, context)
+    const errors: ValidationMessage[] = []
+    const warnings: ValidationMessage[] = []
+
+    if (diagnostics.schema.error) {
+      errors.push({
+        severity: 'error',
+        code: 'schema_error',
+        message: diagnostics.schema.error,
+        location: { sheetName: diagnostics.sheetName },
+        diagnosticPath: 'schema.error'
+      })
+    }
+    if (diagnostics.convert.error) {
+      errors.push({
+        severity: 'error',
+        code: getConvertErrorCode(diagnostics.convert.error),
+        message: diagnostics.convert.error,
+        location: { sheetName: diagnostics.sheetName },
+        diagnosticPath: 'convert.error'
+      })
+    }
+    if (diagnostics.convert.collisionCount > 0) {
+      errors.push({
+        severity: 'error',
+        code: 'tid_collision',
+        message: `Detected ${diagnostics.convert.collisionCount} TID collision(s).`,
+        location: { sheetName: diagnostics.sheetName },
+        diagnosticPath: 'convert.collisionCount',
+        details: {
+          collisionCount: diagnostics.convert.collisionCount
+        }
+      })
+    }
+
+    return {
+      success: errors.length === 0,
+      fileName,
+      sheetName: diagnostics.sheetName,
+      diagnostics,
+      errors,
+      warnings
+    }
+  } catch (error: any) {
+    return {
+      success: false,
+      fileName,
+      errors: [{
+        severity: 'error',
+        code: 'inspect_error',
+        message: error && error.message ? error.message : String(error)
+      }],
+      warnings: []
+    }
+  }
+}
+
+function getConvertErrorCode(message: string): string {
+  return message.toLowerCase().includes('tid collision') ? 'tid_collision' : 'convert_error'
+}
+
+export function inspectTableFile(pathIn: string, options: { sheetName?: string } = {}, context?: Context): InspectDiagnostics {
+  const fileName = Path.parse(pathIn).name
+  const scopedContext: any = context || {}
+  const previousTableMeta = scopedContext.__table
+  scopedContext.__table = {
+    fileName,
+    camelName: makeCamelName(fileName),
+    interfaceName: makeInterfaceName(fileName)
   }
 
-  if (previousTableMeta === undefined) {
-    delete scopedContext.__table
-  } else {
-    scopedContext.__table = previousTableMeta
+  try {
+    let table = readAndTranslate(pathIn, {
+      sheetName: options.sheetName,
+      plugins: [tableSchema]
+    }, scopedContext)
+    let convertError: string | undefined
+
+    try {
+      table = tableConvert(table, scopedContext)
+    } catch (error: any) {
+      convertError = error && error.message ? error.message : String(error)
+    }
+
+    const convert = (table as any).convert || {}
+    const indexes = convert.indexes || {}
+    const aliases = convert.aliases || {}
+    const schemaInfo: InspectDiagnostics['schema'] = {
+      present: !!(table as any).schema
+    }
+
+    if (schemaInfo.present) {
+      try {
+        schemaInfo.model = buildSchemaModel((table as any).schema, (table as any).descLine || {}, (table as any).markCols || [], scopedContext)
+      } catch (error: any) {
+        schemaInfo.error = error && error.message ? error.message : String(error)
+      }
+    }
+
+    return {
+      fileName,
+      sheetName: (table as any).sheetName || options.sheetName,
+      marks: (table as any).marks,
+      markCols: (table as any).markCols || [],
+      descLine: (table as any).descLine || {},
+      schema: schemaInfo,
+      convert: {
+        present: !!(table as any).convert,
+        tidCount: Array.isArray(convert.tids) ? convert.tids.length : 0,
+        resultCount: convert.result ? Object.keys(convert.result).length : 0,
+        collisionCount: Array.isArray(convert.collisions) ? convert.collisions.length : 0,
+        indexCount: Object.keys(indexes).length,
+        aliasCount: Object.keys(aliases).length,
+        meta: convert.meta,
+        error: convertError
+      }
+    }
+  } finally {
+    if (previousTableMeta === undefined) {
+      delete scopedContext.__table
+    } else {
+      scopedContext.__table = previousTableMeta
+    }
   }
 }
 

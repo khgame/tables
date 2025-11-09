@@ -40,13 +40,60 @@ Options:
   --format, -f  export format (defaults to "json").
                  Available values are resolved from the serializer registry at
                  runtime (json, js, ts, ts-interface, jsonx, go, csharp by default).
+  --context, -c context directory or context.*.json file
+  --inspect     print machine-readable diagnostics for a single input file
+  --validate    validate a single input file and print machine-readable result
+  --json        suppress incidental logs for inspect/validate machine output
   -h, --help    Show help                                              [boolean]
   --version     Show version number                                    [boolean]
 ```
 
-默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。
+默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。目录输入会默认加载同目录下的 `context.*.json`；单文件输入需要上下文时可使用 `--context ./dir` 或 `--context ./context.enums.json`。
 
 > 提示：选择 `-f ts` 时会生成两份文件：`<Table>Solution.ts`（含数据 + 仓库实例）以及 `<Table>.ts`（纯类型与仓库定义）。`-f ts-interface` 仅输出类型文件。
+
+调试单文件时可使用：
+
+```bash
+tables -i ./example/items.csv --inspect
+```
+
+`--inspect` 会向 stdout 输出 JSON 诊断，包含实际 sheet 名、标记列、描述行、schema model、convert 计数和错误信息，便于脚本或 AI agent 定位表格问题。
+
+#### AI-friendly validate JSON
+
+当前代码提供 `--inspect` / `inspectTableFile` 作为完整诊断入口，也提供 `--validate` / `validateTableFile` 作为更适合 AI agent 和 CI 消费的校验入口：
+
+```bash
+tables -i ./example/items.csv --validate
+```
+
+`--validate` 只支持单文件输入，始终向 stdout 输出 JSON。校验失败时退出码为非 0。`--json` 可进一步抑制附带日志，保证机器通道更安静。当前输出结构：
+
+```json
+{
+  "success": false,
+  "fileName": "items",
+  "sheetName": "Sheet1",
+  "diagnostics": {
+    "fileName": "items",
+    "sheetName": "Sheet1",
+    "convert": { "present": false, "tidCount": 0, "resultCount": 0 }
+  },
+  "errors": [
+    {
+      "severity": "error",
+      "code": "convert_error",
+      "message": "required value is empty",
+      "location": { "sheetName": "Sheet1" },
+      "diagnosticPath": "convert.error"
+    }
+  ],
+  "warnings": []
+}
+```
+
+测试设计应覆盖：合法表返回 `success: true` 且退出码为 0；转换错误返回 `success: false` 且退出码非 0；TID 冲突生成 `tid_collision`；`--verbose` 或上下文加载日志不污染 stdout JSON。
 
 ### API
 

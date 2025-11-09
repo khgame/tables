@@ -11,6 +11,7 @@ jest.mock('../../src/utils/read', () => ({
 }))
 
 import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, loadContextPath, serializeContext, parseValidationErrorContext } from '../../src/serializer'
+import { createConvertError } from '../../src/plugin/validationError'
 import type { Serializer } from '../../src/types'
 
 const { readAndTranslate } = require('../../src/utils/read') as { readAndTranslate: jest.Mock }
@@ -257,6 +258,41 @@ describe('serializer core helpers', () => {
     })
   })
 
+  it('inspectTableFile carries structured convert error metadata', () => {
+    const tableStub = {
+      cols: ['A', 'B'],
+      data: {
+        3: {
+          B: { v: 'Potion', w: 'Potion' }
+        }
+      },
+      sheetName: '__data',
+      marks: { row: 1, col: 'A' },
+      markCols: ['A', 'B'],
+      descLine: { A: 'id', B: 'name' },
+      markLine: { A: '@', B: 'string' },
+      erows: [1, 2, 3],
+      markList: ['@', 'string'],
+      aliasColumns: [],
+      schema: {},
+      getValue: (table: any, row: number, col: string) => table.data[row]?.[col]?.v
+    }
+    readAndTranslate.mockReturnValueOnce(tableStub)
+
+    const diagnostics = inspectTableFile(Path.join(tmpDir, 'blank_tid.xlsx'))
+
+    expect(diagnostics.convert.errorMeta).toEqual({
+      code: 'missing_tid_segment',
+      location: {
+        row: 3,
+        column: 'A'
+      },
+      details: {
+        tableName: 'blank_tid'
+      }
+    })
+  })
+
   it('validateTableFile returns success with inspect diagnostics', () => {
     const tableStub = {
       cols: ['A'],
@@ -460,6 +496,42 @@ describe('serializer core helpers', () => {
       details: {
         tableName: 'Game',
         duplicateAliases: ['Foo', 'Bar']
+      }
+    })
+  })
+
+  it('parseValidationErrorContext prefers metadata over message parsing', () => {
+    const error = createConvertError('[tables] custom non-parseable failure', {
+      code: 'numeric_overflow',
+      location: {
+        row: 11,
+        fieldPath: 'stats.power'
+      },
+      details: {
+        convertPath: 'Game[row 11].stats.power',
+        rawValue: '9007199254740993',
+        maxSafeInteger: Number.MAX_SAFE_INTEGER,
+        suggestedType: 'BigNum'
+      }
+    })
+
+    expect(parseValidationErrorContext(
+      error.message,
+      { sheetName: '__data', descLine: { A: 'id', B: 'stats' } },
+      error.convertErrorMeta
+    )).toEqual({
+      location: {
+        sheetName: '__data',
+        row: 11,
+        column: 'B',
+        fieldPath: 'stats.power'
+      },
+      details: {
+        convertPath: 'Game[row 11].stats.power',
+        rawValue: '9007199254740993',
+        maxSafeInteger: Number.MAX_SAFE_INTEGER,
+        suggestedType: 'BigNum',
+        tableName: 'Game'
       }
     })
   })

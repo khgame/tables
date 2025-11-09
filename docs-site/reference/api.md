@@ -30,6 +30,7 @@ serialize('example/example.xlsx', 'out', {
 
 - 读取单个 Excel/CSV 并返回机器可读诊断对象
 - 诊断包含实际 sheet 名、mark/desc 信息、schema model、convert 计数、索引与 alias 计数与转换错误
+- convert 阶段自有错误会在 `diagnostics.convert.errorMeta` 中附带结构化错误码、定位和细节；第三方或旧式错误仍保留字符串错误
 - 适合调试表头、生成 AI 修复上下文，或在导出前做轻量检查
 
 ```js
@@ -48,6 +49,7 @@ console.log(diagnostics.convert.tidCount)
 - `location` 面向编辑器和 agent 定位，当前会尽量包含 `sheetName`、`row`、`column`、`fieldPath`
 - `details` 面向自动修复和 CI 展示，当前会尽量包含 `tableName`、`tid`、`sourceAlias`、`rawValue`、`suggestedType`、`duplicateAliases`
 - 当前错误码包括 `schema_error`、`convert_error`、`tid_collision`、`inspect_error`
+- 自有 convert 错误会优先使用结构化 metadata 生成 `location` / `details`，再回退到兼容旧错误文案的解析逻辑
 - 自身不写文件；CLI machine mode 会隔离底层偶发日志，方便测试和 AI agent 直接调用
 - `diagnostics` 保留完整 `inspectTableFile` 结果，便于定位 sheet、mark/desc、schema 和 convert 信息
 

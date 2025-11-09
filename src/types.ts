@@ -35,6 +35,18 @@ export type ConvertResult = {
   };
 }
 
+export type ValidationLocation = {
+  sheetName?: string;
+  row?: number;
+  column?: string;
+  fieldPath?: string;
+}
+
+export type ValidationErrorContext = {
+  location?: ValidationLocation;
+  details?: Record<string, unknown>;
+}
+
 export type Table = {
   cols: string[];
   data: Record<string, Record<string, Cell> | any>;

@@ -1,14 +1,7 @@
-type ValidationLocation = {
-  sheetName?: string;
-  row?: number;
-  column?: string;
-  fieldPath?: string;
-}
+import type { ValidationErrorContext, ValidationLocation } from '../../types'
+import type { ConvertErrorMetadata } from '../../plugin/validationError'
 
-export type ParsedValidationErrorContext = {
-  location?: ValidationLocation;
-  details?: Record<string, unknown>;
-}
+export type ParsedValidationErrorContext = ValidationErrorContext
 
 type DiagnosticsForValidationError = {
   sheetName?: string;
@@ -36,7 +29,13 @@ const patterns = {
   convertPath: new RegExp('^(.+)\\[row ([0-9]+)\\](?:\\.(.+))?$')
 }
 
-export function parseValidationErrorContext(message: string, diagnostics?: DiagnosticsForValidationError): ParsedValidationErrorContext {
+export function parseValidationErrorContext(
+  message: string,
+  diagnostics?: DiagnosticsForValidationError,
+  metadata?: ConvertErrorMetadata
+): ParsedValidationErrorContext {
+  if (metadata) return packMetadataContext(metadata, diagnostics)
+
   const location = baseLocation(diagnostics)
 
   let match = patterns.missingMarker.exec(message)
@@ -130,6 +129,23 @@ export function parseValidationErrorContext(message: string, diagnostics?: Diagn
   }
 
   return pack(location)
+}
+
+function packMetadataContext(
+  metadata: ConvertErrorMetadata,
+  diagnostics?: DiagnosticsForValidationError
+): ParsedValidationErrorContext {
+  const base = baseLocation(diagnostics)
+  const location = {
+    ...base,
+    ...(metadata.location || {})
+  }
+  const details = { ...(metadata.details || {}) }
+  const convertPath = details.convertPath
+  if (typeof convertPath === 'string') {
+    return packPathContext(location, details, convertPath, diagnostics)
+  }
+  return pack(location, details)
 }
 
 function packPathContext(

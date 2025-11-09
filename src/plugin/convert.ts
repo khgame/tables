@@ -5,6 +5,7 @@ import type { Table } from '../types'
 import { buildIndexes } from './indexes'
 import { buildSchemaModel } from '../serializer/core/schemaModel'
 import { computeAliasInfo, normalizeValue } from './convertInternals'
+import { createConvertError } from './validationError'
 
 export function tableConvert(table: Table, context?: any): Table {
   if (!table.schema) {
@@ -60,7 +61,14 @@ export function tableConvert(table: Table, context?: any): Table {
     }
   })
   if (idSeg.length === 0) {
-    throw new Error(`[tables] 表 ${tableName} 缺少 '@' 标记列，无法生成 TID`)
+    const message = `[tables] 表 ${tableName} 缺少 '@' 标记列，无法生成 TID`
+    throw createConvertError(message, {
+      code: 'missing_tid_marker',
+      details: {
+        tableName,
+        requiredMarker: '@'
+      }
+    })
   }
 
   const tableData = (table as any).data || {}
@@ -73,14 +81,33 @@ export function tableConvert(table: Table, context?: any): Table {
       const segment = rawSegment !== undefined ? rawSegment : (values as any)[cur]
       const segmentStr = segment === undefined || segment === null ? '' : String(segment).trim()
       if (!segmentStr) {
-        throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow} 行的 '${colName}' 段缺少 TID 数据`)
+        const message = `[tables] 表 ${tableName} 在第 ${sheetRow} 行的 '${colName}' 段缺少 TID 数据`
+        throw createConvertError(message, {
+          code: 'missing_tid_segment',
+          location: {
+            row: sheetRow,
+            column: colName
+          },
+          details: {
+            tableName
+          }
+        })
       }
       return prev + segmentStr
     }, '')
     /* istanbul ignore next */
     if (!tid) {
       const sheetRow = dataRows[idx]
-      throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow} 行缺少 TID`)
+      const message = `[tables] 表 ${tableName} 在第 ${sheetRow} 行缺少 TID`
+      throw createConvertError(message, {
+        code: 'missing_tid_row',
+        location: {
+          row: sheetRow
+        },
+        details: {
+          tableName
+        }
+      })
     }
     return tid
   })
@@ -125,7 +152,14 @@ export function tableConvert(table: Table, context?: any): Table {
         break
       case 'error':
       default:
-        throw new Error(`[tables] TID collision detected for id ${id}. Configure context.policy.tidConflict to 'overwrite'|'ignore'|'merge'.`)
+        throw createConvertError(`[tables] TID collision detected for id ${id}. Configure context.policy.tidConflict to 'overwrite'|'ignore'|'merge'.`, {
+          code: 'tid_collision',
+          details: {
+            tid: id,
+            policyPath: 'context.policy.tidConflict',
+            allowedPolicies: ['overwrite', 'ignore', 'merge']
+          }
+        })
     }
   })
 

@@ -3,10 +3,12 @@ import * as Path from 'path'
 import * as fs from 'fs-extra'
 import { FileWalker } from 'kht'
 import type { Context, Serializer } from '../../types'
+import type { ConvertErrorMetadata } from '../../plugin/validationError'
 import { makeCamelName, makeInterfaceName } from '../../utils/names'
 import { resolveContextEnums } from '../../context/enumResolver'
 import { tableSchema } from '../../plugin/schema'
 import { tableConvert } from '../../plugin/convert'
+import { getConvertErrorMetadata } from '../../plugin/validationError'
 import { buildSchemaModel } from './schemaModel'
 import { parseValidationErrorContext } from './validationErrorContext'
 
@@ -33,6 +35,7 @@ export type InspectDiagnostics = {
     aliasCount: number;
     meta?: any;
     error?: string;
+    errorMeta?: ConvertErrorMetadata;
   };
 }
 
@@ -106,7 +109,7 @@ export function validateTableFile(pathIn: string, options: { sheetName?: string 
     if (diagnostics.convert.error) {
       errors.push(makeValidationMessage(
         diagnostics,
-        getConvertErrorCode(diagnostics.convert.error),
+        getConvertErrorCode(diagnostics.convert.error, diagnostics.convert.errorMeta),
         diagnostics.convert.error,
         'convert.error'
       ))
@@ -143,8 +146,10 @@ export function validateTableFile(pathIn: string, options: { sheetName?: string 
   }
 }
 
-function getConvertErrorCode(message: string): string {
-  return message.toLowerCase().includes('tid collision') ? 'tid_collision' : 'convert_error'
+function getConvertErrorCode(message: string, metadata?: ConvertErrorMetadata): string {
+  return metadata?.code === 'tid_collision' || message.toLowerCase().includes('tid collision')
+    ? 'tid_collision'
+    : 'convert_error'
 }
 
 function makeValidationMessage(
@@ -154,7 +159,10 @@ function makeValidationMessage(
   diagnosticPath: string,
   details?: Record<string, unknown>
 ): ValidationMessage {
-  const parsed = parseValidationErrorContext(message, diagnostics)
+  const errorMeta = diagnosticPath === 'convert.error' && diagnostics.convert.error === message
+    ? diagnostics.convert.errorMeta
+    : undefined
+  const parsed = parseValidationErrorContext(message, diagnostics, errorMeta)
   const ret: ValidationMessage = {
     severity: 'error',
     code,
@@ -200,12 +208,14 @@ export function inspectTableFile(pathIn: string, options: { sheetName?: string }
       plugins: [schemaPlugin]
     }, scopedContext)
     let convertError: string | undefined
+    let convertErrorMeta: ConvertErrorMetadata | undefined
 
     if (!schemaError) {
       try {
         table = tableConvert(table, scopedContext)
       } catch (error: any) {
         convertError = error && error.message ? error.message : String(error)
+        convertErrorMeta = getConvertErrorMetadata(error)
       }
     }
 
@@ -242,7 +252,8 @@ export function inspectTableFile(pathIn: string, options: { sheetName?: string }
         indexCount: Object.keys(indexes).length,
         aliasCount: Object.keys(aliases).length,
         meta: convert.meta,
-        error: convertError
+        error: convertError,
+        errorMeta: convertErrorMeta
       }
     }
   } finally {

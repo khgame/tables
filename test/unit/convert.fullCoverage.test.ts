@@ -20,6 +20,7 @@ jest.mock('@khgame/schema', () => {
 import { tableConvert } from '../../src/plugin/convert'
 import * as schemaModel from '../../src/serializer/core/schemaModel'
 import * as khSchema from '@khgame/schema'
+import { getConvertErrorMetadata } from '../../src/plugin/validationError'
 
 describe('tableConvert edge cases', () => {
   const exportJsonMock = khSchema.exportJson as jest.Mock
@@ -201,7 +202,22 @@ describe('tableConvert edge cases', () => {
 
     // error branch
     buildSchemaModelSpy.mockReturnValue(makeBaseModel())
-    expect(() => tableConvert(makeTable(), { policy: { tidConflict: 'error' } })).toThrow(/collision/i)
+    try {
+      tableConvert(makeTable(), { policy: { tidConflict: 'error' } })
+      throw new Error('expected tid collision')
+    } catch (error) {
+      expect(error).toEqual(expect.objectContaining({
+        message: expect.stringMatching(new RegExp('collision', 'i'))
+      }))
+      expect(getConvertErrorMetadata(error)).toEqual({
+        code: 'tid_collision',
+        details: {
+          tid: 'hero',
+          policyPath: 'context.policy.tidConflict',
+          allowedPolicies: ['overwrite', 'ignore', 'merge']
+        }
+      })
+    }
 
     warnSpy.mockRestore()
   })

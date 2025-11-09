@@ -284,6 +284,25 @@ export function loadContext(dirIn: string) {
   return context
 }
 
+export function loadContextPath(pathIn: string) {
+  const stat = fs.statSync(pathIn)
+  if (stat.isDirectory()) {
+    return loadContext(pathIn)
+  }
+
+  const blobName = getContextBlobName(pathIn)
+  const json = fs.readJsonSync(pathIn)
+  const context = blobName ? { [blobName]: json } : json
+  resolveContextEnums(context, Path.dirname(pathIn))
+  return context
+}
+
+function getContextBlobName(pathIn: string): string | null {
+  const baseName = Path.basename(pathIn)
+  const match = new RegExp('^context\\.([^.]+)(?:\\..*)?\\.json$', 'i').exec(baseName)
+  return match ? match[1] : null
+}
+
 export function serializeContext(dirOut: string, serializers: Serializer[], context: any) {
   const contextDealers = Object.values(serializers).reduce(
     (prev: any[], cur: any) => (cur.contextDealer && prev.indexOf(cur.contextDealer) < 0) ? prev.concat(cur.contextDealer) : prev,

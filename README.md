@@ -320,15 +320,15 @@ const specific = enemiesRepo.get(toEnemiesTID('50010001'));
    }
    ```
    其中 `"enums"` 对应上一步 JSON 的键名；可写成数组导出多个命名空间。
-3. **在脚本中加载上下文**：CLI 默认不会读取上下文，推荐在自定义脚本中调用 `loadContext`：
+3. **在脚本中加载上下文**：CLI 默认不会读取上下文，推荐在自定义脚本中调用 `loadContextPath`：
    ```ts
-   const { loadContext, serialize, tsInterfaceSerializer } = require('@khgame/tables');
-   const ctx = loadContext('./example');
+   const { loadContextPath, serialize, tsInterfaceSerializer } = require('@khgame/tables');
+   const ctx = loadContextPath('./example');
    serialize('./example/items.xlsx', './out', {
      'Items.ts': tsInterfaceSerializer
    }, ctx);
    ```
-   `loadContext(dir)` 会自动读取 `dir` 下符合 `context.*.json` 的文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
+   `loadContextPath(path)` 会读取 context 目录、单个 `context.<blob>.json`，或完整 context JSON 文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
 4. **表头写成 `enum<Rarity>`**：当标记行使用 `enum<Rarity>`（或 `enum<Rarity|Fallback>`）时，`tableSchema`/`tableConvert` 会校验单元格值是否存在于上下文枚举中；TS/Go/C# 序列化器则会在产物中生成 `TableContext.Rarity` 引用。
 
 ## TS 输出结构

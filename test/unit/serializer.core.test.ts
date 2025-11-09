@@ -10,7 +10,7 @@ jest.mock('../../src/utils/read', () => ({
   }))
 }))
 
-import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, serializeContext, parseValidationErrorContext } from '../../src/serializer'
+import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, loadContextPath, serializeContext, parseValidationErrorContext } from '../../src/serializer'
 import type { Serializer } from '../../src/types'
 
 const { readAndTranslate } = require('../../src/utils/read') as { readAndTranslate: jest.Mock }
@@ -67,6 +67,46 @@ describe('serializer core helpers', () => {
     expect(context.enums).toBeDefined()
     expect(context.enums.Colors).toEqual({ Red: 1 })
     expect(context.enums.Roles).toEqual({ Tank: 2 })
+  })
+
+  it('loadContextPath loads directories and context json files', () => {
+    const ctxDir = Path.join(tmpDir, 'ctx-path')
+    fs.ensureDirSync(ctxDir)
+    fs.writeJsonSync(Path.join(ctxDir, 'context.enums.json'), { Colors: { Red: 1 } })
+    fs.writeJsonSync(Path.join(ctxDir, 'context.policy.json'), { tidConflict: 'ignore' })
+
+    expect(loadContextPath(ctxDir)).toMatchObject({
+      enums: { Colors: { Red: 1 } },
+      policy: { tidConflict: 'ignore' }
+    })
+    expect(loadContextPath(Path.join(ctxDir, 'context.enums.json'))).toEqual({
+      enums: { Colors: { Red: 1 } }
+    })
+  })
+
+  it('loadContextPath preserves plain json context files', () => {
+    const contextFile = Path.join(tmpDir, 'custom-context.json')
+    fs.writeJsonSync(contextFile, {
+      enums: {
+        Colors: {
+          Red: 1
+        }
+      },
+      policy: {
+        tidConflict: 'ignore'
+      }
+    })
+
+    expect(loadContextPath(contextFile)).toEqual({
+      enums: {
+        Colors: {
+          Red: 1
+        }
+      },
+      policy: {
+        tidConflict: 'ignore'
+      }
+    })
   })
 
   it('serializeContext writes combined context dealers', () => {

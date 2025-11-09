@@ -3,7 +3,6 @@ import * as Yargs from 'yargs'
 import { FileWalker } from 'kht'
 import * as Path from 'path'
 import * as fs from 'fs-extra'
-import { resolveContextEnums } from './context/enumResolver'
 import {
   serialize,
   getSerializerFormat,
@@ -11,6 +10,7 @@ import {
   inspectTableFile,
   validateTableFile,
   loadContext,
+  loadContextPath,
   tsSerializer,
   tsInterfaceSerializer
 } from './serializer'
@@ -73,24 +73,9 @@ function buildOutputMap(baseName: string): Record<string, any> {
   }
 }
 
-function getContextBlobName(pathIn: string): string | null {
-  const baseName = Path.basename(pathIn)
-  const match = new RegExp('^context\\.([^.]+)(?:\\..*)?\\.json$', 'i').exec(baseName)
-  return match ? match[1] : null
-}
-
-function loadContextFile(pathIn: string): any {
-  const blobName = getContextBlobName(pathIn)
-  const json = fs.readJsonSync(pathIn)
-  const context = blobName ? { [blobName]: json } : json
-  resolveContextEnums(context, Path.dirname(pathIn))
-  return context
-}
-
 function loadCliContext(inputPath: string, inputStat: fs.Stats): any {
   if (cPath) {
-    const contextStat = fs.statSync(cPath)
-    return contextStat.isDirectory() ? loadContext(cPath) : loadContextFile(cPath)
+    return loadContextPath(cPath)
   }
   return inputStat.isDirectory() ? loadContext(inputPath) : {}
 }

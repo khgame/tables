@@ -66,12 +66,13 @@ if (!report.success) {
 ## 上下文（Context）与枚举
 
 - `loadContext(dir)` 会将 `dir` 下符合 `context.*.json` 的文件聚合为上下文对象
+- `loadContextPath(path)` 可接收 context 目录、`context.<blob>.json` 文件或完整 context JSON 文件；CLI `--context` 与该 API 共享同一加载语义
 - `serializeContext(dirOut, serializers, context)` 会生成 `context.ts`（供 TS 序列化器引用），并可输出枚举
 - 在 `context.meta.exports.enum = [ 'enums', ... ]` 中声明要导出的枚举集合名
 
 ```js
-const { loadContext, serializeContext, tsSerializer } = require('@khgame/tables')
-const ctx = loadContext('example')
+const { loadContextPath, serializeContext, tsSerializer } = require('@khgame/tables')
+const ctx = loadContextPath('example')
 serializeContext('out', [tsSerializer], ctx) // 生成 out/context.ts
 ```
 

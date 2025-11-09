@@ -333,13 +333,29 @@ describe('serializer core helpers', () => {
       diagnosticPath: 'convert.error',
       location: {
         sheetName: '__data',
-        row: 4,
+        row: 3,
         column: 'A'
       },
       details: {
         tableName: 'blank_tid'
       }
     })])
+  })
+
+  it('parseValidationErrorContext keeps dotted TIDs intact', () => {
+    expect(parseValidationErrorContext(
+      "[tables] TID collision detected for id item.001. Configure context.policy.tidConflict to 'overwrite'|'ignore'|'merge'.",
+      { sheetName: '__data' }
+    )).toEqual({
+      location: {
+        sheetName: '__data'
+      },
+      details: {
+        tid: 'item.001',
+        policyPath: 'context.policy.tidConflict',
+        allowedPolicies: ['overwrite', 'ignore', 'merge']
+      }
+    })
   })
 
   it('parseValidationErrorContext extracts structured numeric and alias details', () => {

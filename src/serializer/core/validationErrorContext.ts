@@ -27,7 +27,7 @@ const patterns = {
   missingMarker: new RegExp("表 (.+?) 缺少 '(@)' 标记列，无法生成 TID"),
   missingTidSegment: new RegExp("表 (.+?) 在第 ([0-9]+) 行的 '([^']+)' 段缺少 TID 数据"),
   missingTidRow: new RegExp('表 (.+?) 在第 ([0-9]+) 行缺少 TID'),
-  tidCollision: new RegExp('TID collision detected for id ([^.]+)\\.'),
+  tidCollision: new RegExp('TID collision detected for id (.+?)(?:\\. Configure|\\.$)'),
   bigintExpected: new RegExp('^\\[tables\\] expected (.+?)(?: \\(alias: ([^)]+)\\))? to be a numeric string for BigInt preservation, received ([A-Za-z0-9_$-]+)'),
   numericOverflow: new RegExp('^\\[tables\\] numeric value (.+?) at (.+?)(?: \\(alias: ([^)]+)\\))? exceeds Number\\.MAX_SAFE_INTEGER\\(([0-9]+)\\)\\. Consider using ([^.]+)\\.'),
   multipleAliasColumns: new RegExp('表 (.+?) 暂不支持多个 alias 列'),

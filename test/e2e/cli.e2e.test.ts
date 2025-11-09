@@ -284,6 +284,44 @@ describe('CLI (tables)', () => {
     })
   })
 
+  it('sanitizes context resolver paths in validation JSON preflight errors', () => {
+    const input = Path.resolve(tmp, 'validate-context-path-input')
+    const ctx = Path.resolve(tmp, 'validate-context-path-ctx')
+    fs.removeSync(input)
+    fs.removeSync(ctx)
+    fs.ensureDirSync(input)
+    fs.ensureDirSync(ctx)
+    const csv = Path.join(input, 'items.csv')
+    writeCsv(csv, [
+      ['@', 'enum<Rarity>'],
+      ['id', 'rarity'],
+      ['item_001', 'Rare']
+    ])
+    const contextFile = Path.join(ctx, 'context.enums.json')
+    fs.writeJsonSync(contextFile, {
+      Rarity: {
+        __refs: [{ ref: 'missing_table.csv#alias' }]
+      }
+    })
+
+    const res = runCli(['-i', csv, '--validate', '--json', '--context', contextFile], repoRoot)
+    expect(res.code).not.toBe(0)
+    expect(res.stderr).toBe('')
+    expect(res.stdout).not.toContain(repoRoot)
+    expect(res.stdout).not.toContain(ctx)
+    expect(res.stdout).not.toContain(contextFile)
+    const result = JSON.parse(res.stdout)
+    expect(result).toMatchObject({
+      success: false,
+      fileName: 'items',
+      errors: [{
+        severity: 'error',
+        code: 'preflight_error'
+      }],
+      warnings: []
+    })
+  })
+
   it('suppresses verbose console warnings in validation JSON mode', () => {
     const input = Path.resolve(tmp, 'validate-json-warn-input')
     const ctx = Path.resolve(tmp, 'validate-json-warn-ctx')

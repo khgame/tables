@@ -73,20 +73,28 @@ JSON 形状：
 
 ```json
 {
-  "success": true,
+  "success": false,
   "fileName": "items",
   "sheetName": "Sheet1",
   "diagnostics": {
     "fileName": "items",
     "sheetName": "Sheet1",
     "convert": {
-      "present": true,
-      "tidCount": 1,
-      "resultCount": 1
-      "details": { "tableName": "items" }
+      "present": false,
+      "tidCount": 0,
+      "resultCount": 0
     }
   },
-  "errors": [],
+  "errors": [
+    {
+      "severity": "error",
+      "code": "convert_error",
+      "message": "required value is empty",
+      "location": { "sheetName": "Sheet1", "row": 4, "column": "A" },
+      "diagnosticPath": "convert.error",
+      "details": { "tableName": "items" }
+    }
+  ],
   "warnings": []
 }
 ```

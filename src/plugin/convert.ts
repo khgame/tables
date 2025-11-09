@@ -73,14 +73,14 @@ export function tableConvert(table: Table, context?: any): Table {
       const segment = rawSegment !== undefined ? rawSegment : (values as any)[cur]
       const segmentStr = segment === undefined || segment === null ? '' : String(segment).trim()
       if (!segmentStr) {
-        throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行的 '${colName}' 段缺少 TID 数据`)
+        throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow} 行的 '${colName}' 段缺少 TID 数据`)
       }
       return prev + segmentStr
     }, '')
     /* istanbul ignore next */
     if (!tid) {
       const sheetRow = dataRows[idx]
-      throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow + 1} 行缺少 TID`)
+      throw new Error(`[tables] 表 ${tableName} 在第 ${sheetRow} 行缺少 TID`)
     }
     return tid
   })

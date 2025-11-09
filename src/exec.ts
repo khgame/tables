@@ -117,10 +117,24 @@ function displayCliPath(pathIn: string): string {
 
 function sanitizeCliMessage(message: string): string {
   let ret = message
-  ret = ret.split(iPath).join(displayCliPath(iPath))
-  if (cPath) {
-    ret = ret.split(cPath).join(displayCliPath(cPath))
+  const pathReplacements: Array<[string, string]> = [[iPath, displayCliPath(iPath)]]
+  const inputDir = Path.dirname(iPath)
+  if (inputDir && inputDir !== iPath) {
+    pathReplacements.push([inputDir, displayCliPath(inputDir)])
   }
+  if (cPath) {
+    pathReplacements.push([cPath, displayCliPath(cPath)])
+    const contextDir = Path.dirname(cPath)
+    if (contextDir && contextDir !== cPath) {
+      pathReplacements.push([contextDir, displayCliPath(contextDir)])
+    }
+  }
+  pathReplacements
+    .filter(([absolutePath]) => Path.isAbsolute(absolutePath) && absolutePath.length > 1)
+    .sort((a, b) => b[0].length - a[0].length)
+    .forEach(([absolutePath, displayPath]) => {
+      ret = ret.split(absolutePath).join(displayPath)
+    })
   return ret
 }
 

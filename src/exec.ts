@@ -161,7 +161,7 @@ function withCapturedConsole<T>(action: () => T): { result: T; incidentalLogs: s
   }
 }
 
-function loadCliValidationContext(stat: fs.Stats): CliValidationContextResult {
+function loadCliValidationContext(stat: fs.Stats, validateContextRefs: boolean): CliValidationContextResult {
   let context: any
   try {
     context = cPath
@@ -174,24 +174,25 @@ function loadCliValidationContext(stat: fs.Stats): CliValidationContextResult {
   const contextBaseDir = cPath
     ? (fs.statSync(cPath).isDirectory() ? cPath : Path.dirname(cPath))
     : (stat.isDirectory() ? iPath : Path.dirname(iPath))
-  const contextValidation = validateContextReferences(context, contextBaseDir)
-  if (!contextValidation.success) {
-    return {
-      error: buildCliError(
-        'context_ref_error',
-        'context reference validation failed',
-        contextValidation.errors.map(error => ({
-          ...error,
-          message: sanitizeCliMessage(error.message)
-        }))
-      )
+  if (validateContextRefs) {
+    const contextValidation = validateContextReferences(context, contextBaseDir)
+    if (!contextValidation.success) {
+      return {
+        error: buildCliError(
+          'context_ref_error',
+          'context reference validation failed',
+          contextValidation.errors.map(sanitizeValidationMessage)
+        )
+      }
     }
   }
 
-  const resolvedBaseDir = cPath
-    ? contextBaseDir
-    : (stat.isDirectory() ? iPath : Path.dirname(iPath))
-  resolveContextEnums(context, resolvedBaseDir)
+  if (validateContextRefs) {
+    const resolvedBaseDir = cPath
+      ? contextBaseDir
+      : (stat.isDirectory() ? iPath : Path.dirname(iPath))
+    resolveContextEnums(context, resolvedBaseDir)
+  }
   if (!context.policy) {
     context.policy = {}
   }
@@ -199,6 +200,30 @@ function loadCliValidationContext(stat: fs.Stats): CliValidationContextResult {
     context.policy.tidConflict = 'error'
   }
   return { context }
+}
+
+function sanitizeValidationMessage(error: ValidationMessage): ValidationMessage {
+  return {
+    ...error,
+    message: sanitizeCliMessage(error.message),
+    details: sanitizeDetails(error.details)
+  }
+}
+
+function sanitizeDetails(details?: Record<string, unknown>): Record<string, unknown> | undefined {
+  if (!details) return undefined
+  const sanitized: Record<string, unknown> = {}
+  Object.keys(details).forEach(key => {
+    const value = details[key]
+    sanitized[key] = typeof value === 'string' ? sanitizeCliValue(value) : value
+  })
+  return sanitized
+}
+
+function sanitizeCliValue(value: string): string {
+  const sanitized = sanitizeCliMessage(value)
+  if (!sanitized.includes('/') && !sanitized.includes('\\')) return sanitized
+  return Path.basename(sanitized)
 }
 
 if (inspectMode || validateMode) {
@@ -221,7 +246,7 @@ if (inspectMode || validateMode) {
   const originalError = console.error
   const captured = withCapturedConsole(() => {
     try {
-      const contextResult = loadCliValidationContext(stat)
+      const contextResult = loadCliValidationContext(stat, validateMode)
       if (contextResult.error) return contextResult.error
       const context = contextResult.context
       return validateMode ? validateTableFile(iPath, {}, context) : inspectTableFile(iPath, {}, context)

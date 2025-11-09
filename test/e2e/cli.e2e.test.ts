@@ -375,6 +375,68 @@ describe('CLI (tables)', () => {
     })
   })
 
+  it('does not validate context refs in inspect mode', () => {
+    const input = Path.resolve(tmp, 'inspect-context-ref-input')
+    const ctx = Path.resolve(tmp, 'inspect-context-ref-ctx')
+    fs.removeSync(input)
+    fs.removeSync(ctx)
+    fs.ensureDirSync(input)
+    fs.ensureDirSync(ctx)
+    writeCsv(Path.join(input, 'items.csv'), [
+      ['@', 'string'],
+      ['id', 'name'],
+      ['item_001', 'Potion']
+    ])
+    fs.writeJsonSync(Path.join(ctx, 'context.enums.json'), {
+      Rarity: [
+        { ref: { table: 'missing_table.csv', field: 'alias' } }
+      ]
+    })
+
+    const res = runCli(['-i', Path.join(input, 'items.csv'), '--inspect', '--json', '--context', ctx], repoRoot)
+    expect(res.code).toBe(0)
+    const diagnostics = JSON.parse(res.stdout)
+    expect(diagnostics.convert.present).toBe(true)
+    expect(diagnostics.convert.tidCount).toBe(1)
+  })
+
+  it('sanitizes absolute table refs in validation JSON details', () => {
+    const input = Path.resolve(tmp, 'validate-absolute-ref-input')
+    const ctx = Path.resolve(tmp, 'validate-absolute-ref-ctx')
+    const missing = Path.join(ctx, 'missing_abs.csv')
+    fs.removeSync(input)
+    fs.removeSync(ctx)
+    fs.ensureDirSync(input)
+    fs.ensureDirSync(ctx)
+    writeCsv(Path.join(input, 'items.csv'), [
+      ['@', 'enum<Rarity>'],
+      ['id', 'rarity'],
+      ['item_001', 'Rare']
+    ])
+    fs.writeJsonSync(Path.join(ctx, 'context.enums.json'), {
+      Rarity: [
+        { ref: { table: missing, field: 'alias' } }
+      ]
+    })
+
+    const res = runCli(['-i', Path.join(input, 'items.csv'), '--validate', '--json', '--context', ctx], repoRoot)
+    expect(res.code).not.toBe(0)
+    expect(res.stderr).toBe('')
+    expect(res.stdout).not.toContain(repoRoot)
+    expect(res.stdout).not.toContain(ctx)
+    expect(res.stdout).not.toContain(missing)
+    const result = JSON.parse(res.stdout)
+    expect(result.errors[0]).toMatchObject({
+      severity: 'error',
+      code: 'context_ref_error',
+      details: {
+        enumName: 'Rarity',
+        table: 'missing_abs.csv',
+        field: 'alias'
+      }
+    })
+  })
+
   it('suppresses verbose console warnings in validation JSON mode', () => {
     const input = Path.resolve(tmp, 'validate-json-warn-input')
     const ctx = Path.resolve(tmp, 'validate-json-warn-ctx')

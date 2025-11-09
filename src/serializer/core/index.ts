@@ -332,7 +332,25 @@ export function validateContextReferences(pathOrContext: string | Context, baseD
         warnings: []
       }
     }
-    const context = loadContextPath(pathOrContext, { resolveEnums: false })
+    let context: Context
+    try {
+      context = loadContextPath(pathOrContext, { resolveEnums: false })
+    } catch (error: any) {
+      return {
+        success: false,
+        references: [],
+        errors: [{
+          severity: 'error',
+          code: 'context_ref_error',
+          message: `context path could not be loaded: ${Path.basename(pathOrContext)}`,
+          diagnosticPath: 'context',
+          details: {
+            path: Path.basename(pathOrContext)
+          }
+        }],
+        warnings: []
+      }
+    }
     return validateContextEnumReferences(context, stat.isDirectory() ? pathOrContext : Path.dirname(pathOrContext))
   }
 

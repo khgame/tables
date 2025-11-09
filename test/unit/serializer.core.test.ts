@@ -143,6 +143,28 @@ describe('serializer core helpers', () => {
     })
   })
 
+  it('validateContextReferences returns structured errors for unreadable context files', () => {
+    const contextFile = Path.join(tmpDir, 'broken-context.json')
+    fs.outputFileSync(contextFile, '{bad json')
+
+    const result = validateContextReferences(contextFile)
+
+    expect(result).toEqual({
+      success: false,
+      references: [],
+      errors: [{
+        severity: 'error',
+        code: 'context_ref_error',
+        message: 'context path could not be loaded: broken-context.json',
+        diagnosticPath: 'context',
+        details: {
+          path: 'broken-context.json'
+        }
+      }],
+      warnings: []
+    })
+  })
+
   it('serializeContext writes combined context dealers', () => {
     const ctxOut = Path.join(tmpDir, 'ctx-out')
     fs.ensureDirSync(ctxOut)

@@ -21,7 +21,11 @@ export type ConvertError = Error & {
 
 export function createConvertError(message: string, metadata: ConvertErrorMetadata): ConvertError {
   const error = new Error(message) as ConvertError
-  error.convertErrorMeta = metadata
+  Object.defineProperty(error, 'convertErrorMeta', {
+    value: metadata,
+    enumerable: false,
+    configurable: true
+  })
   return error
 }
 

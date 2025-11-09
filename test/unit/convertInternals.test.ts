@@ -86,6 +86,17 @@ describe('convert internals', () => {
       }
     })
 
+    it('keeps convert metadata out of enumerable error output', () => {
+      try {
+        normalizePrimitive('9007199254740993', intNode as any, 'Game[row 9].power')
+        throw new Error('expected numeric overflow')
+      } catch (error) {
+        expect(Object.keys(error as object)).not.toContain('convertErrorMeta')
+        expect(JSON.stringify(error)).not.toContain('convertErrorMeta')
+        expect(getConvertErrorMetadata(error)?.code).toBe('numeric_overflow')
+      }
+    })
+
     it('default strategy returns original value', () => {
       const noHint = { kind: 'primitive', name: 'string' } as any
       expect(normalizePrimitive('text', noHint, 'path')).toBe('text')

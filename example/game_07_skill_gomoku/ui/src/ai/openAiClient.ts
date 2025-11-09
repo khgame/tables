@@ -110,7 +110,8 @@ export const hasValidSettings = (
   settings: AiSettings | null | undefined,
 ): settings is AiSettings => {
   if (!settings) return false;
-  return Boolean(settings.endpoint && settings.reasoningModel);
+  // 必须同时配置 endpoint、model 与 apiKey 才认为可用；否则一律走本地策略
+  return Boolean(settings.endpoint && settings.reasoningModel && settings.apiKey);
 };
 
 const selectModelForScenario = (
@@ -837,3 +838,12 @@ const serializeTimelineNarrative = (
   });
   return sentences.join(" ");
 };
+  // 离线或未提供 apiKey：直接抛错，外层将转入 fallback 本地策略
+  try {
+    if (typeof navigator !== 'undefined' && (navigator as any).onLine === false) {
+      throw new Error('offline');
+    }
+  } catch {}
+  if (!settings.apiKey || !settings.apiKey.trim()) {
+    throw new Error('missing_api_key');
+  }

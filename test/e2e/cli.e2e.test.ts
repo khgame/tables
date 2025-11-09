@@ -316,7 +316,60 @@ describe('CLI (tables)', () => {
       fileName: 'items',
       errors: [{
         severity: 'error',
-        code: 'preflight_error'
+        code: 'context_ref_error',
+        diagnosticPath: 'context.enums.Rarity.__refs[0]',
+        details: {
+          enumName: 'Rarity',
+          table: 'missing_table.csv',
+          field: 'alias'
+        }
+      }],
+      warnings: []
+    })
+  })
+
+  it('reports non-alias context refs as validation JSON', () => {
+    const input = Path.resolve(tmp, 'validate-context-non-alias-input')
+    const ctx = Path.resolve(tmp, 'validate-context-non-alias-ctx')
+    fs.removeSync(input)
+    fs.removeSync(ctx)
+    fs.ensureDirSync(input)
+    fs.ensureDirSync(ctx)
+    writeCsv(Path.join(input, 'items.csv'), [
+      ['@', 'enum<Rarity>'],
+      ['id', 'rarity'],
+      ['item_001', 'Rare']
+    ])
+    writeCsv(Path.join(ctx, 'labels.csv'), [
+      ['@', 'string'],
+      ['id', 'label'],
+      ['rare', 'Rare']
+    ])
+    fs.writeJsonSync(Path.join(ctx, 'context.enums.json'), {
+      Rarity: [
+        { ref: { table: 'labels.csv', field: 'label' } }
+      ]
+    })
+
+    const res = runCli(['-i', Path.join(input, 'items.csv'), '--validate', '--json', '--context', ctx], repoRoot)
+    expect(res.code).not.toBe(0)
+    expect(res.stderr).toBe('')
+    expect(res.stdout).not.toContain(repoRoot)
+    expect(res.stdout).not.toContain(ctx)
+    const result = JSON.parse(res.stdout)
+    expect(result).toMatchObject({
+      success: false,
+      fileName: 'items',
+      errors: [{
+        severity: 'error',
+        code: 'context_ref_error',
+        diagnosticPath: 'context.enums.Rarity[0]',
+        details: {
+          enumName: 'Rarity',
+          table: 'labels.csv',
+          field: 'label',
+          expected: 'alias_column'
+        }
       }],
       warnings: []
     })

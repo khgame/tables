@@ -9,12 +9,15 @@ import {
   listSerializerFormats,
   inspectTableFile,
   validateTableFile,
+  validateContextReferences,
   loadContext,
   loadContextPath,
   tsSerializer,
   tsInterfaceSerializer
 } from './serializer'
+import { resolveContextEnums } from './context/enumResolver'
 import { makeCamelName } from './utils/names'
+import type { ValidationMessage } from './types'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageObj = require('../package.json')
@@ -88,8 +91,13 @@ type CliMachineResult = {
   success?: boolean;
   fileName: string;
   sheetName?: string;
-  errors: Array<{ severity: 'error'; code: string; message: string }>;
+  errors: ValidationMessage[];
   warnings: any[];
+}
+
+type CliValidationContextResult = {
+  context?: any;
+  error?: CliMachineResult;
 }
 
 function displayCliPath(pathIn: string): string {
@@ -123,11 +131,11 @@ function sanitizeCliMessage(message: string): string {
   return ret
 }
 
-function buildCliError(code: string, message: string): CliMachineResult {
+function buildCliError(code: string, message: string, errors?: CliMachineResult['errors']): CliMachineResult {
   return {
     success: false,
     fileName: Path.parse(iPath || '').name || '',
-    errors: [{
+    errors: errors || [{
       severity: 'error',
       code,
       message: sanitizeCliMessage(message)
@@ -153,15 +161,44 @@ function withCapturedConsole<T>(action: () => T): { result: T; incidentalLogs: s
   }
 }
 
-function loadCliValidationContext(stat: fs.Stats): any {
-  const context: any = loadCliContext(iPath, stat)
+function loadCliValidationContext(stat: fs.Stats): CliValidationContextResult {
+  let context: any
+  try {
+    context = cPath
+      ? loadContextPath(cPath, { resolveEnums: false })
+      : (stat.isDirectory() ? loadContext(iPath, { resolveEnums: false }) : {})
+  } catch (error: any) {
+    return { error: buildCliError('preflight_error', error && error.message ? error.message : String(error)) }
+  }
+
+  const contextBaseDir = cPath
+    ? (fs.statSync(cPath).isDirectory() ? cPath : Path.dirname(cPath))
+    : (stat.isDirectory() ? iPath : Path.dirname(iPath))
+  const contextValidation = validateContextReferences(context, contextBaseDir)
+  if (!contextValidation.success) {
+    return {
+      error: buildCliError(
+        'context_ref_error',
+        'context reference validation failed',
+        contextValidation.errors.map(error => ({
+          ...error,
+          message: sanitizeCliMessage(error.message)
+        }))
+      )
+    }
+  }
+
+  const resolvedBaseDir = cPath
+    ? contextBaseDir
+    : (stat.isDirectory() ? iPath : Path.dirname(iPath))
+  resolveContextEnums(context, resolvedBaseDir)
   if (!context.policy) {
     context.policy = {}
   }
   if ((argv as any).strict) {
     context.policy.tidConflict = 'error'
   }
-  return context
+  return { context }
 }
 
 if (inspectMode || validateMode) {
@@ -184,7 +221,9 @@ if (inspectMode || validateMode) {
   const originalError = console.error
   const captured = withCapturedConsole(() => {
     try {
-      const context = loadCliValidationContext(stat)
+      const contextResult = loadCliValidationContext(stat)
+      if (contextResult.error) return contextResult.error
+      const context = contextResult.context
       return validateMode ? validateTableFile(iPath, {}, context) : inspectTableFile(iPath, {}, context)
     } catch (error: any) {
       return buildCliError('preflight_error', error && error.message ? error.message : String(error))

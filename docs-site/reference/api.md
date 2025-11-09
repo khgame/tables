@@ -48,8 +48,9 @@ console.log(diagnostics.convert.tidCount)
 - `errors[]` / `warnings[]` 使用 `{ severity, code, message, location?, diagnosticPath?, details? }`
 - `location` 面向编辑器和 agent 定位，当前会尽量包含 `sheetName`、`row`、`column`、`fieldPath`
 - `details` 面向自动修复和 CI 展示，当前会尽量包含 `tableName`、`tid`、`sourceAlias`、`rawValue`、`suggestedType`、`duplicateAliases`
-- 当前错误码包括 `schema_error`、`convert_error`、`tid_collision`、`inspect_error`
+- 当前错误码包括 `schema_error`、`convert_error`、`tid_collision`、`context_ref_error`、`inspect_error`
 - 自有 convert 错误会优先使用结构化 metadata 生成 `location` / `details`，再回退到兼容旧错误文案的解析逻辑
+- CLI `--validate --json` 会先校验 context enum refs；缺失目标表或目标字段不是 alias 列时返回 `context_ref_error`
 - 自身不写文件；CLI machine mode 会隔离底层偶发日志，方便测试和 AI agent 直接调用
 - `diagnostics` 保留完整 `inspectTableFile` 结果，便于定位 sheet、mark/desc、schema 和 convert 信息
 
@@ -69,11 +70,15 @@ if (!report.success) {
 
 - `loadContext(dir)` 会将 `dir` 下符合 `context.*.json` 的文件聚合为上下文对象
 - `loadContextPath(path)` 可接收 context 目录、`context.<blob>.json` 文件或完整 context JSON 文件；CLI `--context` 与该 API 共享同一加载语义
+- `validateContextReferences(pathOrContext, baseDir?)` 会检查 `context.enums.*` 中的表引用，并返回 `{ success, references, errors, warnings }`
+- `collectContextEnumReferences(context)` 可只收集 enum refs，不读取目标表
 - `serializeContext(dirOut, serializers, context)` 会生成 `context.ts`（供 TS 序列化器引用），并可输出枚举
 - 在 `context.meta.exports.enum = [ 'enums', ... ]` 中声明要导出的枚举集合名
 
 ```js
-const { loadContextPath, serializeContext, tsSerializer } = require('@khgame/tables')
+const { loadContextPath, serializeContext, tsSerializer, validateContextReferences } = require('@khgame/tables')
+const check = validateContextReferences('example')
+if (!check.success) console.error(check.errors)
 const ctx = loadContextPath('example')
 serializeContext('out', [tsSerializer], ctx) // 生成 out/context.ts
 ```

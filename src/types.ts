@@ -47,6 +47,15 @@ export type ValidationErrorContext = {
   details?: Record<string, unknown>;
 }
 
+export type ValidationMessage = {
+  severity: 'error' | 'warning';
+  code: string;
+  message: string;
+  location?: ValidationLocation;
+  diagnosticPath?: string;
+  details?: Record<string, unknown>;
+}
+
 export type Table = {
   cols: string[];
   data: Record<string, Record<string, Cell> | any>;

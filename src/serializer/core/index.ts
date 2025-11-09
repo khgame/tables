@@ -2,10 +2,15 @@ import { readAndTranslate } from '../../utils/read'
 import * as Path from 'path'
 import * as fs from 'fs-extra'
 import { FileWalker } from 'kht'
-import type { Context, Serializer } from '../../types'
+import type { Context, Serializer, ValidationMessage } from '../../types'
 import type { ConvertErrorMetadata } from '../../plugin/validationError'
 import { makeCamelName, makeInterfaceName } from '../../utils/names'
 import { resolveContextEnums } from '../../context/enumResolver'
+import {
+  collectContextEnumReferences,
+  validateContextEnumReferences,
+  type ContextReferenceValidationResult
+} from '../../context/enumResolver'
 import { tableSchema } from '../../plugin/schema'
 import { tableConvert } from '../../plugin/convert'
 import { getConvertErrorMetadata } from '../../plugin/validationError'
@@ -14,6 +19,12 @@ import { parseValidationErrorContext } from './validationErrorContext'
 
 export { buildStableConvertPayload } from './convertPayload'
 export { parseValidationErrorContext } from './validationErrorContext'
+export { collectContextEnumReferences, validateContextEnumReferences } from '../../context/enumResolver'
+export type { ContextEnumReference, ContextReferenceValidationResult } from '../../context/enumResolver'
+
+export type LoadContextOptions = {
+  resolveEnums?: boolean;
+}
 
 export type InspectDiagnostics = {
   fileName: string;
@@ -39,19 +50,7 @@ export type InspectDiagnostics = {
   };
 }
 
-export type ValidationMessage = {
-  severity: 'error' | 'warning';
-  code: string;
-  message: string;
-  location?: {
-    sheetName?: string;
-    row?: number;
-    column?: string;
-    fieldPath?: string;
-  };
-  diagnosticPath?: string;
-  details?: Record<string, unknown>;
-}
+export type { ValidationMessage } from '../../types'
 
 export type ValidationResult = {
   success: boolean;
@@ -265,7 +264,7 @@ export function inspectTableFile(pathIn: string, options: { sheetName?: string }
   }
 }
 
-export function loadContext(dirIn: string) {
+export function loadContext(dirIn: string, options: LoadContextOptions = {}) {
   const context: any = {}
   FileWalker.forEachSync(dirIn, (fileObj: any) => {
     const fileName = fileObj.parsed.base.replace(/^context\./i, '').replace(/\.json$/i, '')
@@ -288,24 +287,56 @@ export function loadContext(dirIn: string) {
       context[blobName] = fs.readJsonSync(fileObj.path)
     }
   }, false, (file: string) => /^context\..*\.json/i.test(file) && !file.startsWith('~'))
-  resolveContextEnums(context, dirIn)
+  if (options.resolveEnums !== false) {
+    resolveContextEnums(context, dirIn)
+  }
   if (process.env.TABLES_VERBOSE === '1') {
     console.log('context loaded:', dirIn, Object.keys(context))
   }
   return context
 }
 
-export function loadContextPath(pathIn: string) {
+export function loadContextPath(pathIn: string, options: LoadContextOptions = {}) {
   const stat = fs.statSync(pathIn)
   if (stat.isDirectory()) {
-    return loadContext(pathIn)
+    return loadContext(pathIn, options)
   }
 
   const blobName = getContextBlobName(pathIn)
   const json = fs.readJsonSync(pathIn)
   const context = blobName ? { [blobName]: json } : json
-  resolveContextEnums(context, Path.dirname(pathIn))
+  if (options.resolveEnums !== false) {
+    resolveContextEnums(context, Path.dirname(pathIn))
+  }
   return context
+}
+
+export function validateContextReferences(pathOrContext: string | Context, baseDir?: string): ContextReferenceValidationResult {
+  if (typeof pathOrContext === 'string') {
+    let stat: fs.Stats
+    try {
+      stat = fs.statSync(pathOrContext)
+    } catch (error: any) {
+      return {
+        success: false,
+        references: [],
+        errors: [{
+          severity: 'error',
+          code: 'context_ref_error',
+          message: `context path is not accessible: ${Path.basename(pathOrContext)}`,
+          diagnosticPath: 'context',
+          details: {
+            path: Path.basename(pathOrContext)
+          }
+        }],
+        warnings: []
+      }
+    }
+    const context = loadContextPath(pathOrContext, { resolveEnums: false })
+    return validateContextEnumReferences(context, stat.isDirectory() ? pathOrContext : Path.dirname(pathOrContext))
+  }
+
+  return validateContextEnumReferences(pathOrContext, baseDir || process.cwd())
 }
 
 function getContextBlobName(pathIn: string): string | null {

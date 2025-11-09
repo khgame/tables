@@ -1,5 +1,9 @@
 import Path from 'path'
-import { resolveContextEnums } from '../../src/context/enumResolver'
+import {
+  collectContextEnumReferences,
+  resolveContextEnums,
+  validateContextEnumReferences
+} from '../../src/context/enumResolver'
 
 const PROJECT_ROOT = Path.resolve(__dirname, '..', '..')
 
@@ -86,5 +90,98 @@ describe('context enum resolver', () => {
 
     expect(() => resolveContextEnums(context, PROJECT_ROOT)).toThrow(/不是 alias 列/)
   })
-})
 
+  it('collects enum references without resolving tables', () => {
+    const context: any = {
+      enums: {
+        SkillTag: [
+          'None',
+          { ref: { table: 'test/excel/alias.csv', field: 'nameAlias', filter: { sequence: 1 } } }
+        ],
+        ExtraTag: {
+          __refs: [
+            { ref: 'test/excel/alias_desc.csv#aliasName', prefix: 'Meta' }
+          ]
+        }
+      }
+    }
+
+    expect(collectContextEnumReferences(context)).toEqual([
+      {
+        enumName: 'SkillTag',
+        diagnosticPath: 'context.enums.SkillTag[1]',
+        table: 'test/excel/alias.csv',
+        field: 'nameAlias',
+        filter: { sequence: 1 }
+      },
+      {
+        enumName: 'ExtraTag',
+        diagnosticPath: 'context.enums.ExtraTag.__refs[0]',
+        table: 'test/excel/alias_desc.csv',
+        field: 'aliasName',
+        prefix: 'Meta'
+      }
+    ])
+  })
+
+  it('validates enum references as structured messages', () => {
+    const missingTableContext: any = {
+      enums: {
+        Broken: [
+          { ref: { table: 'test/excel/missing.csv', field: 'alias' } }
+        ]
+      }
+    }
+
+    const missingTable = validateContextEnumReferences(missingTableContext, PROJECT_ROOT)
+    expect(missingTable).toMatchObject({
+      success: false,
+      references: [{
+        enumName: 'Broken',
+        diagnosticPath: 'context.enums.Broken[0]',
+        table: 'test/excel/missing.csv',
+        field: 'alias'
+      }],
+      errors: [{
+        severity: 'error',
+        code: 'context_ref_error',
+        diagnosticPath: 'context.enums.Broken[0]',
+        details: {
+          enumName: 'Broken',
+          table: 'test/excel/missing.csv',
+          field: 'alias'
+        }
+      }]
+    })
+
+    const nonAliasContext: any = {
+      enums: {
+        Invalid: [
+          { ref: { table: 'test/excel/alias.csv', field: 'category' } }
+        ]
+      }
+    }
+
+    const nonAlias = validateContextEnumReferences(nonAliasContext, PROJECT_ROOT)
+    expect(nonAlias).toMatchObject({
+      success: false,
+      references: [{
+        enumName: 'Invalid',
+        diagnosticPath: 'context.enums.Invalid[0]',
+        table: 'test/excel/alias.csv',
+        field: 'category'
+      }],
+      errors: [{
+        severity: 'error',
+        code: 'context_ref_error',
+        diagnosticPath: 'context.enums.Invalid[0]',
+        details: {
+          enumName: 'Invalid',
+          table: 'test/excel/alias.csv',
+          field: 'category',
+          expected: 'alias_column'
+        }
+      }]
+    })
+  })
+})

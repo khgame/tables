@@ -10,7 +10,7 @@ jest.mock('../../src/utils/read', () => ({
   }))
 }))
 
-import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, loadContextPath, serializeContext, parseValidationErrorContext } from '../../src/serializer'
+import { buildStableConvertPayload, serialize, inspectTableFile, validateTableFile, loadContext, loadContextPath, serializeContext, parseValidationErrorContext, validateContextReferences } from '../../src/serializer'
 import { createConvertError } from '../../src/plugin/validationError'
 import type { Serializer } from '../../src/types'
 
@@ -107,6 +107,39 @@ describe('serializer core helpers', () => {
       policy: {
         tidConflict: 'ignore'
       }
+    })
+  })
+
+  it('validateContextReferences loads context paths without mutating enum refs', () => {
+    const ctxDir = Path.join(tmpDir, 'ctx-refs')
+    fs.ensureDirSync(ctxDir)
+    fs.writeJsonSync(Path.join(ctxDir, 'context.enums.json'), {
+      Broken: [
+        { ref: { table: 'missing.csv', field: 'alias' } }
+      ]
+    })
+
+    const result = validateContextReferences(ctxDir)
+
+    expect(result).toMatchObject({
+      success: false,
+      references: [{
+        enumName: 'Broken',
+        diagnosticPath: 'context.enums.Broken[0]',
+        table: 'missing.csv',
+        field: 'alias'
+      }],
+      errors: [{
+        severity: 'error',
+        code: 'context_ref_error',
+        diagnosticPath: 'context.enums.Broken[0]',
+        details: {
+          enumName: 'Broken',
+          table: 'missing.csv',
+          field: 'alias'
+        }
+      }],
+      warnings: []
     })
   })
 

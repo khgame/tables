@@ -94,7 +94,7 @@ tables -i ./example/items.csv --validate
 }
 ```
 
-自有转换错误会优先使用结构化 metadata 生成 `location` / `details`，再回退到兼容旧错误文案的解析逻辑。测试设计应覆盖：合法表返回 `success: true` 且退出码为 0；转换错误返回 `success: false` 且退出码非 0，并尽量携带 `row`、`column`、`fieldPath` 或 `details`；TID 冲突生成 `tid_collision`；`--verbose` 或上下文加载日志不污染 stdout JSON。
+自有转换错误会优先使用结构化 metadata 生成 `location` / `details`，再回退到兼容旧错误文案的解析逻辑。`--validate --json` 还会在读取 context 后先校验 `context.enums.*` 的跨表引用，缺失目标表或目标字段不是 alias 列时返回 `context_ref_error`。测试设计应覆盖：合法表返回 `success: true` 且退出码为 0；转换错误返回 `success: false` 且退出码非 0，并尽量携带 `row`、`column`、`fieldPath` 或 `details`；TID 冲突生成 `tid_collision`；`--verbose` 或上下文加载日志不污染 stdout JSON。
 
 ### API
 

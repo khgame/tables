@@ -7,6 +7,8 @@ import { CardView } from './CardView';
 import { GameIcon, FreezeIcon, SkipIcon, CurrentTurnIcon } from './IconLibrary';
 import { ComicBubble } from './ComicBubble';
 import standPng from '../assets/stand.png';
+import standKaraPng from '../assets/stand_kara.png';
+import skill5Png from '../assets/skill5.png';
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
@@ -139,18 +141,20 @@ export const AvatarBadge: React.FC<AvatarBadgeProps> = ({ player, characters, st
 
       {/* 头像 */}
       <div className={`relative h-14 w-14 shrink-0 rounded-xl shadow-sm overflow-hidden ${isBlack ? 'bg-blue-500' : 'bg-pink-500'}`}>
-        {isBlack ? (
-          <div className="flex h-full w-full items-center justify-center">
-            {AVATAR_GLYPHS[player]}
-          </div>
-        ) : (
-          <img
-            src={standPng}
-            alt="White avatar"
-            className="h-full w-full object-cover object-top select-none pointer-events-none origin-top"
-            style={{ transform: 'scale(1.35)' }}
-          />
-        )}
+        {(() => {
+          const ch = character?.name ?? '';
+          const hasZhangXingchao = /张兴朝/.test(ch);
+          const base = isBlack ? standKaraPng : standPng;
+          const src = hasZhangXingchao ? skill5Png : base;
+          return (
+            <img
+              src={src}
+              alt={isBlack ? 'Player avatar' : 'White avatar'}
+              className="h-full w-full object-cover select-none pointer-events-none origin-top"
+              style={{ objectPosition: 'top center', transform: isBlack ? 'scale(1.2)' : 'scale(1.35)' }}
+            />
+          );
+        })()}
       </div>
 
       {/* 玩家信息 */}
@@ -224,7 +228,7 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
 }) => (
   <div className={cx('relative z-[50] flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 固定宽度 */}
-    <div className="relative flex items-center gap-4 rounded-xl p-4 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm overflow-visible">
+    <div className="relative flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[min(320px,28vw)] bg-slate-800/70 backdrop-blur-sm overflow-visible">
       <AvatarBadge player={PlayerEnum.WHITE} characters={characters} statuses={statuses} isCurrent={isCurrent} />
       {bubble && (
         <div className="pointer-events-none absolute top-[calc(100%+8px)] right-1">
@@ -239,7 +243,7 @@ export const OpponentHUD: React.FC<OpponentHudProps> = ({
     </div>
 
     {/* 中央手牌区域 - 靠右对齐，避免与棋盘重叠 */}
-    <div className="relative flex flex-1 items-start justify-end pr-2 h-[7.5rem] overflow-visible max-w-[560px] ml-auto">
+    <div className="relative flex flex-1 items-start justify-end pr-6 md:pr-12 h-[7.2rem] overflow-visible max-w-[560px] ml-auto">
       <HandPanel
         className="w-full"
         cards={handCards}
@@ -261,12 +265,14 @@ export interface PlayerHudProps {
   graveyardCount: number;
   shichahaiCount: number;
   onCardHover?: (card: RawCard | null) => void;
+  onCardClick?: (index: number) => void;
   onCardDragStart?: (index: number) => void;
   onCardDragEnd?: () => void;
   isCurrent: boolean;
   className?: string;
   bubble?: { text: string } | null;
   align?: 'center' | 'end';
+  allowTapPlay?: boolean;
 }
 
 export const PlayerHUD: React.FC<PlayerHudProps> = ({
@@ -279,16 +285,18 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
   graveyardCount,
   shichahaiCount,
   onCardHover,
+  onCardClick,
   onCardDragStart,
   onCardDragEnd,
   isCurrent,
   className,
   bubble = null,
-  align = 'center'
+  align = 'center',
+  allowTapPlay = false
 }) => (
   <div className={cx('flex w-full items-center gap-4', className)}>
     {/* 左侧玩家信息 - 紧凑设计 */}
-    <div className="relative overflow-visible flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[320px] bg-slate-800/70 backdrop-blur-sm">
+    <div className="relative overflow-visible flex items-center gap-3 rounded-xl p-3 shadow-lg flex-shrink-0 w-[min(320px,28vw)] bg-slate-800/70 backdrop-blur-sm">
       {bubble && (
         <div className="pointer-events-none absolute -top-16 left-2">
           <ComicBubble text={bubble.text} tone={'info'} align="left" direction="down" size="lg" />
@@ -300,7 +308,7 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
           'text-xs font-medium text-slate-300',
           disabled && 'opacity-60'
         )}>
-          拖拽发动技能卡
+          {allowTapPlay ? '轻点发动技能卡' : '拖拽发动技能卡'}
         </span>
         <StatsPills
           stats={buildStats({ hand: handCards.length, move: moveCount, stones: stonesCount })}
@@ -309,14 +317,16 @@ export const PlayerHUD: React.FC<PlayerHudProps> = ({
     </div>
 
     {/* 手牌区域 - 可切换对齐（避免遮挡棋盘） */}
-    <div className={`relative flex flex-1 items-end ${align === 'end' ? 'justify-end pr-4 md:pr-8' : 'justify-center'} h-[9.5rem] max-w-[560px] ${align === 'end' ? 'ml-auto' : ''}`}>
+    <div className={`relative flex flex-1 items-end ${align === 'end' ? 'justify-end pr-6 md:pr-12' : 'justify-center'} h-[9rem] max-w-[560px] ${align === 'end' ? 'ml-auto' : ''}`}>
       <HandPanel
         className="w-full"
         cards={handCards}
         disabled={disabled}
         onCardHover={onCardHover}
+        onCardClick={onCardClick}
         onCardDragStart={onCardDragStart}
         onCardDragEnd={onCardDragEnd}
+        allowTapPlay={allowTapPlay}
       />
     </div>
   </div>

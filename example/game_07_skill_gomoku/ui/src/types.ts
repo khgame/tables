@@ -71,6 +71,9 @@ export interface GameLogEntry {
   message: string;
   type: string;
   time: number;
+  // 结构化载荷（用于回放/统计）；保持与 UI 文本并行
+  code?: string;
+  data?: any;
   position?: { row: number; col: number }; // 添加位置信息用于 hover 高亮
 }
 
@@ -88,6 +91,8 @@ export interface VisualEffectEvent {
   id: string;
   effectId?: string;
   cardName: string;
+  cardTid?: string | number;
+  cardQuote?: string;
   player: Player;
   createdAt: number;
   sequence?: number; // 序列号，用于确保相同时间戳的事件按正确顺序排列
@@ -95,6 +100,9 @@ export interface VisualEffectEvent {
   // 可选：用于棋盘定点动画（例如移除棋子飞入什刹海）
   cell?: { row: number; col: number };
   owner?: Player;
+  // 可选：卡牌的标签/子类型（用于音效与表演的细粒度映射）
+  cardTags?: string;
+  cardSubtype?: string;
 }
 
 export type EffectMetadata = {

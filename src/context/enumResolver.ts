@@ -3,6 +3,7 @@ import * as fs from 'fs-extra'
 import { readAndTranslate } from '../utils/read'
 import { tableSchema, tableConvert } from '../plugin'
 import { makeCamelName, makeInterfaceName } from '../utils/names'
+import type { ValidationMessage } from '../types'
 
 type Primitive = string | number | boolean
 type FilterValue = Primitive | Primitive[]
@@ -62,6 +63,27 @@ interface ResolverOptions {
   context: any
 }
 
+export type ContextEnumReference = {
+  enumName: string
+  diagnosticPath: string
+  table: string
+  field: string
+  valueField?: string
+  nameField?: string
+  descriptionField?: string
+  transform?: NameTransform
+  prefix?: string
+  suffix?: string
+  filter?: Record<string, FilterValue>
+}
+
+export type ContextReferenceValidationResult = {
+  success: boolean
+  references: ContextEnumReference[]
+  errors: ValidationMessage[]
+  warnings: ValidationMessage[]
+}
+
 const tableCache = new Map<string, TableConvertBundle>()
 
 export function resolveContextEnums(context: any, baseDir: string): void {
@@ -75,6 +97,41 @@ export function resolveContextEnums(context: any, baseDir: string): void {
     const resolved = resolveEnum(enumName, definition, resolverOptions)
     context.enums[enumName] = resolved
   }
+}
+
+export function collectContextEnumReferences(context: any): ContextEnumReference[] {
+  return collectContextEnumReferenceRecords(context).references
+}
+
+export function validateContextEnumReferences(context: any, baseDir: string): ContextReferenceValidationResult {
+  const collected = collectContextEnumReferenceRecords(context)
+  const references = collected.references
+  const errors: ValidationMessage[] = collected.errors.slice()
+  const warnings: ValidationMessage[] = []
+
+  references.forEach(ref => {
+    const message = validateReference(ref, { baseDir, context })
+    if (message) errors.push(message)
+  })
+
+  return {
+    success: errors.length === 0,
+    references,
+    errors,
+    warnings
+  }
+}
+
+function collectContextEnumReferenceRecords(context: any): { references: ContextEnumReference[]; errors: ValidationMessage[] } {
+  if (!context || typeof context !== 'object') return { references: [], errors: [] }
+  if (!context.enums || typeof context.enums !== 'object') return { references: [], errors: [] }
+
+  const references: ContextEnumReference[] = []
+  const errors: ValidationMessage[] = []
+  Object.keys(context.enums).forEach(enumName => {
+    collectDefinitionReferences(enumName, context.enums[enumName], `context.enums.${enumName}`, references, errors)
+  })
+  return { references, errors }
 }
 
 function resolveEnum(enumName: string, definition: EnumDefinition, options: ResolverOptions): EnumResult {
@@ -153,6 +210,136 @@ function resolveObjectDefinition(enumName: string, definition: Record<string, an
   }
 
   return entries
+}
+
+function collectDefinitionReferences(
+  enumName: string,
+  definition: EnumDefinition,
+  diagnosticPath: string,
+  refs: ContextEnumReference[],
+  errors: ValidationMessage[]
+): void {
+  if (Array.isArray(definition)) {
+    definition.forEach((item, index) => {
+      if (item && typeof item === 'object' && !Array.isArray(item) && 'ref' in item) {
+        pushContextEnumReference(enumName, `${diagnosticPath}[${index}]`, item as EnumReferenceObject, refs, errors)
+      }
+    })
+    return
+  }
+  if (!definition || typeof definition !== 'object') return
+
+  const objectDefinition = definition as Record<string, any>
+  Object.keys(objectDefinition).forEach(key => {
+    if (key === '__refs' || key === '$refs') return
+    const value = objectDefinition[key]
+    if (value && typeof value === 'object' && !Array.isArray(value) && 'ref' in value) {
+      pushContextEnumReference(enumName, `${diagnosticPath}.${key}`, value as EnumReferenceObject, refs, errors)
+    }
+  })
+
+  const configuredRefs = objectDefinition.__refs || objectDefinition.$refs
+  if (Array.isArray(configuredRefs)) {
+    configuredRefs.forEach((value, index) => {
+      if (value) {
+        pushContextEnumReference(enumName, `${diagnosticPath}.__refs[${index}]`, value as EnumReferenceObject, refs, errors)
+      } else {
+        errors.push(makeContextReferenceError({
+          enumName,
+          diagnosticPath: `${diagnosticPath}.__refs[${index}]`,
+          table: '',
+          field: ''
+        }, `[tables] context.enums.${enumName}.__refs[${index}] 配置为空`, {}))
+      }
+    })
+  }
+}
+
+function pushContextEnumReference(
+  enumName: string,
+  diagnosticPath: string,
+  input: EnumReferenceObject,
+  refs: ContextEnumReference[],
+  errors: ValidationMessage[]
+): void {
+  try {
+    refs.push(toContextEnumReference(enumName, diagnosticPath, input))
+  } catch (error: any) {
+    errors.push(makeContextReferenceError({
+      enumName,
+      diagnosticPath,
+      table: '',
+      field: ''
+    }, error && error.message ? error.message : String(error), {}))
+  }
+}
+
+function toContextEnumReference(
+  enumName: string,
+  diagnosticPath: string,
+  input: EnumReferenceObject
+): ContextEnumReference {
+  const config = normalizeReferenceConfig(enumName, input)
+  return {
+    enumName,
+    diagnosticPath,
+    table: config.table,
+    field: config.field,
+    ...(config.valueField ? { valueField: config.valueField } : {}),
+    ...(config.nameField ? { nameField: config.nameField } : {}),
+    ...(config.descriptionField ? { descriptionField: config.descriptionField } : {}),
+    ...(config.transform ? { transform: config.transform } : {}),
+    ...(config.prefix ? { prefix: config.prefix } : {}),
+    ...(config.suffix ? { suffix: config.suffix } : {}),
+    ...(config.filter ? { filter: config.filter } : {})
+  }
+}
+
+function validateReference(ref: ContextEnumReference, options: ResolverOptions): ValidationMessage | undefined {
+  const absolutePath = Path.resolve(options.baseDir, ref.table)
+  if (!fs.pathExistsSync(absolutePath)) {
+    return makeContextReferenceError(ref, `context enum '${ref.enumName}' references missing table '${ref.table}'`, {
+      table: ref.table,
+      field: ref.field
+    })
+  }
+
+  try {
+    const bundle = loadTableConvert(ref.table, options)
+    const convert = bundle.convert || {}
+    const aliasBundle = (convert.aliases || {})[ref.field]
+    if (!aliasBundle) {
+      return makeContextReferenceError(ref, `context enum '${ref.enumName}' references '${ref.table}#${ref.field}', but that field is not an alias column`, {
+        table: ref.table,
+        field: ref.field,
+        expected: 'alias_column'
+      })
+    }
+  } catch (error: any) {
+    return makeContextReferenceError(ref, error && error.message ? error.message : String(error), {
+      table: ref.table,
+      field: ref.field
+    })
+  }
+
+  return undefined
+}
+
+function makeContextReferenceError(
+  ref: ContextEnumReference,
+  message: string,
+  details: Record<string, unknown>
+): ValidationMessage {
+  return {
+    severity: 'error',
+    code: 'context_ref_error',
+    message,
+    diagnosticPath: ref.diagnosticPath,
+    details: {
+      enumName: ref.enumName,
+      ...details
+    }
+  }
 }
 
 function resolveArrayDefinition(enumName: string, definition: EnumArrayDefinition, options: ResolverOptions): EnumEntry[] {

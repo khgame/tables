@@ -205,12 +205,19 @@ export const useAIActions = (
         cachedLocalSuggestion = localSuggestion ?? null;
         if (localSuggestion && shouldAutoplaySuggestion(localSuggestion)) {
           aiLog.info('[local:auto]', formatLocalSuggestion(localSuggestion));
-          processedRef.current.add(key);
+          // 标记当前任务为活跃，真正执行成功后再记为 processed
+          activeKeyRef.current = key;
           const pos = { row: localSuggestion.row, col: localSuggestion.col };
+          const localDelay = !hasValidSettings(aiSettings)
+            ? Math.floor(500 + Math.random() * 2500) // 0.5~3s
+            : 520;
           timerRef.current = window.setTimeout(() => {
+            // 若在等待期间出现动画或任务被取消，则不执行
+            if (activeKeyRef.current !== key) return;
             clearRunningTask();
+            processedRef.current.add(key);
             actions.placeStone(pos.row, pos.col);
-          }, 520);
+          }, localDelay);
           return;
         }
       }
@@ -230,19 +237,37 @@ export const useAIActions = (
 
         attempts += 1;
         attemptsPerKeyRef.current.set(key, attempts);
+        const rand = (min: number, max: number) => Math.floor(min + Math.random() * (max - min));
         const baseDelay = (() => {
+          const local = !hasValidSettings(aiSettings);
+          if (local) {
+            switch (scenarioPayload.kind) {
+              case 'stone':
+                return rand(500, 3000); // 0.5~3s
+              case 'skill':
+                return rand(1000, 5000); // 1~5s（模拟犹豫）
+              case 'card_targeting':
+                return rand(800, 2000);
+              case 'counter_window':
+                return rand(600, 1800);
+              case 'mulligan':
+              default:
+                return rand(300, 1200);
+            }
+          }
+          // 云端：轻量延迟，避免与网络耗时叠加
           switch (scenarioPayload.kind) {
             case 'counter_window':
               return 600;
             case 'skill':
-              return 680;
+              return 650;
             case 'stone':
-              return 520;
+              return 500;
             default:
-              return 750;
+              return 700;
           }
         })();
-        const delay = reason ? 600 : baseDelay;
+        const delay = baseDelay;
         cycleProgressMessage(scenarioPayload, descriptor.message, reason);
         aiLog.info(
           `[${scenarioPayload.kind}][attempt=${attempts}] ${descriptor.startLog}${reason ? `（原因：${reason}）` : ''}`
@@ -250,6 +275,7 @@ export const useAIActions = (
 
         activeKeyRef.current = key;
         timerRef.current = window.setTimeout(async () => {
+          // 若期间出现动画或任务被取消，直接忽略
           if (activeKeyRef.current !== key) return;
 
           const feedbackMessage = reason;
@@ -272,6 +298,8 @@ export const useAIActions = (
 
           const runFallback = () => {
             aiLog.warn(`[${scenarioPayload.kind}] 默认回退策略`);
+            // 若在等待期间出现动画或任务被取消，则不执行
+            if (activeKeyRef.current !== key) return;
             fallbackDecision(scenarioPayload, gameState, actions, cachedLocalSuggestion);
             finalize();
           };
@@ -285,6 +313,8 @@ export const useAIActions = (
           try {
             const decision = await requestAiDecision(aiSettings, scenarioPayload, { feedback: feedbackMessage });
             aiLog.info('[response_json]', decision);
+            // 动画期间可能已取消当前任务
+            if (activeKeyRef.current !== key) return;
             const outcome = decision
               ? applyDecision(decision, scenarioPayload, gameState, actions)
               : { success: false, reason: '未提供有效决策' };
@@ -342,7 +372,7 @@ export const useAIActions = (
     return () => {
       clearRunningTask(false);
     };
-  }, [gameState, aiSettings, playCard, placeStone, resolveCard, selectTarget, updateAiStatus]);
+  }, [gameState, aiSettings, playCard, placeStone, resolveCard, selectTarget, updateAiStatus, visualsActive]);
 
   useEffect(() => () => {
     if (timerRef.current !== null) {

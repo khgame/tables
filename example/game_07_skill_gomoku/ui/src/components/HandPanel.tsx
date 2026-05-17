@@ -14,6 +14,7 @@ export interface HandPanelProps {
   className?: string;
   isOpponent?: boolean;
   animateThinking?: boolean;
+  allowTapPlay?: boolean;
 }
 
 export const HandPanel: React.FC<HandPanelProps> = ({
@@ -25,7 +26,8 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   onCardDragEnd,
   className,
   isOpponent = false,
-  animateThinking = false
+  animateThinking = false,
+  allowTapPlay = false
 }) => {
   const [pickedIdx, setPickedIdx] = React.useState<number | null>(null);
   const [pickedStyle, setPickedStyle] = React.useState<string>('');
@@ -197,7 +199,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   }, [isOpponent, animateThinking, cards.length, clearTimers]);
   if (cards.length === 0) {
     return (
-      <div className={cx('relative flex h-[8.8rem] w-full items-end justify-start', className)}>
+      <div className={cx('relative flex h-[8rem] w-full items-end justify-start', className)}>
         <div className="flex h-full w-full items-center justify-start pl-4 text-sm italic text-amber-200/70">
           {isOpponent ? '白方无手牌' : '暂无手牌'}
         </div>
@@ -212,7 +214,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
   const angleStep = total > 1 ? angleRange / (total - 1) : 0;
   // 增加卡牌间距，确保能看清所有卡面
   const spacingBase = total > 1 ? Math.min(65, 50 + total * 1.8) : 0;
-  const baseWidth = total >= 5 ? 9.8 : 10.8;
+  const baseWidth = total >= 5 ? 9.4 : 10.2;
 
   return (
     <div
@@ -259,6 +261,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                 variant="hand"
                 disabled={disabled}
                 revealBack={isOpponent}
+                enableHandClick={allowTapPlay && !isOpponent && !disabled && typeof onCardClick === 'function'}
                 style={{
                   width: `${baseWidth}rem`,
                   // raise selected card; rely on CSS transitions inside CardView wrapper
@@ -269,7 +272,7 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                   isOpponent && isLeavingCard && 'animate-card-fly-out-opponent'
                 )}
                 onClick={() => {
-                  if (!disabled && !isOpponent) onCardClick?.(idx);
+                  if (!disabled && !isOpponent && allowTapPlay) onCardClick?.(idx);
                 }}
                 onHover={hoverCard => {
                   if (!disabled && !isOpponent) onCardHover?.(hoverCard);
@@ -279,19 +282,15 @@ export const HandPanel: React.FC<HandPanelProps> = ({
                     onCardHover?.(null);
                   }
                 }}
-                onDragStart={event => {
-                  if (!isOpponent) {
-                    event.dataTransfer.setData('application/x-card-index', String(idx));
-                    event.dataTransfer.setData('text/plain', String(idx));
-                    onCardDragStart?.(idx);
-                  }
-                }}
-                onDragEnd={() => {
-                  if (!isOpponent) {
-                    onCardDragEnd?.();
-                    onCardHover?.(null);
-                  }
-                }}
+                onDragStart={(!isOpponent && !allowTapPlay) ? (event => {
+                  event.dataTransfer.setData('application/x-card-index', String(idx));
+                  event.dataTransfer.setData('text/plain', String(idx));
+                  onCardDragStart?.(idx);
+                }) : undefined}
+                onDragEnd={(!isOpponent && !allowTapPlay) ? (() => {
+                  onCardDragEnd?.();
+                  onCardHover?.(null);
+                }) : undefined}
               />
             </div>
           );

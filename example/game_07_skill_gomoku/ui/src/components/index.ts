@@ -30,6 +30,15 @@ export type { AvatarBadgeProps, OpponentHudProps, PlayerHudProps } from './Hud';
 export { ZonePanel } from './ZonePanel';
 export type { ZonePanelProps } from './ZonePanel';
 
+export { CombinedShichahaiPanel } from './CombinedShichahaiPanel';
+export type { CombinedShichahaiPanelProps } from './CombinedShichahaiPanel';
+
+export { CardCollectionPanel } from './CardCollectionPanel';
+export type { CardCollectionPanelProps } from './CardCollectionPanel';
+
+export { CardCollectionTrigger } from './CardCollectionTrigger';
+export type { CardCollectionTriggerProps } from './CardCollectionTrigger';
+
 export { SkillEffectLayer } from './SkillEffectLayer';
 export type { SkillEffectLayerProps } from './SkillEffectLayer';
 
@@ -53,5 +62,8 @@ export type { RulesIntroPanelProps } from './RulesIntroPanel';
 
 export { CardFlyingAnimation } from './CardFlyingAnimation';
 export type { FlyingCardData } from './CardFlyingAnimation';
+
+export { GameStageLayout } from './GameStageLayout';
+export type { GameStageLayoutProps } from './GameStageLayout';
 
 // (MusicToggle kept, but not exported here to avoid accidental external usage)

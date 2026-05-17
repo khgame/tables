@@ -1,4 +1,5 @@
 import type { PrimitiveType, TypeNode } from '../serializer/core/schemaModel'
+import { createConvertError, getConvertErrorMetadata } from './validationError'
 
 export type AliasComputationInput = {
   aliasColumns: number[]
@@ -59,7 +60,11 @@ export function normalizeValue(value: any, node: TypeNode, path: string): any {
         try {
           return normalizeValue(value, variant, path)
         } catch (error) {
-          if (error instanceof Error && error.message && error.message.includes('[tables] numeric value')) {
+          const metadata = getConvertErrorMetadata(error)
+          if (
+            metadata?.code === 'numeric_overflow' ||
+            (error instanceof Error && error.message && error.message.includes('[tables] numeric value'))
+          ) {
             throw error
           }
         }
@@ -81,17 +86,32 @@ export function normalizePrimitive(value: any, node: PrimitiveType, path: string
     if (value === undefined || value === null) return value
     if (typeof value === 'string') return value
     if (typeof value === 'number' || typeof value === 'bigint') return String(value)
-    throw new Error(
-      `[tables] expected ${location}${aliasSuffix} to be a numeric string for BigInt preservation, received ${typeof value}`
-    )
+    const message = `[tables] expected ${location}${aliasSuffix} to be a numeric string for BigInt preservation, received ${typeof value}`
+    throw createConvertError(message, {
+      code: 'bigint_expected_numeric_string',
+      ...buildNumericValidationContext(location, {
+        convertPath: location,
+        expected: 'numeric_string',
+        receivedType: typeof value,
+        sourceAlias: hintMeta?.sourceAlias
+      })
+    })
   }
 
   if (strategy === 'int') {
     if (typeof value === 'number') {
       if (!Number.isSafeInteger(value)) {
-        throw new Error(
-          `[tables] numeric value ${value} at ${location}${aliasSuffix} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`
-        )
+        const message = `[tables] numeric value ${value} at ${location}${aliasSuffix} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`
+        throw createConvertError(message, {
+          code: 'numeric_overflow',
+          ...buildNumericValidationContext(location, {
+            rawValue: String(value),
+            convertPath: location,
+            maxSafeInteger: MAX_SAFE_INTEGER,
+            suggestedType: 'BigNum',
+            sourceAlias: hintMeta?.sourceAlias
+          })
+        })
       }
       return value
     }
@@ -102,9 +122,17 @@ export function normalizePrimitive(value: any, node: PrimitiveType, path: string
       if (trimmed === '') return value
       const parsed = Number(trimmed)
       if (!Number.isFinite(parsed) || !Number.isSafeInteger(parsed)) {
-        throw new Error(
-          `[tables] numeric value ${value} at ${location}${aliasSuffix} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`
-        )
+        const message = `[tables] numeric value ${value} at ${location}${aliasSuffix} exceeds Number.MAX_SAFE_INTEGER(${MAX_SAFE_INTEGER}). Consider using BigNum.`
+        throw createConvertError(message, {
+          code: 'numeric_overflow',
+          ...buildNumericValidationContext(location, {
+            rawValue: value,
+            convertPath: location,
+            maxSafeInteger: MAX_SAFE_INTEGER,
+            suggestedType: 'BigNum',
+            sourceAlias: hintMeta?.sourceAlias
+          })
+        })
       }
       return parsed
     }
@@ -113,18 +141,42 @@ export function normalizePrimitive(value: any, node: PrimitiveType, path: string
   return value
 }
 
+function buildNumericValidationContext(location: string, details: Record<string, unknown>) {
+  const pathContext = parseConvertPath(location)
+  return cleanContext({
+    location: {
+      row: pathContext.row,
+      fieldPath: pathContext.fieldPath
+    },
+    details: {
+      ...details,
+      tableName: pathContext.tableName
+    }
+  })
+}
+
 export function computeAliasInfo(input: AliasComputationInput): AliasComputationResult {
   const { aliasColumns, descList, markCols, convertedRows, tids, tableName } = input
   if (!Array.isArray(aliasColumns) || aliasColumns.length === 0) return null
   if (aliasColumns.length > 1) {
-    throw new Error(`[tables] 表 ${tableName} 暂不支持多个 alias 列`)
+    throw createConvertError(`[tables] 表 ${tableName} 暂不支持多个 alias 列`, {
+      code: 'multiple_alias_columns',
+      details: {
+        tableName
+      }
+    })
   }
 
   const aliasIndex = aliasColumns[0]
   const fieldName = descList[aliasIndex]
   const columnName = markCols[aliasIndex]
   if (!fieldName) {
-    throw new Error(`[tables] alias 列对应的描述行为空，请为列 ${columnName} 设置字段名`)
+    throw createConvertError(`[tables] alias 列对应的描述行为空，请为列 ${columnName} 设置字段名`, {
+      code: 'missing_alias_descriptor',
+      location: {
+        column: columnName
+      }
+    })
   }
 
   const aliasMap: Record<string, string> = {}
@@ -146,7 +198,17 @@ export function computeAliasInfo(input: AliasComputationInput): AliasComputation
 
   if (duplicates.length > 0) {
     const deduped = Array.from(new Set(duplicates))
-    throw new Error(`[tables] 表 ${tableName} 的 alias 列 '${fieldName}' 存在重复别名：${deduped.join(', ')}`)
+    throw createConvertError(`[tables] 表 ${tableName} 的 alias 列 '${fieldName}' 存在重复别名：${deduped.join(', ')}`, {
+      code: 'duplicate_alias',
+      location: {
+        column: columnName,
+        fieldPath: fieldName
+      },
+      details: {
+        tableName,
+        duplicateAliases: deduped
+      }
+    })
   }
 
   return {
@@ -165,4 +227,36 @@ export function computeAliasInfo(input: AliasComputationInput): AliasComputation
       values: Object.keys(aliasMap).sort()
     }
   }
+}
+
+function parseConvertPath(path: string): { tableName?: string; row?: number; fieldPath?: string } {
+  const match = new RegExp('^(.+)\\[row ([0-9]+)\\](?:\\.(.+))?$').exec(path)
+  if (!match) return {}
+  return {
+    tableName: match[1],
+    row: Number(match[2]),
+    fieldPath: match[3]
+  }
+}
+
+function cleanContext(context: {
+  location?: Record<string, unknown>;
+  details?: Record<string, unknown>;
+}) {
+  const location = cleanRecord(context.location)
+  const details = cleanRecord(context.details)
+  return {
+    ...(location ? { location } : {}),
+    ...(details ? { details } : {})
+  }
+}
+
+function cleanRecord(record?: Record<string, unknown>): Record<string, unknown> | undefined {
+  if (!record) return undefined
+  const cleaned: Record<string, unknown> = {}
+  Object.keys(record).forEach(key => {
+    const value = record[key]
+    if (value !== undefined) cleaned[key] = value
+  })
+  return Object.keys(cleaned).length > 0 ? cleaned : undefined
 }

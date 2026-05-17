@@ -52,6 +52,7 @@
   "dependencies": {
     "@babel/runtime": "^7.3.4",
     "@khgame/schema": "^0.0.11",
+    "@tabler/icons-react": "^3.35.0",
     "assert": "^1.4.1",
     "chalk": "^2.4.2",
     "deep-equal": "^1.0.1",

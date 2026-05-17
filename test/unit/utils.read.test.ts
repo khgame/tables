@@ -26,6 +26,7 @@ describe('translateWorkBook', () => {
     }
 
     const table = Read.translateWorkBook(workbook, 'bar')
+    expect(table.sheetName).toBe('bar')
     expect(table.cols).toEqual(['A', 'B', 'AA'])
     expect(table.getValue(table, '2', 'B')).toBe('Alpha')
     expect(table.getValue(table, '3', 'AA')).toBe('extra')
@@ -80,6 +81,7 @@ describe('readAndTranslate', () => {
     readFile.mockReturnValue(workbookStub)
 
     const result = Read.readAndTranslate('path.xlsx')
+    expect(result.sheetName).toBe('foo')
     expect(result.getValue(result, '2', 'B')).toBe(1)
   })
 

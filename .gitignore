@@ -90,3 +90,7 @@ AGENTS.md
 docs-site/.vitepress/dist
 .vscode
 .ref
+
+.codex
+.bagakit
+.worktrees

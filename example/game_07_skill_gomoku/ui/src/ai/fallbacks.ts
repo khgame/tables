@@ -25,6 +25,14 @@ export const fallbackDecision = (
       fallbackPlaceStone(state, actions, localSuggestion ?? null);
       break;
     case 'skill':
+      // 仅在白方回合且处于 PLAYING 阶段时才允许回退技能
+      if (
+        state.phase !== 'playing' ||
+        state.currentPlayer !== PlayerEnum.WHITE ||
+        state.pendingAction || state.pendingCounter || state.targetRequest || state.draft
+      ) {
+        break;
+      }
       if (scenario.skills.length === 0) { fallbackPlaceStone(state, actions, null); break; }
 
       const mySkills = scenario.skills;
@@ -69,9 +77,18 @@ export const fallbackDecision = (
         if (option) actions.selectTarget({ id: option.id });
       }
       break;
-    case 'counter_window':
+    case 'counter_window': {
+      // 若是我方（BLACK）瞬发技能，AI 放弃反击时不应立刻结算，等待 7s 倒计时结束
+      const pending = state.pendingAction;
+      const isBlackInstant = Boolean(pending && pending.player === PlayerEnum.BLACK && pending.metadata && (pending.metadata as any).uiInstant);
+      if (isBlackInstant) {
+        // 交由 useAutoResolvePending 在 7s 后自动结算
+        break;
+      }
+      if (state.phase !== 'counter_window') { break; }
       actions.resolveCard(false, null);
       break;
+    }
   }
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import standPng from '../assets/stand.png';
-import { PLAYER_NAMES, PlayerEnum } from '../core/constants';
+import { PLAYER_NAMES, PlayerEnum, GamePhaseEnum } from '../core/constants';
 import type { GameStatus, Player, RawCard } from '../types';
 import { CardView } from './CardView';
 
@@ -18,6 +18,8 @@ export interface PendingCardPanelProps {
   isInstant?: boolean;
   // 瞬发确认时间（毫秒）
   confirmMs?: number;
+  // 当前阶段（用于控制提示文案/按钮显示）
+  phase?: GameStatus['phase'];
 }
 
 export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
@@ -31,7 +33,8 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   onReact,
   onCancel,
   isInstant = false,
-  confirmMs = 7000
+  confirmMs = 7000,
+  phase
 }) => {
   if (!pendingCard) return null;
   const [appear, setAppear] = useState(false);
@@ -42,6 +45,8 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
   const actingPlayer = pendingCard.player;
   const isResponderAI = aiEnabled && responder === PlayerEnum.WHITE;
   const canCounter = responder === PlayerEnum.BLACK && availableCounters.length > 0;
+  const inCounterWindow = phase === GamePhaseEnum.COUNTER_WINDOW;
+  const inTargeting = phase === GamePhaseEnum.CARD_TARGETING;
 
   return (
     <div className="pointer-events-auto relative">
@@ -129,7 +134,7 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
           </div>
         ) : (
           <div className="pt-1">
-            {pendingCard.player === PlayerEnum.WHITE && responder === PlayerEnum.BLACK ? (
+            {pendingCard.player === PlayerEnum.WHITE && responder === PlayerEnum.BLACK && inCounterWindow ? (
               // 敌方技能，无可反击：给出情绪化按钮等价"放弃反击"
               <div className="flex items-center gap-2">
                 {['可恶', '我知道了', '竟然'].map((label, i) => (
@@ -151,30 +156,38 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
                 ))}
               </div>
             ) : pendingCard.player === PlayerEnum.BLACK ? (
-              // 我方技能：瞬发显示倒计时+"发动"，非瞬发不显示倒计时，仅允许取消
-              isInstant ? (
+              // 我方技能：根据阶段调整 UI
+              inCounterWindow ? (
+                // 反击窗口
+                isInstant ? (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onResolve(false, null)}
+                      className="px-4 py-2 bg-fuchsia-600/90 text-white font-bold text-sm rounded-full shadow hover:bg-fuchsia-600"
+                    >
+                      发动
+                    </button>
+                    <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} ms={confirmMs} />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onCancel?.()}
+                      className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
+                    >
+                      取消
+                    </button>
+                    <span className="text-[0.7rem] text-slate-300">等待对手是否反击…</span>
+                  </div>
+                )
+              ) : inTargeting ? (
+                // 目标选择阶段：仅提示“请选择目标”（取消按钮在该阶段隐藏，以免引擎不支持）
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onResolve(false, null)}
-                    className="px-4 py-2 bg-fuchsia-600/90 text-white font-bold text-sm rounded-full shadow hover:bg-fuchsia-600"
-                  >
-                    发动
-                  </button>
-                  <CountdownCancel onCancel={onCancel} onTimeout={() => onResolve(false, null)} ms={confirmMs} />
+                  <span className="text-[0.75rem] text-amber-100 font-semibold">请选择技能目标</span>
                 </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onCancel?.()}
-                    className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
-                  >
-                    取消
-                  </button>
-                  <span className="text-[0.7rem] text-slate-300">等待对手是否反击…</span>
-                </div>
-              )
+              ) : null
             ) : null}
           </div>
         )}
@@ -184,34 +197,43 @@ export const PendingCardPanel: React.FC<PendingCardPanelProps> = ({
 };
 
 const CountdownCancel: React.FC<{ onCancel?: () => void; onTimeout: () => void; ms?: number }> = ({ onCancel, onTimeout, ms = 3000 }) => {
-  const [remain, setRemain] = useState(Math.max(1, Math.round(ms / 1000)));
-  const cancelledRef = React.useRef(false);
-  const firedRef = React.useRef(false);
+  // Display remaining seconds, computed against a fixed end time to avoid off-by-one
+  const [remain, setRemain] = useState(() => Math.max(1, Math.ceil(ms / 1000)));
+  const endRef = React.useRef<number>(Date.now() + ms);
+  const cancelRef = React.useRef(false);
+  const timeoutRef = React.useRef<number | null>(null);
+  const tickRef = React.useRef<number | null>(null);
+
   useEffect(() => {
-    const t1 = window.setInterval(() => {
-      setRemain(prev => {
-        if (prev <= 1) {
-          window.clearInterval(t1);
-          if (!cancelledRef.current && !firedRef.current) {
-            firedRef.current = true;
-            onTimeout();
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(t1);
-  }, [onTimeout, ms]);
+    // reset timers when ms changes
+    endRef.current = Date.now() + ms;
+    setRemain(Math.max(1, Math.ceil(ms / 1000)));
+    cancelRef.current = false;
+    if (timeoutRef.current !== null) { window.clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (tickRef.current !== null) { window.clearInterval(tickRef.current); tickRef.current = null; }
+
+    timeoutRef.current = window.setTimeout(() => {
+      if (!cancelRef.current) onTimeout();
+    }, ms) as unknown as number;
+
+    const update = () => {
+      const leftMs = Math.max(0, endRef.current - Date.now());
+      setRemain(Math.max(0, Math.ceil(leftMs / 1000)));
+    };
+    update();
+    tickRef.current = window.setInterval(update, 250) as unknown as number;
+
+    return () => {
+      if (timeoutRef.current !== null) { window.clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+      if (tickRef.current !== null) { window.clearInterval(tickRef.current); tickRef.current = null; }
+    };
+  }, [ms, onTimeout]);
 
   return (
     <div className="flex items-center gap-2">
       <button
         type="button"
-        onClick={() => {
-          cancelledRef.current = true;
-          onCancel?.();
-        }}
+        onClick={() => { cancelRef.current = true; onCancel?.(); }}
         className="px-4 py-2 bg-slate-700/90 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700"
       >
         取消

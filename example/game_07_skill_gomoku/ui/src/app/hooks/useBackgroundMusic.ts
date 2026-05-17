@@ -6,7 +6,9 @@ let sharedAudio: HTMLAudioElement | null = null;
 let sharedDidInit = false;
 let sharedIsPlaying = false;
 let sharedVolume = 0.2;
-const listeners = new Set<(s: { isPlaying: boolean; volume: number }) => void>();
+// Persisted user preference: whether BGM is allowed to auto-play
+let sharedEnabled = true;
+const listeners = new Set<(s: { isPlaying: boolean; volume: number; enabled: boolean }) => void>();
 
 type BgmPrefs = {
   enabled: boolean;
@@ -40,6 +42,7 @@ const writePrefs = (prefs: BgmPrefs) => {
 export const useBackgroundMusic = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(sharedIsPlaying);
   const [volume, setVolume] = useState<number>(sharedVolume);
+  const [enabled, setEnabled] = useState<boolean>(sharedEnabled);
   const audioRef = useRef<HTMLAudioElement | null>(sharedAudio);
 
   // lazy init to avoid constructing audio element during SSR
@@ -58,9 +61,10 @@ export const useBackgroundMusic = () => {
   // load persisted prefs once
   useEffect(() => {
     // subscribe to global state changes
-    const listener = (s: { isPlaying: boolean; volume: number }) => {
+    const listener = (s: { isPlaying: boolean; volume: number; enabled: boolean }) => {
       setIsPlaying(s.isPlaying);
       setVolume(s.volume);
+      setEnabled(s.enabled);
     };
     listeners.add(listener);
     // first-time global init only
@@ -69,7 +73,9 @@ export const useBackgroundMusic = () => {
       const prefs = readPrefs();
       sharedVolume = prefs.volume;
       setVolume(sharedVolume);
-      if (prefs.enabled) {
+      sharedEnabled = prefs.enabled;
+      setEnabled(sharedEnabled);
+      if (sharedEnabled) {
         const audio = ensureAudio();
         audio.volume = sharedVolume;
         audio.play().then(() => {
@@ -96,7 +102,7 @@ export const useBackgroundMusic = () => {
   }, [volume]);
 
   const notify = () => {
-    listeners.forEach(fn => fn({ isPlaying: sharedIsPlaying, volume: sharedVolume }));
+    listeners.forEach(fn => fn({ isPlaying: sharedIsPlaying, volume: sharedVolume, enabled: sharedEnabled }));
   };
 
   const play = useCallback(async () => {
@@ -105,7 +111,9 @@ export const useBackgroundMusic = () => {
       await audio.play();
       sharedIsPlaying = true;
       setIsPlaying(true);
-      writePrefs({ enabled: true, volume: sharedVolume });
+      sharedEnabled = true; // user explicitly enabled
+      setEnabled(true);
+      writePrefs({ enabled: sharedEnabled, volume: sharedVolume });
       notify();
     } catch (err) {
       sharedIsPlaying = false;
@@ -119,7 +127,9 @@ export const useBackgroundMusic = () => {
     sharedAudio.pause();
     sharedIsPlaying = false;
     setIsPlaying(false);
-    writePrefs({ enabled: false, volume: sharedVolume });
+    sharedEnabled = false; // user explicitly disabled
+    setEnabled(false);
+    writePrefs({ enabled: sharedEnabled, volume: sharedVolume });
     notify();
   }, []);
 
@@ -131,12 +141,13 @@ export const useBackgroundMusic = () => {
 
   return {
     isPlaying,
+    enabled,
     volume,
     setVolume: (v: number) => {
       sharedVolume = Math.min(1, Math.max(0, v));
       setVolume(sharedVolume);
       if (sharedAudio) sharedAudio.volume = sharedVolume;
-      writePrefs({ enabled: sharedIsPlaying, volume: sharedVolume });
+      writePrefs({ enabled: sharedEnabled, volume: sharedVolume });
       notify();
     },
     play,

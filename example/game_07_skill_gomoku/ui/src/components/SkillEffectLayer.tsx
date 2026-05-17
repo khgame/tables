@@ -1,5 +1,6 @@
 import React from 'react';
-import type { VisualEffectEvent } from '../types';
+import skill5Img from '../assets/skill5.png';
+import type { VisualEffectEvent, Player } from '../types';
 import { PlayerEnum } from '../core/constants';
 import { SkillEffect } from '../skills/effects';
 import { skillPerformanceManager } from '../core/skillPerformance';
@@ -28,19 +29,29 @@ const getEffectColor = (effectId?: string) => {
 
 export interface SkillEffectLayerProps {
   events: VisualEffectEvent[];
+  // 可选：覆盖玩家显示名称（用于回放时显示“{用户名}/启发者”）
+  playerNames?: Record<Player, string>;
 }
 
-export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) => {
+export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events, playerNames }) => {
   // 使用技能表演管理器进行排序，确保攻击方技能先播放，反击方技能后播放
   const sortedEvents = skillPerformanceManager.sortEvents(events);
+  const labels: Record<Player, string> = playerNames ?? ({ [PlayerEnum.BLACK]: '黑方', [PlayerEnum.WHITE]: '白方' } as any);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-[120000]">
       {sortedEvents.map((event, index) => {
         const isPlayerSkill = event.player === PlayerEnum.BLACK;
         const colors = getEffectColor(event.effectId);
-        const playerPrefix = isPlayerSkill ? '黑方发动' : '白方发动';
+        const who = labels[isPlayerSkill ? PlayerEnum.BLACK : PlayerEnum.WHITE] || (isPlayerSkill ? '黑方' : '白方');
+        const playerPrefix = `${who}发动`;
         const skillText = `${playerPrefix} ${event.cardName}!!`;
+        const quote = (event.cardQuote || '').trim();
+        const isSkillFive = String(event.cardTid ?? '') === '1015' || (event.cardName?.includes('技能五'));
+        const isSeeYouAgain = String(event.cardTid ?? '') === '1016' || (event.cardName?.toLowerCase().includes('see you again')) || event.effectId === SkillEffect.ForceExit;
+        const extraNote = isSkillFive
+          ? '下一个回合开始合体技可以生效了'
+          : (isSeeYouAgain ? '对受的合体技被封印了, 哈哈哈嘻哈哈哈' : '');
 
         // 判断是否为反击技能（基于 role 字段）
         const isCounterSkill = event.role === 'counter';
@@ -162,7 +173,7 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
               {skillText}
             </div>
 
-            {/* 主文字 - 白色高亮 */}
+            {/* 主文字 - 白色高亮 + 引用（卡牌宣言） */}
             <div
               className="relative text-6xl font-black select-none"
               style={{
@@ -176,7 +187,28 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
                 filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))'
               }}
             >
-              {skillText}
+              {/* 图像改为绝对定位浮在文字上方，不影响文字排版 */}
+              {isSkillFive && (
+                <img
+                  src={skill5Img}
+                  alt="技能五"
+                  className="absolute left-1/2 z-0 pointer-events-none drop-shadow-[0_8px_18px_rgba(255,255,255,0.28)]"
+                  style={{ top: isPlayerSkill ? '-3.5rem' : '-3.5rem', height: '5rem', ...(typeof window !== 'undefined' ? {} : {}), animation: `skill5-float 2.2s ease-in-out ${delayOffset + 0.1}s infinite`, transform: 'translate(-50%, 0)' }}
+                />
+              )}
+              <div className="relative z-10 flex items-center justify-center">
+                <span>{skillText}</span>
+              </div>
+              {quote && (
+                <div className="relative z-10 mt-2 text-[1.2rem] font-extrabold tracking-wider text-amber-200 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                  {quote}
+                </div>
+              )}
+              {extraNote && (
+                <div className={`mt-1 text-[1rem] font-bold ${isSkillFive ? 'text-emerald-200' : 'text-rose-200'}`}>
+                  {extraNote}
+                </div>
+              )}
             </div>
 
             {/* 装饰性元素 - 星花四溅，位置稍微错开 */}
@@ -210,6 +242,12 @@ export const SkillEffectLayer: React.FC<SkillEffectLayerProps> = ({ events }) =>
         </div>
       );
     })}
+      <style>{`
+        @keyframes skill5-float {
+          0%, 100% { transform: translate(-50%, 0); }
+          50% { transform: translate(-50%, -6px); }
+        }
+      `}</style>
   </div>
   );
 };

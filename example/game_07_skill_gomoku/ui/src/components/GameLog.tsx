@@ -28,17 +28,27 @@ export interface GameLogProps {
 
 export const GameLog: React.FC<GameLogProps> = ({ logs, onPositionHover, turnCount, currentPlayer, playerNames }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [highlight, setHighlight] = React.useState(false);
+  const lastLen = useRef(0);
 
   useEffect(() => {
     if (ref.current) {
       ref.current.scrollTop = ref.current.scrollHeight;
     }
+    if (logs.length > lastLen.current) {
+      setHighlight(true);
+      const t = window.setTimeout(() => setHighlight(false), 1800);
+      return () => window.clearTimeout(t);
+    }
+    lastLen.current = logs.length;
   }, [logs]);
 
   return (
     <div
-      className="flex flex-col rounded-xl p-3 shadow-xl mb-3 h-[280px] min-h-[280px] max-h-[280px]" // 固定高度，不超过屏幕
+      className={cx('flex flex-col rounded-xl p-3 shadow-xl mb-0 transition-shadow', highlight && 'ring-2 ring-amber-400/70 shadow-amber-400/20')}
       style={{
+        minHeight: '36vh',
+        maxHeight: '48vh',
         background: 'linear-gradient(145deg, #374151 0%, #4b5563 8%, #6b7280 92%, #4b5563 100%)',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
       }}
@@ -48,7 +58,7 @@ export const GameLog: React.FC<GameLogProps> = ({ logs, onPositionHover, turnCou
           <h3 className="text-sm font-semibold text-amber-100 drop-shadow-sm tracking-[0.18em]">棋谱纪要</h3>
           <p className="mt-0.5 text-[0.65rem] text-slate-200/70">记录每一次攻守与落子</p>
         </div>
-        <span className="rounded-full border border-amber-200/40 bg-white/10 px-3 py-0.5 text-[0.65rem] font-semibold text-amber-100/90">
+        <span className={cx('rounded-full border px-3 py-0.5 text-[0.65rem] font-semibold', highlight ? 'border-amber-300 bg-amber-200/20 text-amber-100' : 'border-amber-200/40 bg-white/10 text-amber-100/90')}>
           第 {turnCount + 1} 手 - {playerNames[currentPlayer]}回合
         </span>
       </div>

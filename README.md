@@ -40,13 +40,61 @@ Options:
   --format, -f  export format (defaults to "json").
                  Available values are resolved from the serializer registry at
                  runtime (json, js, ts, ts-interface, jsonx, go, csharp by default).
+  --context, -c context directory, context.*.json file, or full context JSON file
+  --inspect     print machine-readable diagnostics for a single input file
+  --validate    validate a single input file and print machine-readable result
+  --json        suppress incidental logs for inspect/validate machine output
   -h, --help    Show help                                              [boolean]
   --version     Show version number                                    [boolean]
 ```
 
-默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。
+默认会扫描输入目录下的 .xls/.xlsx/.csv 表格文件，可直接与 Excel 模板共用标注约定。目录输入会默认加载同目录下的 `context.*.json`；单文件输入需要上下文时可使用 `--context ./dir`、`--context ./context.enums.json` 或 `--context ./context.json`。
 
 > 提示：选择 `-f ts` 时会生成两份文件：`<Table>Solution.ts`（含数据 + 仓库实例）以及 `<Table>.ts`（纯类型与仓库定义）。`-f ts-interface` 仅输出类型文件。
+
+调试单文件时可使用：
+
+```bash
+tables -i ./example/items.csv --inspect
+```
+
+`--inspect` 会向 stdout 输出 JSON 诊断，包含实际 sheet 名、标记列、描述行、schema model、convert 计数和错误信息，便于脚本或 AI agent 定位表格问题。
+
+#### AI-friendly validate JSON
+
+当前代码提供 `--inspect` / `inspectTableFile` 作为完整诊断入口，也提供 `--validate` / `validateTableFile` 作为更适合 AI agent 和 CI 消费的校验入口：
+
+```bash
+tables -i ./example/items.csv --validate
+```
+
+`--validate` 只支持单文件输入，始终向 stdout 输出 JSON。校验失败时退出码为非 0。`--json` 可进一步抑制附带日志，保证机器通道更安静。当前输出结构：
+
+```json
+{
+  "success": false,
+  "fileName": "items",
+  "sheetName": "Sheet1",
+  "diagnostics": {
+    "fileName": "items",
+    "sheetName": "Sheet1",
+    "convert": { "present": false, "tidCount": 0, "resultCount": 0 }
+  },
+  "errors": [
+    {
+      "severity": "error",
+      "code": "convert_error",
+      "message": "required value is empty",
+      "location": { "sheetName": "Sheet1", "row": 4, "column": "A" },
+      "diagnosticPath": "convert.error",
+      "details": { "tableName": "items" }
+    }
+  ],
+  "warnings": []
+}
+```
+
+自有转换错误会优先使用结构化 metadata 生成 `location` / `details`，再回退到兼容旧错误文案的解析逻辑。`--validate --json` 还会在读取 context 后先校验 `context.enums.*` 的跨表引用，缺失目标表或目标字段不是 alias 列时返回 `context_ref_error`。测试设计应覆盖：合法表返回 `success: true` 且退出码为 0；转换错误返回 `success: false` 且退出码非 0，并尽量携带 `row`、`column`、`fieldPath` 或 `details`；TID 冲突生成 `tid_collision`；`--verbose` 或上下文加载日志不污染 stdout JSON。
 
 ### API
 
@@ -272,15 +320,15 @@ const specific = enemiesRepo.get(toEnemiesTID('50010001'));
    }
    ```
    其中 `"enums"` 对应上一步 JSON 的键名；可写成数组导出多个命名空间。
-3. **在脚本中加载上下文**：CLI 默认不会读取上下文，推荐在自定义脚本中调用 `loadContext`：
+3. **在脚本中加载上下文**：目录输入时 CLI 会自动读取同目录下的 `context.*.json`；自定义脚本或单文件输入推荐显式调用 `loadContextPath`：
    ```ts
-   const { loadContext, serialize, tsInterfaceSerializer } = require('@khgame/tables');
-   const ctx = loadContext('./example');
+   const { loadContextPath, serialize, tsInterfaceSerializer } = require('@khgame/tables');
+   const ctx = loadContextPath('./example');
    serialize('./example/items.xlsx', './out', {
      'Items.ts': tsInterfaceSerializer
    }, ctx);
    ```
-   `loadContext(dir)` 会自动读取 `dir` 下符合 `context.*.json` 的文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
+   `loadContextPath(path)` 会读取 context 目录、单个 `context.<blob>.json`，或完整 context JSON 文件，并在序列化阶段提供 `context.enums.*`、`context.meta.*` 等信息。
 4. **表头写成 `enum<Rarity>`**：当标记行使用 `enum<Rarity>`（或 `enum<Rarity|Fallback>`）时，`tableSchema`/`tableConvert` 会校验单元格值是否存在于上下文枚举中；TS/Go/C# 序列化器则会在产物中生成 `TableContext.Rarity` 引用。
 
 ## TS 输出结构

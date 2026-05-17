@@ -1,4 +1,5 @@
 import React from 'react';
+import standKara from '../assets/stand_kara.png';
 import { SKILL_UNLOCK_MOVE } from '../core/constants';
 
 export interface RulesIntroPanelProps {
@@ -30,7 +31,13 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
 
         {/* 顶部标题区 */}
         <header className="relative flex items-start px-6 pt-6">
-          <div className="mr-auto">
+          <div className="mr-auto flex items-center gap-4">
+            <img
+              src={standKara}
+              alt="player"
+              className="h-28 md:h-36 w-auto rounded-xl object-cover object-top select-none pointer-events-none"
+              style={{ transform: 'scale(1.1)' }}
+            />
             <h1 className="font-display text-5xl md:text-6xl font-extrabold tracking-wide text-amber-200 drop-shadow-[0_6px_18px_rgba(245,158,11,0.35)]">
               技能五子棋
             </h1>
@@ -44,7 +51,7 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
             {[
               '棋盘 15×15，连成五子即获胜。',
               '黑先白后，白方由 AI 控制（开启对战后）。',
-              `第 ${SKILL_UNLOCK_MOVE} 步起解锁技能卡（冻结/跳过会影响回合）。`,
+              '第二轮抽卡后可以释放技能（冻结/跳过会影响回合）。',
               '什刹海记录被移除的棋子，墓地记录使用过的卡。',
               '合体技需“张兴朝”在场，召唤当回合不可立刻使用合体技。'
             ].map((line, idx) => (
@@ -60,7 +67,7 @@ export const RulesIntroPanel: React.FC<RulesIntroPanelProps> = ({ hasConfig, onS
 
           {/* 行动区 */}
           <div className="mt-5 flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <p className="text-sm text-slate-300/90">提示：AI 设置已移至右上角齿轮按钮。</p>
+            <p className="text-sm text-slate-300/90">提示：齿轮按钮打开设置, 可以调节音量大小和自定义大模型 AI</p>
             <button
               type="button"
               onClick={onStartAi}

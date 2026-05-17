@@ -110,7 +110,20 @@ export const hasValidSettings = (
   settings: AiSettings | null | undefined,
 ): settings is AiSettings => {
   if (!settings) return false;
-  return Boolean(settings.endpoint && settings.reasoningModel);
+  // 必须同时配置 endpoint、model 与 apiKey 才认为可用；否则一律走本地策略
+  return Boolean(settings.endpoint && settings.reasoningModel && settings.apiKey);
+};
+
+// Fail fast when offline or missing apiKey; caller can fall back to local strategy.
+const ensureOnlineAndApiKey = (settings: AiSettings) => {
+  try {
+    if (typeof navigator !== 'undefined' && (navigator as any).onLine === false) {
+      throw new Error('offline');
+    }
+  } catch {}
+  if (!settings.apiKey || !settings.apiKey.trim()) {
+    throw new Error('missing_api_key');
+  }
 };
 
 const selectModelForScenario = (
@@ -128,6 +141,8 @@ export const requestAiDecision = async (
   scenario: AiScenario,
   options?: { feedback?: string },
 ): Promise<AiDecision | null> => {
+  ensureOnlineAndApiKey(settings);
+
   const userContent = buildUserPrompt(scenario, options);
   const model = selectModelForScenario(settings, scenario.kind);
   const modelSelectionInfo = { scenario: scenario.kind, model }

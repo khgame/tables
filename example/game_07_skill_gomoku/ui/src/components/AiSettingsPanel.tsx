@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import type { AiSettings } from '../ai/openAiClient';
 import { useBackgroundMusic } from '../app/hooks/useBackgroundMusic';
 import { useSoundEffects } from '../app/hooks/useSoundEffects';
+import standPng from '../assets/stand.png';
+import standKaraPng from '../assets/stand_kara.png';
 export interface AiSettingsPanelProps {
   open: boolean;
   settings: AiSettings;
@@ -58,75 +60,72 @@ export const AiSettingsPanel: React.FC<AiSettingsPanelProps> = ({ open, settings
 
   return (
     <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur flex items-center justify-center p-[clamp(1rem,5vw,2.5rem)]" role="dialog" aria-modal="true">
-      <div className="w-[min(640px,100%)] rounded-3xl border border-slate-900/10 shadow-[0_24px_60px_rgba(15,23,42,0.35)] bg-gradient-to-b from-slate-50/95 to-slate-200/90 text-slate-900">
-        <header className="flex items-center justify-between px-6 pt-5 pb-2">
-          <h2 className="text-lg font-bold tracking-[0.08em] uppercase">AI 配置</h2>
-          <button type="button" onClick={onClose} className="text-2xl leading-none text-slate-600 hover:text-slate-800">×</button>
+      <div className="w-[min(840px,100%)] rounded-3xl border border-slate-900/10 shadow-[0_24px_60px_rgba(15,23,42,0.35)] bg-gradient-to-b from-slate-50/95 to-slate-200/90 text-slate-900 overflow-visible">
+        {/* Header with standing portraits */}
+        <header className="relative px-6 pt-5 pb-3 border-b border-slate-300/40">
+          <h2 className="text-lg font-bold tracking-[0.08em] uppercase text-slate-800">AI 配置</h2>
+          <button type="button" onClick={onClose} className="absolute right-4 top-3 text-2xl leading-none text-slate-600 hover:text-slate-800">×</button>
+          {/* portraits */}
+          <div className="pointer-events-none absolute inset-0">
+            {/* <img src={standKaraPng} alt="black stand" className="absolute -left-3 -bottom-2 w-[100px] opacity-80" style={{ filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.35))' }} /> */}
+            <img src={standPng} alt="white stand" className="absolute -right-3 -bottom-4 w-[120px] opacity-80" style={{ filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.35))' }} />
+          </div>
         </header>
-        <form className="flex flex-col gap-4 px-6 pb-6" onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-4 px-6 pb-6 pt-4" onSubmit={handleSubmit}>
           {/* 音频设置 */}
           <fieldset className="rounded-2xl border border-slate-300/60 bg-white/70 p-4">
             <legend className="px-2 text-sm font-semibold text-slate-700">音频设置</legend>
             <AudioSettings />
           </fieldset>
+          {/* Prompt 更大 + 示例片段 */}
+          <fieldset className="rounded-2xl border border-slate-300/60 bg-white/75 p-4">
+            <legend className="px-2 text-sm font-semibold text-slate-700">白方策略提示词（可选）</legend>
+            <label className="flex flex-col gap-2 text-[0.95rem]">
+              <textarea
+                className="w-full min-h-[220px] rounded-xl border border-slate-900/20 bg-white/85 px-3 py-2 text-slate-900 shadow-inner"
+                placeholder="示例：
+- 当对手出现即将成五的威胁时，优先落子阻断或使用反击卡。
+- 张兴朝在场后，优先考虑合体技；若对手空手时更偏好主动移除类技能。
+- 优先围绕棋盘中心与活三/活四展开，避免边角无效落子。"
+                value={localSettings.customPrompt ?? ''}
+                onChange={event => update({ customPrompt: event.target.value })}
+              />
+              <div className="flex flex-wrap gap-2 text-xs">
+                {['优先冻结限制对手；必要时用拾金不昧保子','白方若手牌>=3，谨慎使用力拔山兮','张兴朝不在场时，不考虑任何合体技','优先中腹布局，避免边角孤子'].map(sample => (
+                  <button key={sample} type="button" onClick={() => update({ customPrompt: ((localSettings.customPrompt ?? '') + (localSettings.customPrompt ? '\n' : '') + sample) })} className="px-2 py-1 rounded bg-slate-200/80 border border-slate-400/50 text-slate-700 hover:bg-slate-200">
+                    + {sample}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px] text-slate-600">将作为系统指令附加给云端模型；留空则使用内置本地策略。</span>
+            </label>
+          </fieldset>
+
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-600">推荐默认：火山方舟 Doubao</span>
+            <span className="text-xs text-slate-600"></span>
             <button type="button" onClick={applyDefaults} className="rounded-full border border-slate-300 bg-slate-200/60 px-3 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-200">
-              使用默认
+              使用默认配置: Doubao 1.6
             </button>
           </div>
-          <label className="flex flex-col gap-2 text-[0.95rem]">
-            <span>自定义白方策略指令（可选）</span>
-            <textarea
-              className="w-full min-h-[96px] rounded-xl border border-slate-900/20 bg-white/85 px-3 py-2 text-slate-900 shadow-inner"
-              placeholder="例如：优先使用冻结技能限制对手；当对手即将成五时优先反击或落子阻挡；更偏好中腹落子。"
-              value={localSettings.customPrompt ?? ''}
-              onChange={event => update({ customPrompt: event.target.value })}
-            />
-            <span className="text-[11px] text-slate-600">注：将作为系统指令附加给云端模型，无配置时忽略。</span>
-          </label>
-          <label className="flex flex-col gap-2 text-[0.95rem]">
-            <span>API Endpoint</span>
-            <input
-              className="w-full rounded-xl border border-slate-900/20 bg-white/85 px-3 py-2 text-slate-900 shadow-inner"
-              type="url"
-              placeholder={DEFAULT_AI_ENDPOINT}
-              value={localSettings.endpoint}
-              onChange={event => update({ endpoint: event.target.value })}
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-[0.95rem]">
-            <span>推理模型 (技能/复杂场景)</span>
-            <input
-              className="w-full rounded-xl border border-slate-900/20 bg-white/85 px-3 py-2 text-slate-900 shadow-inner"
-              type="text"
-              placeholder={DEFAULT_MODEL}
-              value={localSettings.reasoningModel}
-              onChange={event => update({ reasoningModel: event.target.value })}
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-[0.95rem]">
-            <span>快速模型 (落子决策)</span>
-            <input
-              className="w-full rounded-xl border border-slate-900/20 bg-white/85 px-3 py-2 text-slate-900 shadow-inner"
-              type="text"
-              placeholder={DEFAULT_MODEL}
-              value={localSettings.fastModel}
-              onChange={event => update({ fastModel: event.target.value })}
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-[0.95rem]">
-            <span>API Key (可留空, 将使用无鉴权请求)</span>
-            <input
-              className="w-full rounded-xl border border-slate-900/20 bg-white/85 px-3 py-2 text-slate-900 shadow-inner"
-              type="password"
-              placeholder="sk-..."
-              value={localSettings.apiKey}
-              onChange={event => update({ apiKey: event.target.value })}
-            />
-          </label>
+          {/* 紧凑设置区：模型 & 端点 & Key */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-slate-700">推理模型 (技能/复杂场景)</span>
+              <input className="w-full rounded-lg border border-slate-900/20 bg-white/85 px-3 py-1.5 text-slate-900 shadow-inner" type="text" placeholder={DEFAULT_MODEL} value={localSettings.reasoningModel} onChange={e => update({ reasoningModel: e.target.value })} required />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-slate-700">快速模型 (落子决策)</span>
+              <input className="w-full rounded-lg border border-slate-900/20 bg-white/85 px-3 py-1.5 text-slate-900 shadow-inner" type="text" placeholder={DEFAULT_MODEL} value={localSettings.fastModel} onChange={e => update({ fastModel: e.target.value })} />
+            </label>
+            <label className="flex flex-col gap-1 text-sm md:col-span-2">
+              <span className="text-slate-700">API Endpoint</span>
+              <input className="w-full rounded-lg border border-slate-900/20 bg-white/85 px-3 py-1.5 text-slate-900 shadow-inner" type="url" placeholder={DEFAULT_AI_ENDPOINT} value={localSettings.endpoint} onChange={e => update({ endpoint: e.target.value })} required />
+            </label>
+            <label className="flex flex-col gap-1 text-sm md:col-span-2">
+              <span className="text-slate-700">API Key（可留空）</span>
+              <input className="w-full rounded-lg border border-slate-900/20 bg-white/85 px-3 py-1.5 text-slate-900 shadow-inner" type="password" placeholder="sk-..." value={localSettings.apiKey} onChange={e => update({ apiKey: e.target.value })} />
+            </label>
+          </div>
           <footer className="mt-1 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="rounded-full border border-slate-300 bg-slate-200/60 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
               取消

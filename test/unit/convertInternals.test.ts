@@ -4,6 +4,7 @@ import {
   normalizePrimitive,
   normalizeValue
 } from '../../src/plugin/convertInternals'
+import { getConvertErrorMetadata } from '../../src/plugin/validationError'
 
 describe('convert internals', () => {
   describe('normalizePrimitive', () => {
@@ -29,6 +30,28 @@ describe('convert internals', () => {
       expect(() => normalizePrimitive({ raw: 1 }, bigintNode as any, 'value')).toThrow(/BigInt preservation/)
     })
 
+    it('attaches metadata to bigint validation failures', () => {
+      try {
+        normalizePrimitive({ raw: 1 }, bigintNode as any, 'Game[row 7].stats[0].power')
+        throw new Error('expected bigint validation failure')
+      } catch (error) {
+        expect(getConvertErrorMetadata(error)).toEqual({
+          code: 'bigint_expected_numeric_string',
+          location: {
+            row: 7,
+            fieldPath: 'stats[0].power'
+          },
+          details: {
+            convertPath: 'Game[row 7].stats[0].power',
+            expected: 'numeric_string',
+            receivedType: 'object',
+            sourceAlias: 'int64',
+            tableName: 'Game'
+          }
+        })
+      }
+    })
+
     it('coerces int strategy for numbers and numeric strings', () => {
       expect(normalizePrimitive(42, intNode as any, 'path')).toBe(42)
       expect(normalizePrimitive(' 7 ', intNode as any, 'path')).toBe(7)
@@ -38,6 +61,43 @@ describe('convert internals', () => {
     it('rejects overflow for int strategy', () => {
       expect(() => normalizePrimitive(Number.MAX_SAFE_INTEGER + 1, intNode as any, 'path')).toThrow(/Number.MAX_SAFE_INTEGER/)
       expect(() => normalizePrimitive('9007199254740993', intNode as any, 'path')).toThrow(/Number.MAX_SAFE_INTEGER/)
+    })
+
+    it('attaches metadata to numeric overflow failures', () => {
+      try {
+        normalizePrimitive('9007199254740993', intNode as any, 'Game[row 9].power')
+        throw new Error('expected numeric overflow')
+      } catch (error) {
+        expect(getConvertErrorMetadata(error)).toEqual({
+          code: 'numeric_overflow',
+          location: {
+            row: 9,
+            fieldPath: 'power'
+          },
+          details: {
+            rawValue: '9007199254740993',
+            convertPath: 'Game[row 9].power',
+            maxSafeInteger: Number.MAX_SAFE_INTEGER,
+            suggestedType: 'BigNum',
+            sourceAlias: 'int32',
+            tableName: 'Game'
+          }
+        })
+      }
+    })
+
+    it('keeps convert metadata out of enumerable error output', () => {
+      try {
+        normalizePrimitive('9007199254740993', intNode as any, 'Game[row 9].power')
+        throw new Error('expected numeric overflow')
+      } catch (error) {
+        expect(Object.keys(error as object)).not.toContain('convertErrorMeta')
+        expect(JSON.stringify(error)).not.toContain('convertErrorMeta')
+        ;(error as any).convertErrorMeta = {
+          code: 'numeric_overflow'
+        }
+        expect(getConvertErrorMetadata(error)?.code).toBe('numeric_overflow')
+      }
     })
 
     it('default strategy returns original value', () => {
@@ -123,6 +183,23 @@ describe('convert internals', () => {
       } as any
       expect(normalizeValue('12', unionNode, 'union')).toBe(12)
       expect(() => normalizeValue(Number.MAX_SAFE_INTEGER + 1, unionNode, 'union')).toThrow(/Number.MAX_SAFE_INTEGER/)
+    })
+
+    it('rethrows typed numeric overflow errors from union variants', () => {
+      const unionNode = {
+        kind: 'union',
+        variants: [
+          { kind: 'primitive', name: 'number', hintMeta: { strategyHint: 'int', sourceAlias: 'int32' } },
+          { kind: 'primitive', name: 'string' }
+        ]
+      } as any
+
+      try {
+        normalizeValue('9007199254740993', unionNode, 'Game[row 3].power')
+        throw new Error('expected numeric overflow')
+      } catch (error) {
+        expect(getConvertErrorMetadata(error)?.code).toBe('numeric_overflow')
+      }
     })
 
     it('returns original value when union variants are exhausted', () => {

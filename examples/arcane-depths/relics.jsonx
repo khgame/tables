@@ -1,0 +1,119 @@
+{
+  "protocol": {
+    "name": "khgame.tables",
+    "version": 1
+  },
+  "source": {
+    "fileName": "relics",
+    "sheetName": "__data"
+  },
+  "convert": {
+    "tids": [
+      "60010000",
+      "60020000",
+      "60030000",
+      "60040000",
+      "60050000"
+    ],
+    "result": {
+      "60010000": {
+        "_tid": "60010000",
+        "familyCode": 60,
+        "relicCode": 1,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "name": "余烬之心碎片",
+        "rarity": 3,
+        "slot": "Any",
+        "effectSummary": "战斗开始额外获得护盾",
+        "triggerCondition": "OnBattleStart",
+        "triggerEffect": "队伍护盾+150",
+        "synergyTrait": "Resolve"
+      },
+      "60020000": {
+        "_tid": "60020000",
+        "familyCode": 60,
+        "relicCode": 2,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 2,
+        "name": "翠潮之语",
+        "rarity": 4,
+        "slot": "Any",
+        "effectSummary": "治疗时为目标附加藤蔓护佑",
+        "triggerCondition": "OnHeal",
+        "triggerEffect": "回复额外15%并免疫下一次减益",
+        "synergyTrait": "Synergy"
+      },
+      "60030000": {
+        "_tid": "60030000",
+        "familyCode": 60,
+        "relicCode": 3,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 3,
+        "name": "星锻合金",
+        "rarity": 5,
+        "slot": "Weapon",
+        "effectSummary": "技能命中时追加星能碎片",
+        "triggerCondition": "OnSkillHit",
+        "triggerEffect": "对同列敌人造成30%额外伤害",
+        "synergyTrait": "Resonance"
+      },
+      "60040000": {
+        "_tid": "60040000",
+        "familyCode": 60,
+        "relicCode": 4,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 4,
+        "name": "猎手之徽",
+        "rarity": 3,
+        "slot": "Accessory",
+        "effectSummary": "高连击时提升暴击",
+        "triggerCondition": "OnCombo",
+        "triggerEffect": "连击>=3时暴击率+18%",
+        "synergyTrait": "Instinct"
+      },
+      "60050000": {
+        "_tid": "60050000",
+        "familyCode": 60,
+        "relicCode": 5,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 5,
+        "name": "守望灯盏",
+        "rarity": 2,
+        "slot": "Armor",
+        "effectSummary": "防御时为队友提供护盾",
+        "triggerCondition": "OnGuard",
+        "triggerEffect": "触发格挡时最近的队友获得100护盾",
+        "synergyTrait": "Resolve"
+      }
+    },
+    "collisions": [],
+    "meta": {
+      "idSegments": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "markCols": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    }
+  }
+}

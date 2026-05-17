@@ -1,0 +1,87 @@
+{
+  "protocol": {
+    "name": "khgame.tables",
+    "version": 1
+  },
+  "source": {
+    "fileName": "skill_links",
+    "sheetName": "__data"
+  },
+  "convert": {
+    "tids": [
+      "31010000",
+      "31020000",
+      "31030000"
+    ],
+    "result": {
+      "31010000": {
+        "_tid": "31010000",
+        "familyCode": 31,
+        "linkCode": 1,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "skillId": 30010100,
+        "triggerTrait": "Resolve",
+        "condition": "队伍护盾总量>=200",
+        "stepOrder": 1,
+        "stepSkill": 30010200,
+        "chance": 1,
+        "remark": "Molten Bulwark 触发升级"
+      },
+      "31020000": {
+        "_tid": "31020000",
+        "familyCode": 31,
+        "linkCode": 2,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "skillId": 30020100,
+        "triggerTrait": "Resonance",
+        "condition": "目标处于易伤",
+        "stepOrder": 1,
+        "stepSkill": 30030100,
+        "chance": 0.85,
+        "remark": "星辉共鸣追加终结一击"
+      },
+      "31030000": {
+        "_tid": "31030000",
+        "familyCode": 31,
+        "linkCode": 3,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "skillId": 30040100,
+        "triggerTrait": "Instinct",
+        "condition": "自身持有动量",
+        "stepOrder": 1,
+        "stepSkill": 30990100,
+        "chance": 0.7,
+        "remark": "Echo Barrage 触发穿透强击"
+      }
+    },
+    "collisions": [],
+    "meta": {
+      "idSegments": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "markCols": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L"
+      ]
+    }
+  }
+}

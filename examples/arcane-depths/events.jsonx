@@ -1,0 +1,141 @@
+{
+  "protocol": {
+    "name": "khgame.tables",
+    "version": 1
+  },
+  "source": {
+    "fileName": "events",
+    "sheetName": "__data"
+  },
+  "convert": {
+    "tids": [
+      "51010000",
+      "51010001",
+      "51020000",
+      "51030000"
+    ],
+    "result": {
+      "51010000": {
+        "_tid": "51010000",
+        "familyCode": 51,
+        "eventCode": 1,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "chapterId": 10010100,
+        "title": "余烬之心的呼唤",
+        "summary": "碎片共鸣召唤你投入灼热火焰。",
+        "option1Text": "投掷熔心碎片",
+        "option1Requirement": "Resource",
+        "option1RewardType": "Relic",
+        "option1RewardValue": "60010000",
+        "option1PenaltyType": "LoseResource",
+        "option1PenaltyValue": "Arcane:10",
+        "option2Text": "保持距离观察",
+        "option2RewardType": "Resource",
+        "option2RewardValue": "Crystal:8",
+        "option2PenaltyType": "Debuff",
+        "option2PenaltyValue": "Scorching",
+        "followUp": 51010001
+      },
+      "51010001": {
+        "_tid": "51010001",
+        "familyCode": 51,
+        "eventCode": 1,
+        "variantCode": 0,
+        "subCode": 1,
+        "sequence": 2,
+        "chapterId": 10010100,
+        "title": "余烬之心回响",
+        "summary": "碎片涌动，显现潜在力量。",
+        "option1Text": "吞噬碎片",
+        "option1Requirement": "HeroTrait",
+        "option1RewardType": "Trait",
+        "option1RewardValue": "Resolve",
+        "option1PenaltyType": "Damage",
+        "option1PenaltyValue": "team:12",
+        "option2Text": "封印碎片",
+        "option2RewardType": "Resource",
+        "option2RewardValue": "Arcane:6",
+        "option2PenaltyValue": ""
+      },
+      "51020000": {
+        "_tid": "51020000",
+        "familyCode": 51,
+        "eventCode": 2,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "chapterId": 10020100,
+        "title": "深根求援",
+        "summary": "被藤蔓缠绕的旅者请求帮助。",
+        "option1Text": "切断藤蔓",
+        "option1Requirement": "SkillTag",
+        "option1RewardType": "Resource",
+        "option1RewardValue": "Provision:20",
+        "option1PenaltyType": "Debuff",
+        "option1PenaltyValue": "Bleed",
+        "option2Text": "分享药剂",
+        "option2Requirement": "Resource",
+        "option2RewardType": "Resource",
+        "option2RewardValue": "Arcane:8",
+        "option2PenaltyValue": "",
+        "followUp": 51020000
+      },
+      "51030000": {
+        "_tid": "51030000",
+        "familyCode": 51,
+        "eventCode": 3,
+        "variantCode": 0,
+        "subCode": 0,
+        "sequence": 1,
+        "chapterId": 10030100,
+        "title": "星火铸炉",
+        "summary": "熔炉中浮现星界影像。",
+        "option1Text": "倾听星火",
+        "option1Requirement": "HeroTrait",
+        "option1RewardType": "Resource",
+        "option1RewardValue": "Arcane:10",
+        "option1PenaltyValue": "",
+        "option2Text": "融入星火",
+        "option2Requirement": "HeroTrait",
+        "option2RewardType": "Relic",
+        "option2RewardValue": "60030000",
+        "option2PenaltyType": "LoseResource",
+        "option2PenaltyValue": "HP:15"
+      }
+    },
+    "collisions": [],
+    "meta": {
+      "idSegments": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "markCols": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U"
+      ]
+    }
+  }
+}

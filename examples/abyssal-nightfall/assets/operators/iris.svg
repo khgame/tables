@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 960" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#171233" />
+    </linearGradient>
+    <linearGradient id="sil" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.85" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="960" fill="url(#bg)" />
+  <path fill="url(#sil)" d="M320 140c54 0 98 58 98 126 0 72-34 120-34 150s34 52 34 118c0 104-70 180-198 180s-198-76-198-180c0-66 34-104 34-118s-34-78-34-150c0-68 44-126 98-126 50 0 78 40 100 92 22-52 50-92 100-92z" opacity="0.9" />
+  <circle cx="320" cy="520" r="160" fill="#ede9fe" opacity="0.12" />
+  <text x="40" y="900" font-size="64" font-family="'Montserrat', 'Arial', sans-serif" font-weight="700" letter-spacing="8" fill="#f5f3ff" opacity="0.35">IRIS</text>
+</svg>
